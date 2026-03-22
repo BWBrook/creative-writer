@@ -1,0 +1,10 @@
+locations:
+  - id: ares-colony
+    name: "Ares Colony"
+    description: "The first substantial human settlement on Mars, assembled by robotic engineers."
+  - id: basalt-ridge
+    name: "Basalt Ridge"
+    description: "A survey zone beyond the colony perimeter with exposed lava-formed terrain."
+  - id: cave-threshold
+    name: "Cave Threshold"
+    description: "The newly noticed entrance where the expedition first finds anomalies."

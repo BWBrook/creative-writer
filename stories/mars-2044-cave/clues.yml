@@ -1,0 +1,9 @@
+clues:
+  - id: scored-basalts
+    name: "Scored basalts"
+    description: "Rock faces near the cave mouth show repeated marks inconsistent with local wind abrasion."
+    status: introduced
+  - id: artificial-marker
+    name: "Artificial marker"
+    description: "A shaped object or symbol inside the cave suggests deliberate prior presence."
+    status: hidden

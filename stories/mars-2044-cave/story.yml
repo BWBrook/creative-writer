@@ -1,0 +1,10 @@
+title: "Mars 2044 Cave Discovery"
+slug: "mars-2044-cave"
+kind: "original"
+status: planning
+target_outputs:
+  - epub
+  - pdf
+chapters:
+  - manuscript/01-expedition-briefing.md
+  - manuscript/02-cave-entry.md

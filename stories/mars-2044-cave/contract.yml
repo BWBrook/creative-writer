@@ -1,0 +1,11 @@
+human_role: "Supply sparks, critical commentary, structural feedback, and revision direction."
+ai_role: "Draft and revise the story while preserving hard-science-fiction coherence and mystery discipline."
+authority_mode: direct_edit
+review_mode: git_diff
+lint:
+  em_dash:
+    enabled: true
+    max_per_chapter: 2
+  contrastive_parallelism:
+    enabled: true
+    max_instances_per_chapter: 1

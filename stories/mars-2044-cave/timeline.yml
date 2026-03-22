@@ -1,0 +1,9 @@
+events:
+  - id: sol-011-briefing
+    label: "Survey briefing"
+    when: "Sol 11"
+    description: "The first off-perimeter survey is authorized and briefed."
+  - id: sol-011-cave-discovery
+    label: "Cave discovery"
+    when: "Sol 11"
+    description: "The EVA team identifies the cave and begins cautious entry."

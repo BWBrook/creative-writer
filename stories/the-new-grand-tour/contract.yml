@@ -1,0 +1,11 @@
+human_role: "Author of the original travel narrative and curator of the setting continuity for follow-on stories."
+ai_role: "Maintain continuity with the established 2052 cislunar setting and help plan or draft sequels set on the Moon, at L5, or farther out."
+authority_mode: direct_edit
+review_mode: git_diff
+lint:
+  em_dash:
+    enabled: true
+    max_per_chapter: 2
+  contrastive_parallelism:
+    enabled: true
+    max_instances_per_chapter: 1

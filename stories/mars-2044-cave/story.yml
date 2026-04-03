@@ -6,5 +6,5 @@ target_outputs:
   - epub
   - pdf
 chapters:
-  - manuscript/01-expedition-briefing.md
-  - manuscript/02-cave-entry.md
+  - chapter-stubs/01-expedition-briefing.md
+  - chapter-stubs/02-cave-entry.md

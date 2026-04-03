@@ -9,6 +9,12 @@ from creative_writer.building import build_story
 from creative_writer.checks import check_story
 from creative_writer.exceptions import CreativeWriterError
 from creative_writer.files import repo_root
+from creative_writer.novellas import (
+    clear_ingested,
+    export_novella,
+    import_novella,
+    resolve_novellas_dir,
+)
 from creative_writer.scaffold import create_story
 
 
@@ -43,6 +49,40 @@ def build_parser() -> argparse.ArgumentParser:
     pdf = subparsers.add_parser("pdf", help="Build a PDF for a story.")
     pdf.add_argument("--story", required=True, help="Story slug.")
 
+    novellas_path = subparsers.add_parser(
+        "novellas-path", help="Print the resolved OneDrive Novellas directory."
+    )
+
+    import_novella_parser = subparsers.add_parser(
+        "import-novella",
+        help="Import a DOCX from OneDrive Documents/Novellas into ingested/ as Markdown.",
+    )
+    import_novella_parser.add_argument(
+        "--source", required=True, help="DOCX filename inside the Novellas folder."
+    )
+
+    export_novella_parser = subparsers.add_parser(
+        "export-novella",
+        help="Export a repo Markdown file to DOCX in OneDrive Documents/Novellas.",
+    )
+    export_novella_parser.add_argument(
+        "--input", required=True, help="Repo-relative or absolute Markdown path."
+    )
+    export_novella_parser.add_argument(
+        "--output-name",
+        help="Optional DOCX filename override for the Novellas folder.",
+    )
+
+    clear_ingested_parser = subparsers.add_parser(
+        "clear-ingested",
+        help="Clear an ingested Markdown source after a story has been safely back-fitted.",
+    )
+    clear_ingested_parser.add_argument(
+        "--story",
+        required=True,
+        help="Story slug whose ingested staging files should be removed.",
+    )
+
     return parser
 
 
@@ -74,6 +114,27 @@ def main(argv: list[str] | None = None) -> int:
         if args.command in {"epub", "pdf"}:
             output_path = build_story(root, args.story, args.command)
             print(f"Built {output_path}")
+            return 0
+
+        if args.command == "novellas-path":
+            print(resolve_novellas_dir())
+            return 0
+
+        if args.command == "import-novella":
+            output_path = import_novella(root, args.source)
+            print(f"Imported {output_path}")
+            return 0
+
+        if args.command == "export-novella":
+            output_path = export_novella(root, args.input, args.output_name)
+            print(f"Exported {output_path}")
+            return 0
+
+        if args.command == "clear-ingested":
+            removed = clear_ingested(root, args.story)
+            print(f"Cleared {len(removed)} staging path(s) for {args.story}:")
+            for path in removed:
+                print(path)
             return 0
     except CreativeWriterError as exc:
         print(str(exc), file=sys.stderr)

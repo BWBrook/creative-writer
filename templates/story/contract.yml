@@ -1,0 +1,11 @@
+human_role: "Describe the human role in the creative process for {{story_title}}."
+ai_role: "Describe the AI role in the creative process for {{story_title}}."
+authority_mode: direct_edit
+review_mode: git_diff
+lint:
+  em_dash:
+    enabled: true
+    max_per_chapter: 2
+  contrastive_parallelism:
+    enabled: true
+    max_instances_per_chapter: 1

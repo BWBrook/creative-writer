@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -32,7 +33,7 @@ def _assemble_markdown(root: Path, slug: str) -> tuple[Path, str, set[str]]:
     for chapter in result.chapters:
         lines.append(f"# {chapter.front_matter.title}")
         lines.append("")
-        body = chapter.body.strip()
+        body = chapter.manuscript_body.strip()
         if body:
             lines.append(body)
         else:
@@ -63,6 +64,14 @@ def build_story(root: Path, slug: str, target: str) -> Path:
         "--toc",
         "--metadata",
         f"title={title}",
+        "--resource-path",
+        os.pathsep.join(
+            [
+                str(root / "stories" / slug),
+                str(root / "stories" / slug / "manuscript"),
+                str(root),
+            ]
+        ),
         "--output",
         str(output_path),
     ]

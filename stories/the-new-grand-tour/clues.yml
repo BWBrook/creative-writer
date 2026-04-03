@@ -1,0 +1,29 @@
+clues:
+  - id: cislunar-tourism-legible
+    name: "Cislunar tourism has become legible"
+    description: "Travel beyond Earth can now be understood in recognisable human terms such as transit, hotel, district, meal, and itinerary."
+    status: resolved
+  - id: automation-made-space-ordinary
+    name: "Automation made the new travel system possible"
+    description: "The post-2035 automation surge transformed orbital and cislunar infrastructure from heroic exception into dependable industry."
+    status: resolved
+  - id: lunar-ice-economy
+    name: "Lunar ice underwrites cislunar life"
+    description: "South-polar water extraction on the Moon supports fuel, life support, and the broader space economy."
+    status: resolved
+  - id: oneill-city-not-resort
+    name: "O’Neill-1 is a city, not a resort"
+    description: "The L5 settlement has crossed the threshold from spectacle to ordinary urban life."
+    status: resolved
+  - id: tourism-adjacent-to-labour
+    name: "Tourism remains adjacent to labour"
+    description: "Hotels, luxury, and leisure exist, but they remain visibly dependent on engineering, maintenance, and industry."
+    status: resolved
+  - id: dyson-swarm-rumors
+    name: "Solar-industry expansion rumours"
+    description: "Residents talk seriously about larger heliocentric industry and early Dyson-swarm-like infrastructure."
+    status: introduced
+  - id: narrator-wants-to-return
+    name: "Narrator wants to return for a longer stay"
+    description: "The closing desire to come back creates a natural bridge into sequel stories."
+    status: introduced

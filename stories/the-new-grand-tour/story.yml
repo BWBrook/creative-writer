@@ -1,0 +1,14 @@
+title: "The New Grand Tour"
+slug: "the-new-grand-tour"
+kind: "original"
+status: complete
+target_outputs:
+  - epub
+  - pdf
+chapters:
+  - chapter-stubs/01-california-to-orbit.md
+  - chapter-stubs/02-shephard.md
+  - chapter-stubs/03-moon-to-l5.md
+  - chapter-stubs/04-arrival-at-oneill-1.md
+  - chapter-stubs/05-station-life.md
+  - chapter-stubs/06-departure-and-horizon.md

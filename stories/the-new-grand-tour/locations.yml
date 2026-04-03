@@ -1,0 +1,46 @@
+locations:
+  - id: pacific-meridian-terminal
+    name: "Pacific Meridian Terminal"
+    description: "The California launch terminal north of Vandenberg where the journey begins."
+  - id: concord-gateway
+    name: "Concord Gateway"
+    description: "An orbital transfer ring and hotel drum used as the first staging point after launch."
+  - id: moonbase-3-shephard
+    name: "Moonbase-3 (Shephard)"
+    description: "A south-polar lunar settlement that combines tourism, industry, extraction, and ordinary civic life."
+  - id: guest-ring
+    name: "Guest Ring"
+    description: "The clean, compact accommodation module for visitors at Shephard."
+  - id: south-polar-extraction-zone
+    name: "South polar extraction zone"
+    description: "The industrial region where lunar water is extracted, processed, and sent into the cislunar economy."
+  - id: earth-moon-l5
+    name: "Earth-Moon L5"
+    description: "The Lagrange-point region where O’Neill-1 sits and from which Earth and Moon part at about sixty degrees."
+  - id: oneill-1
+    name: "O’Neill-1"
+    description: "A rotating settlement at L5 that functions as the first true space city at urban scale."
+  - id: rim-station
+    name: "Rim Station"
+    description: "The spoke-train arrival point where visitors step into the inhabited ring of O’Neill-1."
+  - id: meridian-district
+    name: "Meridian district"
+    description: "A brisk, transit-rich district on O’Neill-1 that includes the Spokehouse and nearby park corridors."
+  - id: foundry-east
+    name: "Foundry East"
+    description: "A more industrial O’Neill-1 district with robotics plants and materials labs."
+  - id: greenline-districts
+    name: "Greenline districts"
+    description: "Park-belt and agricultural neighbourhoods that reconcile density with human comfort."
+  - id: meridian-park
+    name: "Meridian Park"
+    description: "A broad green corridor on O’Neill-1 used as a public social and reflective space."
+  - id: spokehouse-transit-hotel
+    name: "Spokehouse Transit Hotel"
+    description: "A mid-market O’Neill-1 hotel that reveals how the station lives day to day."
+  - id: aurelian-meridian
+    name: "Aurelian Meridian"
+    description: "A luxury O’Neill-1 hotel that shows the city’s polished and aspirational side."
+  - id: celestium-lounge
+    name: "Celestium Lounge"
+    description: "A shielded observation salon attached to the Aurelian Meridian."

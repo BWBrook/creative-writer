@@ -1,0 +1,9 @@
+characters:
+  - id: unnamed-journalist
+    name: "Unnamed travel journalist"
+    role: "First-person narrator and observer of the California-Moon-L5 circuit"
+    motivation: "Understand whether cislunar travel has become a genuine lived experience rather than staged futurism."
+  - id: resident-planner
+    name: "Resident planner"
+    role: "O’Neill-1 planner briefly encountered in Meridian Park"
+    motivation: "Treat the station as a normal home rather than a symbolic frontier."

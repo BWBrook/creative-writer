@@ -88,20 +88,34 @@ def split_front_matter(text: str, path: Path) -> tuple[dict[str, Any], str]:
     return front_matter, body
 
 
-def load_chapter_document(path: Path) -> ChapterDocument:
-    """Load and validate a manuscript chapter."""
+def load_chapter_document(story_dir: Path, stub_path: Path) -> ChapterDocument:
+    """Load and validate one chapter stub plus its full manuscript file."""
 
-    text = path.read_text(encoding="utf-8")
-    raw_front_matter, body = split_front_matter(text, path)
+    text = stub_path.read_text(encoding="utf-8")
+    raw_front_matter, stub_body = split_front_matter(text, stub_path)
 
     try:
         front_matter = ChapterFrontMatter.model_validate(raw_front_matter)
     except ValidationError as exc:
         raise CreativeWriterError(
-            f"Chapter front matter validation failed for {path}:\n{exc}"
+            f"Chapter front matter validation failed for {stub_path}:\n{exc}"
         ) from exc
 
-    return ChapterDocument(path=path, front_matter=front_matter, body=body)
+    manuscript_path = story_dir / front_matter.manuscript
+    try:
+        manuscript_body = manuscript_path.read_text(encoding="utf-8")
+    except FileNotFoundError as exc:
+        raise CreativeWriterError(
+            f"Missing manuscript file for {stub_path}: {manuscript_path}"
+        ) from exc
+
+    return ChapterDocument(
+        stub_path=stub_path,
+        manuscript_path=manuscript_path,
+        front_matter=front_matter,
+        stub_body=stub_body,
+        manuscript_body=manuscript_body,
+    )
 
 
 def write_text(path: Path, content: str) -> None:

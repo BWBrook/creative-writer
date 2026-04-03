@@ -22,6 +22,9 @@ The first implementation slice is a file-first story framework with:
 - `EPUB` and `PDF` builds from Markdown sources,
 - a seeded Mars 2044 test project.
 
+The default story scaffold is now stored explicitly under
+`templates/story/`, so the canonical framework is visible and easy to refine.
+
 ## Story layout
 
 Each story lives under `stories/<slug>/` and uses Markdown plus YAML:
@@ -30,7 +33,10 @@ Each story lives under `stories/<slug>/` and uses Markdown plus YAML:
 - `contract.yml`: human/AI collaboration settings and lint thresholds
 - `style-guide.md`: voice, tone, and prose constraints
 - `outline.md`: synopsis plus structural plan
-- `manuscript/`: chapter Markdown files with YAML front matter
+- `chapter-stubs/`: chapter-level planning files with YAML front matter
+- `manuscript/`: full narrative chapter text
+- `assets/images/`: embedded chapter images or other visual assets
+- `scene-cards/<chapter>/`: optional scene planning linked from each chapter stub
 
 Optional artifact templates are included for:
 
@@ -45,10 +51,40 @@ Optional artifact templates are included for:
 
 ```bash
 make init-story STORY=my-story KIND=original
+make new-story STORY=my-story KIND=original
 make check STORY=mars-2044-cave
 make epub STORY=mars-2044-cave
 make pdf STORY=mars-2044-cave
 make test
 ```
 
+For a simple script wrapper, you can also run:
+
+```bash
+scripts/new_story.sh my-story original "My Story Title"
+```
+
 Generated outputs and reports land under `build/` and are not tracked in git.
+
+## Novellas pipeline
+
+The repo also supports a two-way pipeline to the local OneDrive-synced
+`Documents/Novellas` folder.
+
+```bash
+make novellas-path
+make import-novella FILE="The New Grand Tour.docx"
+make export-novella INPUT="stories/the-new-grand-tour/manuscript/01-california-to-orbit.md" OUTPUT="The New Grand Tour Chapter 1.docx"
+make clear-ingested STORY=the-new-grand-tour
+```
+
+Imported files land under `ingested/`. If the local OneDrive path ever differs
+from this machine's default sync location, set `CREATIVE_WRITER_NOVELLAS_DIR`
+to override discovery.
+
+Once a story has been back-fitted into `stories/<slug>/`, `make clear-ingested`
+can remove its staging import after verifying that:
+
+- the story exists and passes `check`,
+- no story files still reference `ingested/`,
+- any extracted media has been copied into the story's own `assets/images/`.

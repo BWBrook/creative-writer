@@ -1,0 +1,10 @@
+title: "{{story_title}}"
+slug: "{{story_slug}}"
+kind: "{{story_kind}}"
+status: planning
+target_outputs:
+  - epub
+  - pdf
+chapters:
+  - chapter-stubs/01-opening.md
+  - chapter-stubs/02-turn.md

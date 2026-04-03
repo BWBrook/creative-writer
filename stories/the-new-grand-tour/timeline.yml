@@ -1,0 +1,37 @@
+events:
+  - id: day-1-california-departure
+    label: "California departure"
+    when: "Day 1"
+    description: "The narrator departs from Pacific Meridian Terminal aboard the Mojave Clipper."
+  - id: day-1-concord-transfer
+    label: "Concord Gateway transfer"
+    when: "Day 1"
+    description: "After launch, the narrator stages through Concord Gateway before boarding the Selene Packet."
+  - id: day-2-shephard-arrival
+    label: "Arrival at Shephard"
+    when: "Day 2"
+    description: "The narrator reaches Moonbase-3 and enters the Guest Ring."
+  - id: day-3-shephard-exploration
+    label: "Shephard exploration"
+    when: "Day 3"
+    description: "The narrator experiences excursions, industry, and ordinary life on the Moon."
+  - id: day-4-transfer-to-l5
+    label: "Transfer from the Moon to L5"
+    when: "Day 4"
+    description: "The narrator boards the Archimedes and travels outward toward O’Neill-1."
+  - id: day-5-oneill-arrival
+    label: "Arrival at O’Neill-1"
+    when: "Day 5"
+    description: "The station resolves into architecture and the narrator enters the city."
+  - id: day-5-to-6-spokehouse-stay
+    label: "Spokehouse stay"
+    when: "Days 5-6"
+    description: "The narrator experiences the practical, lived-in side of O’Neill-1."
+  - id: day-7-to-8-aurelian-stay
+    label: "Aurelian stay"
+    when: "Days 7-8"
+    description: "The narrator moves to the station’s luxury hotel and sees its more composed public face."
+  - id: day-8-earth-direct-departure
+    label: "Earth Direct departure"
+    when: "Day 8"
+    description: "The trip closes with the narrator preparing to leave while already thinking about returning."

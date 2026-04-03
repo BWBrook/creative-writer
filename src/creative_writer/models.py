@@ -41,9 +41,9 @@ class StoryConfig(BaseModel):
         for chapter in cleaned:
             if chapter in seen:
                 raise ValueError("chapters must be unique")
-            if not chapter.startswith("manuscript/") or not chapter.endswith(".md"):
+            if not chapter.startswith("chapter-stubs/") or not chapter.endswith(".md"):
                 raise ValueError(
-                    "chapter paths must live under manuscript/ and end in .md"
+                    "chapter paths must live under chapter-stubs/ and end in .md"
                 )
             seen.add(chapter)
         return cleaned
@@ -166,18 +166,41 @@ class TimelineRegistry(BaseModel):
 
 
 class ChapterFrontMatter(BaseModel):
-    """Required YAML front matter for manuscript chapters."""
+    """Required YAML front matter for chapter stubs."""
 
     model_config = ConfigDict(extra="allow")
 
     title: NonEmptyStr
     summary: NonEmptyStr
+    manuscript: NonEmptyStr
+    scene_cards_dir: str | None = None
     characters: list[str] = Field(default_factory=list)
     locations: list[str] = Field(default_factory=list)
     clues_introduced: list[str] = Field(default_factory=list)
     clues_resolved: list[str] = Field(default_factory=list)
     plot_devices: list[str] = Field(default_factory=list)
     timeline_events: list[str] = Field(default_factory=list)
+    images: list[str] = Field(default_factory=list)
+
+    @field_validator(
+        "manuscript",
+    )
+    @classmethod
+    def validate_manuscript_path(cls, value: str) -> str:
+        if not value.startswith("manuscript/") or not value.endswith(".md"):
+            raise ValueError("manuscript must live under manuscript/ and end in .md")
+        return value
+
+    @field_validator(
+        "scene_cards_dir",
+    )
+    @classmethod
+    def validate_scene_cards_dir(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        if not value.startswith("scene-cards/"):
+            raise ValueError("scene_cards_dir must live under scene-cards/")
+        return value
 
     @field_validator(
         "characters",
@@ -186,6 +209,7 @@ class ChapterFrontMatter(BaseModel):
         "clues_resolved",
         "plot_devices",
         "timeline_events",
+        "images",
     )
     @classmethod
     def validate_lists(cls, value: list[str]) -> list[str]:
@@ -196,9 +220,11 @@ class ChapterFrontMatter(BaseModel):
 class ChapterDocument:
     """A parsed chapter with validated front matter."""
 
-    path: Path
+    stub_path: Path
+    manuscript_path: Path
     front_matter: ChapterFrontMatter
-    body: str
+    stub_body: str
+    manuscript_body: str
 
 
 @dataclass(slots=True)

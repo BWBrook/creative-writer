@@ -23,6 +23,7 @@ MANDATORY_ARTIFACTS = [
     "contract.yml",
     "style-guide.md",
     "outline.md",
+    "chapter-stubs",
     "manuscript",
 ]
 
@@ -30,6 +31,8 @@ CONTRASTIVE_PATTERN = re.compile(
     r"\b(?:not only\b[^.!?\n]{0,80}\bbut also|not\b[^.!?\n]{0,80}\bbut)\b",
     re.IGNORECASE,
 )
+MARKDOWN_IMAGE_PATTERN = re.compile(r"!\[[^\]]*\]\(([^)]+)\)")
+HTML_IMAGE_PATTERN = re.compile(r'<img[^>]+src="([^"]+)"', re.IGNORECASE)
 
 
 def _add_error(result: CheckResult, location: Path | str, message: str) -> None:
@@ -87,7 +90,8 @@ def _render_report(
         for chapter in result.chapters:
             fm = chapter.front_matter
             lines.append(
-                f"- `{chapter.path.name}`: {fm.title} | characters={len(fm.characters)} | "
+                f"- `{chapter.stub_path.name}` -> `{chapter.manuscript_path.name}`: "
+                f"{fm.title} | characters={len(fm.characters)} | "
                 f"locations={len(fm.locations)} | clues introduced={len(fm.clues_introduced)} | "
                 f"clues resolved={len(fm.clues_resolved)}"
             )
@@ -129,6 +133,12 @@ def _load_registry_ids(
         return set()
 
     return {item.id for item in getattr(registry, key)}
+
+
+def _extract_image_paths(markdown: str) -> set[str]:
+    paths = set(MARKDOWN_IMAGE_PATTERN.findall(markdown))
+    paths.update(HTML_IMAGE_PATTERN.findall(markdown))
+    return {path for path in paths if path and not path.startswith("http")}
 
 
 def check_story(root: Path, slug: str) -> CheckResult:
@@ -196,7 +206,7 @@ def check_story(root: Path, slug: str) -> CheckResult:
                 continue
 
             try:
-                chapter = load_chapter_document(chapter_path)
+                chapter = load_chapter_document(story_dir, chapter_path)
             except CreativeWriterError as exc:
                 _add_error(result, chapter_path, str(exc))
                 continue
@@ -210,7 +220,7 @@ def check_story(root: Path, slug: str) -> CheckResult:
                 if unknown:
                     _add_error(
                         result,
-                        chapter_path,
+                        chapter.stub_path,
                         f"Unknown characters referenced: {', '.join(unknown)}",
                     )
 
@@ -221,7 +231,7 @@ def check_story(root: Path, slug: str) -> CheckResult:
                 if unknown:
                     _add_error(
                         result,
-                        chapter_path,
+                        chapter.stub_path,
                         f"Unknown locations referenced: {', '.join(unknown)}",
                     )
 
@@ -233,7 +243,7 @@ def check_story(root: Path, slug: str) -> CheckResult:
                 if unknown:
                     _add_error(
                         result,
-                        chapter_path,
+                        chapter.stub_path,
                         f"Unknown clues referenced: {', '.join(unknown)}",
                     )
 
@@ -244,23 +254,63 @@ def check_story(root: Path, slug: str) -> CheckResult:
                 if unknown:
                     _add_error(
                         result,
-                        chapter_path,
+                        chapter.stub_path,
                         f"Unknown timeline events referenced: {', '.join(unknown)}",
                     )
 
+            if chapter.front_matter.scene_cards_dir:
+                scene_cards_dir = story_dir / chapter.front_matter.scene_cards_dir
+                if not scene_cards_dir.exists():
+                    _add_error(
+                        result,
+                        chapter.stub_path,
+                        f"Missing scene cards directory: {chapter.front_matter.scene_cards_dir}",
+                    )
+
+            listed_images = set(chapter.front_matter.images)
+            for image_path in sorted(listed_images):
+                image_file = story_dir / image_path
+                if not image_file.exists():
+                    _add_error(
+                        result,
+                        chapter.stub_path,
+                        f"Listed image does not exist: {image_path}",
+                    )
+
+            referenced_images = _extract_image_paths(chapter.manuscript_body)
+            for image_path in sorted(referenced_images):
+                image_file = story_dir / image_path
+                if not image_file.exists():
+                    _add_error(
+                        result,
+                        chapter.manuscript_path,
+                        f"Referenced image does not exist: {image_path}",
+                    )
+
+            unlisted_images = sorted(referenced_images - listed_images)
+            if unlisted_images:
+                _add_warning(
+                    result,
+                    chapter.stub_path,
+                    "Images referenced in the manuscript are not listed in the stub: "
+                    + ", ".join(unlisted_images),
+                )
+
             if result.contract:
-                em_dash_count = chapter.body.count("—")
+                em_dash_count = chapter.manuscript_body.count("—")
                 em_dash_lint = result.contract.lint.em_dash
                 if em_dash_lint.enabled and em_dash_count > em_dash_lint.max_per_chapter:
                     _add_warning(
                         result,
-                        chapter_path,
+                        chapter.manuscript_path,
                         f"Em dash count {em_dash_count} exceeds configured limit "
                         f"{em_dash_lint.max_per_chapter}.",
                     )
 
                 contrastive_lint = result.contract.lint.contrastive_parallelism
-                contrastive_hits = len(CONTRASTIVE_PATTERN.findall(chapter.body))
+                contrastive_hits = len(
+                    CONTRASTIVE_PATTERN.findall(chapter.manuscript_body)
+                )
                 if (
                     contrastive_lint.enabled
                     and contrastive_hits
@@ -268,7 +318,7 @@ def check_story(root: Path, slug: str) -> CheckResult:
                 ):
                     _add_warning(
                         result,
-                        chapter_path,
+                        chapter.manuscript_path,
                         f"Contrastive parallelism count {contrastive_hits} exceeds "
                         f"configured limit "
                         f"{contrastive_lint.max_instances_per_chapter}.",

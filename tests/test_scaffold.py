@@ -14,6 +14,7 @@ def test_init_story_creates_required_and_optional_artifacts(tmp_path: Path) -> N
     (tmp_path / "templates" / "story" / "story.yml").write_text(
         'title: "{{story_title}}"\nslug: "{{story_slug}}"\nkind: "{{story_kind}}"\n'
         "status: planning\n"
+        'language: "en-AU"\n'
         "target_outputs:\n"
         "  - epub\n"
         "chapters:\n"
@@ -156,5 +157,6 @@ def test_init_story_creates_required_and_optional_artifacts(tmp_path: Path) -> N
 
     assert 'title: "Test Story"' in story_config
     assert 'slug: "test-story"' in story_config
+    assert 'language: "en-AU"' in story_config
     assert "Stub for Test Story." in opening_stub
     assert "Prose for Test Story opening." in opening_manuscript

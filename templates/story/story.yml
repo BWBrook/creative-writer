@@ -2,6 +2,7 @@ title: "{{story_title}}"
 slug: "{{story_slug}}"
 kind: "{{story_kind}}"
 status: planning
+language: "en-AU"
 target_outputs:
   - epub
   - pdf

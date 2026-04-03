@@ -1,0 +1,13 @@
+kindle:
+  send_to: "your-device@kindle.com"
+  sender: "your-approved-sender@example.com"
+  sender_name: "Creative Writer"
+  subject_prefix: ""
+smtp:
+  host: "smtp.gmail.com"
+  port: 465
+  security: "ssl"
+  username: "your-approved-sender@example.com"
+  password_env: "CREATIVE_WRITER_SMTP_PASSWORD"
+  keychain_service: "creative-writer/gmail-smtp"
+  keychain_account: "your-approved-sender@example.com"

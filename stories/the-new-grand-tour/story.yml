@@ -2,6 +2,7 @@ title: "The New Grand Tour"
 slug: "the-new-grand-tour"
 kind: "original"
 status: complete
+language: "en-AU"
 target_outputs:
   - epub
   - pdf

@@ -11,7 +11,7 @@ from creative_writer.exceptions import CreativeWriterError
 from creative_writer.files import ensure_directory
 
 
-def _assemble_markdown(root: Path, slug: str) -> tuple[Path, str, set[str]]:
+def _assemble_markdown(root: Path, slug: str) -> tuple[Path, str, str, set[str]]:
     result = check_story(root, slug)
     if not result.ok or not result.story:
         raise CreativeWriterError(
@@ -26,6 +26,7 @@ def _assemble_markdown(root: Path, slug: str) -> tuple[Path, str, set[str]]:
     lines = [
         "---",
         f'title: "{result.story.title}"',
+        f'lang: "{result.story.language}"',
         "---",
         "",
     ]
@@ -41,7 +42,12 @@ def _assemble_markdown(root: Path, slug: str) -> tuple[Path, str, set[str]]:
         lines.append("")
 
     assembled_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
-    return assembled_path, result.story.title, set(result.story.target_outputs)
+    return (
+        assembled_path,
+        result.story.title,
+        result.story.language,
+        set(result.story.target_outputs),
+    )
 
 
 def build_story(root: Path, slug: str, target: str) -> Path:
@@ -50,7 +56,7 @@ def build_story(root: Path, slug: str, target: str) -> Path:
     if target not in {"epub", "pdf"}:
         raise CreativeWriterError("Build target must be 'epub' or 'pdf'.")
 
-    assembled_path, title, target_outputs = _assemble_markdown(root, slug)
+    assembled_path, title, language, target_outputs = _assemble_markdown(root, slug)
     if target not in target_outputs:
         raise CreativeWriterError(
             f"{slug} does not declare '{target}' in story.yml target_outputs."
@@ -64,6 +70,8 @@ def build_story(root: Path, slug: str, target: str) -> Path:
         "--toc",
         "--metadata",
         f"title={title}",
+        "--metadata",
+        f"lang={language}",
         "--resource-path",
         os.pathsep.join(
             [

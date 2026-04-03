@@ -9,6 +9,7 @@ from creative_writer.building import build_story
 from creative_writer.checks import check_story
 from creative_writer.exceptions import CreativeWriterError
 from creative_writer.files import repo_root
+from creative_writer.kindle import kindle_preflight, send_to_kindle, store_smtp_password
 from creative_writer.novellas import (
     clear_ingested,
     export_novella,
@@ -83,6 +84,25 @@ def build_parser() -> argparse.ArgumentParser:
         help="Story slug whose ingested staging files should be removed.",
     )
 
+    kindle_preflight_parser = subparsers.add_parser(
+        "kindle-preflight",
+        help="Build the EPUB and verify Kindle delivery config and SMTP credentials.",
+    )
+    kindle_preflight_parser.add_argument(
+        "--story", required=True, help="Story slug."
+    )
+
+    kindle_parser = subparsers.add_parser(
+        "kindle",
+        help="Build the EPUB and email it to the configured Send-to-Kindle address.",
+    )
+    kindle_parser.add_argument("--story", required=True, help="Story slug.")
+
+    subparsers.add_parser(
+        "kindle-store-password",
+        help="Store the configured SMTP password in the macOS Keychain.",
+    )
+
     return parser
 
 
@@ -135,6 +155,25 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Cleared {len(removed)} staging path(s) for {args.story}:")
             for path in removed:
                 print(path)
+            return 0
+
+        if args.command == "kindle-preflight":
+            result = kindle_preflight(root, args.story)
+            print(f"Kindle delivery is ready for {result.story_title}.")
+            print(f"Attachment: {result.attachment_path}")
+            print(f"Recipient: {result.recipient}")
+            print(f"Report: {result.report_path}")
+            return 0
+
+        if args.command == "kindle":
+            result = send_to_kindle(root, args.story)
+            print(f"Sent {result.attachment_path.name} to {result.recipient}")
+            print(f"Report: {result.report_path}")
+            return 0
+
+        if args.command == "kindle-store-password":
+            key = store_smtp_password(root)
+            print(f"Stored SMTP password in Keychain entry {key}")
             return 0
     except CreativeWriterError as exc:
         print(str(exc), file=sys.stderr)

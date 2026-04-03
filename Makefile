@@ -1,4 +1,4 @@
-.PHONY: init-story new-story check epub pdf novellas-path import-novella export-novella clear-ingested test
+.PHONY: init-story new-story check epub pdf novellas-path import-novella export-novella clear-ingested kindle-preflight kindle kindle-store-password test
 
 KIND ?= original
 
@@ -34,6 +34,15 @@ export-novella:
 
 clear-ingested:
 	uv run creative-writer clear-ingested --story "$(STORY)"
+
+kindle-preflight:
+	uv run creative-writer kindle-preflight --story "$(STORY)"
+
+kindle:
+	uv run creative-writer kindle --story "$(STORY)"
+
+kindle-store-password:
+	uv run creative-writer kindle-store-password
 
 test:
 	uv run --group dev pytest

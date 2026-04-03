@@ -30,6 +30,7 @@ class StoryConfig(BaseModel):
     slug: Slug
     kind: Literal["original", "pastiche"]
     status: Literal["planning", "draft", "revising", "complete"]
+    language: str = Field(default="en-AU", pattern=r"^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$")
     target_outputs: list[Literal["epub", "pdf"]] = Field(min_length=1)
     chapters: list[str] = Field(min_length=1)
 

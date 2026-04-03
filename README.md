@@ -30,6 +30,7 @@ The default story scaffold is now stored explicitly under
 Each story lives under `stories/<slug>/` and uses Markdown plus YAML:
 
 - `story.yml`: build metadata and chapter order
+  - includes the story language used for `EPUB` metadata
 - `contract.yml`: human/AI collaboration settings and lint thresholds
 - `style-guide.md`: voice, tone, and prose constraints
 - `outline.md`: synopsis plus structural plan
@@ -76,6 +77,9 @@ make novellas-path
 make import-novella FILE="The New Grand Tour.docx"
 make export-novella INPUT="stories/the-new-grand-tour/manuscript/01-california-to-orbit.md" OUTPUT="The New Grand Tour Chapter 1.docx"
 make clear-ingested STORY=the-new-grand-tour
+make kindle-preflight STORY=mars-2044-cave
+make kindle STORY=mars-2044-cave
+make kindle-store-password
 ```
 
 Imported files land under `ingested/`. If the local OneDrive path ever differs
@@ -88,3 +92,34 @@ can remove its staging import after verifying that:
 - the story exists and passes `check`,
 - no story files still reference `ingested/`,
 - any extracted media has been copied into the story's own `assets/images/`.
+
+## Kindle delivery
+
+The repo can also email a built `EPUB` to a configured Send-to-Kindle address.
+
+The delivery config is intentionally local-only:
+
+- tracked example: `config/kindle.example.yml`
+- untracked live config: `.creative-writer.local.yml`
+
+Typical flow:
+
+```bash
+cp config/kindle.example.yml .creative-writer.local.yml
+make kindle-store-password
+make kindle-preflight STORY=mars-2044-cave
+make kindle STORY=mars-2044-cave
+```
+
+`kindle-preflight` builds the `EPUB`, validates the local config, resolves the
+SMTP credential from the environment or macOS Keychain, and writes a report to
+`build/<slug>/reports/kindle-delivery.md` without sending mail.
+
+By default, the SMTP layer expects:
+
+- `smtp.gmail.com`
+- port `465`
+- `ssl`
+
+If you prefer not to store the password in Keychain, set the environment
+variable named by `smtp.password_env` instead.

@@ -8,3 +8,9 @@ locations:
   - id: cave-threshold
     name: "Cave Threshold"
     description: "The newly noticed entrance where the expedition first finds anomalies."
+  - id: marker-room
+    name: "Marker Room"
+    description: "A widened chamber where the expedition recovers evidence of the construction fleet's earlier visit."
+  - id: witness-chamber
+    name: "Witness Chamber"
+    description: "The inner chamber containing the basalt object, the salt-bearing seam, and the story's final unresolved clue."

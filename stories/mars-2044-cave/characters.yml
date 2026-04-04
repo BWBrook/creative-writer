@@ -1,9 +1,13 @@
 characters:
   - id: mei-zhang
     name: "Mei Zhang"
-    role: "Planetary geologist and EVA lead"
-    motivation: "Map safe expansion routes and verify the colony's first true field survey."
+    role: "Planetary geologist, EVA lead, and the story's narrative anchor"
+    motivation: "Protect the colony from confident mistakes and earn knowledge before expansion hardens into routine."
   - id: idris-vale
     name: "Idris Vale"
-    role: "Systems engineer assigned to robotic infrastructure and expedition support"
-    motivation: "Confirm that the old construction fleet left no dangerous blind spots near the colony."
+    role: "Systems engineer responsible for interpreting the legacy construction fleet"
+    motivation: "Defend the machines that built Ares Colony while proving that any omission in their maps has an intelligible cause."
+  - id: nadiya-sorel
+    name: "Nadiya Sorel"
+    role: "Settlement operations director overseeing the first eastward expansion corridor"
+    motivation: "Open new ground before supply margins tighten, without gambling the colony on a bad call."

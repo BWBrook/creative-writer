@@ -3,7 +3,19 @@ events:
     label: "Survey briefing"
     when: "Sol 11"
     description: "The first off-perimeter survey is authorized and briefed."
-  - id: sol-011-cave-discovery
-    label: "Cave discovery"
+  - id: sol-011-departure
+    label: "Departure from Ares Colony"
     when: "Sol 11"
-    description: "The EVA team identifies the cave and begins cautious entry."
+    description: "Mei Zhang and Idris Vale leave the graded perimeter for the eastward ridge corridor."
+  - id: sol-011-cave-discovery
+    label: "Ridge anomaly and cave entry"
+    when: "Sol 11"
+    description: "The EVA team identifies the omitted cave, finds scored basalt, and enters the threshold chamber."
+  - id: sol-011-marker-room
+    label: "Marker room recovery"
+    when: "Sol 11"
+    description: "The team recovers machine memory proving that the construction fleet quarantined the site."
+  - id: sol-011-witness-chamber
+    label: "Witness chamber decision"
+    when: "Sol 11"
+    description: "Mei halts eastward expansion after finding a pre-fleet basalt object and a fresh unexplained score."

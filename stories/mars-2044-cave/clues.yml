@@ -1,9 +1,25 @@
 clues:
   - id: scored-basalts
     name: "Scored basalts"
-    description: "Rock faces near the cave mouth show repeated marks inconsistent with local wind abrasion."
+    description: "Rock faces near the cave mouth carry deliberate-looking cuts that survive where wind should not have preserved them."
+    status: introduced
+  - id: omitted-corridor
+    name: "Omitted corridor"
+    description: "The ridge approach and cave are physically reachable but absent from the colony's inherited expansion maps."
+    status: resolved
+  - id: witness-marker
+    name: "Witness marker"
+    description: "A dead ceramic-glass construction marker is hidden just inside the cave instead of appearing in human survey archives."
+    status: resolved
+  - id: hold-order
+    name: "Hold order"
+    description: "Recovered machine memory shows the construction fleet quarantined the site under local authority and forbade cutting."
+    status: resolved
+  - id: six-stroke-tile
+    name: "Six-stroke tile"
+    description: "A fused basalt object incised with six parallel strokes stands in the inner chamber and predates the construction fleet's visit."
     status: introduced
   - id: artificial-marker
-    name: "Artificial marker"
-    description: "A shaped object or symbol inside the cave suggests deliberate prior presence."
-    status: hidden
+    name: "Fresh score"
+    description: "A narrow new cut beside the inner chamber object looks too recent and too clean to explain away with confidence."
+    status: introduced

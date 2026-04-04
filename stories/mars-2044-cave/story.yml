@@ -1,7 +1,7 @@
-title: "Mars 2044 Cave Discovery"
+title: "Basalt Witness"
 slug: "mars-2044-cave"
 kind: "original"
-status: planning
+status: draft
 language: "en-AU"
 target_outputs:
   - epub
@@ -9,3 +9,5 @@ target_outputs:
 chapters:
   - chapter-stubs/01-expedition-briefing.md
   - chapter-stubs/02-cave-entry.md
+  - chapter-stubs/03-marker-room.md
+  - chapter-stubs/04-witness.md

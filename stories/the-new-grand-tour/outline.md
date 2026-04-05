@@ -28,30 +28,3 @@ ordinary life, industry, and culture have already taken root.
 4. `04-arrival-at-oneill-1.md`
 5. `05-station-life.md`
 6. `06-departure-and-horizon.md`
-
-## Continuity anchors
-
-- The year is 2052.
-- Cislunar tourism exists, but remains expensive enough to feel premium rather
-  than casual mass transit.
-- The post-2035 automation surge is a foundational enabling fact in orbit and
-  beyond.
-- Lunar south-polar ice extraction underwrites much of the cislunar economy.
-- O’Neill-1 at Earth-Moon L5 is a compact, functioning city of about forty-two
-  thousand residents plus transients.
-- The narrator leaves already thinking about a longer return stay.
-
-## Sequel vectors
-
-- A longer journalistic stay at Shephard, focusing on work rather than tourism.
-- A return to O’Neill-1 long enough to follow neighbourhood life, governance,
-  industry, and social change.
-- A new itinerary extending onward to an early Mars colony.
-- A future story tracing the first practical stages of solar-industry expansion
-  beyond the Earth-Moon system.
-
-## Source note
-
-This project was back-fitted from an imported manuscript. The chapter stub files
-act as a structured continuity digest, while the manuscript files preserve the
-full narrative prose for sequel-facing reference and reuse.

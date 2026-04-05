@@ -35,6 +35,7 @@ Each story lives under `stories/<slug>/` and uses Markdown plus YAML:
 - `contract.yml`: human/AI collaboration settings and lint thresholds
 - `style-guide.md`: story-specific voice, tone, and prose constraints
 - `outline.md`: synopsis plus structural plan
+- `narrative-design.md`: story-engine decisions such as POV, dramatic question, ending logic, and reveal ladder
 - `chapter-stubs/`: chapter-level planning files with YAML front matter
 - `manuscript/`: full narrative chapter text
 - `assets/images/`: embedded chapter images or other visual assets
@@ -44,6 +45,7 @@ Optional artifact templates are included for:
 
 - `characters.yml`
 - `clues.yml`
+- `plot_devices.yml`
 - `locations.yml`
 - `timeline.yml`
 - `world.md`
@@ -87,6 +89,15 @@ Generated outputs and reports land under `build/` and are not tracked in git.
 - estimated reading time,
 - a supporting-Markdown breakdown so you can see how much of the story exists as
   outline/stubs/scene cards versus full draft prose.
+
+`make check` writes a coherence report to
+`build/<slug>/reports/coherence-report.md`. The report now includes:
+
+- mandatory artifact presence, including `narrative-design.md`,
+- registry counts for characters, clues, locations, timeline events, and plot devices,
+- per-chapter counts for clues, plot devices, and real scene cards,
+- a scene-card section that ignores `README.md` and `_template.md`,
+- a plot-device section summarizing the tracked structural machinery of the story.
 
 ## Novellas pipeline
 

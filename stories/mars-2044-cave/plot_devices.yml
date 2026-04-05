@@ -1,0 +1,41 @@
+plot_devices:
+  - id: mission-authorization
+    name: "Mission authorization"
+    narrative_role: "Establishes the colony's material need to push eastward."
+    description: "The opening operational brief turns the EVA into a necessary colony decision rather than optional exploration."
+    status: resolved
+  - id: inherited-uncertainty
+    name: "Inherited uncertainty"
+    narrative_role: "Frames the colony's dependence on machine-made infrastructure."
+    description: "Mei's distrust of inherited certainty keeps the story alert to the difference between functioning systems and true knowledge."
+    status: active
+  - id: anomaly-escalation
+    name: "Anomaly escalation"
+    narrative_role: "Turns survey procedure into a mystery sequence."
+    description: "Each new physical sign tightens the case that the cave was omitted deliberately and must be pursued carefully."
+    status: resolved
+  - id: map-omission
+    name: "Map omission"
+    narrative_role: "Creates the first hard mystery about the construction fleet."
+    description: "The missing corridor on the inherited maps pushes the expedition from route clearance into forensic interpretation."
+    status: resolved
+  - id: recovered-log
+    name: "Recovered log"
+    narrative_role: "Delivers the explanatory reframe."
+    description: "Machine memory reveals a local hold order and proves the fleet reached the site before the human expedition."
+    status: resolved
+  - id: machine-discretion
+    name: "Machine discretion"
+    narrative_role: "Complicates the colony's trust in autonomous predecessors."
+    description: "The fleet's choice to quarantine the site without human notice creates an ethical problem as well as a technical one."
+    status: resolved
+  - id: hold-order-to-colony
+    name: "Hold order to colony"
+    narrative_role: "Carries the field discovery into policy."
+    description: "Mei must translate a machine quarantine into a human decision about expansion, evidence, and restraint."
+    status: resolved
+  - id: final-physical-turn
+    name: "Final physical turn"
+    narrative_role: "Leaves the ending open without dissolving the story's discipline."
+    description: "A fresh score beside the basalt object keeps the deeper intelligence question alive after the practical decision has been made."
+    status: active

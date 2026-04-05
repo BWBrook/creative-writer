@@ -1,0 +1,61 @@
+plot_devices:
+  - id: first-person-travelogue
+    name: "First-person travelogue"
+    narrative_role: "Provides the human-scale lens for a setting-wide systems reveal."
+    description: "The narrator's movement through terminals, vehicles, hotels, and districts keeps the future grounded in experienced detail."
+    status: resolved
+  - id: launch-as-routine
+    name: "Launch as routine"
+    narrative_role: "Normalises the first stage of the journey."
+    description: "Launch remains physically intense, but the surrounding system treats it as structured premium travel rather than singular heroism."
+    status: resolved
+  - id: inhabited-frontier
+    name: "Inhabited frontier"
+    narrative_role: "Shows the Moon as a place where daily life has already taken root."
+    description: "Shephard shifts the story from transport novelty to evidence of settled civic and industrial life."
+    status: resolved
+  - id: routine-colonises-impossible
+    name: "Routine colonises the impossible"
+    narrative_role: "Turns wonder into habit without draining it of meaning."
+    description: "Ordinary procedure, maintenance, and hospitality prove that once-unimaginable environments are becoming habitable."
+    status: resolved
+  - id: expanding-horizon
+    name: "Expanding horizon"
+    narrative_role: "Reframes the itinerary as part of a larger outward system."
+    description: "The transfer from the Moon to L5 makes each earlier stage read as one segment of a broader civilisational stack."
+    status: resolved
+  - id: geometry-replaces-romance
+    name: "Geometry replaces romance"
+    narrative_role: "Keeps the travelogue analytically grounded."
+    description: "Orbital mechanics, staging logic, and industrial sequence replace older space-opera expectations of dreamy transit."
+    status: resolved
+  - id: city-reveal
+    name: "City reveal"
+    narrative_role: "Delivers the story's central discovery."
+    description: "O'Neill-1 resolves from futuristic concept into inhabited built environment with districts, thresholds, and civic scale."
+    status: resolved
+  - id: built-environment-awe
+    name: "Built-environment awe"
+    narrative_role: "Creates wonder through architecture and systems rather than spectacle alone."
+    description: "The station's scale and engineered reality provide awe while keeping the setting plausible and worked-for."
+    status: resolved
+  - id: district-portrait
+    name: "District portrait"
+    narrative_role: "Gives the city social texture."
+    description: "Neighbourhoods, hotels, parks, and industrial zones show O'Neill-1 as varied urban fabric rather than a single monolithic attraction."
+    status: resolved
+  - id: hotel-contrast
+    name: "Hotel contrast"
+    narrative_role: "Compares the station's practical and prestige faces."
+    description: "The Spokehouse and Aurelian Meridian reveal class, polish, and infrastructure without severing luxury from labour."
+    status: resolved
+  - id: city-thesis
+    name: "City thesis"
+    narrative_role: "States the governing claim of the story."
+    description: "The closing movement argues that O'Neill-1 matters because it has become a functioning city rather than a symbolic frontier object."
+    status: resolved
+  - id: sequel-hook
+    name: "Sequel hook"
+    narrative_role: "Leaves the setting open to further stories."
+    description: "The narrator's desire to return and the wider rumours of solar-industry expansion keep the universe alive beyond the current travel piece."
+    status: active

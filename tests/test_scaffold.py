@@ -47,12 +47,20 @@ def test_init_story_creates_required_and_optional_artifacts(tmp_path: Path) -> N
         "# Outline\n\nPremise for {{story_title}}.\n",
         encoding="utf-8",
     )
+    (tmp_path / "templates" / "story" / "narrative-design.md").write_text(
+        "# Narrative Design\n\nAnchor for {{story_title}}.\n",
+        encoding="utf-8",
+    )
     (tmp_path / "templates" / "story" / "characters.yml").write_text(
         "characters: []\n",
         encoding="utf-8",
     )
     (tmp_path / "templates" / "story" / "clues.yml").write_text(
         "clues: []\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "templates" / "story" / "plot_devices.yml").write_text(
+        "plot_devices: []\n",
         encoding="utf-8",
     )
     (tmp_path / "templates" / "story" / "locations.yml").write_text(
@@ -73,6 +81,10 @@ def test_init_story_creates_required_and_optional_artifacts(tmp_path: Path) -> N
     )
     (tmp_path / "templates" / "story" / "scene-cards" / "README.md").write_text(
         "# Scene Cards\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "templates" / "story" / "scene-cards" / "_template.md").write_text(
+        "# Scene Template\n",
         encoding="utf-8",
     )
     (tmp_path / "templates" / "story" / "scene-cards" / "01-opening" / "README.md").write_text(
@@ -134,8 +146,10 @@ def test_init_story_creates_required_and_optional_artifacts(tmp_path: Path) -> N
         "style-card.md",
         "style-guide.md",
         "outline.md",
+        "narrative-design.md",
         "characters.yml",
         "clues.yml",
+        "plot_devices.yml",
         "locations.yml",
         "timeline.yml",
         "world.md",
@@ -145,6 +159,7 @@ def test_init_story_creates_required_and_optional_artifacts(tmp_path: Path) -> N
         "manuscript/01-opening.md",
         "manuscript/02-turn.md",
         "scene-cards/README.md",
+        "scene-cards/_template.md",
         "scene-cards/01-opening/README.md",
         "scene-cards/02-turn/README.md",
     ]
@@ -201,6 +216,14 @@ def test_init_story_can_copy_builtin_style_card(tmp_path: Path) -> None:
         "# Outline\n",
         encoding="utf-8",
     )
+    (tmp_path / "templates" / "story" / "narrative-design.md").write_text(
+        "# Narrative Design\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "templates" / "story" / "plot_devices.yml").write_text(
+        "plot_devices: []\n",
+        encoding="utf-8",
+    )
     (tmp_path / "templates" / "story" / "chapter-stubs" / "01-opening.md").write_text(
         "---\n"
         'title: "Opening"\n'
@@ -212,6 +235,10 @@ def test_init_story_can_copy_builtin_style_card(tmp_path: Path) -> None:
     )
     (tmp_path / "templates" / "story" / "manuscript" / "01-opening.md").write_text(
         "Draft.\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "templates" / "story" / "scene-cards" / "_template.md").write_text(
+        "# Scene Template\n",
         encoding="utf-8",
     )
     (tmp_path / "templates" / "style-cards" / "quiet_catastrophe_realism.md").write_text(
@@ -267,6 +294,14 @@ def test_init_story_can_copy_custom_style_card(tmp_path: Path) -> None:
         "# Outline\n",
         encoding="utf-8",
     )
+    (tmp_path / "templates" / "story" / "narrative-design.md").write_text(
+        "# Narrative Design\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "templates" / "story" / "plot_devices.yml").write_text(
+        "plot_devices: []\n",
+        encoding="utf-8",
+    )
     (tmp_path / "templates" / "story" / "chapter-stubs" / "01-opening.md").write_text(
         "---\n"
         'title: "Opening"\n'
@@ -278,6 +313,10 @@ def test_init_story_can_copy_custom_style_card(tmp_path: Path) -> None:
     )
     (tmp_path / "templates" / "story" / "manuscript" / "01-opening.md").write_text(
         "Draft.\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "templates" / "story" / "scene-cards" / "_template.md").write_text(
+        "# Scene Template\n",
         encoding="utf-8",
     )
     custom_card = tmp_path / "my-custom-style.md"

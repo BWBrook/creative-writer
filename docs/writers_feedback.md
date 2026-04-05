@@ -8,9 +8,18 @@ Use each entry to capture what a writer was trying to do, where the process
 fought back, why that mattered to the work, and what kind of remedy would make
 the tool more habitable.
 
+## Status note
+
+This file has now largely served its purpose. The planning/coherence upgrade on
+2026-04-05 addressed the scaffold-side items below, leaving only the
+targeted-excerpt review workflow still open for a future pass. Once that review
+workflow exists, this file can likely be deleted.
+
 ## 2026-04-04
 
 ### Entry 1: Narrative-design decisions have no obvious home
+
+- Status: Addressed in the 2026-04-05 planning/coherence upgrade.
 
 - Context: Reworking `stories/mars-2044-cave/` from a short demo scaffold into a
   7-12k story packet before drafting.
@@ -29,6 +38,8 @@ the tool more habitable.
 
 ### Entry 2: Scene cards exist, but feel vestigial
 
+- Status: Addressed in the 2026-04-05 planning/coherence upgrade.
+
 - Context: Deciding whether to use `scene-cards/` during pre-draft planning.
 - Friction: The repo provides scene-card directories and links to them from
   chapter stubs, but it does not provide a real example scene card, a suggested
@@ -43,6 +54,8 @@ the tool more habitable.
 
 ### Entry 3: `plot_devices` is present without a supporting system
 
+- Status: Addressed in the 2026-04-05 planning/coherence upgrade.
+
 - Context: Planning the mystery machinery for the Mars story.
 - Friction: Chapter front matter includes `plot_devices`, but the template has
   no story-level registry for them and the checks do not validate or summarise
@@ -55,6 +68,8 @@ the tool more habitable.
   devices.
 
 ### Entry 4: Writer review wants targeted excerpts, not whole-draft dumping
+
+- Status: Deferred to a future review-workflow pass.
 
 - Context: Planning the first human feedback pass on the Mars story draft.
 - Friction: The current review model points toward file diffs or full-manuscript
@@ -69,3 +84,23 @@ the tool more habitable.
   attach a specific question.
 - Template gaps: Missing review artifact for targeted excerpt feedback during
   drafting.
+
+### Entry 5: A true style card is more effective than a normal style guide
+
+- Status: Addressed earlier by the style-card scaffold integration.
+
+- Context: Revising the full draft after the user supplied a dedicated
+  `style-card.md` alongside the ordinary `style-guide.md`.
+- Friction: The standard style guide is good for tone boundaries, but it is too
+  thin to steer sentence rhythm, dialogue pressure, exposition handling, and the
+  deeper narrative logic of a genre mode. The separate style card carried those
+  decisions far more effectively.
+- Impact on writing: The revision could be systematic rather than cosmetic
+  because the style card specified not just what to avoid, but how scenes should
+  think, turn, and resolve. Without that, the prose drifted toward competent
+  contemporary SF instead of the intended golden-age-adjacent hard-SF register.
+- Suggested fixes: Treat style cards as a first-class optional artifact in the
+  story scaffold, distinct from the lighter style guide. The guide can hold
+  project rules; the card can hold a deeper compositional model.
+- Template gaps: Missing optional `style-card.md` template or equivalent
+  high-resolution style artifact.

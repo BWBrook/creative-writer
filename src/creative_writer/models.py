@@ -130,6 +130,26 @@ class CluesRegistry(BaseModel):
     clues: list[ClueRecord] = Field(default_factory=list)
 
 
+class PlotDeviceRecord(BaseModel):
+    """Plot-device registry item."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: Slug
+    name: NonEmptyStr
+    narrative_role: str = ""
+    description: str = ""
+    status: Literal["dormant", "active", "resolved"] = "dormant"
+
+
+class PlotDevicesRegistry(BaseModel):
+    """Optional plot-device registry."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    plot_devices: list[PlotDeviceRecord] = Field(default_factory=list)
+
+
 class LocationRecord(BaseModel):
     """Location registry item."""
 

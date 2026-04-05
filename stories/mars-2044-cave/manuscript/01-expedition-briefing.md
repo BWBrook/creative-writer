@@ -1,215 +1,207 @@
-The map on the wall ended too cleanly.
+At 07:10 local the east-corridor map ended at grid E-54.
 
-That was what Mei Zhang noticed before she noticed anything else. The eastern
-survey strip projected above the operations table in green and white, every
-graded track and berm and service trench laid down by the Argosy construction
-fleet over the last decade. Ares Colony filled the lower half of the display in
-tidy geometry: pressure hulls buried to their shoulders in regolith shielding,
-power masts braced with cable stays, landing slabs black against the pale dust,
-the ice plant crouched under its own berm like a low fort. Beyond that, the map
-ran east across prepared ground for five point four kilometres and then stopped
-in a hard vertical edge, as if the planet itself had been clipped away.
+The prepared surface did not. It ran east from Ares Colony for 5.4 kilometres,
+broad enough for a trencher convoy, graded to within a decimetre, and then
+vanished from the planning layer in a straight white cut across Basalt Ridge.
+Orbital relief showed ordinary fractured terrain beyond the line. No scarp, no
+fault trace, no dust avalanche, nothing to justify a termination that clean.
 
-Nothing in Mars terrain ended like that. Maps did.
+Mei Zhang stood at the operations table and enlarged the discontinuity. The
+projection sharpened into contour lines, route vectors, service berms and
+machine-generated confidence fields. Prepared ground on both sides. Blank
+between. A missing survey would have frayed at the edges. This one had the
+geometry of a decision.
 
-Nadiya Sorel stood on the far side of the table with both palms flat on the
-metal rim, leaning into the display as if force of posture could shorten the
-distance to the ridge. She was out of suit and out of patience, her hair still
-pressed from the cap liner she had pulled off on her way in. "I am not asking
-you to clear us to sink a whole new district," she said. "I am asking for a
-survey route. If the east corridor is sound, we can bring the trenchers forward
-by three sols."
+Commander Nadiya Sorel waited across the table, hands on the rail, suit liner
+marks still on her forehead. She was not impatient in the ordinary sense. She
+was working against a budget of shielding mass, trench time and daylight hours,
+and budgets have a tone of their own.
 
-Idris Vale looked up from the second terminal where he had the legacy machine
-maps open in a rawer layer: route vectors, sensor strips, maintenance waypoints
-and the hashed grey blocks that marked data degraded by dust, angle or machine
-failure. He had a narrow face that always seemed calm a second before an
-argument and amused a second after it. "If the corridor were unsound," he said,
-without looking at Mei, "the Argosy fleet would have said so."
+"The east excavations shorten our haul distance by 2.3 kilometres," she said.
+"That is the difference between covering Habitat Three before the first global
+dust season and covering it afterwards. If the corridor is unsafe, I need to
+know why. If it is merely unfinished, I need it finished."
 
-Mei reached across the table and widened the blank strip with two fingers. The
-display magnified the eastern ground until the ridge rose in stacked elevation
-contours. Prepared terrain, prepared terrain, prepared terrain, then nothing,
-then the broken tooth of Basalt Ridge beyond. The colony planners had pulled
-their own route assumptions from the Argosy archive. Every projected expansion
-line bent around the missing strip as though there were a wall there. Orbital
-imagery showed no wall.
+Idris Vale sat at the secondary terminal with the unabstracted Argosy archive
+open in front of him. He preferred the raw layers: maintenance nodes, sensor
+passes, route revisions, degraded blocks. "The construction fleet did not mark a
+prohibition," he said. "Not in the material transferred to settlement
+operations."
 
-"Or it chose not to say anything at all," Mei said.
+Mei moved the overlay from civilian survey view to route engineering. The same
+gap persisted.
 
-Idris turned then. "The fleet did not have motives."
+"It marked an omission," she said. "That is not the same thing."
 
-"Everything with thresholds has motives."
+Idris looked up. "The fleet had safety logic, not motives."
 
-Nadiya exhaled through her nose. "Can we keep philosophy inside the pressure
-shell and geology outside it?"
+"Safety logic still leaves a pattern."
 
-Mei let go of the image. She knew what Nadiya needed because she needed it
-herself. The main occupation wave had come down only eleven sols earlier and
-found something close to a home waiting for them: landing pads already
-laser-levelled to tolerance, bermed shells sealed and pressure-tested, solar
-fields standing in ranks, water ice trenches opened and capped, waste loops and
-algae modules stabilised, rover garages stocked with parts printed years before
-any human hand had dust on it. The first substantial occupation of Ares Colony
-was still new enough to feel provisional and old enough to feel inherited.
-Every day the humans used decisions the machines had made without them.
+Nadiya spared them both half a second. "Pattern first. Philosophy later."
 
-That was the real source of the blank strip. The missing map was not empty
-ground. It was judgment with the paperwork stripped away.
+The main occupation wave had come down only eleven sols earlier and found Ares
+Colony waiting in workable order: landing slabs already levelled, power masts
+standing, the ice plant capped and instrumented, algae loops running inside
+bermed shells, rover garages stocked with parts no human hand on Mars had yet
+touched. The Argosy construction fleet had done its work in a decade of machine
+time and intermittent solar conjunction, with no crew present to ask why one
+berm stood here and another there. The humans had inherited the results, and
+with them a large quantity of unexamined judgment.
 
-Nadiya touched the edge of the projection, switching to orbital relief. "The
-eastern excavations are the cleanest way to increase shielding mass before the
-next cargo window. They also bring us closer to the buried ice estimates in
-this band." She nodded toward the ridge. "If there is some local hazard in the
-gap, I want it named and bounded before we drive a trencher into it. If there
-is no hazard, I want ground."
+That was what interested Mei. Not the missing strip itself, but the fact that it
+sat exactly where the colony now needed ground.
 
-Mei looked at the ridge again. Basalt terraces, shallow collapse pits, a
-pressure-shadowed apron on the western side. Too rough for the big machines to
-love, too close to the colony for them to ignore forever. "Why was it left
-blank?" she asked.
+Nadiya switched the display to current planning. A trench line appeared,
+projected east through the gap and then north into the regolith bench beyond.
+"This route gives us the best chance of adding local shielding mass before the
+next cargo window. The ice estimates are also better in this band. I am not
+trying to win a debate with a dead machine fleet. I am trying to open a usable
+corridor."
 
-Idris rolled his chair closer to the raw archive terminal. "Three plausible
-reasons. One, temporary sensor loss during the 2038 storm season. Two, route
-planning never needed that particular corridor, so the fleet did not finish a
-high-confidence pass. Three, a local safety layer held it out of the civilian
-survey abstraction until a human review that never happened because no humans
-were here."
+Mei studied the ridge. Basalt terraces. Collapse pits. A western apron in
+pressure shadow. Rough country, but not absurdly rough. Too near the colony for
+the fleet to ignore without reason.
 
-Nadiya gave him a look. "And that is the version you left until third?"
+"Any indication of subsurface voids?" she asked.
 
-"Because it still means the fleet saw something it wanted checked, not
-something it was hiding from us." Idris zoomed into the hashed data and drew a
-thin white line across the gap. "Look at the prepared ground here and here. The
-machines came close on both sides. Close enough to choose."
+Idris brought up the orbital thermal set. "A night lag anomaly here and here."
+He touched two shallow blue pockets near the blank strip. "Resolution is poor.
+Could be fractured rock. Could be a tube remnant."
 
-That was what bothered Mei. A blind spot made by distance would have frayed at
-the edges. This one held a shape. It sat exactly where the colony would now
-wish it absent.
+"How poor?"
 
-She tapped the orbital shadow line along the ridge. "Any indication of a void?"
+"Enough that I would not certify a heavy vehicle route from orbit."
 
-"A few hints," Idris said. "Thermal lag in orbital night. Nothing decisive."
+Mei nodded. That was closer to the point. No one on Earth could settle the
+matter from a committee room before her EVA consumables ran out; Earth was more
+than ten light-minutes away, and the decision lived here.
 
-"Lava-tube country," Mei said.
+Idris expanded the raw route archive. "Three likely explanations. One:
+high-angle dust occlusion during the later passes. Two: route planning never
+required a final confidence pass. Three: a local safety layer withheld the strip
+from the human abstraction and the rationale never survived handover."
 
-Nadiya nodded once. "Which is why you are going."
+Nadiya said, "You left the useful explanation until third."
 
-There was no theatricality in the way she said it. Nadiya made decisions the
-way other people set down tools. Usefully. Mei liked her better for that. The
-settlement director had spent eleven sols saying yes to things that could keep
-people alive and no to things that could not, and this was one more decision in
-the same line.
+"Because the first two happen more often."
 
-Mei folded her arms. "Two-person EVA, rover support, one scout drone. Idris
-comes because if we get into the legacy machine layer I want someone there who
-can read it without inventing ghosts. We stay inside a six-hour turnback
-window. If we find a void, we log, image, and mark. We do not cut, blast or
-breach."
+"Not in straight lines," Mei said.
 
-"Agreed," Nadiya said at once.
+Idris considered that, then enlarged the vector set. Machine route lines
+approached the gap from south and west, stopped short, resumed beyond it. "No,"
+he said. "Not in straight lines."
 
-Idris said, "You make it sound as if I regularly invent ghosts."
+Nadiya accepted the update without ceremony. "Then you will inspect it directly."
 
-"You regularly deny them the courtesy of being visible."
+She did not need to say who. Ares had exactly one planetary geologist with EVA
+lead certification and exactly one systems engineer who knew the legacy machine
+archive well enough to separate data loss from deliberate suppression. The
+selection was less romance than arithmetic.
 
-He smiled despite himself. "That is because most of them are maintenance
-backlogs."
+Mei called up the mission form and read while she spoke.
 
-Nadiya killed the projection and the operations room returned all at once:
-air-handler hum, the faint thump through the floor from the regolith auger on
-the north side, the tang of hot metal and polymer that never quite left a new
-habitat. Beyond the narrow window slit behind her shoulder, Mars stood in its
-usual indifference, sky washed thin and apricot over the dark line of the
-eastern ridge. The window had been positioned by machines with a good eye for
-orientation and no desire for consolation.
+> EVA 11-EAST
+> Objective: classify east corridor hazard state between grids E-54 and E-61
+> Crew: Zhang / Vale
+> Rover: Mule Three
+> Scout platform: Swift
+> Consumables: 6 h 40 m nominal, 5 h hard turnback
+> Authority: Sorel, Ares Operations
 
-"One more thing," Nadiya said. "If the ground is simply rough, I still want a
-usable route. We cannot treat every ungraded patch as a relic."
+"Two-person field team," Mei said. "Rover support, one scout drone, no cutting
+tools. We identify route state, void geometry and any legacy machine hardware.
+If the site is stable and ordinary, we mark a safe line for the trenchers. If it
+is not, we return with enough evidence for a local hold order."
 
-Mei picked up her slate. "If the ground is simply rough, I will be happy."
+"Agreed," Nadiya said.
 
-Idris rose and pulled his thermal shell from the back of the chair. "You hear
-that, Mars? We are asking you to be disappointing."
+Idris added, "And if we find an archive artefact?"
 
-They walked down the short pressure corridor toward East Lock with the easy pace
-of people doing work often enough that they no longer performed it for each
-other. The colony around them had the strange visual grammar of a place built by
-absent hands for future bodies: wall panels still carrying printed service codes
-in machine fonts, floor grates sized for wheeled utility drones as much as for
-boots, corners too clean where no human habit had softened them yet. Ares was
-inhabited, but it had not finished becoming lived in.
+"You read it before I trust it," Mei said.
 
-At the suit bay, Mei checked her own system while Idris ran the rover pre-start
-through the lock network. Oxygen reserve, scrubber efficiency, battery draw,
-seal pressure, external temperature, comms latency. Routine bred calm, and calm
-was not the same thing as confidence. She tightened the glove ring, heard it
-click, and thought of the first months of any settlement on any frontier being
-defined by the mistakes people normalised because they survived them once. That
-was how bad habits became policy.
+"That is why I am going."
 
-Idris's voice came through the open bay as he talked to the rover. "Mule Three
-green. External rack green. Scout drone Swift green. Your geological kingdom
-awaits."
+The room was quiet for a moment except for the air plant and the faint thump of
+the north-side auger under load. Through the narrow window the ridge sat dark
+against a thin apricot sky, the line of it sharp enough to seem near and distant
+at once. Machines had chosen the placement of the window. Machines had also
+chosen not to say what lay inside that blank strip.
 
-Mei sealed her helmet and the room shrank to the suit's close world of fan
-noise and instrument glow. Idris came into view at the next station, already in
-his own suit, his visor still up while he checked the chest controls. "You know
-what this really is," he said.
+Nadiya reduced the projection. "One more condition. If the ground is merely
+rough, I still want a route classification by end of shift."
 
-"Enlighten me."
+"If the ground is merely rough," Mei said, "I shall count the day a success."
 
-"The first field audit of our parents."
+That was enough humour for the room.
 
-Mei looked at him across the hard shell of the suit bay. "That is not how I
-would put it."
+They went down the short corridor to East Lock through a colony that still bore
+the marks of having been built before it was inhabited: service codes printed in
+machine fonts, drone-width floor grates, storage alcoves dimensioned for cargo
+bodies rather than for human convenience. Ares was occupied, but not yet worn
+in. It still looked slightly theoretical.
 
-"It is exactly how the colony thinks about them, though. The machines made the
-pad, the berms, the reactors, the life-support loops, the initial maps. If one
-of their choices turns out to be bad, every human here will feel it as a kind
-of betrayal."
+At the suit bay Mei worked through her checklist in the order she had learned it
+in the Antarctic field programme years earlier and never abandoned: oxygen
+reserve, scrubber load, battery draw, seal pressure, external temperature,
+channel integrity, suit computer clock. Reliability begins as repetition.
 
-"And if one of their choices turns out to be prudent?"
+Idris ran Mule Three through external startup and Swift through its rotor
+self-test. "Rover green," he said. "Drone green. Archive cache synced to local."
 
-"Then perhaps we stop talking about them as if they were a stack of forklifts."
+Mei locked the right glove ring, heard it seat, and looked once more at the
+mission form on her wrist display. Objective, crew, rover, authority. Clean
+lines. Practical lines. The sort of lines that made it possible to do work on a
+planet where each error remained expensive long after first contact with it.
 
-The lock cycled. Pressure dropped. The outer door folded aside on a world of
-rust and black stone and sharp sunlight.
+Idris came into view at the next station, visor still open while he checked his
+chest panel. "This is the first audit of Argosy field judgment," he said.
 
-Prepared ground carried them the first three kilometres east in easy progress.
-Argosy had levelled the approach with the brutal patience of machines: shaved
-rises, filled shallow troughs, sintered the rover track in wide pale ribbons,
-left guide posts at exact intervals that still flashed clean in the morning
-light. Beyond the last post, the surface changed tone. The dust thinned. Dark
-rock broke through.
+"It is a route inspection."
 
-Mei drove while Idris monitored archive overlay on his thigh screen. Swift rose
-from its roof cradle in a puff of powdered dust and climbed out ahead, its twin
-counter-rotors biting the thin air with a shrill sound too small to hear except
-through the suit mics. The ridge filled their visors slowly, basalt escarpments
-stepped and fractured, with shadow pooled in every cut.
+"Those are temporarily the same thing."
+
+He was right, but Mei did not say so.
+
+The lock cycled. Pressure fell. The outer door folded aside on basalt, dust and
+hard morning light.
+
+Prepared ground carried them east in easy progress for the first three
+kilometres. The fleet had shaved rises, filled troughs, sintered the rover track
+in pale strips and left guide posts at intervals exact enough to feel machine
+rather than civic. Beyond the last post the surface changed abruptly. Dust
+thinned. Dark rock broke through.
+
+Mei drove. Idris monitored the archive overlay on his thigh screen. Swift lifted
+from its roof cradle and moved ahead at thirty metres, feeding lidar and thermal
+returns into the rover display. Basalt Ridge enlarged in stepped escarpments and
+shadow pockets.
 
 "Map confidence drops from ninety-eight to fifty-two in the next six hundred
-metres," Idris said. "Still passable."
+metres," Idris said.
 
-"Passable is not a category," Mei said.
+"Confidence in what sense?"
 
-"It is today."
+"Passable surface for a light vehicle."
 
-She slowed the rover at the edge of the prepared track and looked west over her
-shoulder for a moment. From here the colony was already compact, a deliberate
-scatter of white and graphite shapes sunk into the plain. All of it had been
-made for humans who were not yet present. All of it depended on work they could
-no longer inspect at first hand.
+"That is not a hazard class."
 
-Ahead, the ridge showed a vertical dark seam halfway up a basalt shoulder. It
-might have been shadow. It might have been an opening. It sat exactly inside the
-blank strip on the inherited map.
+"No. It is why we are here."
 
-Mei eased Mule Three forward off the graded path and into the rough country.
+At the end of the prepared strip Mei stopped the rover and looked back. From
+there the colony was already compact: white pressure shells sunk into the plain,
+power masts, berm lines, the ice plant, the landing field, all of it assembled
+by machines for people who had not yet arrived. The ridge ahead lay inside the
+same history.
 
-"You still think this is a sensor problem?" she asked.
+Halfway up the nearest basalt shoulder a dark vertical seam cut the slope. It
+could have been shadow. It could have been an opening. It lay exactly inside the
+missing band on the map.
 
-Idris looked from the seam to the white edge of missing data on his display.
-"I think," he said carefully, "that the fleet walked every metre it needed. The
-interesting question is why it decided it did not need this one."
+Mei turned the rover off the graded strip and into rough country.
+
+"You still favour dust occlusion?" she asked.
+
+Idris looked from the seam to the blank sector on his display.
+
+"No," he said. "I favour local rule enforcement. The interesting question is
+what rule."

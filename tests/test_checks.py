@@ -141,3 +141,103 @@ Stub text.
 
     assert not result.ok
     assert any("image" in error.message.lower() for error in result.errors)
+
+
+def test_missing_narrative_design_is_blocking(tmp_path: Path) -> None:
+    story_dir = create_story(tmp_path, "missing-design", "original")
+    (story_dir / "narrative-design.md").unlink()
+
+    result = check_story(tmp_path, "missing-design")
+
+    assert not result.ok
+    assert any("narrative-design.md" in error.location for error in result.errors)
+
+
+def test_empty_plot_devices_registry_is_allowed_without_references(tmp_path: Path) -> None:
+    create_story(tmp_path, "no-plot-devices", "original")
+
+    result = check_story(tmp_path, "no-plot-devices")
+
+    assert result.ok
+
+
+def test_plot_device_reference_requires_registry_entry(tmp_path: Path) -> None:
+    story_dir = create_story(tmp_path, "plot-device-fail", "original")
+
+    (story_dir / "chapter-stubs" / "01-opening.md").write_text(
+        """---
+title: "Opening"
+summary: "Introduce a plot device."
+manuscript: "manuscript/01-opening.md"
+scene_cards_dir: "scene-cards/01-opening"
+characters: []
+locations: []
+clues_introduced: []
+clues_resolved: []
+plot_devices:
+  - missing-device
+timeline_events: []
+images: []
+---
+
+Stub text.
+""",
+        encoding="utf-8",
+    )
+    (story_dir / "manuscript" / "01-opening.md").write_text("Body text.\n", encoding="utf-8")
+
+    result = check_story(tmp_path, "plot-device-fail")
+
+    assert not result.ok
+    assert any("Unknown plot devices referenced" in error.message for error in result.errors)
+
+
+def test_coherence_report_includes_scene_cards_and_plot_devices(tmp_path: Path) -> None:
+    story_dir = create_story(tmp_path, "report-test", "original")
+
+    (story_dir / "plot_devices.yml").write_text(
+        """plot_devices:
+  - id: test-device
+    name: "Test device"
+    narrative_role: "Creates a structural turn."
+    description: "Used to prove report coverage."
+    status: active
+""",
+        encoding="utf-8",
+    )
+    (story_dir / "chapter-stubs" / "01-opening.md").write_text(
+        """---
+title: "Opening"
+summary: "Generate a populated report."
+manuscript: "manuscript/01-opening.md"
+scene_cards_dir: "scene-cards/01-opening"
+characters: []
+locations: []
+clues_introduced: []
+clues_resolved: []
+plot_devices:
+  - test-device
+timeline_events: []
+images: []
+---
+
+Stub text.
+""",
+        encoding="utf-8",
+    )
+    (story_dir / "manuscript" / "01-opening.md").write_text("Body text.\n", encoding="utf-8")
+    (story_dir / "scene-cards" / "01-opening" / "01-first-beat.md").write_text(
+        "# First Beat\n",
+        encoding="utf-8",
+    )
+
+    result = check_story(tmp_path, "report-test")
+    report = result.report_path.read_text(encoding="utf-8")
+
+    assert result.ok
+    assert "## Scene cards" in report
+    assert "## Plot devices" in report
+    assert "Plot devices tracked: 1" in report
+    assert "plot devices=1 | scene cards=1" in report
+    assert "scene-cards/01-opening/01-first-beat.md" in report
+    assert "_template.md" not in report

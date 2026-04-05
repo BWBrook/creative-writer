@@ -14,6 +14,8 @@ from creative_writer.models import (
     CluesRegistry,
     ContractConfig,
     LocationsRegistry,
+    PlotDeviceRecord,
+    PlotDevicesRegistry,
     StoryConfig,
     TimelineRegistry,
 )
@@ -22,10 +24,12 @@ MANDATORY_ARTIFACTS = [
     "story.yml",
     "contract.yml",
     "style-guide.md",
+    "narrative-design.md",
     "outline.md",
     "chapter-stubs",
     "manuscript",
 ]
+IGNORED_SCENE_CARD_FILES = {"README.md", "_template.md"}
 
 CONTRASTIVE_PATTERN = re.compile(
     r"\b(?:not only\b[^.!?\n]{0,80}\bbut also|not\b[^.!?\n]{0,80}\bbut)\b",
@@ -43,10 +47,44 @@ def _add_warning(result: CheckResult, location: Path | str, message: str) -> Non
     result.warnings.append(CheckMessage("warning", str(location), message))
 
 
+def _load_registry(
+    story_dir: Path,
+    filename: str,
+    model_type: type,
+    result: CheckResult,
+):
+    path = story_dir / filename
+    if not path.exists():
+        return None
+
+    try:
+        return load_yaml_model(path, model_type)
+    except CreativeWriterError as exc:
+        _add_error(result, path, str(exc))
+        return None
+
+
+def _scene_card_files(story_dir: Path, scene_cards_dir: str | None) -> list[str]:
+    if not scene_cards_dir:
+        return []
+
+    directory = story_dir / scene_cards_dir
+    if not directory.exists() or not directory.is_dir():
+        return []
+
+    return sorted(
+        path.relative_to(story_dir).as_posix()
+        for path in directory.glob("*.md")
+        if path.name not in IGNORED_SCENE_CARD_FILES
+    )
+
+
 def _render_report(
     result: CheckResult,
     story_dir: Path,
     registry_counts: dict[str, int],
+    scene_cards_by_chapter: dict[str, list[str]],
+    plot_devices: list[PlotDeviceRecord],
 ) -> str:
     status = "PASS"
     if result.errors:
@@ -81,6 +119,7 @@ def _render_report(
             f"- Clues tracked: {registry_counts['clues']}",
             f"- Locations tracked: {registry_counts['locations']}",
             f"- Timeline events tracked: {registry_counts['timeline']}",
+            f"- Plot devices tracked: {registry_counts['plot_devices']}",
             "",
             "## Chapters",
             "",
@@ -89,14 +128,50 @@ def _render_report(
     if result.chapters:
         for chapter in result.chapters:
             fm = chapter.front_matter
+            scene_cards = scene_cards_by_chapter.get(chapter.stub_path.name, [])
             lines.append(
                 f"- `{chapter.stub_path.name}` -> `{chapter.manuscript_path.name}`: "
                 f"{fm.title} | characters={len(fm.characters)} | "
                 f"locations={len(fm.locations)} | clues introduced={len(fm.clues_introduced)} | "
-                f"clues resolved={len(fm.clues_resolved)}"
+                f"clues resolved={len(fm.clues_resolved)} | "
+                f"plot devices={len(fm.plot_devices)} | scene cards={len(scene_cards)}"
             )
     else:
         lines.append("- No chapters were successfully parsed.")
+
+    lines.extend(["", "## Scene cards", ""])
+    if result.chapters:
+        for chapter in result.chapters:
+            scene_cards = scene_cards_by_chapter.get(chapter.stub_path.name, [])
+            if scene_cards:
+                joined = ", ".join(f"`{path}`" for path in scene_cards)
+                lines.append(
+                    f"- `{chapter.stub_path.name}`: {len(scene_cards)} scene card(s) -> {joined}"
+                )
+            elif chapter.front_matter.scene_cards_dir:
+                lines.append(f"- `{chapter.stub_path.name}`: none.")
+            else:
+                lines.append(f"- `{chapter.stub_path.name}`: no scene card directory linked.")
+    else:
+        lines.append("- No chapters were successfully parsed.")
+
+    lines.extend(["", "## Plot devices", ""])
+    if plot_devices:
+        for item in plot_devices:
+            details = []
+            if item.narrative_role:
+                details.append(item.narrative_role)
+            if item.description:
+                details.append(item.description)
+            summary = " | ".join(details)
+            if summary:
+                lines.append(
+                    f"- `{item.id}` ({item.status}): {item.name} | {summary}"
+                )
+            else:
+                lines.append(f"- `{item.id}` ({item.status}): {item.name}")
+    else:
+        lines.append("- None tracked.")
 
     lines.extend(["", "## Blocking issues", ""])
     if result.errors:
@@ -113,28 +188,6 @@ def _render_report(
         lines.append("- None.")
 
     return "\n".join(lines) + "\n"
-
-
-def _load_registry_ids(
-    story_dir: Path,
-    filename: str,
-    key: str,
-    model_type: type,
-    result: CheckResult,
-) -> set[str]:
-    path = story_dir / filename
-    if not path.exists():
-        return set()
-
-    try:
-        registry = load_yaml_model(path, model_type)
-    except CreativeWriterError as exc:
-        _add_error(result, path, str(exc))
-        return set()
-
-    return {item.id for item in getattr(registry, key)}
-
-
 def _extract_image_paths(markdown: str) -> set[str]:
     paths = set(MARKDOWN_IMAGE_PATTERN.findall(markdown))
     paths.update(HTML_IMAGE_PATTERN.findall(markdown))
@@ -156,7 +209,15 @@ def check_story(root: Path, slug: str) -> CheckResult:
             _render_report(
                 result,
                 story_dir,
-                {"characters": 0, "clues": 0, "locations": 0, "timeline": 0},
+                {
+                    "characters": 0,
+                    "clues": 0,
+                    "locations": 0,
+                    "timeline": 0,
+                    "plot_devices": 0,
+                },
+                {},
+                [],
             ),
             encoding="utf-8",
         )
@@ -183,20 +244,45 @@ def check_story(root: Path, slug: str) -> CheckResult:
         except CreativeWriterError as exc:
             _add_error(result, contract_path, str(exc))
 
+    characters_registry = _load_registry(
+        story_dir, "characters.yml", CharactersRegistry, result
+    )
+    clues_registry = _load_registry(story_dir, "clues.yml", CluesRegistry, result)
+    locations_registry = _load_registry(
+        story_dir, "locations.yml", LocationsRegistry, result
+    )
+    timeline_registry = _load_registry(
+        story_dir, "timeline.yml", TimelineRegistry, result
+    )
+    plot_devices_registry = _load_registry(
+        story_dir, "plot_devices.yml", PlotDevicesRegistry, result
+    )
+
     registry_ids = {
-        "characters": _load_registry_ids(
-            story_dir, "characters.yml", "characters", CharactersRegistry, result
+        "characters": (
+            {item.id for item in characters_registry.characters}
+            if characters_registry
+            else set()
         ),
-        "clues": _load_registry_ids(
-            story_dir, "clues.yml", "clues", CluesRegistry, result
+        "clues": ({item.id for item in clues_registry.clues} if clues_registry else set()),
+        "locations": (
+            {item.id for item in locations_registry.locations}
+            if locations_registry
+            else set()
         ),
-        "locations": _load_registry_ids(
-            story_dir, "locations.yml", "locations", LocationsRegistry, result
+        "timeline": (
+            {item.id for item in timeline_registry.events}
+            if timeline_registry
+            else set()
         ),
-        "timeline": _load_registry_ids(
-            story_dir, "timeline.yml", "events", TimelineRegistry, result
+        "plot_devices": (
+            {item.id for item in plot_devices_registry.plot_devices}
+            if plot_devices_registry
+            else set()
         ),
     }
+    scene_cards_by_chapter: dict[str, list[str]] = {}
+    plot_devices = plot_devices_registry.plot_devices if plot_devices_registry else []
 
     if result.story:
         for chapter_name in result.story.chapters:
@@ -266,6 +352,23 @@ def check_story(root: Path, slug: str) -> CheckResult:
                         chapter.stub_path,
                         f"Missing scene cards directory: {chapter.front_matter.scene_cards_dir}",
                     )
+                scene_cards_by_chapter[chapter.stub_path.name] = _scene_card_files(
+                    story_dir, chapter.front_matter.scene_cards_dir
+                )
+            else:
+                scene_cards_by_chapter[chapter.stub_path.name] = []
+
+            plot_device_refs = set(chapter.front_matter.plot_devices)
+            unknown_plot_devices = sorted(
+                plot_device_refs - registry_ids["plot_devices"]
+            )
+            if unknown_plot_devices:
+                _add_error(
+                    result,
+                    chapter.stub_path,
+                    "Unknown plot devices referenced: "
+                    + ", ".join(unknown_plot_devices),
+                )
 
             listed_images = set(chapter.front_matter.images)
             for image_path in sorted(listed_images):
@@ -326,13 +429,16 @@ def check_story(root: Path, slug: str) -> CheckResult:
 
     report_body = _render_report(
         result,
-        story_dir,
-        {
-            "characters": len(registry_ids["characters"]),
-            "clues": len(registry_ids["clues"]),
-            "locations": len(registry_ids["locations"]),
-            "timeline": len(registry_ids["timeline"]),
-        },
-    )
+            story_dir,
+            {
+                "characters": len(registry_ids["characters"]),
+                "clues": len(registry_ids["clues"]),
+                "locations": len(registry_ids["locations"]),
+                "timeline": len(registry_ids["timeline"]),
+                "plot_devices": len(registry_ids["plot_devices"]),
+            },
+            scene_cards_by_chapter,
+            plot_devices,
+        )
     result.report_path.write_text(report_body, encoding="utf-8")
     return result

@@ -16,6 +16,7 @@ from creative_writer.novellas import (
     import_novella,
     resolve_novellas_dir,
 )
+from creative_writer.review_packs import generate_review_pack
 from creative_writer.scaffold import create_story, list_style_cards
 from creative_writer.stats import generate_story_statistics
 
@@ -65,6 +66,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Generate a manuscript statistics report for a story.",
     )
     stats.add_argument("--story", required=True, help="Story slug.")
+
+    review_pack = subparsers.add_parser(
+        "review-pack",
+        help="Build a targeted excerpt review pack from a story-local manifest.",
+    )
+    review_pack.add_argument("--story", required=True, help="Story slug.")
+    review_pack.add_argument(
+        "--pack", required=True, help="Review-pack manifest name (with or without .yml)."
+    )
 
     novellas_path = subparsers.add_parser(
         "novellas-path", help="Print the resolved OneDrive Novellas directory."
@@ -174,6 +184,13 @@ def main(argv: list[str] | None = None) -> int:
                 f"Total manuscript words: {result.manuscript_total_words:,} "
                 f"across {result.chapter_count} chapter(s)."
             )
+            return 0
+
+        if args.command == "review-pack":
+            result = generate_review_pack(root, args.story, args.pack)
+            print(f"Review pack written to {result.output_path}")
+            print(f"Manifest: {result.manifest_path}")
+            print(f"Entries: {result.entry_count}")
             return 0
 
         if args.command == "novellas-path":

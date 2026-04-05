@@ -19,6 +19,7 @@ from creative_writer.models import (
     StoryConfig,
     TimelineRegistry,
 )
+from creative_writer.review_packs import review_pack_manifest_paths, validate_review_pack_manifest
 
 MANDATORY_ARTIFACTS = [
     "story.yml",
@@ -188,6 +189,8 @@ def _render_report(
         lines.append("- None.")
 
     return "\n".join(lines) + "\n"
+
+
 def _extract_image_paths(markdown: str) -> set[str]:
     paths = set(MARKDOWN_IMAGE_PATTERN.findall(markdown))
     paths.update(HTML_IMAGE_PATTERN.findall(markdown))
@@ -426,6 +429,26 @@ def check_story(root: Path, slug: str) -> CheckResult:
                         f"configured limit "
                         f"{contrastive_lint.max_instances_per_chapter}.",
                     )
+
+    chapter_index = {
+        chapter.front_matter.manuscript: (
+            chapter.front_matter.title,
+            chapter.front_matter.summary,
+        )
+        for chapter in result.chapters
+    }
+    review_pack_paths = review_pack_manifest_paths(story_dir)
+    if result.contract and result.contract.review_mode == "excerpt_pack" and not review_pack_paths:
+        _add_warning(
+            result,
+            story_dir / "review-packs",
+            "review_mode is excerpt_pack but no review-pack manifests were found.",
+        )
+    for manifest_path in review_pack_paths:
+        try:
+            validate_review_pack_manifest(story_dir, manifest_path, chapter_index)
+        except CreativeWriterError as exc:
+            _add_error(result, manifest_path, str(exc))
 
     report_body = _render_report(
         result,

@@ -1,0 +1,11 @@
+title: "First human pass"
+purpose: "Select a few passages for targeted human feedback."
+entries:
+  - id: opening-example
+    label: "Opening sample"
+    manuscript: "manuscript/01-expedition-briefing.md"
+    start_line: 1
+    end_line: 6
+    kind: confidence
+    question: "Is this doing the right kind of opening work?"
+    context: "Use confidence when the writer wants to verify that a passage is landing as intended."

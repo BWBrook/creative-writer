@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 Slug = Annotated[str, Field(pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")]
 NonEmptyStr = Annotated[str, Field(min_length=1)]
@@ -88,7 +88,7 @@ class ContractConfig(BaseModel):
     human_role: NonEmptyStr
     ai_role: NonEmptyStr
     authority_mode: Literal["direct_edit", "suggest_only", "review_first"]
-    review_mode: Literal["git_diff", "summary", "none"]
+    review_mode: Literal["git_diff", "summary", "none", "excerpt_pack"]
     lint: LintSettings = Field(default_factory=LintSettings)
 
 
@@ -185,6 +185,44 @@ class TimelineRegistry(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     events: list[TimelineEvent] = Field(default_factory=list)
+
+
+class ReviewPackEntry(BaseModel):
+    """One targeted excerpt request inside a review pack."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: Slug
+    label: NonEmptyStr
+    manuscript: NonEmptyStr
+    start_line: int = Field(ge=1)
+    end_line: int = Field(ge=1)
+    kind: Literal["confidence", "uncertainty"]
+    question: NonEmptyStr
+    context: str = ""
+
+    @field_validator("manuscript")
+    @classmethod
+    def validate_manuscript_path(cls, value: str) -> str:
+        if not value.startswith("manuscript/") or not value.endswith(".md"):
+            raise ValueError("manuscript must live under manuscript/ and end in .md")
+        return value
+
+    @model_validator(mode="after")
+    def validate_line_range(self) -> "ReviewPackEntry":
+        if self.end_line < self.start_line:
+            raise ValueError("end_line must be greater than or equal to start_line")
+        return self
+
+
+class ReviewPackManifest(BaseModel):
+    """A story-local manifest for targeted review excerpts."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: NonEmptyStr
+    purpose: NonEmptyStr
+    entries: list[ReviewPackEntry] = Field(min_length=1)
 
 
 class ChapterFrontMatter(BaseModel):

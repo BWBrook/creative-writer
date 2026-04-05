@@ -10,6 +10,7 @@ def test_init_story_creates_required_and_optional_artifacts(tmp_path: Path) -> N
     (tmp_path / "templates" / "story" / "manuscript").mkdir(parents=True)
     (tmp_path / "templates" / "story" / "scene-cards" / "01-opening").mkdir(parents=True)
     (tmp_path / "templates" / "story" / "scene-cards" / "02-turn").mkdir(parents=True)
+    (tmp_path / "templates" / "story" / "review-packs").mkdir(parents=True)
     (tmp_path / "templates" / "story" / "assets" / "images").mkdir(parents=True)
     (tmp_path / "templates" / "story" / "story.yml").write_text(
         'title: "{{story_title}}"\nslug: "{{story_slug}}"\nkind: "{{story_kind}}"\n'
@@ -95,6 +96,14 @@ def test_init_story_creates_required_and_optional_artifacts(tmp_path: Path) -> N
         "# Turn Scene Cards\n",
         encoding="utf-8",
     )
+    (tmp_path / "templates" / "story" / "review-packs" / "README.md").write_text(
+        "# Review Packs\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "templates" / "story" / "review-packs" / "_template.yml").write_text(
+        "title: \"Pack\"\npurpose: \"Purpose\"\nentries:\n  - id: sample\n    label: \"Sample\"\n    manuscript: \"manuscript/01-opening.md\"\n    start_line: 1\n    end_line: 1\n    kind: confidence\n    question: \"Question?\"\n",
+        encoding="utf-8",
+    )
     (tmp_path / "templates" / "story" / "chapter-stubs" / "01-opening.md").write_text(
         "---\n"
         'title: "Opening"\n'
@@ -162,6 +171,8 @@ def test_init_story_creates_required_and_optional_artifacts(tmp_path: Path) -> N
         "scene-cards/_template.md",
         "scene-cards/01-opening/README.md",
         "scene-cards/02-turn/README.md",
+        "review-packs/README.md",
+        "review-packs/_template.yml",
     ]
 
     for relative in expected:
@@ -188,6 +199,7 @@ def test_init_story_can_copy_builtin_style_card(tmp_path: Path) -> None:
     (tmp_path / "templates" / "story" / "chapter-stubs").mkdir(parents=True)
     (tmp_path / "templates" / "story" / "manuscript").mkdir(parents=True)
     (tmp_path / "templates" / "story" / "scene-cards").mkdir(parents=True)
+    (tmp_path / "templates" / "story" / "review-packs").mkdir(parents=True)
     (tmp_path / "templates" / "story" / "assets" / "images").mkdir(parents=True)
 
     (tmp_path / "templates" / "story" / "story.yml").write_text(
@@ -239,6 +251,14 @@ def test_init_story_can_copy_builtin_style_card(tmp_path: Path) -> None:
     )
     (tmp_path / "templates" / "story" / "scene-cards" / "_template.md").write_text(
         "# Scene Template\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "templates" / "story" / "review-packs" / "README.md").write_text(
+        "# Review Packs\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "templates" / "story" / "review-packs" / "_template.yml").write_text(
+        "title: \"Pack\"\npurpose: \"Purpose\"\nentries:\n  - id: sample\n    label: \"Sample\"\n    manuscript: \"manuscript/01-opening.md\"\n    start_line: 1\n    end_line: 1\n    kind: confidence\n    question: \"Question?\"\n",
         encoding="utf-8",
     )
     (tmp_path / "templates" / "style-cards" / "quiet_catastrophe_realism.md").write_text(
@@ -266,6 +286,7 @@ def test_init_story_can_copy_custom_style_card(tmp_path: Path) -> None:
     (tmp_path / "templates" / "story" / "chapter-stubs").mkdir(parents=True)
     (tmp_path / "templates" / "story" / "manuscript").mkdir(parents=True)
     (tmp_path / "templates" / "story" / "scene-cards").mkdir(parents=True)
+    (tmp_path / "templates" / "story" / "review-packs").mkdir(parents=True)
     (tmp_path / "templates" / "story" / "assets" / "images").mkdir(parents=True)
 
     (tmp_path / "templates" / "story" / "story.yml").write_text(
@@ -317,6 +338,14 @@ def test_init_story_can_copy_custom_style_card(tmp_path: Path) -> None:
     )
     (tmp_path / "templates" / "story" / "scene-cards" / "_template.md").write_text(
         "# Scene Template\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "templates" / "story" / "review-packs" / "README.md").write_text(
+        "# Review Packs\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "templates" / "story" / "review-packs" / "_template.yml").write_text(
+        "title: \"Pack\"\npurpose: \"Purpose\"\nentries:\n  - id: sample\n    label: \"Sample\"\n    manuscript: \"manuscript/01-opening.md\"\n    start_line: 1\n    end_line: 1\n    kind: confidence\n    question: \"Question?\"\n",
         encoding="utf-8",
     )
     custom_card = tmp_path / "my-custom-style.md"

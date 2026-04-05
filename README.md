@@ -40,6 +40,7 @@ Each story lives under `stories/<slug>/` and uses Markdown plus YAML:
 - `manuscript/`: full narrative chapter text
 - `assets/images/`: embedded chapter images or other visual assets
 - `scene-cards/<chapter>/`: optional scene planning linked from each chapter stub
+- `review-packs/`: optional manifest-driven excerpt requests for targeted human feedback
 
 Optional artifact templates are included for:
 
@@ -50,6 +51,7 @@ Optional artifact templates are included for:
 - `timeline.yml`
 - `world.md`
 - `scene-cards/`
+- `review-packs/`
 
 ## Commands
 
@@ -62,6 +64,7 @@ make check STORY=mars-2044-cave
 make epub STORY=mars-2044-cave
 make pdf STORY=mars-2044-cave
 make stats STORY=mars-2044-cave
+make review-pack STORY=mars-2044-cave PACK=first-human-pass
 make test
 ```
 
@@ -98,6 +101,11 @@ Generated outputs and reports land under `build/` and are not tracked in git.
 - per-chapter counts for clues, plot devices, and real scene cards,
 - a scene-card section that ignores `README.md` and `_template.md`,
 - a plot-device section summarizing the tracked structural machinery of the story.
+
+`make review-pack` reads a manifest from `stories/<slug>/review-packs/<pack>.yml`
+and writes a readable Markdown packet to `build/<slug>/reviews/<pack>.md`. Each
+entry selects an inclusive manuscript line range, labels it as `confidence` or
+`uncertainty`, attaches a reviewer question, and includes optional context.
 
 ## Novellas pipeline
 

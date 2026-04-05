@@ -1,7 +1,7 @@
 human_role: "Read as the first human audience, supply criticism on force, clarity, and emotional truth, and steer later revisions."
 ai_role: "Design, draft, and revise the story while using the repo structure as a real fiction harness rather than bypassing it."
 authority_mode: direct_edit
-review_mode: git_diff
+review_mode: excerpt_pack
 lint:
   em_dash:
     enabled: true

@@ -1,0 +1,35 @@
+title: "First human pass"
+purpose: "Surface a small set of passages for targeted human feedback, mixing places that seem to be landing well with places where judgement and suspense still need interrogation."
+entries:
+  - id: opening-discontinuity
+    label: "Opening discontinuity"
+    manuscript: "manuscript/01-expedition-briefing.md"
+    start_line: 1
+    end_line: 18
+    kind: confidence
+    question: "Does this opening establish the right kind of hard-SF mystery pressure without feeling overloaded?"
+    context: "Intended as a confident opening that moves from physical anomaly into operational stakes."
+  - id: archive-argument
+    label: "Archive argument"
+    manuscript: "manuscript/01-expedition-briefing.md"
+    start_line: 79
+    end_line: 99
+    kind: uncertainty
+    question: "Is this exchange clear and tense, or does the technical reasoning start to feel too explained?"
+    context: "This is meant to show Mei, Idris, and Nadiya sharpening the story problem rather than pausing it."
+  - id: witness-tag-reveal
+    label: "Witness-tag reveal"
+    manuscript: "manuscript/02-cave-entry.md"
+    start_line: 98
+    end_line: 149
+    kind: confidence
+    question: "Does this reveal sequence earn the step from anomaly to deliberate concealment?"
+    context: "Intended as the chapter's hard pivot from geology into evidence of a prior machine encounter."
+  - id: final-incision
+    label: "Final incision"
+    manuscript: "manuscript/04-witness.md"
+    start_line: 105
+    end_line: 128
+    kind: uncertainty
+    question: "Does the ending land as a disciplined physical mystery, or does the final added incision risk reading as a gimmick?"
+    context: "This is the closing image and the main place where tone control matters most."

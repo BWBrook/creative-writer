@@ -11,9 +11,9 @@ the tool more habitable.
 ## Status note
 
 This file has now largely served its purpose. The planning/coherence upgrade on
-2026-04-05 addressed the scaffold-side items below, leaving only the
-targeted-excerpt review workflow still open for a future pass. Once that review
-workflow exists, this file can likely be deleted.
+2026-04-05 and the targeted review-pack workflow added on 2026-04-05 addressed
+the practical items below. The document can now be retained as a short record or
+deleted in a later cleanup pass.
 
 ## 2026-04-04
 
@@ -69,7 +69,7 @@ workflow exists, this file can likely be deleted.
 
 ### Entry 4: Writer review wants targeted excerpts, not whole-draft dumping
 
-- Status: Deferred to a future review-workflow pass.
+- Status: Addressed in the 2026-04-05 review-pack workflow upgrade.
 
 - Context: Planning the first human feedback pass on the Mars story draft.
 - Friction: The current review model points toward file diffs or full-manuscript

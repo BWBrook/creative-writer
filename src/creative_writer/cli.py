@@ -16,7 +16,8 @@ from creative_writer.novellas import (
     import_novella,
     resolve_novellas_dir,
 )
-from creative_writer.scaffold import create_story
+from creative_writer.scaffold import create_story, list_style_cards
+from creative_writer.stats import generate_story_statistics
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -40,6 +41,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Story type.",
     )
     init_story.add_argument("--title", help="Optional title override.")
+    init_story.add_argument(
+        "--style-card",
+        help="Optional built-in style card key or path to a custom Markdown style card.",
+    )
+
+    subparsers.add_parser(
+        "style-cards",
+        help="List the built-in style cards available for new story scaffolds.",
+    )
 
     check = subparsers.add_parser("check", help="Run coherence and style checks.")
     check.add_argument("--story", required=True, help="Story slug.")
@@ -49,6 +59,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     pdf = subparsers.add_parser("pdf", help="Build a PDF for a story.")
     pdf.add_argument("--story", required=True, help="Story slug.")
+
+    stats = subparsers.add_parser(
+        "stats",
+        help="Generate a manuscript statistics report for a story.",
+    )
+    stats.add_argument("--story", required=True, help="Story slug.")
 
     novellas_path = subparsers.add_parser(
         "novellas-path", help="Print the resolved OneDrive Novellas directory."
@@ -115,8 +131,23 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         if args.command == "init-story":
-            story_dir = create_story(root, args.story, args.kind, args.title)
+            story_dir = create_story(
+                root,
+                args.story,
+                args.kind,
+                args.title,
+                args.style_card,
+            )
             print(f"Created story scaffold at {story_dir}")
+            return 0
+
+        if args.command == "style-cards":
+            cards = list_style_cards(root)
+            if not cards:
+                print("No built-in style cards found.")
+                return 0
+            for key, title in cards:
+                print(f"{key}\t{title}")
             return 0
 
         if args.command == "check":
@@ -134,6 +165,15 @@ def main(argv: list[str] | None = None) -> int:
         if args.command in {"epub", "pdf"}:
             output_path = build_story(root, args.story, args.command)
             print(f"Built {output_path}")
+            return 0
+
+        if args.command == "stats":
+            result = generate_story_statistics(root, args.story)
+            print(f"Statistics report written to {result.report_path}")
+            print(
+                f"Total manuscript words: {result.manuscript_total_words:,} "
+                f"across {result.chapter_count} chapter(s)."
+            )
             return 0
 
         if args.command == "novellas-path":

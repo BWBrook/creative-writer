@@ -31,8 +31,9 @@ Each story lives under `stories/<slug>/` and uses Markdown plus YAML:
 
 - `story.yml`: build metadata and chapter order
   - includes the story language used for `EPUB` metadata
+- `style-card.md`: inherited style family copied from a built-in or custom card
 - `contract.yml`: human/AI collaboration settings and lint thresholds
-- `style-guide.md`: voice, tone, and prose constraints
+- `style-guide.md`: story-specific voice, tone, and prose constraints
 - `outline.md`: synopsis plus structural plan
 - `chapter-stubs/`: chapter-level planning files with YAML front matter
 - `manuscript/`: full narrative chapter text
@@ -52,20 +53,40 @@ Optional artifact templates are included for:
 
 ```bash
 make init-story STORY=my-story KIND=original
+make init-story STORY=my-story KIND=original STYLE_CARD=quiet_catastrophe_realism
 make new-story STORY=my-story KIND=original
+make style-cards
 make check STORY=mars-2044-cave
 make epub STORY=mars-2044-cave
 make pdf STORY=mars-2044-cave
+make stats STORY=mars-2044-cave
 make test
 ```
 
 For a simple script wrapper, you can also run:
 
 ```bash
-scripts/new_story.sh my-story original "My Story Title"
+scripts/new_story.sh my-story original "My Story Title" quiet_catastrophe_realism
 ```
 
+`STYLE_CARD` can be either:
+
+- a built-in card key from `templates/style-cards/`
+- a path to a custom Markdown style card
+
+When selected, the card is copied into the new story as `style-card.md`, and
+the chosen source is recorded in `story.yml`.
+
 Generated outputs and reports land under `build/` and are not tracked in git.
+
+`make stats` writes a manuscript progress snapshot to
+`build/<slug>/reports/ms-statistics.md`. The report includes:
+
+- per-chapter manuscript word counts in story order,
+- total manuscript words and average words per chapter,
+- estimated reading time,
+- a supporting-Markdown breakdown so you can see how much of the story exists as
+  outline/stubs/scene cards versus full draft prose.
 
 ## Novellas pipeline
 

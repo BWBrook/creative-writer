@@ -2,6 +2,9 @@
 
 This is a core artifact for `{{story_title}}`.
 
+Use `style-card.md` for the inherited style family and this file for the
+story-specific interpretation of that card.
+
 ## Voice and tone
 
 - State the intended voice here.

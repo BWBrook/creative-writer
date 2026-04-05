@@ -3,6 +3,7 @@ slug: "mars-2044-cave"
 kind: "original"
 status: draft
 language: "en-AU"
+style_card: rationalist_sense_of_wonder_sci_fi
 target_outputs:
   - epub
   - pdf

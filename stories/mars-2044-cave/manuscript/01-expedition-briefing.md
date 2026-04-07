@@ -93,10 +93,9 @@ he said. "Not in straight lines."
 
 Nadiya accepted the update without ceremony. "Then you will inspect it directly."
 
-She did not need to say who. Ares had exactly one planetary geologist with EVA
-lead certification and exactly one systems engineer who knew the legacy machine
-archive well enough to separate data loss from deliberate suppression. The
-selection was less romance than arithmetic.
+She did not need to say who. Ares had one planetary geologist with EVA lead
+certification and one systems engineer who knew the legacy machine archive well
+enough to separate data loss from deliberate suppression.
 
 Mei called up the mission form and read while she spoke.
 

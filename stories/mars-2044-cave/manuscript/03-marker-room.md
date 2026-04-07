@@ -42,8 +42,6 @@ solar conjunction the site relay had been deferred. At some later stage the
 civilian settlement abstraction had kept the revised routes and dropped the
 reason.
 
-The colony had inherited the result and not the argument.
-
 Nadiya came onto the channel as soon as the log reached operations. "Confidence
 forty-two per cent," she said. "Low for a verdict. High enough for caution."
 
@@ -72,9 +70,6 @@ Idris did not answer immediately. His argument with the cave had narrowed over
 the last twenty minutes from theory to evidence, and evidence was winning. "No,"
 he said. "It found it."
 
-That conclusion changed the site from a machine-archive puzzle into something
-older and more interesting.
-
 Mei crossed the chamber towards the object. The crawler on the floor was an
 early Argosy utility body: six radial legs, mast snapped away, hull scarred on
 one side by heat or impact. A witness, not a culprit. Beyond it stood the
@@ -100,8 +95,6 @@ any field safety code I know."
 
 "If it had, the cache would contain a creation path. Instead it contains a hold
 order."
-
-That was decisive enough for the moment.
 
 Behind the slab the wall curved inward to a darker seam, a zone where basalt,
 salts and glassy film had collected together. Thin frost persisted in the more
@@ -136,11 +129,6 @@ least, perhaps three."
 
 "Nominal return 4 h 11 m," Idris said. "Hard turnback 2 h 31 m. One more chamber
 is within the plan."
-
-Mei kept her eyes on the basalt slab. The fleet had reached the room years
-earlier and had still judged ignorance safer than intervention. That was not
-dramatic. It was better than dramatic. It was rational caution under imperfect
-information, which is the condition under which most real decisions are made.
 
 She stood.
 

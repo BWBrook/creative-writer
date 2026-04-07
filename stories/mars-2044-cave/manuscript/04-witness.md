@@ -111,13 +111,12 @@ glossy face, another line came up from the basalt beside the existing six.
 She stopped at once.
 
 The seventh incision was narrow and exact. It had been missed on the first pass,
-or hidden by angle, or absent then. She could not yet rank those explanations.
+or hidden by angle. She could not yet rank those explanations.
 She only knew that the count on her field record had become wrong.
 
 "Idris."
 
-He looked, checked the earlier images on his sleeve, and said nothing for a full
-five seconds.
+He looked, checked the earlier images on his sleeve, and said nothing.
 
 Mei recorded the new line, transmitted the correction to operations, and amended
 the field manifest before memory could improve upon fact.

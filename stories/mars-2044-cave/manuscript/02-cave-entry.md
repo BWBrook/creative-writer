@@ -104,10 +104,8 @@ erased by time.
 
 Idris took it carefully. "Argosy witness tag," he said.
 
-The early construction fleet had used local markers when a machine inspected an
-anomaly and wanted the site tied to a maintenance record even if the main relay
-was down. The symbol on the tag was from that older field set: three nested
-angles around a point.
+The symbol on the tag was from the early field set: three nested angles around
+a point.
 
 "And it should appear where?" Mei asked.
 
@@ -144,10 +142,6 @@ Short range. Low power."
 
 "More than one."
 
-That altered the status of the cave. This was no longer a topographic omission.
-The fleet had entered, instrumented and revisited the site. The absence in the
-human map layer was the residue of that decision.
-
 Mei walked the smooth strip on the floor. Under the dust the basalt had been
 abraded or compacted in a line about a metre wide, too regular for natural wear.
 Light machine traffic, repeated enough to hold a path.
@@ -171,8 +165,5 @@ In Mei's lights, dust lay on the floor in scalloped drifts around a low object
 on the far side. It looked at first like a fallen boulder, then like a piece of
 equipment, then like neither. Beside it, the wall carried a run of old mounting
 points and one intact service node.
-
-Idris came up on her right and spoke very softly, as if the cave were listening
-through the basalt.
 
 "That," he said, "is not a place the fleet visited once."

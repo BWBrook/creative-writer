@@ -1,0 +1,41 @@
+events:
+  - id: temple-founded
+    label: "The old temple is founded"
+    when: "Centuries before the story"
+    description: "A shrine or temple connected to Tyr and older Moonsea rites occupies Thorn Island."
+  - id: dragon-run
+    label: "The Dragon Run ruins the temple"
+    when: "Roughly two centuries before the story"
+    description: "The temple is destroyed and later stories about it contradict one another."
+  - id: house-sokol-restores-keep
+    label: "House Sokol restores the keep"
+    when: "Before the story"
+    description: "The noble house expands the old structure and maintains the beacon."
+  - id: igan-finds-shrine
+    label: "Igan finds Harae's shrine"
+    when: "Igan's childhood"
+    description: "The hidden East Tower shrine becomes Igan's private place of devotion."
+  - id: grim-joins-search
+    label: "Grim joins Igan's treasure search"
+    when: "Weeks before the story"
+    description: "Grim encourages Igan and steers Black Fist labour toward the West Tower."
+  - id: igan-murdered
+    label: "Igan is murdered at the idol"
+    when: "Two days before the story"
+    description: "Grim stabs Igan after Igan wants the jade idol destroyed."
+  - id: beacon-dark
+    label: "The beacon goes dark"
+    when: "Two days before the story"
+    description: "Harae extinguishes the beacon to draw help to the island."
+  - id: keria-investigates
+    label: "Keria crosses to Thorn Island"
+    when: "Story present"
+    description: "Keria and Aravele follow public pressure and private concern to the keep."
+  - id: body-recovered
+    label: "Igan's body is recovered"
+    when: "Story present"
+    description: "The murder becomes evidence that can be carried back."
+  - id: grim-arrested
+    label: "Grim is taken into custody"
+    when: "Story resolution"
+    description: "Keria chooses public justice and testimony over private punishment."

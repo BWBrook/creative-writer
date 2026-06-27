@@ -1,0 +1,61 @@
+characters:
+  - id: keria
+    name: Keria
+    role: "Primary viewpoint; human mercenary and friend of Grim."
+    motivation: "Find out whether Grim is alive, guilty, or both, without letting loyalty blind her."
+  - id: aravele
+    name: Aravele
+    role: "Keria's companion and second witness."
+    motivation: "Keep Keria honest and alive while the keep's evidence narrows."
+  - id: imizael
+    name: Imizael
+    role: "Bartender at the Laughing Goblin."
+    motivation: "Keep order, keep earning, and keep the docks from smashing her room apart."
+  - id: markoth-hasselpond
+    name: "Markoth Hasselpond"
+    role: "Gossiping waiter called Fat Mar."
+    motivation: "Trade stories for attention, soup money, and the respect of being called by his name."
+  - id: thirus
+    name: Thirus
+    role: "Dockworker who leads the tavern confrontation."
+    motivation: "Force answers from anyone connected to the dark beacon."
+  - id: liela
+    name: Liela
+    role: "House Sokol administrator at the docks."
+    motivation: "Protect House Sokol property and reputation while getting the beacon restored."
+  - id: hurn
+    name: "Guard Sergeant Hurn"
+    role: "Older Black Fist sergeant at the dock post."
+    motivation: "Outsource a hard problem before it becomes his last official disgrace."
+  - id: karst
+    name: Karst
+    role: "Old ferryman to Thorn Island."
+    motivation: "Get paid, survive the crossing, and avoid old island trouble if he can."
+  - id: darvag
+    name: Darvag
+    role: "House Sokol groundskeeper at the keep."
+    motivation: "Protect his family and explain enough to make the strangers useful."
+  - id: shandra
+    name: Shandra
+    role: "House Sokol retainer responsible for the interior."
+    motivation: "Keep the household intact and steer respectful investigators toward the right rooms."
+  - id: rorin
+    name: Rorin
+    role: "Darvag and Shandra's son."
+    motivation: "Help his parents and report what he has seen without being noticed too much."
+  - id: igan-sokol
+    name: "Igan Sokol"
+    role: "Young House Sokol quartermaster and murder victim."
+    motivation: "Restore his standing by finding treasure, then destroy what he judges evil."
+  - id: harae
+    name: Harae
+    role: "Dead priestess of Tyr bound to the hidden shrine."
+    motivation: "Recover Igan's body and make Grim's murder known through lawful justice."
+  - id: grim-thornbuck
+    name: "Guard Sergeant Grim Thornbuck"
+    role: "Black Fist sergeant, murderer, and trapped conspirator."
+    motivation: "Escape the temple, keep the treasure, and make someone else carry the blame."
+  - id: surviving-guards
+    name: "Grim's surviving guards"
+    role: "Exhausted Black Fist conspirators in the reliquary."
+    motivation: "Survive the dark and decide whether to keep lying for Grim."

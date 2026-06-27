@@ -1,0 +1,11 @@
+human_role: "Provide taste, setting calibration, Sinew & Steel continuity, and judgement on how far the adaptation should move from module structure into narrative fiction."
+ai_role: "Convert the private-use module source into a restrained narrative story, preserving the clue chain and moral architecture while choosing one coherent path through the adventure."
+authority_mode: direct_edit
+review_mode: git_diff
+lint:
+  em_dash:
+    enabled: true
+    max_per_chapter: 1
+  contrastive_parallelism:
+    enabled: true
+    max_instances_per_chapter: 1

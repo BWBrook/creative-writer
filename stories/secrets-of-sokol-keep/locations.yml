@@ -1,0 +1,34 @@
+locations:
+  - id: laughing-goblin
+    name: "The Laughing Goblin"
+    description: "Dockside tavern where public anger over the dark beacon becomes personal."
+  - id: house-sokol-office
+    name: "House Sokol office"
+    description: "Liela's ordered dockside office and the first gate of permission."
+  - id: black-fist-post
+    name: "Black Fist dock post"
+    description: "Hurn's tired official perch near the harbour."
+  - id: thorn-island
+    name: "Thorn Island"
+    description: "Wind-cut island in the Bay of Phlan, reached by Karst's ferry."
+  - id: sokol-keep
+    name: "Sokol Keep"
+    description: "Old temple-fortress restored into House Sokol property and lighthouse."
+  - id: igans-quarters
+    name: "Igan's quarters"
+    description: "Untidy suite of books, notes, poor poetry, hidden objects, and useful obsessions."
+  - id: east-tower-shrine
+    name: "East Tower shrine"
+    description: "Hidden shrine to Tyr where Harae watches and Igan kept his journal."
+  - id: west-tower
+    name: "West Tower"
+    description: "Dusty tower with fresh earth, tools, cut rope, and the vanishing slab."
+  - id: jade-temple
+    name: "Jade Temple"
+    description: "Wet under-temple of mud, brass, bones, old rites, and trapped men."
+  - id: idol-chamber
+    name: "Idol chamber"
+    description: "Central cavern where Igan was stabbed before the pale jade idol."
+  - id: reliquary
+    name: "Reliquary"
+    description: "Collapsed treasure room where Grim and his surviving guards hide."

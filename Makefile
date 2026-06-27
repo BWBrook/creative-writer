@@ -1,4 +1,4 @@
-.PHONY: init-story new-story style-cards check epub pdf stats review-pack novellas-path import-novella export-novella clear-ingested kindle-preflight kindle kindle-store-password test
+.PHONY: init-story new-story style-cards check epub pdf stats ai-audit review-pack novellas-path import-novella export-novella clear-ingested kindle-preflight kindle kindle-store-password test
 
 KIND ?= original
 STYLE_CARD_ARG :=
@@ -34,6 +34,9 @@ pdf:
 
 stats:
 	uv run creative-writer stats --story "$(STORY)"
+
+ai-audit:
+	uv run creative-writer ai-audit --story "$(STORY)"
 
 review-pack:
 	uv run creative-writer review-pack --story "$(STORY)" --pack "$(PACK)"

@@ -1,0 +1,31 @@
+plot_devices:
+  - id: dark-beacon-pressure
+    name: "Dark beacon pressure"
+    narrative_role: "Inciting pressure"
+    description: "The missing light turns a private murder into a public crisis."
+    status: active
+  - id: harae-witness
+    name: "Harae as silent witness"
+    narrative_role: "Supernatural evidence engine"
+    description: "Harae cannot narrate the truth, so she arranges clues and judges conduct."
+    status: active
+  - id: igan-document-chain
+    name: "Igan's document chain"
+    narrative_role: "Investigation ladder"
+    description: "Sketch, book, shrine, journal, and phrase guide the living below the keep."
+    status: active
+  - id: jade-idol-temptation
+    name: "The jade idol"
+    narrative_role: "Moral and occult fulcrum"
+    description: "The idol gives Grim motive and tests whether treasure can be separated from guilt."
+    status: active
+  - id: grims-false-account
+    name: "Grim's false account"
+    narrative_role: "Final contradiction"
+    description: "Grim blames the dead until body evidence and stolen relics defeat the lie."
+    status: dormant
+  - id: public-justice-choice
+    name: "Public justice choice"
+    narrative_role: "Resolution test"
+    description: "Keria must decide whether justice means custody, killing, concealment, or vengeance."
+    status: dormant

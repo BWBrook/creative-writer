@@ -10,6 +10,18 @@ from creative_writer.checks import check_story
 from creative_writer.exceptions import CreativeWriterError
 from creative_writer.files import ensure_directory
 
+MACOS_TEXBIN = Path("/Library/TeX/texbin")
+
+
+def _build_environment() -> dict[str, str]:
+    env = os.environ.copy()
+    if MACOS_TEXBIN.exists():
+        path_parts = env.get("PATH", "").split(os.pathsep)
+        texbin = str(MACOS_TEXBIN)
+        if texbin not in path_parts:
+            env["PATH"] = os.pathsep.join([texbin, *path_parts])
+    return env
+
 
 def _assemble_markdown(root: Path, slug: str) -> tuple[Path, str, str, set[str]]:
     result = check_story(root, slug)
@@ -87,7 +99,13 @@ def build_story(root: Path, slug: str, target: str) -> Path:
         command.extend(["--pdf-engine=xelatex"])
 
     try:
-        subprocess.run(command, check=True, capture_output=True, text=True)
+        subprocess.run(
+            command,
+            check=True,
+            capture_output=True,
+            text=True,
+            env=_build_environment(),
+        )
     except FileNotFoundError as exc:
         raise CreativeWriterError("Pandoc is not installed or not on PATH.") from exc
     except subprocess.CalledProcessError as exc:

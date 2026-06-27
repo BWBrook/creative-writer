@@ -64,6 +64,7 @@ make check STORY=mars-2044-cave
 make epub STORY=mars-2044-cave
 make pdf STORY=mars-2044-cave
 make stats STORY=mars-2044-cave
+make ai-audit STORY=mars-2044-cave
 make review-pack STORY=mars-2044-cave PACK=first-human-pass
 make test
 ```
@@ -92,6 +93,14 @@ Generated outputs and reports land under `build/` and are not tracked in git.
 - estimated reading time,
 - a supporting-Markdown breakdown so you can see how much of the story exists as
   outline/stubs/scene cards versus full draft prose.
+
+`make ai-audit` runs the local `audit-ai-writing` skill scanner over the
+manuscript chapters and writes a triage report to
+`build/<slug>/reports/ai-writing-audit.md`. Use it before or after revision
+passes to catch stock AI surface tells such as abstract significance language,
+over-neat parallelism, and repeated narrative closure habits. Set
+`CREATIVE_WRITER_AI_AUDIT_SCRIPT` if the scanner script lives somewhere other
+than the default Codex skill path.
 
 `make check` writes a coherence report to
 `build/<slug>/reports/coherence-report.md`. The report now includes:

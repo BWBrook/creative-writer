@@ -1,0 +1,16 @@
+title: Secrets of Sokol Keep
+slug: secrets-of-sokol-keep
+kind: pastiche
+status: draft
+language: en-AU
+target_outputs:
+- epub
+- pdf
+chapters:
+- chapter-stubs/01-dark-beacon.md
+- chapter-stubs/02-permission-and-crossing.md
+- chapter-stubs/03-rooms-above.md
+- chapter-stubs/04-under-the-west-tower.md
+- chapter-stubs/05-idol-and-lie.md
+- chapter-stubs/06-beacon-at-dawn.md
+style_card: haunted_justice_whodunnit

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import sys
 
+from creative_writer.ai_audit import generate_ai_writing_audit
 from creative_writer.building import build_story
 from creative_writer.checks import check_story
 from creative_writer.exceptions import CreativeWriterError
@@ -66,6 +67,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Generate a manuscript statistics report for a story.",
     )
     stats.add_argument("--story", required=True, help="Story slug.")
+
+    ai_audit = subparsers.add_parser(
+        "ai-audit",
+        help="Run the audit-ai-writing scanner over a story manuscript.",
+    )
+    ai_audit.add_argument("--story", required=True, help="Story slug.")
+    ai_audit.add_argument(
+        "--genre",
+        default="narrative",
+        choices=["email", "general", "marketing", "narrative", "scientific", "wiki"],
+        help="Scanner genre profile.",
+    )
 
     review_pack = subparsers.add_parser(
         "review-pack",
@@ -184,6 +197,12 @@ def main(argv: list[str] | None = None) -> int:
                 f"Total manuscript words: {result.manuscript_total_words:,} "
                 f"across {result.chapter_count} chapter(s)."
             )
+            return 0
+
+        if args.command == "ai-audit":
+            result = generate_ai_writing_audit(root, args.story, args.genre)
+            print(f"AI-writing audit report written to {result.report_path}")
+            print(f"Scanned {result.chapter_count} chapter(s) with {result.script_path}.")
             return 0
 
         if args.command == "review-pack":

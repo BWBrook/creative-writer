@@ -1,0 +1,45 @@
+clues:
+  - id: dark-beacon
+    name: "The beacon is dark"
+    description: "The lighthouse has been out for two days and is not physically broken."
+    status: introduced
+  - id: grim-debts
+    name: "Grim's debts and treasure talk"
+    description: "Several witnesses know Grim was debt-prone and unusually interested in keep duty."
+    status: introduced
+  - id: igan-search
+    name: "Igan's treasure search"
+    description: "Igan was obsessed with old treasure, the shrine, and hidden spaces below the keep."
+    status: hidden
+  - id: harae-signs
+    name: "Harae's arranged signs"
+    description: "Small movements, knocks, cold air, and falling books guide respectful investigators."
+    status: hidden
+  - id: moonsea-cults
+    name: "Moonsea Cults"
+    description: "Old book that explains symbols and the phrase needed to open the slab."
+    status: hidden
+  - id: igan-journal
+    name: "Igan's journal"
+    description: "Rambling journal that points from shrine, book, and phrase toward the West Tower."
+    status: hidden
+  - id: west-tower-dig
+    name: "The West Tower dig"
+    description: "Fresh earth, tools, ropes, and the hand-marked slab prove a deliberate descent."
+    status: hidden
+  - id: cut-rope
+    name: "The cut rope"
+    description: "A cleanly sliced rope below the slab shows the exit was severed or abandoned."
+    status: hidden
+  - id: igan-body
+    name: "Igan's body"
+    description: "Igan was stabbed in the back at the idol; the murder is physically legible."
+    status: hidden
+  - id: grim-loot
+    name: "Grim's loot"
+    description: "Sacks of reliquary objects and brass plates expose motive and conspiracy."
+    status: hidden
+  - id: beacon-relit
+    name: "The beacon relit"
+    description: "Harae accepts public custody and testimony; the curse lifts."
+    status: hidden

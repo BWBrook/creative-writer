@@ -25,9 +25,12 @@ The project metadata will use:
 - kind: `pastiche`
 - status: `planning`
 
-The eventual manuscript is a growing anthology. Additional expeditions will
-be added to the same chapter sequence unless experience later shows that the
-anthology has outgrown the existing story boundary.
+The eventual manuscript is a growing anthology. Each expedition will be a
+standalone short story, shorter than *The Time Machine* but written in the
+same carefully studied mode. Additional expeditions will be added to the same
+chapter sequence unless experience later shows that the anthology has
+outgrown the existing story boundary. A possible anthology spine is deferred;
+the stories do not need a shared narrative arc at this stage.
 
 ## Canonical Source Anchor
 
@@ -50,7 +53,7 @@ as the archival source. The edition homepage is:
 
 The compatible EPUB download is:
 
-`https://standardebooks.org/ebooks/h-g-wells/the-time-machine/dist/h-g-wells_the-time-machine.epub`
+`https://standardebooks.org/ebooks/h-g-wells/the-time-machine/downloads/h-g-wells_the-time-machine.epub?source=download`
 
 `source.yml` will record:
 
@@ -68,11 +71,16 @@ public-domain text from Standard Ebooks production contributions and will not
 present itself as legal advice.
 
 Pandoc will derive `original/text/the-time-machine.md` from that exact EPUB.
-The Markdown is working material for search, quotation checks, structural
-analysis, and later style study. It is not a replacement authority for the
-retained EPUB. The derived file will preserve chapter headings and the full
-prose but may omit ebook-only presentation elements such as cover art and
-navigation pages.
+The derivation will select the twelve chapter XHTML files and the epilogue in
+spine order, excluding the cover, imprint, colophon, endnotes, and uncopyright
+pages. The Markdown is working material for search, quotation checks,
+structural analysis, and later style study. It is not a replacement authority
+for the retained EPUB. The derived file will preserve chapter headings and
+the full literary prose while omitting ebook-only presentation elements.
+
+The `original/` subtree is reference material, not story planning or
+manuscript prose. Manuscript statistics will therefore exclude Markdown below
+`original/` so the Wells corpus cannot inflate draft-progress totals.
 
 `original/README.md` will explain the relationship between the archival EPUB,
 derived Markdown, and new anthology material. It will also state that later

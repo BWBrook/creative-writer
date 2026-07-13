@@ -20,6 +20,8 @@ Where the books differ, *The Time Machine* governs the new expeditions.
 
 - `h-g-wells_the-time-machine.epub`: unchanged compatible Standard Ebooks EPUB.
 - `h-g-wells_the-invisible-man.epub`: unchanged compatible Standard Ebooks EPUB.
+- `filters/remove-excluded-packaging-links.lua`: tracked Pandoc filter that
+  removes links into excluded ebook apparatus files.
 - `sources.yml`: authority roles, provenance, retrieval details, checksums,
   and derivation metadata for both works.
 - `text/the-time-machine.md`: chapters I-XII and epilogue in source order.
@@ -45,6 +47,7 @@ From the repository root in `zsh`:
 ```zsh
 tmpdir=$(mktemp -d /tmp/time-expedition-extract.XXXXXX)
 trap 'rm -rf "$tmpdir"' EXIT
+filter=stories/time-expedition/original/filters/remove-excluded-packaging-links.lua
 
 unzip -q stories/time-expedition/original/h-g-wells_the-time-machine.epub \
   -d "$tmpdir/time-machine"
@@ -52,6 +55,7 @@ time_machine_chapters=("$tmpdir"/time-machine/epub/text/chapter-{1..12}.xhtml)
 pandoc "${time_machine_chapters[@]}" \
   "$tmpdir/time-machine/epub/text/epilogue.xhtml" \
   --from=html --to=gfm-raw_html --wrap=none \
+  --lua-filter="$filter" \
   --output=stories/time-expedition/original/text/the-time-machine.md
 
 unzip -q stories/time-expedition/original/h-g-wells_the-invisible-man.epub \
@@ -60,10 +64,12 @@ invisible_man_chapters=("$tmpdir"/invisible-man/epub/text/chapter-{1..28}.xhtml)
 pandoc "${invisible_man_chapters[@]}" \
   "$tmpdir/invisible-man/epub/text/epilogue.xhtml" \
   --from=html --to=gfm-raw_html --wrap=none \
+  --lua-filter="$filter" \
   --output=stories/time-expedition/original/text/the-invisible-man.md
 ```
 
 Both extractions deliberately exclude covers, imprints, colophons,
-uncopyright pages, and other ebook packaging. See `sources.yml` for pinned
-fingerprints and upstream provenance. The rights records there are not legal
-advice.
+uncopyright pages, and other ebook packaging. The tracked Pandoc filter also
+removes any links into excluded apparatus files so the derived literary text
+has no dangling packaging links. See `sources.yml` for pinned fingerprints and
+upstream provenance. The rights records there are not legal advice.

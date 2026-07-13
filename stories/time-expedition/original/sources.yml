@@ -25,6 +25,7 @@ sources:
       input: "epub/text/chapter-1.xhtml through chapter-12.xhtml, then epub/text/epilogue.xhtml"
       writer: "gfm-raw_html"
       wrap: "none"
+      filter: "filters/remove-excluded-packaging-links.lua"
     provenance:
       transcription: "Project Gutenberg ebook 35, produced by Distributed Proofreaders"
       page_scans: "Google Books volume Y0pAAQAAIAAJ"
@@ -58,6 +59,7 @@ sources:
       input: "epub/text/chapter-1.xhtml through chapter-28.xhtml, then epub/text/epilogue.xhtml"
       writer: "gfm-raw_html"
       wrap: "none"
+      filter: "filters/remove-excluded-packaging-links.lua"
     provenance:
       transcription: "Project Gutenberg ebook 5230, produced by Andrew Sly"
       page_scans: "Google Books volume vdAOAAAAIAAJ"

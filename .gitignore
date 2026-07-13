@@ -8,3 +8,4 @@ __pycache__/
 *.pyd
 dist/
 .creative-writer.local.yml
+.worktrees/

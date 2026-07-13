@@ -31,3 +31,36 @@ sources:
     rights:
       source_text: "Public-domain Wells text; users should verify the law applicable in their jurisdiction. This record is provenance, not legal advice."
       standard_ebooks_contributions: "Dedicated to the worldwide public domain under CC0 1.0 by Standard Ebooks contributors."
+
+  - id: "the-invisible-man"
+    role:
+      story_world_canon: false
+      primary_style_anchor: false
+      secondary_style_anchor: true
+      focus: "Sustained dialogue, social interaction, class register, comic friction, concealment, speech attribution, and crowd response."
+    work:
+      title: "The Invisible Man"
+      author: "H. G. Wells"
+      first_published: 1897
+    edition:
+      publisher: "Standard Ebooks"
+      homepage: "https://standardebooks.org/ebooks/h-g-wells/the-invisible-man"
+      download_url: "https://standardebooks.org/ebooks/h-g-wells/the-invisible-man/downloads/h-g-wells_the-invisible-man.epub?source=download"
+      upstream_release: "2026-06-30T02:48:51Z"
+      upstream_revision: "5d64618"
+    retrieved: "2026-07-13"
+    files:
+      epub: "h-g-wells_the-invisible-man.epub"
+      epub_sha256: "31e36b331983cb324629b21429c17c3408ec4801b324350fb7cc662e7ad94b71"
+      markdown: "text/the-invisible-man.md"
+    derivation:
+      tool: "Pandoc 3.10"
+      input: "epub/text/chapter-1.xhtml through chapter-28.xhtml, then epub/text/epilogue.xhtml"
+      writer: "gfm-raw_html"
+      wrap: "none"
+    provenance:
+      transcription: "Project Gutenberg ebook 5230, produced by Andrew Sly"
+      page_scans: "Google Books volume vdAOAAAAIAAJ"
+    rights:
+      source_text: "Public-domain Wells text; users should verify the law applicable in their jurisdiction. This record is provenance, not legal advice."
+      standard_ebooks_contributions: "Dedicated to the worldwide public domain under CC0 1.0 by Standard Ebooks contributors."

@@ -32,7 +32,7 @@ chapter sequence unless experience later shows that the anthology has
 outgrown the existing story boundary. A possible anthology spine is deferred;
 the stories do not need a shared narrative arc at this stage.
 
-## Canonical Source Anchor
+## Canonical Reference Corpus
 
 The source material will be stored under the story rather than in a global
 library:
@@ -40,24 +40,39 @@ library:
 ```text
 stories/time-expedition/original/
   README.md
-  source.yml
+  sources.yml
   h-g-wells_the-time-machine.epub
+  h-g-wells_the-invisible-man.epub
   text/
     the-time-machine.md
+    the-invisible-man.md
 ```
 
-The compatible EPUB published by Standard Ebooks will be retained unchanged
-as the archival source. The edition homepage is:
+The corpus has two explicitly different kinds of authority:
 
-`https://standardebooks.org/ebooks/h-g-wells/the-time-machine`
+- *The Time Machine* is the sole story-world canon and the primary style
+  anchor. It governs the Time Traveller, fictional continuity, framing
+  architecture, and the voice of his reported account.
+- *The Invisible Man* is a secondary style anchor for Wells's handling of
+  sustained dialogue, social interaction, class register, comic friction,
+  concealment, and crowd response. It does not add characters, events,
+  technology, or world facts to *Time Expedition* continuity.
 
-The compatible EPUB download is:
+Compatible EPUBs published by Standard Ebooks will be retained unchanged. The
+edition homepages are:
 
-`https://standardebooks.org/ebooks/h-g-wells/the-time-machine/downloads/h-g-wells_the-time-machine.epub?source=download`
+- `https://standardebooks.org/ebooks/h-g-wells/the-time-machine`
+- `https://standardebooks.org/ebooks/h-g-wells/the-invisible-man`
 
-`source.yml` will record:
+The effective compatible EPUB downloads are:
+
+- `https://standardebooks.org/ebooks/h-g-wells/the-time-machine/downloads/h-g-wells_the-time-machine.epub?source=download`
+- `https://standardebooks.org/ebooks/h-g-wells/the-invisible-man/downloads/h-g-wells_the-invisible-man.epub?source=download`
+
+`sources.yml` will record for each work:
 
 - work title and author;
+- its authority role in this project;
 - upstream edition homepage and exact download URL;
 - retrieval date;
 - local EPUB filename;
@@ -65,27 +80,29 @@ The compatible EPUB download is:
 - the public-domain and edition-provenance context;
 - the command used to derive the working Markdown.
 
-The checksum pins the exact comparative anchor even if the upstream EPUB is
-later corrected or regenerated. The provenance note will distinguish Wells's
-public-domain text from Standard Ebooks production contributions and will not
-present itself as legal advice.
+The checksums pin the exact comparative corpus even if either upstream EPUB is
+later corrected or regenerated. The provenance notes will distinguish Wells's
+public-domain texts from Standard Ebooks production contributions and will
+not present themselves as legal advice.
 
 Pandoc will derive `original/text/the-time-machine.md` from that exact EPUB.
 The derivation will select the twelve chapter XHTML files and the epilogue in
 spine order, excluding the cover, imprint, colophon, endnotes, and uncopyright
-pages. The Markdown is working material for search, quotation checks,
-structural analysis, and later style study. It is not a replacement authority
-for the retained EPUB. The derived file will preserve chapter headings and
-the full literary prose while omitting ebook-only presentation elements.
+pages. It will similarly derive `original/text/the-invisible-man.md` from that
+book's twenty-eight chapter XHTML files and epilogue. The Markdown files are
+working material for search, quotation checks, structural comparison, and the
+later style study. They are not replacement authorities for the retained
+EPUBs. The derived files will preserve chapter headings and the full literary
+prose while omitting ebook-only presentation elements.
 
 The `original/` subtree is reference material, not story planning or
 manuscript prose. Manuscript statistics will therefore exclude Markdown below
 `original/` so the Wells corpus cannot inflate draft-progress totals.
 
-`original/README.md` will explain the relationship between the archival EPUB,
-derived Markdown, and new anthology material. It will also state that later
-film, television, game, audiobook, and illustrated-edition inventions are not
-canonical sources for this project.
+`original/README.md` will explain the relationship among the archival EPUBs,
+derived Markdown, and new anthology material. It will state the authority
+boundary between the two Wells works and exclude later film, television,
+game, audiobook, and illustrated-edition inventions from project canon.
 
 ## Initial Story Scaffold
 
@@ -100,16 +117,19 @@ scene-cards/01-last-week-of-the-permian/
 ```
 
 The stub summary will explicitly state that the expedition's internal chapter
-structure remains unresolved. The manuscript file will contain only front
-matter, a title, and a drafting note. No narrative prose will be written in
-this pass.
+structure remains unresolved. The manuscript file will contain only an HTML
+drafting note, which the statistics layer does not count as prose; the stub
+supplies the title during document assembly. No narrative prose will be
+written in this pass.
 
 The planning files will record only the decisions already made:
 
 - *Time Expedition* is an anthology of further journeys by Wells's Time
   Traveller;
 - Expedition I is *The Last Week of the Permian*;
-- Wells's novella is the sole canonical literary anchor at this stage;
+- *The Time Machine* is the sole story-world canon and primary voice anchor;
+- *The Invisible Man* is a secondary style anchor for dialogue and social
+  scenes, not a continuity source;
 - meticulous source analysis must precede imitation and drafting;
 - detailed Permian science, hazards, plot turns, reveal structure, and ending
   logic remain for a later planning phase.
@@ -119,11 +139,13 @@ unnamed frame narrator. Other character, clue, location, timeline, and plot
 device registries will remain empty until the detailed design phase.
 
 `style-card.md` and `style-guide.md` will identify the intended Wells pastiche
-and the comparative source, but they will not pretend that the close style
-study has already been performed. The later style phase must examine at least
-the frame narrator, reported first-person tale, diction, syntax, scientific
+and both reference roles, but they will not pretend that the close style study
+has already been performed. The later style phase must examine at least the
+frame narrator, reported first-person tale, diction, syntax, scientific
 exposition, humour, speculative reasoning, descriptive selection, and
-rhetorical habits of the anchored text.
+rhetorical habits of *The Time Machine*. It will use *The Invisible Man* to
+analyse dialogue cadence, social register, interruption, comic friction,
+speech attribution, and conversation-driven scene movement.
 
 ## Collaboration Contract
 
@@ -138,25 +160,26 @@ model integration or review command is required for this pass.
 
 ## Failure Handling
 
-The EPUB download will first land in a temporary local path. It will be moved
-into `original/` only after a successful transfer and ZIP integrity check, so
-an interrupted request cannot masquerade as a valid source.
+Both EPUB downloads will first land in temporary local paths. They will be
+moved into `original/` only after successful transfers and ZIP integrity
+checks, so an interrupted request cannot masquerade as a valid source.
 
-Markdown derivation must fail visibly if Pandoc cannot parse the EPUB. The
+Markdown derivation must fail visibly if Pandoc cannot parse either EPUB. Each
 derived file must be non-empty and contain representative beginning and ending
-text from Wells's work. The recorded checksum must be recomputed from the
-final retained EPUB.
+text from its Wells work. The recorded checksums must be recomputed from the
+final retained EPUBs.
 
 ## Verification
 
 Implementation is complete when all of the following hold:
 
 1. The expected story scaffold and `original/` tree exist.
-2. The retained EPUB passes a ZIP archive integrity check.
-3. Its SHA-256 checksum matches `source.yml`.
-4. Pandoc successfully produces non-empty Markdown with chapter structure.
-5. A manual spot-check confirms that the derived text begins and ends at the
-   correct points in Wells's work and does not include unrelated material.
+2. Both retained EPUBs pass ZIP archive integrity checks.
+3. Their SHA-256 checksums match `sources.yml`.
+4. Pandoc successfully produces both non-empty Markdown files with the
+   expected chapter structures.
+5. Manual spot-checks confirm that each derived text begins and ends at the
+   correct points in its Wells work and does not include unrelated material.
 6. `make check STORY=time-expedition` passes.
 7. Existing repository tests continue to pass.
 

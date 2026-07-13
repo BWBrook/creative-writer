@@ -1,0 +1,11 @@
+human_role: "Supply premises, scientific judgement, taste, and critical calibration for the anthology and its individual expeditions."
+ai_role: "Organise canonical sources and planning artifacts, perform the approved comparative style analysis, and draft or revise prose only after the relevant style and narrative plans are settled."
+authority_mode: direct_edit
+review_mode: git_diff
+lint:
+  em_dash:
+    enabled: true
+    max_per_chapter: 2
+  contrastive_parallelism:
+    enabled: true
+    max_instances_per_chapter: 1

@@ -1,0 +1,10 @@
+title: "Time Expedition"
+slug: "time-expedition"
+kind: "pastiche"
+status: "planning"
+language: "en-AU"
+target_outputs:
+  - epub
+  - pdf
+chapters:
+  - chapter-stubs/01-last-week-of-the-permian.md

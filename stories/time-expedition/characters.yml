@@ -1,0 +1,9 @@
+characters:
+  - id: time-traveller
+    name: "The Time Traveller"
+    role: "Inventor of the Time Machine and principal witness of the expeditions."
+    motivation: "To investigate time directly and test speculative reasoning against observation."
+  - id: frame-narrator
+    name: "The unnamed frame narrator"
+    role: "Member of the Time Traveller's circle who records and mediates his account."
+    motivation: "To preserve the account while retaining a thoughtful measure of uncertainty."

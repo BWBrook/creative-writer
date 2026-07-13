@@ -52,3 +52,26 @@ def test_generate_story_statistics_falls_back_when_story_yml_is_invalid(
     assert result.story_title == "Fallback Story"
     assert result.chapter_count >= 1
     assert any("Invalid YAML" in note for note in result.notes)
+
+
+def test_generate_story_statistics_excludes_original_reference_markdown(
+    tmp_path: Path,
+) -> None:
+    story_dir = create_story(tmp_path, "source-backed-story", "pastiche")
+    baseline = generate_story_statistics(tmp_path, "source-backed-story")
+
+    original_text_dir = story_dir / "original" / "text"
+    original_text_dir.mkdir(parents=True)
+    (story_dir / "original" / "README.md").write_text(
+        "# Comparative source\n\nReference metadata only.\n",
+        encoding="utf-8",
+    )
+    (original_text_dir / "source-novel.md").write_text(
+        "This source corpus must not count as story planning prose.\n" * 100,
+        encoding="utf-8",
+    )
+
+    result = generate_story_statistics(tmp_path, "source-backed-story")
+
+    assert result.supporting_markdown_words == baseline.supporting_markdown_words
+    assert result.total_story_markdown_words == baseline.total_story_markdown_words

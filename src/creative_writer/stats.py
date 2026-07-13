@@ -124,7 +124,7 @@ def _supporting_markdown_categories(story_dir: Path) -> list[CategoryStatistics]
 
     for path in sorted(story_dir.rglob("*.md")):
         relative = path.relative_to(story_dir)
-        if relative.parts[0] == "manuscript":
+        if relative.parts[0] in {"manuscript", "original"}:
             continue
         if relative == Path("outline.md"):
             buckets["Outline"].append(path)

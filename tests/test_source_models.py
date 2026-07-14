@@ -37,6 +37,10 @@ sources:
       download_url: https://standardebooks.org/ebooks/h-g-wells/the-time-machine/downloads/h-g-wells_the-time-machine.epub?source=download
       artifact_format: standard-ebooks-compatible-epub
       planned_path: original/h-g-wells_the-time-machine.epub
+      public_domain_context: Public-domain Wells text in a Standard Ebooks edition.
+      textual_limitations: The edition is a modern transcription, not a first-edition facsimile.
+      editorial_normalisation: Standard Ebooks house style may regularise presentation.
+      variant_concerns: Serial and book witnesses may differ and require later comparison.
     selections: []
 """
 
@@ -49,6 +53,34 @@ def test_source_study_admission_parses_valid_yaml(tmp_path: Path) -> None:
 
     assert admission.composition_window.start == 1897
     assert admission.sources[0].authority.style_authority == "primary"
+    assert admission.sources[0].edition.public_domain_context.startswith(
+        "Public-domain Wells text"
+    )
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "public_domain_context",
+        "textual_limitations",
+        "editorial_normalisation",
+        "variant_concerns",
+    ],
+)
+def test_source_study_admission_requires_each_edition_risk_field(
+    tmp_path: Path,
+    field: str,
+) -> None:
+    path = tmp_path / "admission.yml"
+    lines = [
+        line
+        for line in VALID_ADMISSION.splitlines()
+        if not line.startswith(f"      {field}:")
+    ]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    with pytest.raises(CreativeWriterError, match=field):
+        load_yaml_model(path, SourceStudyAdmission)
 
 
 def test_source_study_admission_rejects_duplicate_ids(tmp_path: Path) -> None:

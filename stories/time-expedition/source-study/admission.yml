@@ -17,6 +17,10 @@ sources:
       download_url: "https://standardebooks.org/ebooks/h-g-wells/the-time-machine/downloads/h-g-wells_the-time-machine.epub?source=download"
       artifact_format: standard-ebooks-compatible-epub
       planned_path: "original/h-g-wells_the-time-machine.epub"
+      public_domain_context: "The 1895 Wells text is treated as public-domain source material; Standard Ebooks edition contributions are released under CC0, with jurisdiction checks left to users."
+      textual_limitations: "This retained EPUB is a modern Standard Ebooks transcription derived from Project Gutenberg and page scans, not a diplomatic facsimile of the 1895 Heinemann edition."
+      editorial_normalisation: "Standard Ebooks typography, spelling decisions, and EPUB structure may regularise features of the source witnesses; the derived Markdown also removes packaging matter."
+      variant_concerns: "The New Review serial, British book, and US book witnesses are not assumed identical; claims sensitive to wording or paragraphing require later witness comparison."
     selections: []
 
   - id: the-invisible-man
@@ -33,6 +37,10 @@ sources:
       download_url: "https://standardebooks.org/ebooks/h-g-wells/the-invisible-man/downloads/h-g-wells_the-invisible-man.epub?source=download"
       artifact_format: standard-ebooks-compatible-epub
       planned_path: "original/h-g-wells_the-invisible-man.epub"
+      public_domain_context: "The 1897 Wells text is treated as public-domain source material; Standard Ebooks edition contributions are released under CC0, with jurisdiction checks left to users."
+      textual_limitations: "This retained EPUB is a modern Standard Ebooks transcription derived from Project Gutenberg and Google Books scans, not a diplomatic facsimile of the first book edition."
+      editorial_normalisation: "Standard Ebooks typography and house-style decisions may regularise punctuation, spelling, and presentation; the derived Markdown removes packaging matter."
+      variant_concerns: "Pearson's Weekly serial and book witnesses may differ in wording, paragraphing, and chapter presentation and must be distinguished in variant-sensitive claims."
     selections: []
 
   - id: the-island-of-doctor-moreau
@@ -49,6 +57,10 @@ sources:
       download_url: "https://standardebooks.org/ebooks/h-g-wells/the-island-of-doctor-moreau/downloads/h-g-wells_the-island-of-doctor-moreau.epub?source=download"
       artifact_format: standard-ebooks-compatible-epub
       planned_path: "original/h-g-wells_the-island-of-doctor-moreau.epub"
+      public_domain_context: "The 1896 Wells text is treated as public-domain source material; Standard Ebooks edition contributions are released under CC0, with jurisdiction checks left to users."
+      textual_limitations: "This retained EPUB is a modern Standard Ebooks transcription based on Project Gutenberg ebook 159 and an Internet Archive scan, not a diplomatic first-edition facsimile."
+      editorial_normalisation: "Standard Ebooks typography and house style may regularise presentation; EPUB-to-Markdown derivation preserves chapter text while removing edition packaging."
+      variant_concerns: "British and US first editions and later reprints may contain wording or punctuation variants; no single retained transcription settles variant-sensitive claims."
     selections: []
 
   - id: the-war-of-the-worlds
@@ -65,6 +77,10 @@ sources:
       download_url: "https://standardebooks.org/ebooks/h-g-wells/the-war-of-the-worlds/downloads/h-g-wells_the-war-of-the-worlds.epub?source=download"
       artifact_format: standard-ebooks-compatible-epub
       planned_path: "original/h-g-wells_the-war-of-the-worlds.epub"
+      public_domain_context: "The 1898 Wells book text is treated as public-domain source material; Standard Ebooks edition contributions are released under CC0, with jurisdiction checks left to users."
+      textual_limitations: "This retained EPUB is a modern Standard Ebooks transcription based on Project Gutenberg ebook 36 and a HathiTrust scan, not a diplomatic facsimile of the first book edition."
+      editorial_normalisation: "Standard Ebooks typography and house style may regularise presentation; the derived Markdown preserves the two-book structure but removes packaging matter."
+      variant_concerns: "The Pearson's Magazine and Cosmopolitan serials and the 1898 book witnesses may differ; serial-specific wording or structure cannot be inferred from this EPUB alone."
     selections: []
 
   - id: selected-short-fiction
@@ -81,6 +97,10 @@ sources:
       download_url: "https://standardebooks.org/ebooks/h-g-wells/short-fiction/downloads/h-g-wells_short-fiction.epub?source=download"
       artifact_format: standard-ebooks-compatible-epub
       planned_path: "original/h-g-wells_short-fiction.epub"
+      public_domain_context: "The four selected 1896-1897 Wells stories are treated as public-domain source material; Standard Ebooks edition contributions are released under CC0, with jurisdiction checks left to users."
+      textual_limitations: "The proposed EPUB is a larger multi-work collection; only the four named selections are admissible, and all other stories and packaging must be excluded during derivation."
+      editorial_normalisation: "Standard Ebooks collection typography and house style may normalise story presentation and headings relative to original periodical appearances."
+      variant_concerns: "Original magazine appearances and later collection texts may differ; each selected story needs witness-level checking before variant-sensitive evidence is admitted."
     selections:
       - id: the-plattner-story
         title: "The Plattner Story"
@@ -113,6 +133,10 @@ sources:
       download_url: "https://www.gutenberg.org/ebooks/17508.epub.noimages"
       artifact_format: project-gutenberg-epub
       planned_path: "original/h-g-wells_certain-personal-matters.epub"
+      public_domain_context: "Wells's period essays are treated as public-domain source material in the proposed Project Gutenberg edition, subject to jurisdiction-specific checks."
+      textual_limitations: "The proposed EPUB is a Project Gutenberg transcription rather than a scan-backed diplomatic edition; source-witness and paragraph-boundary checks remain necessary after approval."
+      editorial_normalisation: "Project Gutenberg encoding and EPUB conversion may regularise typography, spacing, headings, and punctuation presentation."
+      variant_concerns: "Collection contents, essay titles, and wording may vary among early editions and reprints; the retained edition must be identified before claims use exact phrasing."
     selections: []
 
   - id: text-book-of-biology-part-1
@@ -129,6 +153,10 @@ sources:
       download_url: "https://www.gutenberg.org/ebooks/21781.epub.noimages"
       artifact_format: project-gutenberg-epub
       planned_path: "original/h-g-wells_text-book-of-biology-part-1.epub"
+      public_domain_context: "Wells's 1893 biology textbook is treated as public-domain source material in the proposed Project Gutenberg edition, subject to jurisdiction-specific checks."
+      textual_limitations: "EPUB conversion may flatten diagrams, labelled figures, lists, and other instructional structures, so prose analysis must exclude conversion artefacts and inspect figures separately."
+      editorial_normalisation: "Project Gutenberg encoding may regularise scientific typography, italics, symbols, headings, and spacing relative to the printed textbook."
+      variant_concerns: "Later impressions may revise nomenclature, examples, or figure references; the proposed transcription must be tied to a specific printed witness before historical vocabulary claims."
     selections: []
 
   - id: the-british-barbarians
@@ -145,6 +173,10 @@ sources:
       download_url: "https://www.gutenberg.org/ebooks/4340.epub.images"
       artifact_format: project-gutenberg-epub
       planned_path: "original/grant-allen_the-british-barbarians.epub"
+      public_domain_context: "Allen's 1895 novel is treated as public-domain source material in the proposed Project Gutenberg edition, subject to jurisdiction-specific checks."
+      textual_limitations: "The proposed Project Gutenberg transcription is not a diplomatic first-edition facsimile and may not preserve original typography or page-level evidence."
+      editorial_normalisation: "Project Gutenberg encoding and EPUB conversion may regularise quotation marks, dashes, italics, spacing, and chapter presentation."
+      variant_concerns: "Early editions and later reprints may differ; any apparent contrast with Wells that depends on exact punctuation or wording requires witness comparison."
     selections: []
 
   - id: a-desert-drama
@@ -161,6 +193,10 @@ sources:
       download_url: "https://www.gutenberg.org/ebooks/21768.epub.noimages"
       artifact_format: project-gutenberg-epub
       planned_path: "original/arthur-conan-doyle_a-desert-drama.epub"
+      public_domain_context: "Doyle's 1898 work is treated as public-domain source material in the proposed Project Gutenberg edition, subject to jurisdiction-specific checks."
+      textual_limitations: "The proposed Project Gutenberg transcription is not a diplomatic first-edition facsimile and may not preserve page layout, chapter display, or dialogue typography."
+      editorial_normalisation: "Project Gutenberg encoding and EPUB conversion may regularise punctuation, italics, spacing, and chapter headings."
+      variant_concerns: "The work circulated under A Desert Drama and The Tragedy of the Korosko; title-state and edition differences must be resolved before exact textual contrasts."
     selections: []
 
   - id: the-days-work
@@ -177,6 +213,10 @@ sources:
       download_url: "https://www.gutenberg.org/ebooks/2569.epub.images"
       artifact_format: project-gutenberg-epub
       planned_path: "original/rudyard-kipling_the-days-work.epub"
+      public_domain_context: "Kipling's 1898 collection is treated as public-domain source material in the proposed Project Gutenberg edition, subject to jurisdiction-specific checks."
+      textual_limitations: "The proposed EPUB is a multi-story collection whose dialect, technical vocabulary, italics, and story boundaries may be vulnerable to transcription or conversion artefacts."
+      editorial_normalisation: "Project Gutenberg encoding may regularise dialect typography, punctuation, spacing, headings, and emphasis relative to magazine and first-book witnesses."
+      variant_concerns: "Individual stories appeared in periodicals before collection; magazine and book texts may differ, so work-level and story-level witnesses must not be conflated."
     selections: []
 
   - id: the-beetle
@@ -193,4 +233,8 @@ sources:
       download_url: "https://www.gutenberg.org/ebooks/5164.epub.noimages"
       artifact_format: project-gutenberg-epub
       planned_path: "original/richard-marsh_the-beetle.epub"
+      public_domain_context: "Marsh's 1897 novel is treated as public-domain source material in the proposed Project Gutenberg edition, subject to jurisdiction-specific checks."
+      textual_limitations: "The proposed Project Gutenberg transcription is not a diplomatic first-edition facsimile and may not preserve narrator labels, chapter display, italics, or page-level evidence exactly."
+      editorial_normalisation: "Project Gutenberg encoding and EPUB conversion may regularise punctuation, emphasis, spacing, and the presentation of the novel's multiple narrative parts."
+      variant_concerns: "Early editions and later reprints may differ in title presentation, wording, and punctuation; narrator-specific claims require checks against the identified witness."
     selections: []

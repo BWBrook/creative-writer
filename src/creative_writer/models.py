@@ -149,6 +149,10 @@ class PlannedSourceEdition(BaseModel):
         "project-gutenberg-epub",
     ]
     planned_path: NonEmptyStr
+    public_domain_context: NonEmptyStr
+    textual_limitations: NonEmptyStr
+    editorial_normalisation: NonEmptyStr
+    variant_concerns: NonEmptyStr
 
     @field_validator("planned_path")
     @classmethod

@@ -17,6 +17,7 @@ def _write_minimal_epub(
     mimetype: str = "application/epub+zip",
     container: str | None = None,
     package_path: str | None = "EPUB/package.opf",
+    members: dict[str, str] | None = None,
 ) -> None:
     if container is None and package_path is not None:
         container = f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -45,6 +46,8 @@ def _write_minimal_epub(
 </package>
 """,
             )
+        for member, content in (members or {}).items():
+            archive.writestr(member, content)
 
 
 def _write_fixture(root: Path) -> Path:
@@ -206,6 +209,113 @@ sources:
     return story
 
 
+def _write_yaml(path: Path, data: object) -> None:
+    path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+
+def _make_witness_omnibus(story: Path) -> None:
+    epub = story / "original" / "witness.epub"
+    _write_minimal_epub(
+        epub,
+        members={"epub/text/the-star.xhtml": "<html><body><p>Star source.</p></body></html>"},
+    )
+    markdown = story / "original" / "text" / "selected-short-fiction" / "the-star.md"
+    markdown.parent.mkdir(parents=True)
+    markdown.write_text("The selected star witness.\n", encoding="utf-8")
+
+    admission_path = story / "source-study" / "admission.yml"
+    admission = yaml.safe_load(admission_path.read_text(encoding="utf-8"))
+    planned = next(item for item in admission["sources"] if item["id"] == "witness")
+    planned["selections"] = [
+        {
+            "id": "the-star",
+            "title": "The Star",
+            "first_published": 1897,
+            "analytical_roles": ["catastrophe"],
+        }
+    ]
+    _write_yaml(admission_path, admission)
+
+    registry_path = story / "original" / "sources.yml"
+    registry = yaml.safe_load(registry_path.read_text(encoding="utf-8"))
+    retained = next(item for item in registry["sources"] if item["id"] == "witness")
+    retained["files"] = {
+        "epub": "witness.epub",
+        "epub_sha256": hashlib.sha256(epub.read_bytes()).hexdigest(),
+    }
+    retained["selections"] = [
+        {
+            "id": "the-star",
+            "title": "The Star",
+            "first_published": 1897,
+            "input": "epub/text/the-star.xhtml",
+            "markdown": "text/selected-short-fiction/the-star.md",
+            "markdown_sha256": hashlib.sha256(markdown.read_bytes()).hexdigest(),
+        }
+    ]
+    _write_yaml(registry_path, registry)
+
+
+def _mutate_omnibus_fixture(story: Path, mutation: str) -> None:
+    admission_path = story / "source-study" / "admission.yml"
+    registry_path = story / "original" / "sources.yml"
+    admission = yaml.safe_load(admission_path.read_text(encoding="utf-8"))
+    registry = yaml.safe_load(registry_path.read_text(encoding="utf-8"))
+    planned = next(item for item in admission["sources"] if item["id"] == "witness")
+    retained = next(item for item in registry["sources"] if item["id"] == "witness")
+    selection = retained["selections"][0]
+    epub = story / "original" / "witness.epub"
+    markdown = story / "original" / selection["markdown"]
+
+    if mutation == "missing-retained-selection":
+        full_markdown = story / "original" / "text" / "witness.md"
+        retained["files"]["markdown"] = "text/witness.md"
+        retained["files"]["markdown_sha256"] = hashlib.sha256(
+            full_markdown.read_bytes()
+        ).hexdigest()
+        retained["selections"] = []
+    elif mutation == "extra-retained-selection":
+        second_markdown = markdown.parent / "second-story.md"
+        second_markdown.write_text("Second selected witness.\n", encoding="utf-8")
+        _write_minimal_epub(
+            epub,
+            members={
+                "epub/text/the-star.xhtml": "<html><body><p>Star source.</p></body></html>",
+                "epub/text/second-story.xhtml": "<html><body><p>Second source.</p></body></html>",
+            },
+        )
+        retained["files"]["epub_sha256"] = hashlib.sha256(epub.read_bytes()).hexdigest()
+        retained["selections"].append(
+            {
+                "id": "second-story",
+                "title": "Second Story",
+                "first_published": 1898,
+                "input": "epub/text/second-story.xhtml",
+                "markdown": "text/selected-short-fiction/second-story.md",
+                "markdown_sha256": hashlib.sha256(second_markdown.read_bytes()).hexdigest(),
+            }
+        )
+    elif mutation == "changed-title":
+        selection["title"] = "Changed Title"
+    elif mutation == "changed-year":
+        selection["first_published"] = 1898
+    elif mutation == "missing-input-member":
+        _write_minimal_epub(epub)
+        retained["files"]["epub_sha256"] = hashlib.sha256(epub.read_bytes()).hexdigest()
+    elif mutation == "missing-markdown":
+        markdown.unlink()
+    elif mutation == "bad-markdown-hash":
+        selection["markdown_sha256"] = "0" * 64
+    elif mutation == "packaging-link":
+        markdown.write_text("Text.[1](endnotes.xhtml#note-1)\n", encoding="utf-8")
+        selection["markdown_sha256"] = hashlib.sha256(markdown.read_bytes()).hexdigest()
+    else:
+        raise AssertionError(f"Unknown mutation: {mutation}")
+
+    _write_yaml(admission_path, admission)
+    _write_yaml(registry_path, registry)
+
+
 def _update_retained_source(
     story: Path,
     source_id: str,
@@ -244,6 +354,7 @@ def test_source_admission_writes_passing_report(tmp_path: Path) -> None:
     assert "- Permitted uses:\n  - continuity" in report
     assert "- Prohibited uses:\n  - none" in report
     assert "#### Retained source" in report
+    assert "- Derived Markdown SHA-256: `" in report
     assert "- Derivation tool: Pandoc 3.10" in report
     assert "- Provenance transcription: Test" in report
     assert "- Rights source text: Public domain test." in report
@@ -418,7 +529,64 @@ def test_source_admission_blocks_proposed_artifact(tmp_path: Path) -> None:
     result = check_source_admission(tmp_path, "source-test")
 
     assert not result.ok
-    assert any("exists before corpus approval" in issue for issue in result.errors)
+    assert any("artifact exists before corpus admission" in issue for issue in result.errors)
+
+
+def test_source_admission_accepts_and_reports_selected_witness(tmp_path: Path) -> None:
+    story = _write_fixture(tmp_path)
+    _make_witness_omnibus(story)
+    result = check_source_admission(tmp_path, "source-test")
+    assert result.ok
+    report = result.report_path.read_text(encoding="utf-8")
+    assert "- Derived Markdown path: `original/text/selected-short-fiction/the-star.md`" in report
+    assert "- Derived Markdown SHA-256: `" in report
+    assert "- Derivation input: `epub/text/the-star.xhtml`" in report
+
+
+@pytest.mark.parametrize(
+    ("mutation", "expected"),
+    [
+        ("missing-retained-selection", "selection parity differs"),
+        ("extra-retained-selection", "selection parity differs"),
+        ("changed-title", "selection parity differs"),
+        ("changed-year", "selection parity differs"),
+        ("missing-input-member", "selection input member is missing"),
+        ("missing-markdown", "Missing or empty derived Markdown"),
+        ("bad-markdown-hash", "Markdown SHA-256 mismatch"),
+        ("packaging-link", "excluded packaging link"),
+    ],
+)
+def test_source_admission_blocks_invalid_selected_witness(
+    tmp_path: Path, mutation: str, expected: str
+) -> None:
+    story = _write_fixture(tmp_path)
+    _make_witness_omnibus(story)
+    _mutate_omnibus_fixture(story, mutation)
+    result = check_source_admission(tmp_path, "source-test")
+    assert not result.ok
+    assert any(expected in issue for issue in result.errors)
+
+
+def test_source_admission_blocks_full_work_markdown_hash_mismatch(tmp_path: Path) -> None:
+    story = _write_fixture(tmp_path)
+    (story / "original" / "text" / "canonical.md").write_text("Changed.\n", encoding="utf-8")
+    result = check_source_admission(tmp_path, "source-test")
+    assert not result.ok
+    assert any("Markdown SHA-256 mismatch" in issue for issue in result.errors)
+
+
+def test_source_admission_blocks_excluded_artifact(tmp_path: Path) -> None:
+    story = _write_fixture(tmp_path)
+    admission_path = story / "source-study" / "admission.yml"
+    admission = yaml.safe_load(admission_path.read_text(encoding="utf-8"))
+    control = next(item for item in admission["sources"] if item["id"] == "control")
+    control["status"] = "excluded"
+    control["authority"] = {"tier": 5, "story_world_canon": False, "style_authority": "none"}
+    admission_path.write_text(yaml.safe_dump(admission, sort_keys=False), encoding="utf-8")
+    (story / "original" / "control.epub").write_bytes(b"must remain absent")
+    result = check_source_admission(tmp_path, "source-test")
+    assert not result.ok
+    assert any("excluded source" in issue for issue in result.errors)
 
 
 def test_source_admission_blocks_dangling_packaging_link(tmp_path: Path) -> None:

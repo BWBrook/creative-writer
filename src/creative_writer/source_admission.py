@@ -102,6 +102,39 @@ def _epub_integrity_error(path: Path) -> str | None:
     return None
 
 
+def _archive_members(path: Path) -> set[str]:
+    with zipfile.ZipFile(path) as archive:
+        return set(archive.namelist())
+
+
+def _append_markdown_errors(
+    *, source_id: str, markdown_path: Path, expected_sha256: str, errors: list[str]
+) -> None:
+    if not markdown_path.is_file():
+        errors.append(f"Missing or empty derived Markdown for `{source_id}`: {markdown_path}")
+        return
+    try:
+        markdown = markdown_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as exc:
+        errors.append(f"Unable to read derived Markdown for `{source_id}`: {exc}")
+    else:
+        if not markdown.strip():
+            errors.append(
+                f"Missing or empty derived Markdown for `{source_id}`: {markdown_path}"
+            )
+        elif EXCLUDED_PACKAGING_LINK_PATTERN.search(markdown):
+            errors.append(
+                f"Derived Markdown for `{source_id}` contains an excluded packaging link."
+            )
+    try:
+        digest = _sha256(markdown_path)
+    except OSError as exc:
+        errors.append(f"Unable to hash derived Markdown for `{source_id}`: {exc}")
+    else:
+        if digest != expected_sha256:
+            errors.append(f"Markdown SHA-256 mismatch for `{source_id}`: {markdown_path}")
+
+
 def _append_parity_errors(
     source: SourceAdmissionRecord,
     retained: RetainedSourceRecord,
@@ -145,6 +178,17 @@ def _append_parity_errors(
                 f"`{source.id}` {label} differs between admission.yml and "
                 "original/sources.yml."
             )
+    planned_selections = [
+        (item.id, item.title, item.first_published) for item in source.selections
+    ]
+    retained_selections = [
+        (item.id, item.title, item.first_published) for item in retained.selections
+    ]
+    if planned_selections != retained_selections:
+        errors.append(
+            f"`{source.id}` selection parity differs between admission.yml and "
+            "original/sources.yml."
+        )
 
 
 def _append_report_list(lines: list[str], label: str, values: list[str]) -> None:
@@ -208,6 +252,11 @@ def _render_report(
                 "- Tier 4 restriction: **Negative evidence only; never positive "
                 "style or continuity authority.**"
             )
+        if source.authority.tier == 5:
+            lines.append(
+                "- Tier 5 restriction: **Excluded influence only; no retained "
+                "artifact or positive authority.**"
+            )
         _append_report_list(lines, "Analytical roles", source.analytical_roles)
         _append_report_list(lines, "Permitted uses", source.permitted_uses)
         _append_report_list(lines, "Prohibited uses", source.prohibited_uses)
@@ -235,6 +284,8 @@ def _render_report(
             lines.append("- Selected subworks: None.")
 
         retained_source = retained.get(source.id)
+        if source.status == "excluded" and retained_source is None:
+            lines.append("- Retained artifact: Intentionally absent.")
         if retained_source is not None:
             lines.extend(
                 [
@@ -243,7 +294,31 @@ def _render_report(
                     "",
                     f"- EPUB path: `original/{retained_source.files.epub}`",
                     f"- EPUB SHA-256: `{retained_source.files.epub_sha256}`",
-                    f"- Derived Markdown path: `original/{retained_source.files.markdown}`",
+                ]
+            )
+            if retained_source.files.markdown is not None:
+                lines.extend(
+                    [
+                        f"- Derived Markdown path: `original/{retained_source.files.markdown}`",
+                        "- Derived Markdown SHA-256: "
+                        f"`{retained_source.files.markdown_sha256}`",
+                    ]
+                )
+            else:
+                lines.append("- Retained selections:")
+                for selection in retained_source.selections:
+                    lines.extend(
+                        [
+                            f"  - **{selection.title}** ({selection.first_published})",
+                            f"    - Derivation input: `{selection.input}`",
+                            "    - Derived Markdown path: "
+                            f"`original/{selection.markdown}`",
+                            "    - Derived Markdown SHA-256: "
+                            f"`{selection.markdown_sha256}`",
+                        ]
+                    )
+            lines.extend(
+                [
                     f"- Retrieved: {retained_source.retrieved}",
                     f"- Derivation tool: {retained_source.derivation.tool}",
                     f"- Derivation input: {retained_source.derivation.input}",
@@ -300,11 +375,17 @@ def check_source_admission(root: Path, slug: str) -> SourceAdmissionResult:
         except CreativeWriterError as exc:
             result.errors.append(str(exc))
             continue
-        if source.status == "proposed" and planned_path.exists():
-            result.errors.append(
-                f"`{source.id}` artifact exists before corpus approval: {planned_path}"
-            )
         if source.status != "admitted":
+            if planned_path.exists():
+                if source.status == "excluded":
+                    result.errors.append(
+                        f"Artifact exists for excluded source `{source.id}`: {planned_path}"
+                    )
+                else:
+                    result.errors.append(
+                        f"`{source.id}` artifact exists before corpus admission: "
+                        f"{planned_path}"
+                    )
             continue
 
         retained_source = retained.get(source.id)
@@ -315,7 +396,6 @@ def check_source_admission(root: Path, slug: str) -> SourceAdmissionResult:
 
         try:
             epub_path = _story_path(story_dir / "original", retained_source.files.epub)
-            markdown_path = _story_path(story_dir / "original", retained_source.files.markdown)
         except CreativeWriterError as exc:
             result.errors.append(str(exc))
             continue
@@ -323,6 +403,7 @@ def check_source_admission(root: Path, slug: str) -> SourceAdmissionResult:
             result.errors.append(
                 f"Retained EPUB path for `{source.id}` does not match the admission plan."
             )
+        integrity_error: str | None = None
         if not epub_path.exists():
             result.errors.append(f"Missing retained EPUB for `{source.id}`: {epub_path}")
         else:
@@ -341,22 +422,47 @@ def check_source_admission(root: Path, slug: str) -> SourceAdmissionResult:
                 else:
                     if digest != retained_source.files.epub_sha256:
                         result.errors.append(f"SHA-256 mismatch for `{source.id}`: {epub_path}")
-        if not markdown_path.exists():
-            result.errors.append(f"Missing or empty derived Markdown for `{source.id}`: {markdown_path}")
-        else:
+        if retained_source.files.markdown is not None:
+            assert retained_source.files.markdown_sha256 is not None
             try:
-                markdown = markdown_path.read_text(encoding="utf-8")
-            except (OSError, UnicodeError) as exc:
-                result.errors.append(
-                    f"Unable to read derived Markdown for `{source.id}`: {exc}"
+                markdown_path = _story_path(
+                    story_dir / "original", retained_source.files.markdown
                 )
+            except CreativeWriterError as exc:
+                result.errors.append(str(exc))
             else:
-                if not markdown.strip():
-                    result.errors.append(f"Missing or empty derived Markdown for `{source.id}`: {markdown_path}")
-                elif EXCLUDED_PACKAGING_LINK_PATTERN.search(markdown):
+                _append_markdown_errors(
+                    source_id=source.id,
+                    markdown_path=markdown_path,
+                    expected_sha256=retained_source.files.markdown_sha256,
+                    errors=result.errors,
+                )
+        else:
+            members = (
+                _archive_members(epub_path)
+                if epub_path.is_file() and not integrity_error
+                else set()
+            )
+            for selection in retained_source.selections:
+                selection_id = f"{source.id}/{selection.id}"
+                if selection.input not in members:
                     result.errors.append(
-                        f"Derived Markdown for `{source.id}` contains an excluded packaging link."
+                        "Retained selection input member is missing from EPUB for "
+                        f"`{selection_id}`: {selection.input}"
                     )
+                try:
+                    markdown_path = _story_path(
+                        story_dir / "original", selection.markdown
+                    )
+                except CreativeWriterError as exc:
+                    result.errors.append(str(exc))
+                    continue
+                _append_markdown_errors(
+                    source_id=selection_id,
+                    markdown_path=markdown_path,
+                    expected_sha256=selection.markdown_sha256,
+                    errors=result.errors,
+                )
 
     extra_retained = sorted(set(retained) - admitted_ids)
     for source_id in extra_retained:

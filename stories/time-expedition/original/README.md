@@ -36,7 +36,7 @@ Where the books differ, *The Time Machine* governs the new expeditions.
 - `text/the-time-machine.md`: chapters I-XII and epilogue in source order.
 - `text/the-invisible-man.md`: chapters I-XXVIII and epilogue in source order.
 - `text/the-island-of-doctor-moreau.md`: chapters I-XXII in source order.
-- `text/the-war-of-the-worlds.md`: Books I-II and chapters I-XVII in source order.
+- `text/the-war-of-the-worlds.md`: Book I chapters I-XVII and Book II chapters I-X in source order.
 
 The EPUBs are the archival authorities for this checkout. The Markdown exists
 for search, structural comparison, quotation checks, and the later Wells style
@@ -98,7 +98,7 @@ pandoc "${war_book_one[@]}" "${war_book_two[@]}" \
   --output=stories/time-expedition/original/text/the-war-of-the-worlds.md
 ```
 
-Both extractions deliberately exclude covers, imprints, colophons,
+All four extractions deliberately exclude covers, imprints, colophons,
 uncopyright pages, and other ebook packaging. The tracked Pandoc filter also
 removes any links into excluded apparatus files so the derived literary text
 has no dangling packaging links. See `sources.yml` for pinned fingerprints and

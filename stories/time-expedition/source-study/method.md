@@ -10,7 +10,7 @@ The five-tier hierarchy in the approved design governs every claim. *The Time Ma
 
 ## Admission rule
 
-Only records marked `admitted` may be analysed. `approved` identifies the two fixed Wells additions awaiting reproducible retention. `proposed` records remain absent from `original/` until human review.
+Only records marked `admitted` may be analysed. `approved` is the generic status for a source approved for corpus retention but not yet retained and admitted; no approved sources currently await retention. `proposed` records remain absent from `original/` until human review.
 
 ## Later analytical method
 

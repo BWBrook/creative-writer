@@ -92,6 +92,221 @@ class ContractConfig(BaseModel):
     lint: LintSettings = Field(default_factory=LintSettings)
 
 
+class CompositionWindow(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    start: int = Field(ge=1800, le=2100)
+    end: int = Field(ge=1800, le=2100)
+
+    @model_validator(mode="after")
+    def validate_order(self) -> "CompositionWindow":
+        if self.end < self.start:
+            raise ValueError("composition window end must not precede start")
+        return self
+
+
+class SourceAuthority(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    tier: Literal[1, 2, 3, 4, 5]
+    story_world_canon: bool
+    style_authority: Literal["primary", "secondary", "bounded", "control", "none"]
+
+    @model_validator(mode="after")
+    def validate_tier(self) -> "SourceAuthority":
+        if self.tier == 1:
+            if not self.story_world_canon or self.style_authority != "primary":
+                raise ValueError("Tier 1 must be canonical and use primary style authority")
+        elif self.story_world_canon:
+            raise ValueError("only Tier 1 may provide story-world canon")
+        if self.tier == 2 and self.style_authority not in {"secondary", "bounded"}:
+            raise ValueError("Tier 2 sources must use secondary or bounded style authority")
+        if self.tier == 3 and self.style_authority != "bounded":
+            raise ValueError("Tier 3 sources must use bounded style authority")
+        if self.tier == 4 and self.style_authority != "control":
+            raise ValueError("Tier 4 sources must use control style authority")
+        if self.tier == 5 and self.style_authority != "none":
+            raise ValueError("Tier 5 sources must use no style authority")
+        return self
+
+
+class SourceWork(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: NonEmptyStr
+    author: NonEmptyStr
+    first_published: int | None = Field(default=None, ge=1800, le=2100)
+
+
+class PlannedSourceEdition(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    publisher: NonEmptyStr
+    homepage: NonEmptyStr
+    download_url: NonEmptyStr
+    artifact_format: Literal[
+        "standard-ebooks-compatible-epub",
+        "project-gutenberg-epub",
+    ]
+    planned_path: NonEmptyStr
+
+    @field_validator("planned_path")
+    @classmethod
+    def validate_planned_path(cls, value: str) -> str:
+        if not value.startswith("original/") or not value.endswith(".epub"):
+            raise ValueError("planned_path must be an EPUB below original/")
+        return value
+
+
+class SourceSelection(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: Slug
+    title: NonEmptyStr
+    first_published: int = Field(ge=1800, le=2100)
+    analytical_roles: list[NonEmptyStr] = Field(min_length=1)
+
+
+class SourceAdmissionRecord(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: Slug
+    status: Literal["admitted", "approved", "proposed", "excluded"]
+    authority: SourceAuthority
+    work: SourceWork
+    analytical_roles: list[NonEmptyStr] = Field(min_length=1)
+    permitted_uses: list[NonEmptyStr] = Field(min_length=1)
+    prohibited_uses: list[NonEmptyStr] = Field(min_length=1)
+    rationale: NonEmptyStr
+    edition: PlannedSourceEdition
+    selections: list[SourceSelection] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_status(self) -> "SourceAdmissionRecord":
+        if self.status == "excluded" and self.authority.tier != 5:
+            raise ValueError("excluded sources must use Tier 5")
+        if self.status != "excluded" and self.authority.tier == 5:
+            raise ValueError("Tier 5 sources must be excluded")
+        return self
+
+
+class SourceStudyAdmission(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    composition_window: CompositionWindow
+    editorial_mode: Literal["restrained_apparatus"]
+    sources: list[SourceAdmissionRecord] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_sources(self) -> "SourceStudyAdmission":
+        ids = [item.id for item in self.sources]
+        if len(ids) != len(set(ids)):
+            raise ValueError("source IDs must be unique")
+        tier_one = [item for item in self.sources if item.authority.tier == 1]
+        if len(tier_one) != 1:
+            raise ValueError("admission must contain exactly one Tier 1 source")
+        return self
+
+
+class RetainedSourceRole(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    tier: Literal[1, 2, 3, 4]
+    story_world_canon: bool
+    style_authority: Literal["primary", "secondary", "bounded", "control"]
+    primary_style_anchor: bool
+    secondary_style_anchor: bool
+    focus: NonEmptyStr
+    analytical_roles: list[NonEmptyStr] = Field(min_length=1)
+    permitted_uses: list[NonEmptyStr] = Field(min_length=1)
+    prohibited_uses: list[NonEmptyStr] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_flags(self) -> "RetainedSourceRole":
+        authority = SourceAuthority(
+            tier=self.tier,
+            story_world_canon=self.story_world_canon,
+            style_authority=self.style_authority,
+        )
+        del authority
+        if self.primary_style_anchor != (self.style_authority == "primary"):
+            raise ValueError("primary_style_anchor must match style_authority")
+        if self.secondary_style_anchor != (
+            self.style_authority in {"secondary", "bounded"}
+        ):
+            raise ValueError("secondary_style_anchor must match style_authority")
+        return self
+
+
+class RetainedSourceEdition(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    publisher: NonEmptyStr
+    homepage: NonEmptyStr
+    download_url: NonEmptyStr
+    upstream_release: NonEmptyStr
+    upstream_revision: NonEmptyStr
+
+
+class RetainedSourceFiles(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    epub: NonEmptyStr
+    epub_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    markdown: NonEmptyStr
+
+
+class SourceDerivation(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    tool: NonEmptyStr
+    input: NonEmptyStr
+    writer: NonEmptyStr
+    wrap: NonEmptyStr
+    filter: NonEmptyStr
+
+
+class SourceProvenance(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    transcription: NonEmptyStr
+    page_scans: NonEmptyStr
+
+
+class SourceRights(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    source_text: NonEmptyStr
+    edition_contributions: NonEmptyStr
+
+
+class RetainedSourceRecord(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: Slug
+    role: RetainedSourceRole
+    work: SourceWork
+    edition: RetainedSourceEdition
+    retrieved: NonEmptyStr
+    files: RetainedSourceFiles
+    derivation: SourceDerivation
+    provenance: SourceProvenance
+    rights: SourceRights
+
+
+class SourcesRegistry(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    sources: list[RetainedSourceRecord] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_unique_ids(self) -> "SourcesRegistry":
+        ids = [item.id for item in self.sources]
+        if len(ids) != len(set(ids)):
+            raise ValueError("retained source IDs must be unique")
+        return self
+
+
 class CharacterRecord(BaseModel):
     """Character registry item."""
 

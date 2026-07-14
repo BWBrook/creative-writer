@@ -1,0 +1,196 @@
+composition_window:
+  start: 1897
+  end: 1899
+editorial_mode: restrained_apparatus
+sources:
+  - id: the-time-machine
+    status: admitted
+    authority: {tier: 1, story_world_canon: true, style_authority: primary}
+    work: {title: "The Time Machine", author: "H. G. Wells", first_published: 1895}
+    analytical_roles: ["continuity", "frame architecture", "reported first-person account", "speculative method"]
+    permitted_uses: ["all Time Expedition continuity", "primary voice evidence", "frame and Traveller evidence"]
+    prohibited_uses: ["later-adaptation material", "unsupported generalisation from one passage"]
+    rationale: "The sole story-world canon and governing style authority."
+    edition:
+      publisher: "Standard Ebooks"
+      homepage: "https://standardebooks.org/ebooks/h-g-wells/the-time-machine"
+      download_url: "https://standardebooks.org/ebooks/h-g-wells/the-time-machine/downloads/h-g-wells_the-time-machine.epub?source=download"
+      artifact_format: standard-ebooks-compatible-epub
+      planned_path: "original/h-g-wells_the-time-machine.epub"
+    selections: []
+
+  - id: the-invisible-man
+    status: admitted
+    authority: {tier: 2, story_world_canon: false, style_authority: secondary}
+    work: {title: "The Invisible Man", author: "H. G. Wells", first_published: 1897}
+    analytical_roles: ["sustained dialogue", "social register", "comic friction", "crowd response"]
+    permitted_uses: ["dialogue and social-style comparison"]
+    prohibited_uses: ["Time Expedition continuity", "Traveller characterisation", "frame architecture"]
+    rationale: "A close Wells witness for dialogue and social scenes only."
+    edition:
+      publisher: "Standard Ebooks"
+      homepage: "https://standardebooks.org/ebooks/h-g-wells/the-invisible-man"
+      download_url: "https://standardebooks.org/ebooks/h-g-wells/the-invisible-man/downloads/h-g-wells_the-invisible-man.epub?source=download"
+      artifact_format: standard-ebooks-compatible-epub
+      planned_path: "original/h-g-wells_the-invisible-man.epub"
+    selections: []
+
+  - id: the-island-of-doctor-moreau
+    status: approved
+    authority: {tier: 2, story_world_canon: false, style_authority: bounded}
+    work: {title: "The Island of Doctor Moreau", author: "H. G. Wells", first_published: 1896}
+    analytical_roles: ["retrospective first-person narration", "scientific argument", "moral pressure", "dialogue under stress"]
+    permitted_uses: ["bounded narrative and scientific-style comparison"]
+    prohibited_uses: ["Time Expedition continuity", "Moreau characters or inventions", "override of The Time Machine"]
+    rationale: "The closest period witness for retrospective scientific adventure and observed horror."
+    edition:
+      publisher: "Standard Ebooks"
+      homepage: "https://standardebooks.org/ebooks/h-g-wells/the-island-of-doctor-moreau"
+      download_url: "https://standardebooks.org/ebooks/h-g-wells/the-island-of-doctor-moreau/downloads/h-g-wells_the-island-of-doctor-moreau.epub?source=download"
+      artifact_format: standard-ebooks-compatible-epub
+      planned_path: "original/h-g-wells_the-island-of-doctor-moreau.epub"
+    selections: []
+
+  - id: the-war-of-the-worlds
+    status: approved
+    authority: {tier: 2, story_world_canon: false, style_authority: bounded}
+    work: {title: "The War of the Worlds", author: "H. G. Wells", first_published: 1898}
+    analytical_roles: ["catastrophe", "landscape observation", "public behaviour", "evidence-to-speculation movement"]
+    permitted_uses: ["bounded catastrophe and observational-style comparison"]
+    prohibited_uses: ["Time Expedition continuity", "Martian inventions", "override of The Time Machine"]
+    rationale: "A composition-window witness for catastrophe, technical observation, and reflective aftermath."
+    edition:
+      publisher: "Standard Ebooks"
+      homepage: "https://standardebooks.org/ebooks/h-g-wells/the-war-of-the-worlds"
+      download_url: "https://standardebooks.org/ebooks/h-g-wells/the-war-of-the-worlds/downloads/h-g-wells_the-war-of-the-worlds.epub?source=download"
+      artifact_format: standard-ebooks-compatible-epub
+      planned_path: "original/h-g-wells_the-war-of-the-worlds.epub"
+    selections: []
+
+  - id: selected-short-fiction
+    status: proposed
+    authority: {tier: 2, story_world_canon: false, style_authority: bounded}
+    work: {title: "Selected Short Fiction", author: "H. G. Wells", first_published: null}
+    analytical_roles: ["short-form architecture", "testimony", "biological danger", "scientific mystery", "cosmic catastrophe"]
+    permitted_uses: ["bounded short-story and scene comparison"]
+    prohibited_uses: ["Time Expedition continuity", "unselected stories", "override of The Time Machine"]
+    rationale: "Four tightly dated stories supply short-form Wells evidence without admitting the entire 1894-1909 collection."
+    edition:
+      publisher: "Standard Ebooks"
+      homepage: "https://standardebooks.org/ebooks/h-g-wells/short-fiction"
+      download_url: "https://standardebooks.org/ebooks/h-g-wells/short-fiction/downloads/h-g-wells_short-fiction.epub?source=download"
+      artifact_format: standard-ebooks-compatible-epub
+      planned_path: "original/h-g-wells_short-fiction.epub"
+    selections:
+      - id: the-plattner-story
+        title: "The Plattner Story"
+        first_published: 1896
+        analytical_roles: ["frame testimony", "epistemic uncertainty", "other-world description"]
+      - id: the-sea-raiders
+        title: "The Sea Raiders"
+        first_published: 1896
+        analytical_roles: ["biological observation", "compressed danger", "action"]
+      - id: the-crystal-egg
+        title: "The Crystal Egg"
+        first_published: 1897
+        analytical_roles: ["observational mystery", "scientific object", "speculative inference"]
+      - id: the-star
+        title: "The Star"
+        first_published: 1897
+        analytical_roles: ["catastrophe", "deep-scale description", "global montage"]
+
+  - id: certain-personal-matters
+    status: proposed
+    authority: {tier: 3, story_world_canon: false, style_authority: bounded}
+    work: {title: "Certain Personal Matters", author: "H. G. Wells", first_published: 1897}
+    analytical_roles: ["essay voice", "humour", "conversation", "microscopic observation"]
+    permitted_uses: ["nonfiction comparison for explanation, humour, and period idiom"]
+    prohibited_uses: ["fictional continuity", "direct prescription of narrative voice"]
+    rationale: "A composition-window nonfiction witness to Wells's conversational and explanatory habits."
+    edition:
+      publisher: "Project Gutenberg"
+      homepage: "https://www.gutenberg.org/ebooks/17508"
+      download_url: "https://www.gutenberg.org/ebooks/17508.epub.noimages"
+      artifact_format: project-gutenberg-epub
+      planned_path: "original/h-g-wells_certain-personal-matters.epub"
+    selections: []
+
+  - id: text-book-of-biology-part-1
+    status: proposed
+    authority: {tier: 3, story_world_canon: false, style_authority: bounded}
+    work: {title: "Text Book of Biology, Part 1: Vertebrata", author: "H. G. Wells", first_published: 1893}
+    analytical_roles: ["biological terminology", "instructional exposition", "comparison and classification"]
+    permitted_uses: ["scientific vocabulary and explanatory-method comparison"]
+    prohibited_uses: ["fictional continuity", "direct prescription of narrative voice", "post-1890s scientific knowledge"]
+    rationale: "A formative scientific witness for the vocabulary and habits Wells brought to late-1890s fiction."
+    edition:
+      publisher: "Project Gutenberg"
+      homepage: "https://www.gutenberg.org/ebooks/21781"
+      download_url: "https://www.gutenberg.org/ebooks/21781.epub.noimages"
+      artifact_format: project-gutenberg-epub
+      planned_path: "original/h-g-wells_text-book-of-biology-part-1.epub"
+    selections: []
+
+  - id: the-british-barbarians
+    status: proposed
+    authority: {tier: 4, story_world_canon: false, style_authority: control}
+    work: {title: "The British Barbarians", author: "Grant Allen", first_published: 1895}
+    analytical_roles: ["scientific-romance control", "time-visitor premise", "social satire"]
+    permitted_uses: ["negative period and genre comparison"]
+    prohibited_uses: ["style prescription", "Time Expedition continuity", "phrase borrowing"]
+    rationale: "Distinguishes Wells from a nearby scientific-romance treatment of time displacement and society."
+    edition:
+      publisher: "Project Gutenberg"
+      homepage: "https://www.gutenberg.org/ebooks/4340"
+      download_url: "https://www.gutenberg.org/ebooks/4340.epub.images"
+      artifact_format: project-gutenberg-epub
+      planned_path: "original/grant-allen_the-british-barbarians.epub"
+    selections: []
+
+  - id: a-desert-drama
+    status: proposed
+    authority: {tier: 4, story_world_canon: false, style_authority: control}
+    work: {title: "A Desert Drama", author: "Arthur Conan Doyle", first_published: 1898}
+    analytical_roles: ["adventure control", "group dialogue", "danger pacing", "social register"]
+    permitted_uses: ["negative period and adventure comparison"]
+    prohibited_uses: ["style prescription", "Time Expedition continuity", "phrase borrowing"]
+    rationale: "A date-matched control for competent ensemble dialogue and adventure pressure."
+    edition:
+      publisher: "Project Gutenberg"
+      homepage: "https://www.gutenberg.org/ebooks/21768"
+      download_url: "https://www.gutenberg.org/ebooks/21768.epub.noimages"
+      artifact_format: project-gutenberg-epub
+      planned_path: "original/arthur-conan-doyle_a-desert-drama.epub"
+    selections: []
+
+  - id: the-days-work
+    status: proposed
+    authority: {tier: 4, story_world_canon: false, style_authority: control}
+    work: {title: "The Day's Work", author: "Rudyard Kipling", first_published: 1898}
+    analytical_roles: ["technical-work control", "professional dialogue", "imperial register", "machinery"]
+    permitted_uses: ["negative period, technical, and professional-register comparison"]
+    prohibited_uses: ["style prescription", "Time Expedition continuity", "phrase borrowing"]
+    rationale: "A date-matched control for technical competence, work, and a strongly non-Wellsian period voice."
+    edition:
+      publisher: "Project Gutenberg"
+      homepage: "https://www.gutenberg.org/ebooks/2569"
+      download_url: "https://www.gutenberg.org/ebooks/2569.epub.images"
+      artifact_format: project-gutenberg-epub
+      planned_path: "original/rudyard-kipling_the-days-work.epub"
+    selections: []
+
+  - id: the-beetle
+    status: proposed
+    authority: {tier: 4, story_world_canon: false, style_authority: control}
+    work: {title: "The Beetle: A Mystery", author: "Richard Marsh", first_published: 1897}
+    analytical_roles: ["sensational-fiction control", "multiple narrators", "London danger", "horror escalation"]
+    permitted_uses: ["negative period, sensational, and horror comparison"]
+    prohibited_uses: ["style prescription", "Time Expedition continuity", "phrase borrowing"]
+    rationale: "A date-matched control for the sensational register that the anthology must not accidentally adopt."
+    edition:
+      publisher: "Project Gutenberg"
+      homepage: "https://www.gutenberg.org/ebooks/5164"
+      download_url: "https://www.gutenberg.org/ebooks/5164.epub.noimages"
+      artifact_format: project-gutenberg-epub
+      planned_path: "original/richard-marsh_the-beetle.epub"
+    selections: []

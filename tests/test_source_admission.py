@@ -203,3 +203,18 @@ def test_source_admission_reports_non_regular_epub_path(tmp_path: Path) -> None:
     assert any("Invalid retained EPUB" in issue for issue in result.errors)
     report = result.report_path.read_text(encoding="utf-8")
     assert "Status: **FAIL**" in report
+
+
+def test_time_expedition_admission_passes() -> None:
+    root = Path(__file__).resolve().parents[1]
+
+    result = check_source_admission(root, "time-expedition")
+
+    assert result.ok
+    report = result.report_path.read_text(encoding="utf-8")
+    assert "- Admitted: 2" in report
+    assert "- Approved, awaiting retention: 2" in report
+    assert "- Proposed: 7" in report
+    assert "| `the-time-machine` | admitted | 1 | primary |" in report
+    assert "| `the-island-of-doctor-moreau` | approved | 2 | bounded |" in report
+    assert "| `the-british-barbarians` | proposed | 4 | control |" in report

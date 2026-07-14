@@ -1,10 +1,15 @@
 sources:
   - id: "the-time-machine"
     role:
+      tier: 1
       story_world_canon: true
+      style_authority: primary
       primary_style_anchor: true
       secondary_style_anchor: false
       focus: "Time Traveller continuity, frame architecture, reported first-person voice, scientific exposition, and speculative method."
+      analytical_roles: ["continuity", "frame architecture", "reported first-person account", "speculative method"]
+      permitted_uses: ["all Time Expedition continuity", "primary voice evidence", "frame and Traveller evidence"]
+      prohibited_uses: ["later-adaptation material", "unsupported generalisation from one passage"]
     work:
       title: "The Time Machine"
       author: "H. G. Wells"
@@ -31,14 +36,19 @@ sources:
       page_scans: "Google Books volume Y0pAAQAAIAAJ"
     rights:
       source_text: "Public-domain Wells text; users should verify the law applicable in their jurisdiction. This record is provenance, not legal advice."
-      standard_ebooks_contributions: "Dedicated to the worldwide public domain under CC0 1.0 by Standard Ebooks contributors."
+      edition_contributions: "Dedicated to the worldwide public domain under CC0 1.0 by Standard Ebooks contributors."
 
   - id: "the-invisible-man"
     role:
+      tier: 2
       story_world_canon: false
+      style_authority: secondary
       primary_style_anchor: false
       secondary_style_anchor: true
       focus: "Sustained dialogue, social interaction, class register, comic friction, concealment, speech attribution, and crowd response."
+      analytical_roles: ["sustained dialogue", "social register", "comic friction", "crowd response"]
+      permitted_uses: ["dialogue and social-style comparison"]
+      prohibited_uses: ["Time Expedition continuity", "Traveller characterisation", "frame architecture"]
     work:
       title: "The Invisible Man"
       author: "H. G. Wells"
@@ -65,4 +75,4 @@ sources:
       page_scans: "Google Books volume vdAOAAAAIAAJ"
     rights:
       source_text: "Public-domain Wells text; users should verify the law applicable in their jurisdiction. This record is provenance, not legal advice."
-      standard_ebooks_contributions: "Dedicated to the worldwide public domain under CC0 1.0 by Standard Ebooks contributors."
+      edition_contributions: "Dedicated to the worldwide public domain under CC0 1.0 by Standard Ebooks contributors."

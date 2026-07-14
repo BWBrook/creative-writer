@@ -19,6 +19,7 @@ from creative_writer.novellas import (
 )
 from creative_writer.review_packs import generate_review_pack
 from creative_writer.scaffold import create_story, list_style_cards
+from creative_writer.source_admission import check_source_admission
 from creative_writer.stats import generate_story_statistics
 
 
@@ -88,6 +89,12 @@ def build_parser() -> argparse.ArgumentParser:
     review_pack.add_argument(
         "--pack", required=True, help="Review-pack manifest name (with or without .yml)."
     )
+
+    source_admission = subparsers.add_parser(
+        "source-admission",
+        help="Validate a story-local forensic source admission record.",
+    )
+    source_admission.add_argument("--story", required=True, help="Story slug.")
 
     novellas_path = subparsers.add_parser(
         "novellas-path", help="Print the resolved OneDrive Novellas directory."
@@ -211,6 +218,15 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Manifest: {result.manifest_path}")
             print(f"Entries: {result.entry_count}")
             return 0
+
+        if args.command == "source-admission":
+            result = check_source_admission(root, args.story)
+            print(f"Source admission report written to {result.report_path}")
+            if result.ok:
+                print("Source admission completed without blocking issues.")
+                return 0
+            print(f"Source admission failed with {len(result.errors)} blocking issue(s).", file=sys.stderr)
+            return 1
 
         if args.command == "novellas-path":
             print(resolve_novellas_dir())

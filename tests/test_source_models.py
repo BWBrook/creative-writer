@@ -249,13 +249,53 @@ def test_retained_source_rejects_invalid_derived_shape(
         ),
         (
             "input",
+            "C:/epub/text/the-star.xhtml",
+            "selection input must be a relative XHTML member",
+        ),
+        (
+            "input",
+            "epub/text/./the-star.xhtml",
+            "selection input must be a relative XHTML member",
+        ),
+        (
+            "input",
+            "epub//text/the-star.xhtml",
+            "selection input must be a relative XHTML member",
+        ),
+        (
+            "input",
+            "epub\\text\\..\\..\\the-star.xhtml",
+            "selection input must be a relative XHTML member",
+        ),
+        (
+            "input",
             "epub/text/the-star.md",
             "selection input must be a relative XHTML member",
         ),
         ("markdown", "../the-star.md", "selection markdown must be below text/"),
         (
             "markdown",
+            "/text/the-star.md",
+            "selection markdown must be below text/",
+        ),
+        (
+            "markdown",
             "other/the-star.md",
+            "selection markdown must be below text/",
+        ),
+        (
+            "markdown",
+            "text/./story.md",
+            "selection markdown must be below text/",
+        ),
+        (
+            "markdown",
+            "text//the-star.md",
+            "selection markdown must be below text/",
+        ),
+        (
+            "markdown",
+            "text/..\\..\\the-star.md",
             "selection markdown must be below text/",
         ),
     ],
@@ -286,15 +326,23 @@ def test_retained_selection_rejects_invalid_paths(
 
 
 @pytest.mark.parametrize(
-    ("second_id", "second_markdown", "message"),
+    ("second_id", "second_input", "second_markdown", "message"),
     [
         (
             "the-star",
+            "epub/text/second-story.xhtml",
             "text/selected-short-fiction/second.md",
             "retained selection IDs must be unique",
         ),
         (
             "second-story",
+            "epub/text/the-star.xhtml",
+            "text/selected-short-fiction/second.md",
+            "retained selection input paths must be unique",
+        ),
+        (
+            "second-story",
+            "epub/text/second-story.xhtml",
             "text/selected-short-fiction/the-star.md",
             "retained selection Markdown paths must be unique",
         ),
@@ -303,6 +351,7 @@ def test_retained_selection_rejects_invalid_paths(
 def test_retained_source_rejects_duplicate_selection_identity(
     tmp_path: Path,
     second_id: str,
+    second_input: str,
     second_markdown: str,
     message: str,
 ) -> None:
@@ -316,7 +365,7 @@ def test_retained_source_rejects_duplicate_selection_identity(
       - id: {second_id}
         title: Second Story
         first_published: 1898
-        input: epub/text/second-story.xhtml
+        input: {second_input}
         markdown: {second_markdown}
         markdown_sha256: {'d' * 64}"""
     path = tmp_path / "sources.yml"

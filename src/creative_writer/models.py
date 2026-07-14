@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -13,9 +13,15 @@ NonEmptyStr = Annotated[str, Field(min_length=1)]
 SHA256_PATTERN = r"^[0-9a-f]{64}$"
 
 
-def _is_safe_relative_path(value: str) -> bool:
-    path = PurePosixPath(value)
-    return not path.is_absolute() and ".." not in path.parts and "." not in path.parts
+def _is_canonical_relative_posix_path(value: str) -> bool:
+    if "\\" in value:
+        return False
+    parts = value.split("/")
+    return (
+        not PurePosixPath(value).is_absolute()
+        and not PureWindowsPath(value).drive
+        and all(part not in {"", ".", ".."} for part in parts)
+    )
 
 
 def _validate_string_list(values: list[str]) -> list[str]:
@@ -286,7 +292,9 @@ class RetainedSourceSelection(BaseModel):
     @field_validator("input")
     @classmethod
     def validate_input(cls, value: str) -> str:
-        if not _is_safe_relative_path(value) or not value.endswith(".xhtml"):
+        if not _is_canonical_relative_posix_path(value) or not value.endswith(
+            ".xhtml"
+        ):
             raise ValueError("selection input must be a relative XHTML member")
         return value
 
@@ -294,7 +302,7 @@ class RetainedSourceSelection(BaseModel):
     @classmethod
     def validate_markdown(cls, value: str) -> str:
         if (
-            not _is_safe_relative_path(value)
+            not _is_canonical_relative_posix_path(value)
             or not value.startswith("text/")
             or not value.endswith(".md")
         ):
@@ -349,6 +357,9 @@ class RetainedSourceRecord(BaseModel):
         ids = [selection.id for selection in self.selections]
         if len(ids) != len(set(ids)):
             raise ValueError("retained selection IDs must be unique")
+        input_paths = [selection.input for selection in self.selections]
+        if len(input_paths) != len(set(input_paths)):
+            raise ValueError("retained selection input paths must be unique")
         markdown_paths = [selection.markdown for selection in self.selections]
         if len(markdown_paths) != len(set(markdown_paths)):
             raise ValueError("retained selection Markdown paths must be unique")

@@ -36,7 +36,7 @@ sources:
     selections: []
 
   - id: the-island-of-doctor-moreau
-    status: approved
+    status: admitted
     authority: {tier: 2, story_world_canon: false, style_authority: bounded}
     work: {title: "The Island of Doctor Moreau", author: "H. G. Wells", first_published: 1896}
     analytical_roles: ["retrospective first-person narration", "scientific argument", "moral pressure", "dialogue under stress"]
@@ -52,7 +52,7 @@ sources:
     selections: []
 
   - id: the-war-of-the-worlds
-    status: approved
+    status: admitted
     authority: {tier: 2, story_world_canon: false, style_authority: bounded}
     work: {title: "The War of the Worlds", author: "H. G. Wells", first_published: 1898}
     analytical_roles: ["catastrophe", "landscape observation", "public behaviour", "evidence-to-speculation movement"]

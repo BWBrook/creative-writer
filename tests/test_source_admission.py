@@ -212,9 +212,10 @@ def test_time_expedition_admission_passes() -> None:
 
     assert result.ok
     report = result.report_path.read_text(encoding="utf-8")
-    assert "- Admitted: 2" in report
-    assert "- Approved, awaiting retention: 2" in report
+    assert "- Admitted: 4" in report
+    assert "- Approved, awaiting retention: 0" in report
     assert "- Proposed: 7" in report
     assert "| `the-time-machine` | admitted | 1 | primary |" in report
-    assert "| `the-island-of-doctor-moreau` | approved | 2 | bounded |" in report
+    assert "| `the-island-of-doctor-moreau` | admitted | 2 | bounded |" in report
+    assert "| `the-war-of-the-worlds` | admitted | 2 | bounded |" in report
     assert "| `the-british-barbarians` | proposed | 4 | control |" in report

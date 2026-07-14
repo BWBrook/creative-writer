@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import re
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -20,6 +21,8 @@ def test_time_expedition_derived_sources_have_no_excluded_packaging_links() -> N
     source_paths = [
         source_dir / "the-time-machine.md",
         source_dir / "the-invisible-man.md",
+        source_dir / "the-island-of-doctor-moreau.md",
+        source_dir / "the-war-of-the-worlds.md",
     ]
 
     violations = []
@@ -32,3 +35,14 @@ def test_time_expedition_derived_sources_have_no_excluded_packaging_links() -> N
     assert not violations, "Derived source contains excluded packaging links:\n" + "\n".join(
         violations
     )
+
+
+def test_time_expedition_fixed_wells_epubs_match_pinned_hashes() -> None:
+    root = Path(__file__).resolve().parents[1]
+    original = root / "stories" / "time-expedition" / "original"
+    expected = {
+        "h-g-wells_the-island-of-doctor-moreau.epub": "c1805bbc79b423716520a24a016ee1feeaa970a9f74f1d4bac4d6c8bccc66c2d",
+        "h-g-wells_the-war-of-the-worlds.epub": "56b57347a63fbd52a6a94b6500e5ff1c0a49a266e525223fef08789cb1ad4f8f",
+    }
+    for filename, digest in expected.items():
+        assert hashlib.sha256((original / filename).read_bytes()).hexdigest() == digest

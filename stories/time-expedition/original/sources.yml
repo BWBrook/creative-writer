@@ -25,6 +25,7 @@ sources:
       epub: "h-g-wells_the-time-machine.epub"
       epub_sha256: "ab1e79b320d93de15df26bd1c39211dd2c09bc15138f85d8ff115f86338d1f91"
       markdown: "text/the-time-machine.md"
+      markdown_sha256: "f52983c2c426587b2831b34be3a8ff4a43e556d6d384a4b83caee38028417641"
     derivation:
       tool: "Pandoc 3.10"
       input: "epub/text/chapter-1.xhtml through chapter-12.xhtml, then epub/text/epilogue.xhtml"
@@ -64,6 +65,7 @@ sources:
       epub: "h-g-wells_the-invisible-man.epub"
       epub_sha256: "31e36b331983cb324629b21429c17c3408ec4801b324350fb7cc662e7ad94b71"
       markdown: "text/the-invisible-man.md"
+      markdown_sha256: "89cf0695fcfbeb07370ef8ed41a5b1fd9f1c3c69efdbb642233fbea21e6fb74b"
     derivation:
       tool: "Pandoc 3.10"
       input: "epub/text/chapter-1.xhtml through chapter-28.xhtml, then epub/text/epilogue.xhtml"
@@ -103,6 +105,7 @@ sources:
       epub: "h-g-wells_the-island-of-doctor-moreau.epub"
       epub_sha256: "c1805bbc79b423716520a24a016ee1feeaa970a9f74f1d4bac4d6c8bccc66c2d"
       markdown: "text/the-island-of-doctor-moreau.md"
+      markdown_sha256: "c424529a5fb44b1f322be231b7e1fc82741373f6886e1087f5befd72a57e1c10"
     derivation:
       tool: "Pandoc 3.10"
       input: "epub/text/chapter-1.xhtml through chapter-22.xhtml"
@@ -142,6 +145,7 @@ sources:
       epub: "h-g-wells_the-war-of-the-worlds.epub"
       epub_sha256: "56b57347a63fbd52a6a94b6500e5ff1c0a49a266e525223fef08789cb1ad4f8f"
       markdown: "text/the-war-of-the-worlds.md"
+      markdown_sha256: "4373eaafa7e062f17191a2a279d9c3d31a0fc2b5124aa532f05268d4e7c8c5e5"
     derivation:
       tool: "Pandoc 3.10"
       input: "epub/text/book-1.xhtml, chapter-1-1.xhtml through chapter-1-17.xhtml, book-2.xhtml, and chapter-2-1.xhtml through chapter-2-10.xhtml"

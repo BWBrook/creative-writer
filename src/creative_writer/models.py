@@ -3,13 +3,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 Slug = Annotated[str, Field(pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")]
 NonEmptyStr = Annotated[str, Field(min_length=1)]
+SHA256_PATTERN = r"^[0-9a-f]{64}$"
+
+
+def _is_safe_relative_path(value: str) -> bool:
+    path = PurePosixPath(value)
+    return not path.is_absolute() and ".." not in path.parts and "." not in path.parts
 
 
 def _validate_string_list(values: list[str]) -> list[str]:
@@ -256,8 +262,44 @@ class RetainedSourceFiles(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     epub: NonEmptyStr
-    epub_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    epub_sha256: str = Field(pattern=SHA256_PATTERN)
+    markdown: NonEmptyStr | None = None
+    markdown_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
+
+    @model_validator(mode="after")
+    def validate_markdown_pair(self) -> "RetainedSourceFiles":
+        if (self.markdown is None) != (self.markdown_sha256 is None):
+            raise ValueError("markdown and markdown_sha256 must be supplied together")
+        return self
+
+
+class RetainedSourceSelection(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: Slug
+    title: NonEmptyStr
+    first_published: int = Field(ge=1800, le=2100)
+    input: NonEmptyStr
     markdown: NonEmptyStr
+    markdown_sha256: str = Field(pattern=SHA256_PATTERN)
+
+    @field_validator("input")
+    @classmethod
+    def validate_input(cls, value: str) -> str:
+        if not _is_safe_relative_path(value) or not value.endswith(".xhtml"):
+            raise ValueError("selection input must be a relative XHTML member")
+        return value
+
+    @field_validator("markdown")
+    @classmethod
+    def validate_markdown(cls, value: str) -> str:
+        if (
+            not _is_safe_relative_path(value)
+            or not value.startswith("text/")
+            or not value.endswith(".md")
+        ):
+            raise ValueError("selection markdown must be below text/ and end in .md")
+        return value
 
 
 class SourceDerivation(BaseModel):
@@ -293,9 +335,24 @@ class RetainedSourceRecord(BaseModel):
     edition: RetainedSourceEdition
     retrieved: NonEmptyStr
     files: RetainedSourceFiles
+    selections: list[RetainedSourceSelection] = Field(default_factory=list)
     derivation: SourceDerivation
     provenance: SourceProvenance
     rights: SourceRights
+
+    @model_validator(mode="after")
+    def validate_derived_shape(self) -> "RetainedSourceRecord":
+        has_full_work = self.files.markdown is not None
+        has_selections = bool(self.selections)
+        if has_full_work == has_selections:
+            raise ValueError("retained source must use exactly one derived-text shape")
+        ids = [selection.id for selection in self.selections]
+        if len(ids) != len(set(ids)):
+            raise ValueError("retained selection IDs must be unique")
+        markdown_paths = [selection.markdown for selection in self.selections]
+        if len(markdown_paths) != len(set(markdown_paths)):
+            raise ValueError("retained selection Markdown paths must be unique")
+        return self
 
 
 class SourcesRegistry(BaseModel):

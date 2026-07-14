@@ -57,11 +57,17 @@ def _write_fixture(root: Path) -> Path:
     witness_epub = story / "original" / "witness.epub"
     _write_minimal_epub(witness_epub)
     witness_digest = hashlib.sha256(witness_epub.read_bytes()).hexdigest()
-    (story / "original" / "text" / "canonical.md").write_text("Literary text.\n", encoding="utf-8")
-    (story / "original" / "text" / "witness.md").write_text(
+    canonical_markdown = story / "original" / "text" / "canonical.md"
+    canonical_markdown.write_text("Literary text.\n", encoding="utf-8")
+    canonical_markdown_digest = hashlib.sha256(
+        canonical_markdown.read_bytes()
+    ).hexdigest()
+    witness_markdown = story / "original" / "text" / "witness.md"
+    witness_markdown.write_text(
         "Witness text.\n",
         encoding="utf-8",
     )
+    witness_markdown_digest = hashlib.sha256(witness_markdown.read_bytes()).hexdigest()
     (story / "source-study" / "admission.yml").write_text(
         """composition_window:
   start: 1897
@@ -153,6 +159,7 @@ sources:
       epub: canonical.epub
       epub_sha256: {digest}
       markdown: text/canonical.md
+      markdown_sha256: {canonical_markdown_digest}
     derivation:
       tool: Pandoc 3.10
       input: chapters
@@ -184,6 +191,7 @@ sources:
       epub: witness.epub
       epub_sha256: {witness_digest}
       markdown: text/witness.md
+      markdown_sha256: {witness_markdown_digest}
     derivation:
       tool: Pandoc 3.10
       input: chapters

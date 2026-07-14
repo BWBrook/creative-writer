@@ -6,14 +6,17 @@ import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from pydantic import TypeAdapter, ValidationError
+
 from creative_writer.exceptions import CreativeWriterError
 from creative_writer.files import ensure_directory, load_yaml_model
-from creative_writer.models import SourceStudyAdmission, SourcesRegistry
+from creative_writer.models import Slug, SourceStudyAdmission, SourcesRegistry
 
 EXCLUDED_PACKAGING_LINK_PATTERN = re.compile(
     r"\]\([^)]*(?:endnotes|imprint|colophon|uncopyright)\.xhtml(?:[#?][^)]*)?\)",
     re.IGNORECASE,
 )
+STORY_SLUG_ADAPTER = TypeAdapter(Slug)
 
 
 @dataclass(slots=True)
@@ -26,6 +29,15 @@ class SourceAdmissionResult:
     @property
     def ok(self) -> bool:
         return not self.errors
+
+
+def _validate_story_slug(slug: str) -> str:
+    try:
+        return STORY_SLUG_ADAPTER.validate_python(slug)
+    except ValidationError as exc:
+        raise CreativeWriterError(
+            "Story slug must use lowercase letters, numbers, and single hyphens."
+        ) from exc
 
 
 def _sha256(path: Path) -> str:
@@ -45,10 +57,15 @@ def _story_path(story_dir: Path, relative: str) -> Path:
 
 
 def _epub_integrity_error(path: Path) -> str | None:
-    if not zipfile.is_zipfile(path):
-        return "not a ZIP-based EPUB"
-    with zipfile.ZipFile(path) as archive:
-        bad_member = archive.testzip()
+    if not path.is_file():
+        return "not a regular file"
+    try:
+        if not zipfile.is_zipfile(path):
+            return "not a ZIP-based EPUB"
+        with zipfile.ZipFile(path) as archive:
+            bad_member = archive.testzip()
+    except Exception as exc:
+        return f"could not inspect archive: {exc}"
     if bad_member is not None:
         return f"corrupt archive member: {bad_member}"
     return None
@@ -96,6 +113,7 @@ def _render_report(
 
 
 def check_source_admission(root: Path, slug: str) -> SourceAdmissionResult:
+    slug = _validate_story_slug(slug)
     story_dir = root / "stories" / slug
     admission_path = story_dir / "source-study" / "admission.yml"
     registry_path = story_dir / "original" / "sources.yml"
@@ -154,18 +172,32 @@ def check_source_admission(root: Path, slug: str) -> SourceAdmissionResult:
                 result.errors.append(
                     f"Invalid retained EPUB for `{source.id}`: {integrity_error}"
                 )
-            if _sha256(epub_path) != retained_source.files.epub_sha256:
-                result.errors.append(f"SHA-256 mismatch for `{source.id}`: {epub_path}")
+            if epub_path.is_file():
+                try:
+                    digest = _sha256(epub_path)
+                except OSError as exc:
+                    result.errors.append(
+                        f"Unable to hash retained EPUB for `{source.id}`: {exc}"
+                    )
+                else:
+                    if digest != retained_source.files.epub_sha256:
+                        result.errors.append(f"SHA-256 mismatch for `{source.id}`: {epub_path}")
         if not markdown_path.exists():
             result.errors.append(f"Missing or empty derived Markdown for `{source.id}`: {markdown_path}")
         else:
-            markdown = markdown_path.read_text(encoding="utf-8")
-            if not markdown.strip():
-                result.errors.append(f"Missing or empty derived Markdown for `{source.id}`: {markdown_path}")
-            elif EXCLUDED_PACKAGING_LINK_PATTERN.search(markdown):
+            try:
+                markdown = markdown_path.read_text(encoding="utf-8")
+            except (OSError, UnicodeError) as exc:
                 result.errors.append(
-                    f"Derived Markdown for `{source.id}` contains an excluded packaging link."
+                    f"Unable to read derived Markdown for `{source.id}`: {exc}"
                 )
+            else:
+                if not markdown.strip():
+                    result.errors.append(f"Missing or empty derived Markdown for `{source.id}`: {markdown_path}")
+                elif EXCLUDED_PACKAGING_LINK_PATTERN.search(markdown):
+                    result.errors.append(
+                        f"Derived Markdown for `{source.id}` contains an excluded packaging link."
+                    )
 
     extra_retained = sorted(set(retained) - admitted_ids)
     for source_id in extra_retained:

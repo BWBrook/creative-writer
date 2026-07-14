@@ -4,6 +4,9 @@ import hashlib
 import zipfile
 from pathlib import Path
 
+import pytest
+
+from creative_writer.exceptions import CreativeWriterError
 from creative_writer.source_admission import check_source_admission
 
 
@@ -147,3 +150,56 @@ def test_source_admission_blocks_dangling_packaging_link(tmp_path: Path) -> None
 
     assert not result.ok
     assert any("excluded packaging link" in issue for issue in result.errors)
+
+
+def test_source_admission_rejects_absolute_slug_without_writing_outside_root(
+    tmp_path: Path,
+) -> None:
+    outside = tmp_path.parent / f"{tmp_path.name}-absolute-admission-escape"
+
+    with pytest.raises(CreativeWriterError, match="Story slug must use lowercase"):
+        check_source_admission(tmp_path, str(outside))
+
+    assert not outside.exists()
+    assert not (tmp_path / "build").exists()
+
+
+def test_source_admission_rejects_traversal_slug_without_writing_outside_root(
+    tmp_path: Path,
+) -> None:
+    outside = tmp_path.parent / f"{tmp_path.name}-traversal-admission-escape"
+    slug = f"../../{outside.name}"
+
+    with pytest.raises(CreativeWriterError, match="Story slug must use lowercase"):
+        check_source_admission(tmp_path, slug)
+
+    assert not outside.exists()
+    assert not (tmp_path / "build").exists()
+
+
+def test_source_admission_reports_non_utf8_derived_markdown(tmp_path: Path) -> None:
+    story = _write_fixture(tmp_path)
+    (story / "original" / "text" / "canonical.md").write_bytes(
+        b"Literary text.\xff\n"
+    )
+
+    result = check_source_admission(tmp_path, "source-test")
+
+    assert not result.ok
+    assert any("Unable to read derived Markdown" in issue for issue in result.errors)
+    report = result.report_path.read_text(encoding="utf-8")
+    assert "Status: **FAIL**" in report
+
+
+def test_source_admission_reports_non_regular_epub_path(tmp_path: Path) -> None:
+    story = _write_fixture(tmp_path)
+    epub = story / "original" / "canonical.epub"
+    epub.unlink()
+    epub.mkdir()
+
+    result = check_source_admission(tmp_path, "source-test")
+
+    assert not result.ok
+    assert any("Invalid retained EPUB" in issue for issue in result.errors)
+    report = result.report_path.read_text(encoding="utf-8")
+    assert "Status: **FAIL**" in report

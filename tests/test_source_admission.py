@@ -575,6 +575,83 @@ def test_source_admission_blocks_full_work_markdown_hash_mismatch(tmp_path: Path
     assert any("Markdown SHA-256 mismatch" in issue for issue in result.errors)
 
 
+def test_source_admission_accumulates_checks_with_unsafe_planned_epub(
+    tmp_path: Path,
+) -> None:
+    story = _write_fixture(tmp_path)
+    admission_path = story / "source-study" / "admission.yml"
+    admission = yaml.safe_load(admission_path.read_text(encoding="utf-8"))
+    planned = next(item for item in admission["sources"] if item["id"] == "witness")
+    planned["edition"]["planned_path"] = "original/../../outside.epub"
+    planned["selections"] = [
+        {
+            "id": "unretained",
+            "title": "Unretained Selection",
+            "first_published": 1898,
+            "analytical_roles": ["observation"],
+        }
+    ]
+    _write_yaml(admission_path, admission)
+
+    markdown = story / "original" / "text" / "witness.md"
+    markdown.write_text("Text.[1](endnotes.xhtml#note-1)\n", encoding="utf-8")
+    _update_retained_source(
+        story,
+        "witness",
+        [
+            (
+                ("files", "markdown_sha256"),
+                hashlib.sha256(markdown.read_bytes()).hexdigest(),
+            )
+        ],
+    )
+
+    result = check_source_admission(tmp_path, "source-test")
+
+    expected_errors = (
+        "Source path escapes story directory: original/../../outside.epub",
+        "`witness` selection parity differs",
+        "Derived Markdown for `witness` contains an excluded packaging link.",
+    )
+    assert not result.ok
+    report = result.report_path.read_text(encoding="utf-8")
+    for expected in expected_errors:
+        assert any(expected in issue for issue in result.errors)
+        assert expected in report
+
+
+def test_source_admission_accumulates_checks_with_unsafe_retained_epub(
+    tmp_path: Path,
+) -> None:
+    story = _write_fixture(tmp_path)
+    _make_witness_omnibus(story)
+    registry_path = story / "original" / "sources.yml"
+    registry = yaml.safe_load(registry_path.read_text(encoding="utf-8"))
+    retained = next(item for item in registry["sources"] if item["id"] == "witness")
+    retained["files"]["epub"] = "../unsafe.epub"
+    retained["selections"][0]["title"] = "Changed Title"
+    markdown = story / "original" / retained["selections"][0]["markdown"]
+    markdown.write_text("Text.[1](endnotes.xhtml#note-1)\n", encoding="utf-8")
+    retained["selections"][0]["markdown_sha256"] = hashlib.sha256(
+        markdown.read_bytes()
+    ).hexdigest()
+    _write_yaml(registry_path, registry)
+
+    result = check_source_admission(tmp_path, "source-test")
+
+    expected_errors = (
+        "Source path escapes story directory: ../unsafe.epub",
+        "`witness` selection parity differs",
+        "Derived Markdown for `witness/the-star` contains an excluded packaging link.",
+    )
+    assert not result.ok
+    assert not any("selection input member is missing" in issue for issue in result.errors)
+    report = result.report_path.read_text(encoding="utf-8")
+    for expected in expected_errors:
+        assert any(expected in issue for issue in result.errors)
+        assert expected in report
+
+
 def test_source_admission_blocks_excluded_artifact(tmp_path: Path) -> None:
     story = _write_fixture(tmp_path)
     admission_path = story / "source-study" / "admission.yml"

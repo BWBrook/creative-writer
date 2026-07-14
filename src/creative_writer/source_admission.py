@@ -370,13 +370,13 @@ def check_source_admission(root: Path, slug: str) -> SourceAdmissionResult:
     admitted_ids = {source.id for source in admission.sources if source.status == "admitted"}
 
     for source in admission.sources:
+        planned_path: Path | None = None
         try:
             planned_path = _story_path(story_dir, source.edition.planned_path)
         except CreativeWriterError as exc:
             result.errors.append(str(exc))
-            continue
         if source.status != "admitted":
-            if planned_path.exists():
+            if planned_path is not None and planned_path.exists():
                 if source.status == "excluded":
                     result.errors.append(
                         f"Artifact exists for excluded source `{source.id}`: {planned_path}"
@@ -394,34 +394,41 @@ def check_source_admission(root: Path, slug: str) -> SourceAdmissionResult:
             continue
         _append_parity_errors(source, retained_source, result.errors)
 
+        epub_path: Path | None = None
         try:
             epub_path = _story_path(story_dir / "original", retained_source.files.epub)
         except CreativeWriterError as exc:
             result.errors.append(str(exc))
-            continue
-        if epub_path != planned_path:
+        if (
+            epub_path is not None
+            and planned_path is not None
+            and epub_path != planned_path
+        ):
             result.errors.append(
                 f"Retained EPUB path for `{source.id}` does not match the admission plan."
             )
         integrity_error: str | None = None
-        if not epub_path.exists():
-            result.errors.append(f"Missing retained EPUB for `{source.id}`: {epub_path}")
-        else:
-            integrity_error = _epub_integrity_error(epub_path)
-            if integrity_error:
-                result.errors.append(
-                    f"Invalid retained EPUB for `{source.id}`: {integrity_error}"
-                )
-            if epub_path.is_file():
-                try:
-                    digest = _sha256(epub_path)
-                except OSError as exc:
+        if epub_path is not None:
+            if not epub_path.exists():
+                result.errors.append(f"Missing retained EPUB for `{source.id}`: {epub_path}")
+            else:
+                integrity_error = _epub_integrity_error(epub_path)
+                if integrity_error:
                     result.errors.append(
-                        f"Unable to hash retained EPUB for `{source.id}`: {exc}"
+                        f"Invalid retained EPUB for `{source.id}`: {integrity_error}"
                     )
-                else:
-                    if digest != retained_source.files.epub_sha256:
-                        result.errors.append(f"SHA-256 mismatch for `{source.id}`: {epub_path}")
+                if epub_path.is_file():
+                    try:
+                        digest = _sha256(epub_path)
+                    except OSError as exc:
+                        result.errors.append(
+                            f"Unable to hash retained EPUB for `{source.id}`: {exc}"
+                        )
+                    else:
+                        if digest != retained_source.files.epub_sha256:
+                            result.errors.append(
+                                f"SHA-256 mismatch for `{source.id}`: {epub_path}"
+                            )
         if retained_source.files.markdown is not None:
             assert retained_source.files.markdown_sha256 is not None
             try:
@@ -438,14 +445,12 @@ def check_source_admission(root: Path, slug: str) -> SourceAdmissionResult:
                     errors=result.errors,
                 )
         else:
-            members = (
-                _archive_members(epub_path)
-                if epub_path.is_file() and not integrity_error
-                else set()
-            )
+            members: set[str] | None = None
+            if epub_path is not None and epub_path.is_file() and not integrity_error:
+                members = _archive_members(epub_path)
             for selection in retained_source.selections:
                 selection_id = f"{source.id}/{selection.id}"
-                if selection.input not in members:
+                if members is not None and selection.input not in members:
                     result.errors.append(
                         "Retained selection input member is missing from EPUB for "
                         f"`{selection_id}`: {selection.input}"

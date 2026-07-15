@@ -39,7 +39,7 @@ This report is the only additional allowed file.
 - Added reusable canonical relative-path, slug, SHA-256, Git-hash, and
   non-empty-text constraints.
 - `AnalysisConfig` records the actual Phase 2A admission and source-registry
-  SHA-256 values, the 1895-1899 composition window, protocol state, the
+  SHA-256 values, the 1897-1899 composition window, protocol state, the
   adopted ten dimension IDs, authority tiers/roles, parser constants,
   deterministic partition constants, declared measurements/lexicons,
   vocabularies, and generated paths.
@@ -239,3 +239,109 @@ Result: no raw data or unrelated artefacts changed.
 No unresolved concerns. The separate report commit hash is returned in the
 handoff because recording a commit's own hash inside that same commit would be
 self-referential.
+
+## Remaining Review Findings
+
+### Status
+
+The remaining Task 1 review findings are fixed in implementation commit
+`5958ce1294354e42e179f225f5c39f58b9d0cde7`.
+
+### Changes
+
+- Made `authority_tiers` required and enforced one policy for each tier 1
+  through 5, with duplicate tier IDs rejected. The complete model fixture now
+  declares all five policies.
+- Derived the story-local per-tier role comparison from `admission.yml`, adding
+  all selected-short-fiction roles to Tier 2 and `social register` to Tier 4.
+  The repository test compares exact role sets after including source-level
+  and selection-level roles.
+- Expanded `enabled_measurements` to the approved core set: totals for words,
+  passages, sentences, and sections; sentence, passage, and paragraph length
+  distributions; dialogue proportion and runs; punctuation; speech/reporting
+  verbs; pronoun, demonstrative, modal, and epistemic frequencies; function
+  words and sequences; paragraph openings/transitions; moving-window lexical
+  concentration; block proportions; and section-level variation.
+- Declared explicit `first_person_pronouns`, `third_person_pronouns`, and
+  `demonstratives` lexicons for later pronoun metrics.
+- Required each generated path to pass canonical relative-POSIX validation and
+  begin with `build/`, with an isolated rejection test.
+- Defined the canonical `DimensionId` literal union and reused it for both
+  `AnalyticalDimension.id` and `EvidenceClaim.dimension`, with isolated
+  invented-dimension rejection tests.
+- Corrected the superseded earlier report wording to `1897-1899`; the Phase 2A
+  admission registry remains unchanged.
+
+### TDD and verification
+
+RED command, after adding the focused tests and before implementation:
+
+```text
+uv run pytest tests/test_source_analysis_models.py -q
+Result: 8 failed, 26 passed in 0.24s.
+Expected failures covered required/unique authority tiers, exact admission role
+sets, the expanded measurement and lexicon declarations, the build-path rule,
+and invented dimension IDs.
+```
+
+GREEN focused suite:
+
+```text
+uv run pytest tests/test_source_analysis_models.py -q
+Result: 34 passed in 0.26s.
+```
+
+Full regression suite:
+
+```text
+uv run pytest -q
+Result: 155 passed in 19.79s.
+```
+
+Independent admission-vs-analysis role comparison:
+
+```text
+uv run python - <<'PY'
+# Loads admission.yml and analysis.yml, unions source and selection roles by
+# tier, and compares each modelled tier as an exact set.
+PY
+Result: tiers [1, 2, 3, 4, 5];
+        tier 1 expected=4 actual=4 exact=True;
+        tier 2 expected=28 actual=28 exact=True;
+        tier 3 expected=7 actual=7 exact=True;
+        tier 4 expected=21 actual=21 exact=True;
+        tier 5 expected=3 actual=3 exact=True.
+```
+
+Formatting and scope checks:
+
+```text
+git diff --check
+Result: passed before the implementation commit.
+
+Implementation commit paths:
+src/creative_writer/source_analysis_models.py
+tests/test_source_analysis_models.py
+stories/time-expedition/source-study/analysis.yml
+Result: no raw data or unrelated artefacts changed.
+```
+
+### Self-review
+
+- The authority policy now cannot omit a tier, repeat a tier, or introduce a
+  tier outside the prescribed 1-5 set.
+- The repository role test derives expected values from the admission registry,
+  so selection roles cannot silently disappear from `analysis.yml`.
+- Measurement identifiers are explicit and unique, and the three pronoun
+  lexicons are visible configuration rather than implementation constants.
+- Generated paths validate canonical relative-POSIX syntax before the required
+  `build/` prefix check.
+- `DimensionId` is the single declared vocabulary used at both dimension
+  declaration and evidence-claim boundaries.
+- Only the three requested implementation/config/test files were included in
+  the implementation commit; this report is being committed separately.
+
+### Concerns
+
+No unresolved concerns. The report commit hash is returned separately because
+including it in this report would make the report commit self-referential.

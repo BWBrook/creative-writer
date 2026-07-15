@@ -1,7 +1,7 @@
 # Wells Phase 2B Detailed Forensic Analysis Design
 
 Date: 2026-07-15
-Status: proposed design, awaiting human review
+Status: approved design, implementation authorised
 
 ## Purpose
 

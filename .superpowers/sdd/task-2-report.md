@@ -278,3 +278,137 @@ Additional checks passed:
 
 The implementation commit is complete and independently verified. The only
 remaining action for this task is the separate commit containing this report.
+
+## Phase 2B Task 2 review-fix addendum
+
+This addendum records the complete review closure after the original Task 2
+implementation. The original concern that ordering would fall back to source
+and witness IDs is superseded: explicit global witness ordinals are now
+required by both relevant schemas and are the only registry-order key used by
+the index writer and reader.
+
+### Findings and fixes
+
+1. Heading context was made level-aware. The parser stores `(level, label)`
+   entries, pops stored levels greater than or equal to each new header level,
+   and appends the new header. A real Pandoc test covers H1 `A` to H4 `A`,
+   sibling H4 `B`, H4 to H3, repeated H3, and repeated H5 transitions; stale
+   siblings disappear from every resulting heading path.
+
+2. `WitnessDescriptor` and `PassageRecord` now require strict one-based
+   `witness_ordinal` values. Parsing propagates the descriptor value. Writer
+   sorting uses `(witness_ordinal, source_ordinal)` only. Writer and reader
+   validation enforce one ordinal per witness, one witness per ordinal, and a
+   complete ordinal set contiguous from 1. Reader input must already be in
+   the same reading order. Fixtures and tests now provide explicit ordinals.
+
+3. Writers reject empty collections and duplicate passage IDs before creating
+   a directory or temporary file. Readers reject zero-byte files and
+   duplicates. Existing destination content is tested and preserved on
+   pre-write validation failure.
+
+4. `PassageRecord` validation now requires the final heading path label to
+   equal `heading_label`, recomputes SHA-256 from `normalized_text`, checks
+   `content_hash` and the passage ID against that digest, and recomputes
+   `word_count`. Isolated read and write tampering tests cover each integrity
+   field.
+
+5. `partition_windows` now requires `type(max_blocks) is int` and the value
+   to be in `1..5`; booleans, zero, and six are rejected.
+
+6. Pandoc `Quoted` fixtures and extraction now use tagged enum values such as
+   `{"t": "DoubleQuote"}` and `{"t": "SingleQuote"}`. A focused tagged-shape
+   test confirms rendered delimiters while preserving literal GFM quote text.
+
+7. Directory creation errors are converted to `CreativeWriterError`. Index
+   output is written to a same-directory temporary file and installed with
+   `os.replace`; all temporary paths are cleaned up on write or replacement
+   failure. Focused failure tests confirm destination preservation without
+   platform-specific assumptions.
+
+### TDD evidence
+
+#### RED
+
+The focused review tests were added before the implementation fixes and run
+with:
+
+```text
+uv run pytest tests/test_source_passages.py tests/test_source_analysis_models.py -q
+```
+
+Observed result: `32 failed, 40 passed`. The failures were the expected
+missing witness-ordinal schema, tagged-quote handling, heading-stack
+behavior, strict partition validation, index validation, integrity checks,
+and atomic-write protections.
+
+#### GREEN
+
+After implementation, the focused command passed:
+
+```text
+72 passed in 1.22s
+```
+
+The focused source regression set passed:
+
+```text
+uv run pytest tests/test_source_passages.py tests/test_source_analysis_models.py \
+  tests/test_source_models.py tests/test_source_admission.py -q
+145 passed in 2.15s
+```
+
+### Full verification
+
+The complete repository suite passed after the final implementation change:
+
+```text
+uv run pytest -q
+193 passed in 11.37s
+```
+
+Compilation and whitespace checks passed:
+
+```text
+uv run python -m compileall -q src tests
+git diff --check
+git diff --cached --check
+```
+
+The real source registry was expanded in declared source order, with the
+selected omnibus children expanded in declared selection order, into exactly
+15 explicit global witness ordinals. All 15 witnesses parsed successfully,
+producing 12,541 passages:
+
+```text
+parsed_witnesses=15
+temporary_index_round_trip=ok
+indexed_passages=12541
+```
+
+The temporary full index was written and read back successfully. The read
+records matched the writer's `(witness_ordinal, source_ordinal)` order, had
+ordinals 1 through 15 without gaps, and passed record-integrity validation.
+No generated corpus artifact was retained.
+
+### Updated self-review
+
+- [x] Level-aware heading stack and focused real heading transition coverage.
+- [x] Explicit one-based witness ordinal schema propagation and non-lexical
+  writer/reader ordering.
+- [x] Consistent witness/ordinal mappings and contiguous full-index ordinals.
+- [x] Empty/duplicate rejection before write-side filesystem mutation and on
+  read.
+- [x] Heading, digest, passage-ID, and word-count integrity checks on read and
+  write through the shared strict model.
+- [x] Strict `partition_windows` bound and boolean rejection.
+- [x] Pandoc tagged quote enums with literal GFM quote preservation.
+- [x] CreativeWriterError-wrapped directory creation and atomic replacement
+  with cleanup and destination preservation tests.
+- [x] Only the four implementation/test files named by the task were changed
+  in the implementation commit; no witnesses, registries, orchestration, CLI,
+  story evidence, styles, plans, or manuscripts were touched.
+
+Implementation/tests commit:
+
+`a7382559c349b8115c99c31fa740111267cbc0a5`

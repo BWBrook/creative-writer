@@ -119,6 +119,26 @@ def _read(path: Path) -> str:
         raise CreativeWriterError(f"Unable to read evidence file {path}: {exc}") from exc
 
 
+def _canonical_root_path(root: Path, path: Path) -> Path:
+    candidate = path if path.is_absolute() else root / path
+    return candidate.resolve(strict=False)
+
+
+def _identity_tuple(item: object) -> tuple[object, object, object]:
+    if isinstance(item, dict):
+        selection_id = item.get("selection_id") or None
+        return (item.get("witness_id"), item.get("source_id"), selection_id)
+    return (None, None, None)
+
+
+def _profile_identity_tuple(item: object) -> tuple[object, object, object]:
+    return (
+        getattr(item, "witness_id", None),
+        getattr(item, "source_id", None),
+        getattr(item, "selection_id", None),
+    )
+
+
 def _passage_maps(passages: Sequence[PassageRecord]) -> tuple[dict[str, PassageRecord], dict[str, list[PassageRecord]]]:
     by_id: dict[str, PassageRecord] = {}
     by_witness: dict[str, list[PassageRecord]] = {}
@@ -738,6 +758,25 @@ def _profile_finding_issues(
         for _, finding_number, finding_content in findings:
             fields = _entry_blocks(finding_content, re.compile(r"^##### (.+)$"))
             actual_fields = [name for _, name, _ in fields]
+            expected_field_headings = {f"##### {name}" for name in expected_fields}
+            first_expected_field = next(
+                (
+                    index
+                    for index, line in enumerate(finding_content.splitlines())
+                    if line in expected_field_headings
+                ),
+                None,
+            )
+            if first_expected_field is None or any(
+                line.strip()
+                for line in finding_content.splitlines()[:first_expected_field]
+            ):
+                result.errors.append(_error(path, "Profile finding contains stray or unparsed content before the first expected field", locator=f"dimension {ordinal} finding {finding_number}"))
+            if any(
+                re.match(r"^#{1,6} ", line) and line not in expected_field_headings
+                for line in finding_content.splitlines()
+            ):
+                result.errors.append(_error(path, "Profile finding contains an unexpected heading or unparsed record content", locator=f"dimension {ordinal} finding {finding_number}"))
             if actual_fields != expected_fields:
                 result.errors.append(_error(path, f"Profile finding fields must be exactly ordered as {expected_fields}", locator=f"dimension {ordinal} finding {finding_number}"))
                 continue
@@ -851,8 +890,10 @@ def collect_quantitative_profile_issues(
     configured_json = config.generated_paths["development_metrics"]
     configured_csv = config.generated_paths["development_metrics_csv"]
     metrics_csv_path = metrics_csv_path or root / configured_csv
-    if metrics_path.resolve(strict=False) != (root / configured_json).resolve(strict=False):
+    if _canonical_root_path(root, metrics_path) != _canonical_root_path(root, Path(configured_json)):
         result.errors.append(_error(metrics_path, "Quantitative profile JSON path is not the configured development output", locator=str(metrics_path)))
+    if _canonical_root_path(root, metrics_csv_path) != _canonical_root_path(root, Path(configured_csv)):
+        result.errors.append(_error(metrics_csv_path, "Quantitative profile CSV path is not the configured development output", locator=str(metrics_csv_path)))
     expected_references = {
         "development-metrics": configured_json,
         "development-metrics-csv": configured_csv,
@@ -874,7 +915,13 @@ def collect_quantitative_profile_issues(
     if len(metric_witness_ids) != len(set(metric_witness_ids)):
         result.errors.append(_error(metrics_path, "Generated development metric witness IDs must be unique"))
     metric_witnesses = set(metric_witness_ids)
+    metric_identities = [_identity_tuple(item) for item in metric_records]
+    if len(metric_identities) != len(set(metric_identities)):
+        result.errors.append(_error(metrics_path, "Generated development metric witness identities must be unique"))
     profile_witnesses = {item.witness_id for item in profile.witnesses}
+    profile_identities = [_profile_identity_tuple(item) for item in profile.witnesses]
+    if len(profile_identities) != len(set(profile_identities)):
+        result.errors.append(_error(metrics_path, "Quantitative profile witness identities must be unique"))
     if profile_witnesses != development_witness_ids:
         result.errors.append(_error(metrics_path, "Quantitative profile witness set must exactly equal current development metric witnesses"))
     if metric_witnesses != development_witness_ids:
@@ -942,6 +989,23 @@ def collect_quantitative_profile_issues(
             if not rows:
                 result.errors.append(_error(metrics_csv_path, "Current development CSV must contain data rows"))
             provenance = document.get("provenance", {})
+            csv_identities = [
+                (row.get("witness_id"), row.get("source_id"), row.get("selection_id") or None)
+                for row in rows
+            ]
+            if set(csv_identities) != set(metric_identities):
+                result.errors.append(_error(metrics_csv_path, "Current development CSV identity set does not exactly match generated JSON metrics"))
+            if set(csv_identities) != set(profile_identities):
+                result.errors.append(_error(metrics_csv_path, "Current development CSV identity set does not exactly match the quantitative profile witnesses"))
+            csv_row_keys = [
+                tuple(row.get(field, "") for field in (
+                    "witness_id", "source_id", "selection_id", "section_id",
+                    "metric", "submetric", "value", "passage_id", "notes",
+                ))
+                for row in rows
+            ]
+            if len(csv_row_keys) != len(set(csv_row_keys)):
+                result.errors.append(_error(metrics_csv_path, "Current development CSV contains duplicate metric rows"))
             for row in rows:
                 if (
                     row.get("study_id") != config.study_id

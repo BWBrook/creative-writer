@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import csv
 import hashlib
+import io
 import json
 import subprocess
 import zipfile
@@ -45,6 +47,14 @@ from creative_writer.source_passages import read_passage_index
 
 
 HASH = "a" * 64
+CANONICAL_PROTOCOL_VALIDATION_BODY = (
+    "# Validation Record\n\n"
+    "## Protocol state\n\n"
+    "The strict YAML front matter records the adopted protocol state. Freeze hashes,\n"
+    "holdout results, control comparisons, reviewer findings, claim transitions,\n"
+    "and the final profile fingerprint will be recorded only after their respective\n"
+    "stages have occurred.\n"
+)
 
 
 def _sha256(path: Path) -> str:
@@ -122,7 +132,7 @@ def _analysis_config(admission_hash: str, source_hash: str, *, seed: str = "fixt
                 "selected-short-fiction/the-sea-raiders",
                 "selected-short-fiction/the-crystal-egg",
                 "selected-short-fiction/the-star",
-                "control",
+                "tier-four",
             ],
             "excluded_tier5_ids": ["the-lost-world"],
             "whole_work_holdouts": ["selected-short-fiction/the-star"],
@@ -135,7 +145,7 @@ def _analysis_config(admission_hash: str, source_hash: str, *, seed: str = "fixt
                     1: ["wells-alpha role"],
                     2: ["selected-short-fiction role", "fixture role"],
                     3: [],
-                    4: ["control role"],
+                    4: ["tier-four role"],
                     5: ["later diagnostic"],
                 }[tier],
                 "evidence_rule": f"Tier {tier} rule.",
@@ -314,7 +324,7 @@ def _write_fixture(root: Path) -> Path:
             2,
             selection_ids=["the-plattner-story", "the-sea-raiders", "the-crystal-egg", "the-star"],
         ),
-        _retained_source(story, "control", 4),
+        _retained_source(story, "tier-four", 4),
     ]
     admission_sources = [
         _source_admission("wells-alpha", 1),
@@ -326,7 +336,7 @@ def _write_fixture(root: Path) -> Path:
                 for item in ["the-plattner-story", "the-sea-raiders", "the-crystal-egg", "the-star"]
             ],
         ),
-        _source_admission("control", 4),
+        _source_admission("tier-four", 4),
         {
             "id": "the-lost-world",
             "status": "excluded",
@@ -335,7 +345,7 @@ def _write_fixture(root: Path) -> Path:
             "analytical_roles": ["later diagnostic"],
             "permitted_uses": ["none"],
             "prohibited_uses": ["all"],
-            "rationale": "Excluded outside-window control.",
+            "rationale": "Excluded outside-window tier-four source.",
             "edition": {
                 "publisher": "Fixture Press",
                 "homepage": "https://example.test/lost-world",
@@ -427,7 +437,8 @@ def _write_fixture(root: Path) -> Path:
     (source_study / "validation.md").write_text(
         "---\n"
         + yaml.safe_dump(validation, sort_keys=False)
-        + "---\n\n# Validation Record\n\nProtocol state.\n",
+        + "---\n\n"
+        + CANONICAL_PROTOCOL_VALIDATION_BODY,
         encoding="utf-8",
     )
     return story
@@ -515,7 +526,7 @@ def test_prepare_builds_exact_lock_and_expands_selected_selections_in_order(tmp_
     assert [item["id"] for item in lock["sources"]] == [
         "wells-alpha",
         "selected-short-fiction",
-        "control",
+        "tier-four",
     ]
     assert lock["sources"][1]["tier"] == 2
     assert lock["sources"][1]["analytical_roles"] == ["selected-short-fiction role"]
@@ -538,7 +549,7 @@ def test_prepare_builds_exact_lock_and_expands_selected_selections_in_order(tmp_
         "selected-short-fiction/the-sea-raiders",
         "selected-short-fiction/the-crystal-egg",
         "selected-short-fiction/the-star",
-        "control",
+        "tier-four",
     ]
     assert [item["witness_ordinal"] for item in witnesses] == list(range(1, 7))
 
@@ -551,13 +562,13 @@ def test_holdout_manifest_has_all_fingerprints_and_quarantines_controls(tmp_path
     assert set(manifest["source_fingerprints"]) == {
         "source/wells-alpha/epub",
         "source/selected-short-fiction/epub",
-        "source/control/epub",
+        "source/tier-four/epub",
         "witness/wells-alpha/markdown",
         "witness/selected-short-fiction/the-plattner-story/markdown",
         "witness/selected-short-fiction/the-sea-raiders/markdown",
         "witness/selected-short-fiction/the-crystal-egg/markdown",
         "witness/selected-short-fiction/the-star/markdown",
-        "witness/control/markdown",
+        "witness/tier-four/markdown",
     }
     assert manifest["whole_work_holdouts"] == ["selected-short-fiction/the-star"]
     assert {item["witness_id"] for item in manifest["witnesses"]} == {
@@ -572,7 +583,7 @@ def test_holdout_manifest_has_all_fingerprints_and_quarantines_controls(tmp_path
     assert len(star["holdout_windows"]) == 3
     assert all(item["id"].startswith("w0") for item in star["holdout_windows"])
     assert all(item["id"].startswith("w0") for item in manifest["witnesses"][0]["development_windows"])
-    assert all("control" not in item["witness_id"] for item in manifest["witnesses"])
+    assert all("tier-four" not in item["witness_id"] for item in manifest["witnesses"])
     assert result.holdout_path == story / "source-study/holdouts.yml"
 
 
@@ -1148,7 +1159,7 @@ def test_develop_requires_committed_holdouts_and_writes_development_only_outputs
             encoding="utf-8"
         )
         assert "selected-short-fiction/the-star" not in text
-        assert "control" not in text
+        assert "tier-four" not in text
     report = (tmp_path / "build/fixture/source-study/development-report.md").read_text(
         encoding="utf-8"
     )
@@ -1259,6 +1270,75 @@ def test_develop_rejects_populated_protocol_validation_record(tmp_path: Path) ->
         run_source_analysis(tmp_path, "fixture", "develop")
 
 
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "holdout_summary",
+        "control_summary",
+        "reviewer_summary",
+        "unresolved_uncertainty",
+        "body",
+    ],
+)
+def test_develop_rejects_substantive_protocol_validation_mutations(
+    tmp_path: Path, mutation: str
+) -> None:
+    story, _ = _fixture(tmp_path)
+    validation_path = story / "source-study/validation.md"
+    validation_text = validation_path.read_text(encoding="utf-8")
+    if mutation == "body":
+        validation_text = validation_text.replace(
+            "The strict YAML front matter records the adopted protocol state.",
+            "The study concludes that the source has a distinctive structure.",
+        )
+    else:
+        validation = yaml.safe_load(validation_text.split("---", 2)[1])
+        validation[mutation] = "A substantive conclusion has been reviewed."
+        validation_text = (
+            "---\n"
+            + yaml.safe_dump(validation, sort_keys=False)
+            + "---\n\n"
+            + CANONICAL_PROTOCOL_VALIDATION_BODY
+        )
+    validation_path.write_text(validation_text, encoding="utf-8")
+    _commit_fixture_holdouts(tmp_path)
+
+    with pytest.raises(CreativeWriterError, match="(?i)protocol validation"):
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+
+def test_develop_rejects_protocol_validation_body_that_changes_only_line_content(
+    tmp_path: Path,
+) -> None:
+    story, _ = _fixture(tmp_path)
+    validation_path = story / "source-study/validation.md"
+    validation_path.write_text(
+        validation_path.read_text(encoding="utf-8").replace(
+            "and the final profile fingerprint will be recorded only after their respective\n",
+            "and the final profile fingerprint will be recorded only after all stages.\n",
+        ),
+        encoding="utf-8",
+    )
+    _commit_fixture_holdouts(tmp_path)
+
+    with pytest.raises(CreativeWriterError, match="(?i)protocol validation"):
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+
+def test_develop_accepts_protocol_body_line_endings_and_missing_final_newline(
+    tmp_path: Path,
+) -> None:
+    story, _ = _fixture(tmp_path)
+    validation_path = story / "source-study/validation.md"
+    validation_text = validation_path.read_text(encoding="utf-8")
+    validation_path.write_bytes(validation_text.replace("\n", "\r\n").rstrip("\r\n").encode("utf-8"))
+    _commit_fixture_holdouts(tmp_path)
+
+    result = run_source_analysis(tmp_path, "fixture", "develop")
+
+    assert result.stage == "develop"
+
+
 def test_develop_writes_diagnostics_when_ledger_schema_read_fails_after_metrics(
     tmp_path: Path,
 ) -> None:
@@ -1275,6 +1355,72 @@ def test_develop_writes_diagnostics_when_ledger_schema_read_fails_after_metrics(
     report_text = report.read_text(encoding="utf-8")
     assert "Evidence validation diagnostics" in report_text
     assert "Blocking errors: **1**" in report_text
+    assert "locator" not in report_text
+
+
+@pytest.mark.parametrize("failure", ["schema", "read"])
+def test_develop_writes_diagnostics_when_validation_schema_or_read_fails_after_metrics(
+    tmp_path: Path, failure: str
+) -> None:
+    story, _ = _fixture(tmp_path)
+    validation_path = story / "source-study/validation.md"
+    if failure == "schema":
+        validation_path.write_text(
+            "---\nschema_version: 1\nstudy_id: fixture-wells-phase-2b\nstage: protocol\n---\n\n"
+            + CANONICAL_PROTOCOL_VALIDATION_BODY,
+            encoding="utf-8",
+        )
+    else:
+        validation_path.unlink()
+        validation_path.mkdir()
+    _commit_fixture_holdouts(tmp_path)
+
+    with pytest.raises((CreativeWriterError, OSError), match="validation|ValidationRecord|read|directory"):
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+    report = tmp_path / "build/fixture/source-study/development-report.md"
+    report_text = report.read_text(encoding="utf-8")
+    assert "Evidence validation diagnostics" in report_text
+    assert "Blocking errors: **1**" in report_text
+    assert "Warnings: **0**" in report_text
+    assert "locator" not in report_text
+
+
+@pytest.mark.parametrize("artifact", ["profile", "observation"])
+def test_develop_writes_diagnostics_when_profile_or_observation_grammar_fails(
+    tmp_path: Path, artifact: str
+) -> None:
+    story, _ = _fixture(tmp_path)
+    if artifact == "profile":
+        path = story / "source-study/wells-profile.md"
+        path.write_text(
+            path.read_text(encoding="utf-8").replace(
+                "No reviewed descriptive synthesis is recorded at protocol status.",
+                "Rogue profile prose.",
+                1,
+            ),
+            encoding="utf-8",
+        )
+    else:
+        path = story / "source-study/observations/wells-alpha.md"
+        path.write_text(
+            path.read_text(encoding="utf-8").replace(
+                "No reviewed observations are recorded at protocol status.",
+                "Rogue observation prose.",
+                1,
+            ),
+            encoding="utf-8",
+        )
+    _commit_fixture_holdouts(tmp_path)
+
+    with pytest.raises(CreativeWriterError, match="(?i)validation|profile|observation"):
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+    report = tmp_path / "build/fixture/source-study/development-report.md"
+    report_text = report.read_text(encoding="utf-8")
+    assert "Evidence validation diagnostics" in report_text
+    assert "Blocking errors: **1**" in report_text
+    assert "Warnings: **0**" in report_text
     assert "locator" not in report_text
 
 
@@ -2150,6 +2296,38 @@ def test_profile_rejects_stray_prose_inside_finding_record_region(tmp_path: Path
         validate_profile_claim_links(profile, ledger, config, stage="development")
 
 
+def test_profile_rejects_rogue_record_heading_and_prose_after_finding_start(
+    tmp_path: Path,
+) -> None:
+    story, _ = _fixture(tmp_path)
+    config = _config_for_selection()
+    claim = _fixture_claim(
+        claim_id="profile-rogue-record",
+        jurisdiction={"scope": "role_specific", "roles": ["wells-alpha role"], "eligible_witness_ids": ["wells-alpha"]},
+        classification="role_specific", support=[], search=None, status="rejected",
+    )
+    ledger = EvidenceLedger.model_validate(
+        {
+            "schema_version": 1,
+            "study_id": config.study_id,
+            "stage": "development",
+            "mode": "descriptive",
+            "claims": [claim],
+        }
+    )
+    profile = story / "source-study/wells-profile.md"
+    profile.write_text(
+        _profile_with_fields(config, "profile-rogue-record").replace(
+            "#### Finding 1\n\n",
+            "#### Finding 1\n\n#### Rogue record heading\n\nArbitrary rogue record prose.\n\n",
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(CreativeWriterError, match="(?i)heading|unparsed|stray|record"):
+        validate_profile_claim_links(profile, ledger, config, stage="development")
+
+
 def test_profile_requires_exact_protocol_sentinel_for_empty_dimension(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
     config = _config_for_selection()
@@ -2356,6 +2534,76 @@ def test_quantitative_profile_rejects_empty_or_stale_csv_provenance(tmp_path: Pa
         validate_quantitative_profile(profile, root=tmp_path, metrics_path=metrics_path, metrics_csv_path=csv_path, config=config, passages=index, development_witness_ids={item.witness_id for item in profile.witnesses})
 
 
+def _rewrite_csv_rows(path: Path, rows: list[dict[str, str]]) -> None:
+    fieldnames = list(rows[0])
+    output = io.StringIO(newline="")
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerows(rows)
+    path.write_text(output.getvalue(), encoding="utf-8")
+
+
+@pytest.mark.parametrize("mutation", ["duplicate", "remove", "extra", "mismatch"])
+def test_quantitative_profile_requires_exact_csv_json_profile_identity_sets(
+    tmp_path: Path, mutation: str
+) -> None:
+    _story, config, metrics, metrics_path, csv_path, index = _development_metric_fixture(tmp_path)
+    profile = _complete_quantitative_profile(config, metrics, metrics_path, csv_path)
+    if mutation == "duplicate":
+        metrics["witnesses"].append(dict(metrics["witnesses"][0]))
+        metrics_path.write_text(json.dumps(metrics, indent=2) + "\n", encoding="utf-8")
+        profile.generated_metrics[0].sha256 = _sha256(metrics_path)
+    else:
+        rows = list(csv.DictReader(io.StringIO(csv_path.read_text(encoding="utf-8"))))
+        if mutation == "remove":
+            removed = profile.witnesses.pop()
+            rows = [row for row in rows if row["witness_id"] != removed.witness_id]
+        elif mutation == "extra":
+            extra = dict(rows[0])
+            extra.update({"witness_id": "extra-witness", "source_id": "extra-witness", "selection_id": ""})
+            rows.append(extra)
+        else:
+            rows = [
+                {**row, "source_id": "mismatched-source"}
+                if row["witness_id"] == profile.witnesses[0].witness_id
+                else row
+                for row in rows
+            ]
+        _rewrite_csv_rows(csv_path, rows)
+        profile.generated_metrics[1].sha256 = _sha256(csv_path)
+
+    with pytest.raises(CreativeWriterError, match="(?i)identity|unique|witness set"):
+        validate_quantitative_profile(
+            profile,
+            root=tmp_path,
+            metrics_path=metrics_path,
+            metrics_csv_path=csv_path,
+            config=config,
+            passages=index,
+            development_witness_ids={item.witness_id for item in profile.witnesses},
+        )
+
+
+def test_quantitative_profile_rejects_csv_path_outside_configured_generated_output(
+    tmp_path: Path,
+) -> None:
+    _story, config, metrics, metrics_path, csv_path, index = _development_metric_fixture(tmp_path)
+    profile = _complete_quantitative_profile(config, metrics, metrics_path, csv_path)
+    alternate = tmp_path / "build/fixture/source-study/alternate.csv"
+    alternate.write_bytes(csv_path.read_bytes())
+
+    with pytest.raises(CreativeWriterError, match="(?i)CSV path|configured.*CSV|configured development"):
+        validate_quantitative_profile(
+            profile,
+            root=tmp_path,
+            metrics_path=metrics_path,
+            metrics_csv_path=alternate,
+            config=config,
+            passages=index,
+            development_witness_ids={item.witness_id for item in profile.witnesses},
+        )
+
+
 def test_populated_protocol_quantitative_profile_cannot_skip_current_output_checks(
     tmp_path: Path,
 ) -> None:
@@ -2429,6 +2677,66 @@ def test_leakage_rejects_a_within_work_holdout_passage_id_in_free_text(tmp_path:
         validate_leakage([path], forbidden_witness_ids=set(), forbidden_passages=[passage])
 
 
+def test_develop_pipeline_rejects_holdout_passage_id_in_tracked_artifact(
+    tmp_path: Path,
+) -> None:
+    story, _ = _fixture(tmp_path)
+    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    holdout = next(
+        item for item in index if item.witness_id == "selected-short-fiction/the-star"
+    )
+    controls = story / "source-study/period-controls.md"
+    controls.write_text(
+        controls.read_text(encoding="utf-8")
+        + f"\nTracked holdout locator: {holdout.passage_id}\n",
+        encoding="utf-8",
+    )
+    _commit_fixture_holdouts(tmp_path)
+
+    with pytest.raises(CreativeWriterError, match="(?i)passage ID|forbidden"):
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+    report = tmp_path / "build/fixture/source-study/development-report.md"
+    report_text = report.read_text(encoding="utf-8")
+    assert "Evidence validation diagnostics" in report_text
+    assert "Blocking errors: **2**" in report_text
+
+
+def test_develop_pipeline_rejects_holdout_passage_id_in_generated_artifact(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    story, _ = _fixture(tmp_path)
+    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    holdout = next(
+        item for item in index if item.witness_id == "selected-short-fiction/the-star"
+    )
+    original_measure_development = source_analysis.measure_development
+
+    def mutate_generated_report(*args: object, **kwargs: object) -> object:
+        result = original_measure_development(*args, **kwargs)
+        output_paths = kwargs["output_paths"]
+        assert isinstance(output_paths, dict)
+        report_path = output_paths["development_report"]
+        assert isinstance(report_path, Path)
+        report_path.write_text(
+            report_path.read_text(encoding="utf-8")
+            + f"\nGenerated holdout locator: {holdout.passage_id}\n",
+            encoding="utf-8",
+        )
+        return result
+
+    monkeypatch.setattr(source_analysis, "measure_development", mutate_generated_report)
+    _commit_fixture_holdouts(tmp_path)
+
+    with pytest.raises(CreativeWriterError, match="(?i)passage ID|forbidden"):
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+    report = tmp_path / "build/fixture/source-study/development-report.md"
+    report_text = report.read_text(encoding="utf-8")
+    assert "Evidence validation diagnostics" in report_text
+    assert "Blocking errors: **2**" in report_text
+
+
 def test_develop_requires_exact_retained_tier_one_to_three_dossiers(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
     admission, registry = _fixture_authority(story)
@@ -2497,7 +2805,7 @@ def test_development_rejects_tier_four_control_and_tier_two_continuity(tmp_path:
     config = _config_for_selection()
     config.dimensions[0].roles[:] = ["selected-short-fiction role"]
     admission, registry = _fixture_authority(story)
-    control = next(item for item in index if item.witness_id == "control")
+    control = next(item for item in index if item.witness_id == "tier-four")
     control_reference = _fixture_reference(control, 4)
     control_reference["evidence_role"] = "control"
     claim = _fixture_claim(

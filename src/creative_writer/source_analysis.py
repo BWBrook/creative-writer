@@ -37,7 +37,7 @@ from creative_writer.source_analysis_models import (
     ValidationRecord,
     WitnessDescriptor,
     WitnessHoldouts,
-    parse_validation_document,
+    load_validation_document,
 )
 from creative_writer.source_passages import (
     parse_markdown_witness,
@@ -77,6 +77,20 @@ CANONICAL_EVIDENCE_FILENAMES = (
     "period-controls.md",
     "validation.md",
 )
+CANONICAL_PROTOCOL_VALIDATION_BODY = (
+    "# Validation Record\n\n"
+    "## Protocol state\n\n"
+    "The strict YAML front matter records the adopted protocol state. Freeze hashes,\n"
+    "holdout results, control comparisons, reviewer findings, claim transitions,\n"
+    "and the final profile fingerprint will be recorded only after their respective\n"
+    "stages have occurred.\n"
+)
+PROTOCOL_VALIDATION_SUMMARIES = {
+    "holdout_summary": "Held-out material has not been opened at protocol stage.",
+    "control_summary": "Tier 4 controls remain quarantined at protocol stage.",
+    "reviewer_summary": "Independent review has not begun at protocol stage.",
+    "unresolved_uncertainty": "No reviewed claim outcomes exist at protocol stage.",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -132,6 +146,11 @@ def _relative_to_root(path: Path, root: Path) -> str:
     """Return a relative POSIX path across macOS /var and /private/var aliases."""
 
     return path.resolve(strict=False).relative_to(root.resolve(strict=False)).as_posix()
+
+
+def _normalize_markdown_body(body: str) -> str:
+    normalized = body.replace("\r\n", "\n").replace("\r", "\n")
+    return normalized if normalized.endswith("\n") else normalized + "\n"
 
 
 def _registry_path(story_dir: Path, relative: str) -> Path:
@@ -1013,6 +1032,7 @@ def _validate_artifact_lifecycle(
     ledger: EvidenceLedger | None,
     quantitative_profile: QuantitativeProfile | None,
     validation_record: ValidationRecord | None,
+    validation_body: str | None,
     ledger_path: Path,
     quantitative_path: Path,
     validation_path: Path,
@@ -1047,6 +1067,22 @@ def _validate_artifact_lifecycle(
             result.errors.append(ValidationIssue("error", str(validation_path), message="Validation artifact stage leads configured analysis stage"))
         if validation_record.stage == "protocol" and validation_record.claim_transitions:
             result.errors.append(ValidationIssue("error", str(validation_path), message="Populated protocol validation record is not an empty template"))
+        if validation_record.stage == "protocol":
+            for field, expected in PROTOCOL_VALIDATION_SUMMARIES.items():
+                if getattr(validation_record, field) != expected:
+                    result.errors.append(ValidationIssue("error", str(validation_path), locator=field, message="Protocol validation record must retain the exact current placeholder value"))
+            if any(
+                getattr(validation_record, field) is not None
+                for field in (
+                    "candidate_commit",
+                    "candidate_profile_sha256",
+                    "candidate_ledger_sha256",
+                    "final_profile_sha256",
+                )
+            ):
+                result.errors.append(ValidationIssue("error", str(validation_path), message="Protocol validation record must not contain hashes"))
+            if validation_body is None or _normalize_markdown_body(validation_body) != _normalize_markdown_body(CANONICAL_PROTOCOL_VALIDATION_BODY):
+                result.errors.append(ValidationIssue("error", str(validation_path), message="Protocol validation Markdown body must match the canonical protocol body"))
         if configured == "candidate_frozen" and validation_record.stage != "candidate_frozen":
             result.errors.append(ValidationIssue("error", str(validation_path), message="Candidate-frozen analysis requires a candidate_frozen validation record"))
         if configured == "validated" and validation_record.stage != "validated":
@@ -1186,19 +1222,18 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
         development_report,
         lambda: _load_optional_yaml_model(quantitative_path, QuantitativeProfile),
     )
-    validation_record: ValidationRecord | None = _post_metric_call(
+    validation_record, validation_body = _post_metric_call(
         validation_path,
         development_report,
-        lambda: parse_validation_document(
-            validation_path.read_text(encoding="utf-8"), validation_path
-        ),
-    )[0]
+        lambda: load_validation_document(validation_path),
+    )
     evidence_result.extend(
         _validate_artifact_lifecycle(
             config,
             ledger=ledger,
             quantitative_profile=quantitative_profile,
             validation_record=validation_record,
+            validation_body=validation_body,
             ledger_path=ledger_path,
             quantitative_path=quantitative_path,
             validation_path=validation_path,

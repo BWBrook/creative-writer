@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from creative_writer.exceptions import CreativeWriterError
-from creative_writer.source_analysis_models import WitnessDescriptor
+from creative_writer.source_analysis_models import PassageRecord, WitnessDescriptor
 from creative_writer.source_passages import (
     context_window,
     parse_markdown_witness,
@@ -48,6 +48,19 @@ def _stub_pandoc(monkeypatch: pytest.MonkeyPatch, payload: object, *, stderr: st
 
 def _text(value: str) -> list[dict[str, object]]:
     return [{"t": "Str", "c": value}]
+
+
+def _reordinal(
+    passage: PassageRecord, *, source_ordinal: int, heading_ordinal: int
+) -> PassageRecord:
+    prefix = passage.passage_id.rsplit(":", 2)[0]
+    return passage.model_copy(
+        update={
+            "source_ordinal": source_ordinal,
+            "heading_ordinal": heading_ordinal,
+            "passage_id": f"{prefix}:{source_ordinal}:{passage.content_hash[:12]}",
+        }
+    )
 
 
 def _fixture_ast() -> dict[str, object]:
@@ -466,6 +479,80 @@ def test_write_rejects_isolated_record_tampering_before_replacing_artifact(tmp_p
     assert output.read_text(encoding="utf-8") == "existing artifact\n"
 
 
+@pytest.mark.parametrize("field", ["block_type", "heading_ordinal"])
+def test_write_revalidates_model_copy_instances_before_filesystem_operations(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, field: str
+) -> None:
+    markdown = tmp_path / "fixture.md"
+    markdown.write_text("# Heading\n\nText.", encoding="utf-8")
+    passage = parse_markdown_witness(markdown, _witness())[0]
+    invalid_value = "not-a-block-type" if field == "block_type" else 0
+    tampered = passage.model_copy(update={field: invalid_value})
+    output = tmp_path / "passages.jsonl"
+    output.write_text("existing artifact\n", encoding="utf-8")
+
+    def filesystem_operation_is_forbidden(*args: object, **kwargs: object) -> None:
+        raise AssertionError("filesystem operation occurred before revalidation")
+
+    monkeypatch.setattr(Path, "mkdir", filesystem_operation_is_forbidden)
+
+    with pytest.raises(CreativeWriterError, match="Invalid passage record"):
+        write_passage_index(output, [tampered])
+    assert output.read_text(encoding="utf-8") == "existing artifact\n"
+
+
+@pytest.mark.parametrize(
+    ("source_ordinals", "heading_ordinals", "message"),
+    [
+        pytest.param([1, 1], [1, 2], "source ordinals", id="duplicate-source"),
+        pytest.param([1, 3], [1, 2], "source ordinals", id="gapped-source"),
+        pytest.param([1, 2], [1, 99], "heading ordinals", id="gapped-heading"),
+    ],
+)
+def test_writer_and_reader_enforce_full_index_ordinal_sequences_before_mutation(
+    tmp_path: Path,
+    source_ordinals: list[int],
+    heading_ordinals: list[int],
+    message: str,
+) -> None:
+    markdown = tmp_path / "fixture.md"
+    markdown.write_text("# Heading\n\nFirst.\n\nSecond.", encoding="utf-8")
+    passages = parse_markdown_witness(markdown, _witness())
+    records = [
+        _reordinal(
+            passage,
+            source_ordinal=source_ordinal,
+            heading_ordinal=heading_ordinal,
+        )
+        for passage, source_ordinal, heading_ordinal in zip(
+            passages, source_ordinals, heading_ordinals
+        )
+    ]
+    output = tmp_path / "passages.jsonl"
+    output.write_text("existing artifact\n", encoding="utf-8")
+
+    with pytest.raises(CreativeWriterError, match=message):
+        write_passage_index(output, records)
+    assert output.read_text(encoding="utf-8") == "existing artifact\n"
+
+    index = tmp_path / "invalid.jsonl"
+    index.write_text(
+        "".join(
+            json.dumps(
+                record.model_dump(mode="json"),
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            + "\n"
+            for record in records
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(CreativeWriterError, match=message):
+        read_passage_index(index)
+
+
 @pytest.mark.parametrize("max_blocks", [True, False, 0, 6])
 def test_partition_windows_rejects_non_strict_or_out_of_range_max_blocks(
     max_blocks: object,
@@ -492,6 +579,36 @@ def test_write_preserves_existing_artifact_when_atomic_replace_fails(
         write_passage_index(output, [passage])
     assert output.read_text(encoding="utf-8") == "existing artifact\n"
     assert list(tmp_path.glob(f".{output.name}.*.tmp")) == []
+
+
+def test_atomic_write_reports_replace_and_temporary_cleanup_failures(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    markdown = tmp_path / "fixture.md"
+    markdown.write_text("Text.", encoding="utf-8")
+    passage = parse_markdown_witness(markdown, _witness())[0]
+    output = tmp_path / "passages.jsonl"
+    output.write_text("existing artifact\n", encoding="utf-8")
+
+    def fail_replace(*args: object, **kwargs: object) -> None:
+        raise OSError("replace failed")
+
+    def fail_unlink(*args: object, **kwargs: object) -> None:
+        raise OSError("cleanup failed")
+
+    monkeypatch.setattr("creative_writer.source_passages.os.replace", fail_replace)
+    monkeypatch.setattr(Path, "unlink", fail_unlink)
+
+    with pytest.raises(CreativeWriterError) as raised:
+        write_passage_index(output, [passage])
+
+    residual = list(tmp_path.glob(f".{output.name}.*.tmp"))
+    assert len(residual) == 1
+    message = str(raised.value)
+    assert str(residual[0]) in message
+    assert "replace failed" in message
+    assert "cleanup failed" in message
+    assert output.read_text(encoding="utf-8") == "existing artifact\n"
 
 
 def test_write_wraps_directory_creation_failures(

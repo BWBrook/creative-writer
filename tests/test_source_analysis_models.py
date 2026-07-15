@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import hashlib
+import unicodedata
 from pathlib import Path
 
 import pytest
@@ -19,6 +20,7 @@ from creative_writer.source_analysis_models import (
     WitnessDescriptor,
     QuantitativeProfile,
     ValidationRecord,
+    _heading_slug,
     parse_validation_document,
 )
 
@@ -435,6 +437,30 @@ def test_passage_rejects_malformed_hash() -> None:
     payload["source_fingerprint"] = "not-a-sha256"
 
     with pytest.raises(ValidationError, match="source_fingerprint"):
+        PassageRecord.model_validate(payload)
+
+
+@pytest.mark.parametrize("heading", ["!!!", "漢字"])
+def test_heading_slug_uses_deterministic_hash_for_non_slug_headings(heading: str) -> None:
+    normalized_heading = unicodedata.normalize("NFC", heading)
+    expected_slug = f"heading-{hashlib.sha256(normalized_heading.encode('utf-8')).hexdigest()[:12]}"
+
+    assert _heading_slug(heading) == expected_slug
+    assert _heading_slug("Untitled") == "untitled"
+
+    payload = _passage()
+    payload["heading_path"] = [heading]
+    payload["heading_label"] = heading
+    payload["passage_id"] = (
+        f"selected-short-fiction/the-star:{expected_slug}:1:{payload['content_hash'][:12]}"
+    )
+    record = PassageRecord.model_validate(payload)
+    assert record.passage_id == payload["passage_id"]
+
+    payload["passage_id"] = (
+        f"selected-short-fiction/the-star:untitled:1:{payload['content_hash'][:12]}"
+    )
+    with pytest.raises(ValidationError, match="passage ID"):
         PassageRecord.model_validate(payload)
 
 

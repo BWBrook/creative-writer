@@ -414,18 +414,56 @@ def _validate_index_records(
                 "passage index records must be ordered by witness_ordinal then source_ordinal"
             )
 
+    current_witness: str | None = None
+    expected_source_ordinal = 1
+    previous_heading_path: tuple[str, ...] | None = None
+    expected_heading_ordinal = 0
+    for record in records:
+        if record.witness_id != current_witness:
+            current_witness = record.witness_id
+            expected_source_ordinal = 1
+            previous_heading_path = None
+            expected_heading_ordinal = 0
+
+        if record.source_ordinal != expected_source_ordinal:
+            raise CreativeWriterError(
+                f"source ordinals for witness {record.witness_id} must be exactly 1..n"
+            )
+        expected_source_ordinal += 1
+
+        heading_path = tuple(record.heading_path)
+        expected_heading_ordinal = (
+            1
+            if heading_path != previous_heading_path
+            else expected_heading_ordinal + 1
+        )
+        if record.heading_ordinal != expected_heading_ordinal:
+            raise CreativeWriterError(
+                f"heading ordinals for witness {record.witness_id} must reset to 1 when "
+                "heading_path changes and increment by one while unchanged"
+            )
+        previous_heading_path = heading_path
+
 
 def write_passage_index(path: Path, passages: Iterable[PassageRecord]) -> None:
     """Write validated passage records as deterministic UTF-8 JSON Lines."""
 
     try:
-        records = [PassageRecord.model_validate(passage) for passage in passages]
+        records = [
+            PassageRecord.model_validate(
+                passage.model_dump(mode="json")
+                if isinstance(passage, PassageRecord)
+                else passage
+            )
+            for passage in passages
+        ]
     except (ValidationError, TypeError) as exc:
         raise CreativeWriterError(f"Invalid passage record: {exc}") from exc
-    _validate_index_records(records, require_reading_order=False)
     records.sort(key=lambda item: (item.witness_ordinal, item.source_ordinal))
+    _validate_index_records(records, require_reading_order=True)
 
     temporary_path: Path | None = None
+    write_error: CreativeWriterError | None = None
     try:
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -457,16 +495,29 @@ def write_passage_index(path: Path, passages: Iterable[PassageRecord]) -> None:
             os.fsync(handle.fileno())
         os.replace(temporary_path, path)
         temporary_path = None
-    except CreativeWriterError:
-        raise
+    except CreativeWriterError as exc:
+        write_error = exc
     except OSError as exc:
-        raise CreativeWriterError(f"Unable to write passage index {path}: {exc}") from exc
-    finally:
-        if temporary_path is not None:
-            try:
-                temporary_path.unlink()
-            except OSError:
-                pass
+        write_error = CreativeWriterError(f"Unable to write passage index {path}: {exc}")
+
+    cleanup_error: OSError | None = None
+    if temporary_path is not None:
+        try:
+            temporary_path.unlink()
+        except OSError as exc:
+            cleanup_error = exc
+
+    if cleanup_error is not None:
+        residual = temporary_path
+        detail = (
+            f"temporary passage index remains at {residual}; "
+            f"temporary cleanup failed: {cleanup_error}"
+        )
+        if write_error is not None:
+            detail = f"{write_error}; {detail}"
+        raise CreativeWriterError(detail) from cleanup_error
+    if write_error is not None:
+        raise write_error
 
 
 def read_passage_index(path: Path) -> list[PassageRecord]:

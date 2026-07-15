@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+import unicodedata
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Literal, get_args
@@ -103,8 +104,14 @@ def _validate_selection_identity(
 
 
 def _heading_slug(label: str) -> str:
-    slug = re.sub(r"[^a-z0-9]+", "-", label.lower()).strip("-")
-    return slug or "untitled"
+    normalized = unicodedata.normalize("NFC", label)
+    slug = re.sub(r"[^a-z0-9]+", "-", normalized.lower()).strip("-")
+    if slug:
+        return slug
+    if normalized == "Untitled":
+        return "untitled"
+    digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:12]
+    return f"heading-{digest}"
 
 
 class RegistryReference(StrictModel):

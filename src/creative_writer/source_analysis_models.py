@@ -130,6 +130,20 @@ class PassageRules(StrictModel):
         return _validate_unique(value, "substantive block types")
 
 
+class WitnessDescriptor(StrictModel):
+    """Identity and retained-text fingerprint supplied to the passage parser."""
+
+    witness_id: NonEmptyText
+    source_id: NonEmptyText
+    selection_id: Slug | None = None
+    source_fingerprint: SHA256
+
+    @model_validator(mode="after")
+    def validate_identity(self) -> "WitnessDescriptor":
+        _validate_selection_identity(self.witness_id, self.source_id, self.selection_id)
+        return self
+
+
 class PartitionRules(StrictModel):
     seed: NonEmptyText
     algorithm_version: NonEmptyText

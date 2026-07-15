@@ -80,6 +80,53 @@ def test_generation_publication_and_pinned_reader_return_complete_snapshot(tmp_p
     assert set(snapshot.paths) == set(payloads)
 
 
+def test_publication_rejects_symlinked_validation_root(tmp_path: Path) -> None:
+    validation_root = tmp_path / "validation"
+    validation_root.symlink_to(tmp_path / "outside", target_is_directory=False)
+    payloads = {
+        "validation-metrics.json": b'{}\n',
+        "validation-packet.md": b"# packet\n",
+        "analysis-report.md": b"# report\n",
+    }
+
+    with pytest.raises(CreativeWriterError, match="symlink|regular directory"):
+        publish_validation_generation(validation_root, payloads)
+
+
+def test_post_swap_parent_fsync_reports_committed_state_and_keeps_new_pointer(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    validation_root = tmp_path / "validation"
+    old_payloads = {
+        "validation-metrics.json": b"old metrics\n",
+        "validation-packet.md": b"# old packet\n",
+        "analysis-report.md": b"# old report\n",
+    }
+    new_payloads = {
+        "validation-metrics.json": b"new metrics\n",
+        "validation-packet.md": b"# new packet\n",
+        "analysis-report.md": b"# new report\n",
+    }
+    publish_validation_generation(validation_root, old_payloads)
+
+    import creative_writer.source_analysis_common as common
+
+    real_fsync = common._fsync_directory
+
+    def fail_after_swap(path: Path) -> None:
+        if path == validation_root:
+            raise OSError("injected parent fsync failure")
+        real_fsync(path)
+
+    monkeypatch.setattr(common, "_fsync_directory", fail_after_swap)
+    with pytest.raises(CreativeWriterError) as caught:
+        publish_validation_generation(validation_root, new_payloads)
+
+    assert "current advanced" in str(caught.value)
+    assert "durability" in str(caught.value)
+    assert read_current_validation_generation(validation_root).bytes == new_payloads
+
+
 def test_unmanaged_current_path_is_rejected(tmp_path: Path) -> None:
     validation_root = tmp_path / "validation"
     validation_root.mkdir(parents=True)

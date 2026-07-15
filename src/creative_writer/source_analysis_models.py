@@ -1117,6 +1117,8 @@ class ValidationRecord(StrictModel):
     stage: Stage
     validation_step: ValidationStep = "not_started"
     candidate_commit: GitHash | None = None
+    candidate_analysis_sha256: SHA256 | None = None
+    candidate_manifest_sha256: SHA256 | None = None
     candidate_profile_sha256: SHA256 | None = None
     candidate_ledger_sha256: SHA256 | None = None
     holdout_summary: NonEmptyText
@@ -1181,6 +1183,8 @@ class ValidationRecord(StrictModel):
                 value is not None
                 for value in (
                     self.candidate_commit,
+                    self.candidate_analysis_sha256,
+                    self.candidate_manifest_sha256,
                     self.candidate_profile_sha256,
                     self.candidate_ledger_sha256,
                     self.final_profile_sha256,
@@ -1190,6 +1194,8 @@ class ValidationRecord(StrictModel):
                 raise ValueError("protocol validation records cannot contain freeze hashes")
         elif self.stage in {"candidate_frozen", "validated"} and not (
             self.candidate_commit
+            and self.candidate_analysis_sha256
+            and self.candidate_manifest_sha256
             and self.candidate_profile_sha256
             and self.candidate_ledger_sha256
         ):

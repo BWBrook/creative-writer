@@ -1097,6 +1097,8 @@ def test_candidate_frozen_validation_accepts_candidate_hashes_without_final_hash
             "stage": "candidate_frozen",
             "validation_step": "frozen",
             "candidate_commit": COMMIT,
+            "candidate_analysis_sha256": HASH,
+            "candidate_manifest_sha256": HASH,
             "candidate_profile_sha256": HASH,
             "candidate_ledger_sha256": HASH,
         }
@@ -1107,6 +1109,22 @@ def test_candidate_frozen_validation_accepts_candidate_hashes_without_final_hash
     assert record.final_profile_sha256 is None
 
 
+def test_candidate_frozen_validation_requires_candidate_analysis_and_manifest_hashes() -> None:
+    payload = _validation()
+    payload.update(
+        {
+            "stage": "candidate_frozen",
+            "validation_step": "frozen",
+            "candidate_commit": COMMIT,
+            "candidate_profile_sha256": HASH,
+            "candidate_ledger_sha256": HASH,
+        }
+    )
+
+    with pytest.raises(ValidationError, match="analysis.*manifest|candidate freeze hashes"):
+        ValidationRecord.model_validate(payload)
+
+
 def test_validation_rejects_final_profile_hash_before_validated() -> None:
     payload = _validation()
     payload.update(
@@ -1114,6 +1132,8 @@ def test_validation_rejects_final_profile_hash_before_validated() -> None:
             "stage": "candidate_frozen",
             "validation_step": "frozen",
             "candidate_commit": COMMIT,
+            "candidate_analysis_sha256": HASH,
+            "candidate_manifest_sha256": HASH,
             "candidate_profile_sha256": HASH,
             "candidate_ledger_sha256": HASH,
             "final_profile_sha256": HASH,
@@ -1131,6 +1151,8 @@ def test_validated_validation_requires_final_profile_hash() -> None:
             "stage": "validated",
             "validation_step": "complete",
             "candidate_commit": COMMIT,
+            "candidate_analysis_sha256": HASH,
+            "candidate_manifest_sha256": HASH,
             "candidate_profile_sha256": HASH,
             "candidate_ledger_sha256": HASH,
         }
@@ -1147,6 +1169,8 @@ def test_validated_validation_accepts_complete_hash_lifecycle() -> None:
             "stage": "validated",
             "validation_step": "complete",
             "candidate_commit": COMMIT,
+            "candidate_analysis_sha256": HASH,
+            "candidate_manifest_sha256": HASH,
             "candidate_profile_sha256": HASH,
             "candidate_ledger_sha256": HASH,
             "final_profile_sha256": HASH,
@@ -1185,6 +1209,8 @@ def test_validation_record_has_two_pass_step_and_final_ledger_hash() -> None:
             "stage": "candidate_frozen",
             "validation_step": "frozen",
             "candidate_commit": COMMIT,
+            "candidate_analysis_sha256": HASH,
+            "candidate_manifest_sha256": HASH,
             "candidate_profile_sha256": HASH,
             "candidate_ledger_sha256": HASH,
         }

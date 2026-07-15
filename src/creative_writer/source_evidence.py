@@ -23,6 +23,7 @@ from creative_writer.exceptions import CreativeWriterError
 from creative_writer.models import SourceStudyAdmission, SourcesRegistry
 from creative_writer.source_analysis_models import (
     AnalysisConfig,
+    ControlComparison,
     EvidenceClaim,
     EvidenceLedger,
     GeneratedDevelopmentMetrics,
@@ -302,6 +303,41 @@ def _parse_candidate_claims(content: str) -> list[str] | None:
             return None
         claims.append(match.group(1))
     return claims if claims else None
+
+
+_ALLOWED_CONTROL_WITNESS_PATH = re.compile(
+    r"^claims\[\d+\]\.validation_expectation\.control_targets\[\d+\]\.witness_id$"
+)
+
+
+def _yaml_scalar_occurrences(text: str) -> list[tuple[str, str]]:
+    """Return every composed YAML scalar and its document path."""
+
+    root = yaml.compose(text)
+    if root is None:
+        return []
+    occurrences: list[tuple[str, str]] = []
+
+    def visit(node: object, path: str) -> None:
+        node_id = getattr(node, "id", None)
+        if node_id == "scalar":
+            value = getattr(node, "value", None)
+            if isinstance(value, str):
+                occurrences.append((path, value))
+            return
+        if node_id == "sequence":
+            for index, child in enumerate(getattr(node, "value", [])):
+                visit(child, f"{path}[{index}]")
+            return
+        if node_id == "mapping":
+            for key_node, value_node in getattr(node, "value", []):
+                key = getattr(key_node, "value", None)
+                key_path = f"{path}.{key}" if path else str(key)
+                visit(key_node, f"{path}.<key>" if path else "<key>")
+                visit(value_node, key_path)
+
+    visit(root, "")
+    return occurrences
 
 
 def _observation_entry_issues(
@@ -1203,36 +1239,26 @@ def collect_leakage_issues(
             forbidden_sequences.append((passage.passage_id, tokens))
     for path in sorted(paths, key=lambda item: item.as_posix()):
         text = _read(path)
-        structured_control_target_ids: set[str] = set()
-        structured_control_target_counts: dict[str, int] = {}
-        if path.name == "evidence-ledger.yml":
+        yaml_occurrences: list[tuple[str, str]] = []
+        if path.name.endswith((".yml", ".yaml")):
             try:
-                raw = yaml.safe_load(text)
+                yaml_occurrences = _yaml_scalar_occurrences(text)
             except yaml.YAMLError:
-                raw = None
-            if isinstance(raw, dict) and isinstance(raw.get("claims"), list):
-                for claim in raw["claims"]:
-                    if not isinstance(claim, dict):
-                        continue
-                    expectation = claim.get("validation_expectation")
-                    if not isinstance(expectation, dict):
-                        continue
-                    targets = expectation.get("control_targets")
-                    if not isinstance(targets, list):
-                        continue
-                    for target in targets:
-                        if not isinstance(target, dict) or not isinstance(target.get("witness_id"), str):
-                            continue
-                        witness_id = target["witness_id"]
-                        structured_control_target_ids.add(witness_id)
-                        structured_control_target_counts[witness_id] = structured_control_target_counts.get(witness_id, 0) + 1
+                yaml_occurrences = []
         for witness_id in sorted(forbidden_witness_ids):
             boundary = rf"(?<![A-Za-z0-9_-]){re.escape(witness_id)}(?![A-Za-z0-9_-])"
             occurrences = len(re.findall(boundary, text))
-            if witness_id in structured_control_target_ids:
-                if occurrences != structured_control_target_counts[witness_id]:
-                    result.errors.append(_error(path, "Predeclared Tier 4 target witness ID appears outside its structured control-target declaration", locator=witness_id))
-            elif occurrences:
+            allowed = [
+                document_path
+                for document_path, value in yaml_occurrences
+                if value == witness_id and _ALLOWED_CONTROL_WITNESS_PATH.fullmatch(document_path)
+            ]
+            disallowed = [
+                document_path
+                for document_path, value in yaml_occurrences
+                if value == witness_id and not _ALLOWED_CONTROL_WITNESS_PATH.fullmatch(document_path)
+            ]
+            if disallowed or occurrences != len(allowed):
                 result.errors.append(_error(path, "Forbidden holdout or Tier 4 witness ID appears in tracked development content", locator=witness_id))
         for passage in forbidden_passages:
             boundary = rf"(?<![A-Za-z0-9_-]){re.escape(passage.passage_id)}(?![A-Za-z0-9_-])"
@@ -1253,6 +1279,99 @@ def validate_leakage(*args, **kwargs) -> ValidationResult:
     return raise_for_issues(result, "Development leakage validation")
 
 
+_PERIOD_ROOT_HEADING = "# Period Controls"
+_PERIOD_CLAIM_HEADING = re.compile(r"^## Claim `([^`]+)`$")
+_PERIOD_COMPARISON_HEADING = re.compile(r"^### Comparison `([^`]+)`$")
+
+
+def collect_period_controls_issues(
+    text: str,
+    comparisons: Sequence[ControlComparison],
+    *,
+    file: Path | str = "period-controls.md",
+) -> ValidationResult:
+    """Validate the exact claim/comparison Markdown grammar for final controls."""
+
+    result = ValidationResult()
+    path = Path(file)
+    lines = text.splitlines()
+    if not lines or lines[0] != _PERIOD_ROOT_HEADING:
+        result.errors.append(_error(path, "Period controls must begin with `# Period Controls`"))
+
+    expected: dict[str, set[str]] = {}
+    for comparison in comparisons:
+        expected.setdefault(comparison.claim_id, set()).add(comparison.id)
+    actual: dict[str, list[str]] = {}
+    seen_claims: set[str] = set()
+    seen_comparisons: set[str] = set()
+    current_claim: str | None = None
+    current_comparison: str | None = None
+    comparison_body: list[str] = []
+
+    def finish_comparison() -> None:
+        nonlocal current_comparison, comparison_body
+        if current_comparison is None:
+            return
+        if not "".join(comparison_body).strip():
+            result.errors.append(
+                _error(path, "Period-control comparison section must contain non-whitespace prose", locator=current_comparison)
+            )
+        current_comparison = None
+        comparison_body = []
+
+    for line in lines[1:] if lines else []:
+        normalized = line
+        claim_match = _PERIOD_CLAIM_HEADING.fullmatch(normalized)
+        comparison_match = _PERIOD_COMPARISON_HEADING.fullmatch(normalized)
+        if claim_match:
+            finish_comparison()
+            claim_id = claim_match.group(1)
+            if claim_id in seen_claims:
+                result.errors.append(_error(path, "Duplicate period-control claim section", locator=claim_id))
+            seen_claims.add(claim_id)
+            actual.setdefault(claim_id, [])
+            current_claim = claim_id
+            continue
+        if comparison_match:
+            finish_comparison()
+            if current_claim is None:
+                result.errors.append(_error(path, "Comparison section is not nested under a claim section"))
+                current_comparison = comparison_match.group(1)
+                comparison_body = []
+                continue
+            comparison_id = comparison_match.group(1)
+            if comparison_id in seen_comparisons:
+                result.errors.append(_error(path, "Duplicate period-control comparison section", locator=comparison_id))
+            seen_comparisons.add(comparison_id)
+            actual[current_claim].append(comparison_id)
+            current_comparison = comparison_id
+            comparison_body = []
+            continue
+        if normalized.startswith("#"):
+            result.errors.append(_error(path, "Malformed or unexpected period-control heading", locator=normalized))
+        if current_comparison is not None:
+            comparison_body.append(line)
+
+    finish_comparison()
+    if set(actual) != set(expected):
+        result.errors.append(
+            _error(path, "Period-control claim sections do not exactly match claims with control comparisons")
+        )
+    for claim_id, expected_ids in expected.items():
+        if set(actual.get(claim_id, [])) != expected_ids or len(actual.get(claim_id, [])) != len(expected_ids):
+            result.errors.append(
+                _error(path, "Period-control comparison sections do not exactly match the claim registry", locator=claim_id)
+            )
+    return result.sorted()
+
+
+def validate_period_controls(*args, **kwargs) -> ValidationResult:
+    return raise_for_issues(
+        collect_period_controls_issues(*args, **kwargs),
+        "Final period-control validation",
+    )
+
+
 __all__ = [
     "FORBIDDEN_TEXT_MIN_TOKENS",
     "PROTOCOL_OBSERVATION_SENTINEL",
@@ -1261,12 +1380,14 @@ __all__ = [
     "ValidationResult",
     "collect_evidence_issues",
     "collect_leakage_issues",
+    "collect_period_controls_issues",
     "collect_observation_issues",
     "collect_profile_issues",
     "collect_quantitative_profile_issues",
     "raise_for_issues",
     "validate_evidence_ledger",
     "validate_leakage",
+    "validate_period_controls",
     "validate_observation_dossiers",
     "validate_profile_claim_links",
     "validate_quantitative_profile",

@@ -31,6 +31,7 @@ from creative_writer.source_analysis import (
 )
 from creative_writer.source_analysis_models import (
     AnalysisConfig,
+    ControlComparison,
     EvidenceLedger,
     HoldoutManifest,
     MetricReference,
@@ -42,6 +43,7 @@ from creative_writer.source_analysis_models import (
 from creative_writer.source_evidence import (
     ValidationIssue,
     collect_leakage_issues,
+    collect_period_controls_issues,
     validate_leakage,
     validate_quantitative_profile,
 )
@@ -441,6 +443,8 @@ def _write_fixture(root: Path) -> Path:
         "study_id": "fixture-wells-phase-2b",
         "stage": "protocol",
         "candidate_commit": None,
+        "candidate_analysis_sha256": None,
+        "candidate_manifest_sha256": None,
         "candidate_profile_sha256": None,
         "candidate_ledger_sha256": None,
         "holdout_summary": "Held-out material has not been opened at protocol stage.",
@@ -3365,6 +3369,57 @@ def test_leakage_requires_full_passage_sequence_and_boundary_safe_ids(tmp_path: 
         validate_leakage([full], forbidden_witness_ids={"holdout"}, forbidden_passages=[passage])
 
 
+def test_yaml_alias_reuse_cannot_escape_the_exact_control_target_path(tmp_path: Path) -> None:
+    path = tmp_path / "evidence-ledger.yml"
+    path.write_text(
+        "claims:\n"
+        "  - validation_expectation:\n"
+        "      control_targets:\n"
+        "        - witness_id: &control period-alpha\n"
+        "      note: *control\n",
+        encoding="utf-8",
+    )
+
+    result = collect_leakage_issues(
+        [path], forbidden_witness_ids={"period-alpha"}, forbidden_passages=[]
+    )
+
+    assert any("witness ID" in issue.message for issue in result.errors)
+
+
+def test_period_controls_require_exact_claim_and_comparison_sections() -> None:
+    comparison = ControlComparison.model_validate(
+        {
+            "id": "comparison-one",
+            "claim_id": "claim-one",
+            "expectation_target_id": "target-one",
+            "witness_id": "period-alpha",
+            "role": "comparison",
+            "passage_ids": ["period-alpha:one:1:aaaaaaaaaaaa"],
+            "comparison": "The control is comparative only.",
+            "result": "not_shared",
+            "notes": "Synthetic comparison.",
+        }
+    )
+    valid = (
+        "# Period Controls\n\n"
+        "## Claim `claim-one`\n\n"
+        "### Comparison `comparison-one`\n\n"
+        "The control remains comparative.\n"
+    )
+    assert not collect_period_controls_issues(valid, [comparison]).errors
+    empty = valid.replace("The control remains comparative.", "")
+    assert collect_period_controls_issues(empty, [comparison]).errors
+
+
+def test_complete_validation_rerun_reuses_the_managed_generation(tmp_path: Path) -> None:
+    _complete_committed_candidate_fixture(tmp_path)
+    first = run_source_analysis(tmp_path, "fixture", "validate")
+    second = run_source_analysis(tmp_path, "fixture", "validate")
+
+    assert second.generation_id == first.generation_id
+
+
 def test_diagnostics_write_is_atomic_and_preserves_previous_report_on_replace_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     report = tmp_path / "development-report.md"
     report.write_text("old report\n", encoding="utf-8")
@@ -3772,6 +3827,8 @@ def _set_candidate_frozen_protocol_fixture(story: Path, *, commit: str = "a" * 4
         "stage": "candidate_frozen",
         "validation_step": "frozen",
         "candidate_commit": commit,
+        "candidate_analysis_sha256": HASH,
+        "candidate_manifest_sha256": HASH,
         "candidate_profile_sha256": HASH,
         "candidate_ledger_sha256": HASH,
         "holdout_summary": "Synthetic held-out Wells material is pending assessment.",
@@ -3850,6 +3907,8 @@ def _prepare_committed_candidate_fixture(
         "stage": "candidate_frozen",
         "validation_step": "frozen",
         "candidate_commit": candidate_commit,
+        "candidate_analysis_sha256": _sha256(analysis_path),
+        "candidate_manifest_sha256": _sha256(story / "source-study/holdouts.yml"),
         "candidate_profile_sha256": _sha256(profile_path),
         "candidate_ledger_sha256": _sha256(ledger_path),
         "holdout_summary": "Synthetic held-out Wells material is pending assessment.",
@@ -3895,6 +3954,8 @@ def _commit_fixture_validation(story: Path, message: str = "update validation fi
 def _complete_committed_candidate_fixture(root: Path) -> Path:
     story, candidate_commit = _prepare_committed_candidate_fixture(root, with_claim=True)
     candidate_ledger_hash = _sha256(story / "source-study/evidence-ledger.yml")
+    candidate_analysis_hash = _sha256(story / "source-study/analysis.yml")
+    candidate_manifest_hash = _sha256(story / "source-study/holdouts.yml")
     heldout_index = read_passage_index(root / "build/fixture/source-study/indexes/heldout-wells.jsonl")
     control_index = read_passage_index(root / "build/fixture/source-study/indexes/tier4-controls.jsonl")
     manifest = HoldoutManifest.model_validate(
@@ -3916,11 +3977,15 @@ def _complete_committed_candidate_fixture(root: Path) -> Path:
     ledger["claims"][0]["confidence"] = "moderate"
     ledger_path.write_text(yaml.safe_dump(ledger, sort_keys=False), encoding="utf-8")
     analysis_path = story / "source-study/analysis.yml"
-    analysis = yaml.safe_load(analysis_path.read_text(encoding="utf-8"))
-    analysis["study_status"] = "validated"
-    analysis_path.write_text(yaml.safe_dump(analysis, sort_keys=False), encoding="utf-8")
+    (story / "source-study/period-controls.md").write_text(
+        "# Period Controls\n\n"
+        "## Claim `fixture-claim`\n\n"
+        "### Comparison `control-fixture-claim`\n\n"
+        "The negative control remains comparative and does not authorize positive use.\n",
+        encoding="utf-8",
+    )
     subprocess.run(
-        ["git", "add", "stories/fixture/source-study/analysis.yml", "stories/fixture/source-study/evidence-ledger.yml"],
+        ["git", "add", "stories/fixture/source-study/evidence-ledger.yml", "stories/fixture/source-study/period-controls.md"],
         cwd=root,
         check=True,
     )
@@ -3933,6 +3998,8 @@ def _complete_committed_candidate_fixture(root: Path) -> Path:
         "stage": "validated",
         "validation_step": "complete",
         "candidate_commit": candidate_commit,
+        "candidate_analysis_sha256": candidate_analysis_hash,
+        "candidate_manifest_sha256": candidate_manifest_hash,
         "candidate_profile_sha256": _sha256(story / "source-study/wells-profile.md"),
         "candidate_ledger_sha256": candidate_ledger_hash,
         "holdout_summary": "Held-out result was recorded for the original candidate claim.",

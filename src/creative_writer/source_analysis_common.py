@@ -89,6 +89,10 @@ VALIDATION_PAYLOAD_NAMES = (
 _GENERATION_ID_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
+class CommittedValidationGenerationError(CreativeWriterError):
+    """The pointer moved, but the parent-directory durability fsync failed."""
+
+
 @dataclass(frozen=True, slots=True)
 class ValidationGenerationSnapshot:
     """A complete, already-pinned validation generation."""
@@ -106,6 +110,46 @@ def _fsync_directory(path: Path) -> None:
         os.fsync(fd)
     finally:
         os.close(fd)
+
+
+def _reject_symlinked_components(path: Path) -> None:
+    """Reject symlinks in an absolute path without resolving them."""
+
+    absolute = Path(os.path.abspath(path))
+    current = Path(absolute.anchor)
+    for component in absolute.parts[1:]:
+        current /= component
+        if current.is_symlink():
+            raise CreativeWriterError(f"Publication path contains a symlinked component: {current}")
+
+
+def _require_real_directory(path: Path, *, create: bool = False) -> None:
+    _reject_symlinked_components(path)
+    if os.path.lexists(path):
+        if path.is_symlink() or not path.is_dir():
+            raise CreativeWriterError(f"Publication directory is not a real directory: {path}")
+        return
+    if not create:
+        raise CreativeWriterError(f"Publication directory is missing: {path}")
+    try:
+        path.mkdir()
+    except OSError as exc:
+        raise CreativeWriterError(f"Unable to create publication directory {path}: {exc}") from exc
+    if path.is_symlink() or not path.is_dir():
+        raise CreativeWriterError(f"Publication directory is not a real directory: {path}")
+
+
+def _current_target(validation_root: Path) -> tuple[Path, str] | None:
+    current = validation_root / "current"
+    if not os.path.lexists(current):
+        return None
+    if not current.is_symlink():
+        raise CreativeWriterError("validation/current is not the managed symlink")
+    target = os.readlink(current)
+    match = re.fullmatch(r"generations/([0-9a-f]{64})", target)
+    if match is None:
+        raise CreativeWriterError("validation/current target is not generations/<64hex>")
+    return current, match.group(1)
 
 
 def _validation_manifest(payloads: Mapping[str, bytes]) -> tuple[bytes, str]:
@@ -190,16 +234,13 @@ def _verify_generation_directory(
 
 
 def _managed_current_generation(validation_root: Path) -> ValidationGenerationSnapshot:
-    current = validation_root / "current"
-    if current.is_symlink():
-        target = os.readlink(current)
-    else:
-        raise CreativeWriterError("validation/current is not a managed relative symlink")
-    match = re.fullmatch(r"generations/([0-9a-f]{64})", target)
-    if match is None:
-        raise CreativeWriterError("validation/current target is not generations/<64hex>")
-    generation_id = match.group(1)
+    _require_real_directory(validation_root)
     generations = validation_root / "generations"
+    _require_real_directory(generations)
+    current_info = _current_target(validation_root)
+    if current_info is None:
+        raise CreativeWriterError("validation/current is not a managed relative symlink")
+    _current, generation_id = current_info
     generation = generations / generation_id
     if generation.resolve(strict=False) != generation:
         raise CreativeWriterError("validation/current generation redirects through a symlink")
@@ -220,13 +261,27 @@ def publish_validation_generation(
     validation_root = Path(validation_root)
     generations = validation_root / "generations"
     lock_path = validation_root / ".publication.lock"
-    validation_root.mkdir(parents=True, exist_ok=True)
-    generations.mkdir(parents=True, exist_ok=True)
+    if not os.path.lexists(validation_root):
+        _reject_symlinked_components(validation_root)
+        validation_root.mkdir(parents=True, exist_ok=True)
+    _require_real_directory(validation_root)
+    if not os.path.lexists(generations):
+        _reject_symlinked_components(generations)
+        generations.mkdir()
+    _require_real_directory(generations)
+    if os.path.lexists(lock_path) and (lock_path.is_symlink() or not lock_path.is_file()):
+        raise CreativeWriterError("Publication lock is not a regular file")
     lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
     staging: Path | None = None
-    renamed = False
+    swapped = False
     try:
         fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        current_info = _current_target(validation_root)
+        current_snapshot = (
+            _verify_generation_directory(generations / current_info[1], current_info[1])
+            if current_info is not None
+            else None
+        )
         for stale in generations.glob(".staging-*"):
             if stale.is_dir() and not stale.is_symlink():
                 shutil.rmtree(stale)
@@ -236,21 +291,25 @@ def publish_validation_generation(
         final = generations / generation_id
         if final.exists() or final.is_symlink():
             existing = _verify_generation_directory(final, generation_id)
-            current = validation_root / "current"
-            if current.is_symlink() and os.readlink(current) == f"generations/{generation_id}":
+            if current_snapshot is not None and current_snapshot.generation_id == generation_id:
                 return existing
-            # Reuse the complete immutable generation, but still publish it through
-            # the same single managed pointer swap when it is not current.
             _fsync_directory(generations)
             tmp_link = validation_root / f".current-{uuid.uuid4().hex}"
             os.symlink(f"generations/{generation_id}", tmp_link)
             try:
-                os.replace(tmp_link, current)
+                os.replace(tmp_link, validation_root / "current")
+                swapped = True
             finally:
                 if tmp_link.is_symlink() or tmp_link.exists():
                     tmp_link.unlink(missing_ok=True)
-            _fsync_directory(validation_root)
-            return _verify_generation_directory(final, generation_id)
+            try:
+                _fsync_directory(validation_root)
+            except OSError as exc:
+                raise CommittedValidationGenerationError(
+                    "validation/current advanced to the new generation, but publication durability is uncertain: "
+                    f"parent fsync failed: {exc}"
+                ) from exc
+            return existing
         staging = generations / f".staging-{uuid.uuid4().hex}"
         staging.mkdir()
         for name in VALIDATION_PAYLOAD_NAMES:
@@ -267,19 +326,28 @@ def publish_validation_generation(
         _fsync_directory(staging)
         os.replace(staging, final)
         staging = None
-        renamed = True
         _fsync_directory(generations)
+        verified = _verify_generation_directory(final, generation_id)
         tmp_link = validation_root / f".current-{uuid.uuid4().hex}"
         os.symlink(f"generations/{generation_id}", tmp_link)
         try:
             os.replace(tmp_link, validation_root / "current")
+            swapped = True
         finally:
             if tmp_link.is_symlink() or tmp_link.exists():
                 tmp_link.unlink(missing_ok=True)
-        _fsync_directory(validation_root)
-        return _verify_generation_directory(final, generation_id)
+        try:
+            _fsync_directory(validation_root)
+        except OSError as exc:
+            raise CommittedValidationGenerationError(
+                "validation/current advanced to the new generation, but publication durability is uncertain: "
+                f"parent fsync failed: {exc}"
+            ) from exc
+        return verified
+    except CommittedValidationGenerationError:
+        raise
     except (CreativeWriterError, OSError) as exc:
-        if staging is not None and (staging.exists() or staging.is_symlink()):
+        if not swapped and staging is not None and (staging.exists() or staging.is_symlink()):
             if staging.is_dir() and not staging.is_symlink():
                 shutil.rmtree(staging, ignore_errors=True)
             else:

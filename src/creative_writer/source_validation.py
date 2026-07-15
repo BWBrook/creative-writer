@@ -24,7 +24,7 @@ from creative_writer.models import SourceStudyAdmission, SourcesRegistry
 from creative_writer.source_analysis_models import AnalysisConfig, CorpusLock, EvidenceLedger, EvidenceClaim, HoldoutManifest, PassageIndexBinding, PassageRecord, QuantitativeProfile, ControlComparison, HeldoutClaimResult, ReviewerRecord, ValidationMetricPartition, ValidationMetricProvenance, ValidationMetricWitness, ValidationMetricsDocument, ValidationRecord, WitnessMetricRecord, WitnessDescriptor, WitnessHoldouts, load_validation_document, parse_validation_document
 from creative_writer.source_passages import context_window, parse_passage_partition
 from creative_writer.source_metrics import measure_validation_partition
-from creative_writer.source_evidence import ValidationIssue, ValidationResult
+from creative_writer.source_evidence import ValidationIssue, ValidationResult, validate_period_controls
 
 TOOL_VERSION = f"creative-writer {__version__}"
 GENERATED_FILENAMES = {"corpus_lock": "corpus-lock.json", "development_passage_index": "indexes/development.jsonl", "heldout_wells_passage_index": "indexes/heldout-wells.jsonl", "tier4_control_passage_index": "indexes/tier4-controls.jsonl", "development_metrics": "development-metrics.json", "development_metrics_csv": "development-metrics.csv", "development_report": "development-report.md", "validation_metrics": "validation/current/validation-metrics.json", "validation_packet": "validation/current/validation-packet.md", "analysis_report": "validation/current/analysis-report.md"}
@@ -184,7 +184,16 @@ def _resolve_generated_paths(root: Path, slug: str, config: AnalysisConfig) -> d
         if relative != expected_relative:
             raise CreativeWriterError(f"Configured generated path for {key} has the wrong configured path")
         target = resolved_root / expected_relative
-        if target.resolve(strict=False) != target:
+        current = target.parent
+        managed_current = (
+            key in {"validation_metrics", "validation_packet", "analysis_report"}
+            and current.name == "current"
+            and current.is_symlink()
+            and current.parent.name == "validation"
+            and current.parent.resolve(strict=False) == current.parent
+            and re.fullmatch(r"generations/[0-9a-f]{64}", os.readlink(current)) is not None
+        )
+        if target.resolve(strict=False) != target and not managed_current:
             raise CreativeWriterError(f"Generated path redirects through a symlink: {relative}")
         resolved[key] = target
     return resolved
@@ -432,7 +441,7 @@ def _git_stdout(root: Path, arguments: list[str]) -> str:
     return _git_bytes(root, arguments).decode("utf-8", errors="strict")
 
 
-def _candidate_git_blob(root: Path, commit: str, relative: str) -> bytes:
+def _candidate_git_blob_record(root: Path, commit: str, relative: str) -> tuple[str, bytes]:
     tree = _git_bytes(root, ["ls-tree", "-z", "--full-tree", commit, "--", relative])
     entries = tree.split(b"\0") if tree else []
     matching = [entry for entry in entries if entry]
@@ -450,7 +459,11 @@ def _candidate_git_blob(root: Path, commit: str, relative: str) -> bytes:
         )
     if len(object_id) != _git_object_id_length(root) or not re.fullmatch(r"[0-9a-f]+", object_id):
         raise CreativeWriterError(f"Candidate Git object ID is malformed for `{relative}`")
-    return _git_bytes(root, ["cat-file", "blob", object_id])
+    return object_id, _git_bytes(root, ["cat-file", "blob", object_id])
+
+
+def _candidate_git_blob(root: Path, commit: str, relative: str) -> bytes:
+    return _candidate_git_blob_record(root, commit, relative)[1]
 
 
 def _verify_candidate_commit(root: Path, commit: str) -> None:
@@ -568,73 +581,101 @@ def _preflight_validation(root: Path, slug: str) -> _ValidationPreflight:
             f"Validation requires schema-v2 clean HEAD protocol blobs and configured generated paths/known corpus-analysis keys: {exc}"
         ) from exc
     try:
-        config = AnalysisConfig.model_validate(yaml.safe_load(analysis_bytes.decode("utf-8")))
         validation, _ = parse_validation_document(
             validation_bytes.decode("utf-8"), validation_path
         )
     except (UnicodeError, yaml.YAMLError, ValidationError, CreativeWriterError) as exc:
         raise CreativeWriterError(f"Trusted validation protocol is invalid: {exc}") from exc
-    if config.study_status not in {"candidate_frozen", "validated"}:
-        raise CreativeWriterError(
-            "Validation requires analysis.yml study_status candidate_frozen or validated"
-        )
-    if validation.stage != config.study_status:
-        raise CreativeWriterError(
-            f"Validation record stage `{validation.stage}` does not match config status `{config.study_status}`"
-        )
+    if validation.stage not in {"candidate_frozen", "validated"}:
+        raise CreativeWriterError("Validation requires a candidate_frozen or validated record")
     if not validation.candidate_commit:
         raise CreativeWriterError("Validation record is missing candidate_commit")
     _verify_candidate_commit(root, validation.candidate_commit)
 
+    candidate_analysis_path = source_study / "analysis.yml"
+    candidate_manifest_path = source_study / "holdouts.yml"
     candidate_profile_path = source_study / "wells-profile.md"
     candidate_ledger_path = source_study / "evidence-ledger.yml"
-    profile_relative = _relative_to_root(candidate_profile_path, root)
-    ledger_relative = _relative_to_root(candidate_ledger_path, root)
-    candidate_profile_mode, candidate_profile_head_oid = _verify_current_candidate_file(
-        root, candidate_profile_path, profile_relative
-    )
-    candidate_ledger_mode, candidate_ledger_head_oid = _verify_current_candidate_file(
-        root, candidate_ledger_path, ledger_relative
-    )
-    candidate_profile_bytes = _candidate_git_blob(root, validation.candidate_commit, profile_relative)
-    candidate_ledger_bytes = _candidate_git_blob(root, validation.candidate_commit, ledger_relative)
-    del candidate_profile_mode, candidate_ledger_mode, candidate_profile_head_oid, candidate_ledger_head_oid
-    if config.study_status == "candidate_frozen" and (
-        _head_object_id(root, profile_relative)[1] != _candidate_blob_object_id(root, validation.candidate_commit, profile_relative)
-        or _head_object_id(root, ledger_relative)[1] != _candidate_blob_object_id(root, validation.candidate_commit, ledger_relative)
-    ):
-        raise CreativeWriterError("Current candidate profile or ledger bytes drift from the frozen Git commit")
-    profile_hash = hashlib.sha256(candidate_profile_bytes).hexdigest()
-    ledger_hash = hashlib.sha256(candidate_ledger_bytes).hexdigest()
-    if profile_hash != validation.candidate_profile_sha256:
-        raise CreativeWriterError(
-            f"Candidate profile SHA-256 mismatch: expected {validation.candidate_profile_sha256}, got {profile_hash}"
+    candidate_paths = {
+        "analysis": candidate_analysis_path,
+        "manifest": candidate_manifest_path,
+        "profile": candidate_profile_path,
+        "ledger": candidate_ledger_path,
+    }
+    candidate_relative = {
+        name: _relative_to_root(path, root) for name, path in candidate_paths.items()
+    }
+    candidate_blobs = {
+        name: _candidate_git_blob_record(root, validation.candidate_commit, relative)
+        for name, relative in candidate_relative.items()
+    }
+    recorded_hashes = {
+        "analysis": validation.candidate_analysis_sha256,
+        "manifest": validation.candidate_manifest_sha256,
+        "profile": validation.candidate_profile_sha256,
+        "ledger": validation.candidate_ledger_sha256,
+    }
+    for name, (_object_id, data) in candidate_blobs.items():
+        actual_hash = sha256_bytes(data)
+        if actual_hash != recorded_hashes[name]:
+            raise CreativeWriterError(
+                f"Candidate {name} SHA-256 mismatch: expected {recorded_hashes[name]}, got {actual_hash}"
+            )
+
+    # Hash checks above deliberately precede all current profile/ledger reads.
+    for name, path in candidate_paths.items():
+        _verify_current_candidate_file(
+            root,
+            path,
+            candidate_relative[name],
+            expected_object_id=candidate_blobs[name][0] if name in {"analysis", "manifest"} or validation.stage == "candidate_frozen" else None,
         )
-    if ledger_hash != validation.candidate_ledger_sha256:
-        raise CreativeWriterError(
-            f"Candidate ledger SHA-256 mismatch: expected {validation.candidate_ledger_sha256}, got {ledger_hash}"
-        )
+
     try:
+        config = AnalysisConfig.model_validate(
+            yaml.safe_load(candidate_blobs["analysis"][1].decode("utf-8"))
+        )
+        manifest = HoldoutManifest.model_validate(
+            yaml.safe_load(candidate_blobs["manifest"][1].decode("utf-8"))
+        )
+        candidate_profile_bytes = candidate_blobs["profile"][1]
+        candidate_ledger_bytes = candidate_blobs["ledger"][1]
         raw_ledger = yaml.safe_load(candidate_ledger_bytes.decode("utf-8"))
         candidate_ledger = EvidenceLedger.model_validate(raw_ledger)
     except (UnicodeError, yaml.YAMLError, ValidationError, TypeError) as exc:
-        raise CreativeWriterError(f"Frozen candidate ledger is not valid structured YAML: {exc}") from exc
+        raise CreativeWriterError(f"Frozen candidate files are not valid structured content: {exc}") from exc
+    if config.study_status not in {"candidate_frozen", "validated"}:
+        raise CreativeWriterError(
+            "Validation requires analysis.yml study_status candidate_frozen or validated"
+        )
+    if not (
+        validation.stage == config.study_status
+        or (config.study_status == "candidate_frozen" and validation.stage == "validated")
+    ):
+        raise CreativeWriterError(
+            f"Validation record stage `{validation.stage}` does not match config status `{config.study_status}`"
+        )
     if candidate_ledger.study_id != config.study_id:
         raise CreativeWriterError("Frozen candidate ledger study identity does not match analysis.yml")
     if candidate_ledger.stage != "development":
         raise CreativeWriterError("Frozen candidate ledger must remain at development stage")
+
+    profile_relative = _relative_to_root(candidate_profile_path, root)
+    ledger_relative = _relative_to_root(candidate_ledger_path, root)
+    if validation.stage == "candidate_frozen" and (
+        _head_object_id(root, profile_relative)[1] != candidate_blobs["profile"][0]
+        or _head_object_id(root, ledger_relative)[1] != candidate_blobs["ledger"][0]
+    ):
+        raise CreativeWriterError("Current candidate profile or ledger bytes drift from the frozen Git commit")
     generated_paths = _resolve_generated_paths(root, slug, config)
     lock_path = generated_paths["corpus_lock"]
-    manifest_path = source_study / "holdouts.yml"
+    manifest_path = candidate_manifest_path
     try:
         lock_bytes = _head_model_bytes(root, lock_path, "Corpus lock")
         lock = CorpusLock.model_validate(json.loads(lock_bytes.decode("utf-8")))
-        manifest_bytes = _head_model_bytes(root, manifest_path, "Holdout manifest")
-        manifest = HoldoutManifest.model_validate(yaml.safe_load(manifest_bytes.decode("utf-8")))
+        manifest_bytes = candidate_blobs["manifest"][1]
     except (OSError, UnicodeError, json.JSONDecodeError, yaml.YAMLError, ValidationError, CreativeWriterError) as exc:
         raise CreativeWriterError(f"Validation corpus lock/manifest could not be loaded: {exc}") from exc
-    if manifest is None:
-        raise CreativeWriterError(f"Missing committed holdout manifest: {manifest_path}")
     expected_index_paths = {
         "development": _relative_to_root(generated_paths["development_passage_index"], root),
         "heldout_wells": _relative_to_root(generated_paths["heldout_wells_passage_index"], root),
@@ -1187,13 +1228,13 @@ def _build_validation_metrics(
     )
     return ValidationMetricsDocument(
         schema_version=1,
-        stage=config.study_status,
+        stage=validation.stage,
         validation_step=validation.validation_step,
         study_id=config.study_id,
         provenance=ValidationMetricProvenance(
             study_id=config.study_id,
             tool_version=TOOL_VERSION,
-            stage=config.study_status,
+            stage=validation.stage,
             validation_step=validation.validation_step,
             config_sha256=sha256_bytes(config_bytes),
             index_sha256=_sha256(generated_paths["heldout_wells_passage_index"]),
@@ -1226,7 +1267,7 @@ def _validate(root: Path, slug: str) -> SourceAnalysisResult:
     generated_paths = _resolve_generated_paths(root, slug, config)
     candidate_claims = preflight.candidate_ledger.claims
     freeze = _freeze_from_preflight(preflight)
-    if config.study_status == "candidate_frozen" and validation.validation_step == "frozen":
+    if validation.stage == "candidate_frozen" and validation.validation_step == "frozen":
         if validation.heldout_claim_results or validation.control_comparisons or validation.reviewer_records:
             raise CreativeWriterError("frozen validation step cannot contain held-out, control, or reviewer records")
         heldout = open_heldout_wells(freeze)
@@ -1240,7 +1281,7 @@ def _validate(root: Path, slug: str) -> SourceAnalysisResult:
         )
         return _make_result(root, slug, generated_paths=generated_paths, holdout_path=_story_path(root, slug) / "source-study" / "holdouts.yml", witness_count=len(metrics.heldout_wells.witnesses), passage_count=len(corpus.heldout_ids), generation_id=generation_id)
 
-    if config.study_status == "candidate_frozen" and validation.validation_step == "heldout_assessed":
+    if validation.stage == "candidate_frozen" and validation.validation_step == "heldout_assessed":
         _require_validation_treatment(validation, candidate_claims, require_controls=False, require_reviewers=False)
         heldout = open_heldout_wells(freeze)
         corpus = _corpus_from_capabilities(freeze, heldout, manifest=preflight.manifest)
@@ -1269,7 +1310,7 @@ def _validate(root: Path, slug: str) -> SourceAnalysisResult:
         )
         return _make_result(root, slug, generated_paths=generated_paths, holdout_path=_story_path(root, slug) / "source-study" / "holdouts.yml", witness_count=len(metrics.heldout_wells.witnesses) + len(metrics.tier4_controls.witnesses if metrics.tier4_controls else []), passage_count=len(corpus.passages), generation_id=generation_id)
 
-    if config.study_status != "validated" or validation.validation_step != "complete":
+    if validation.stage != "validated" or validation.validation_step != "complete":
         raise CreativeWriterError("Validation record must use frozen, heldout_assessed, or complete step for its configured stage")
     _require_validation_treatment(validation, candidate_claims, require_controls=True, require_reviewers=True)
     heldout = open_heldout_wells(freeze)
@@ -1314,6 +1355,17 @@ def _validate(root: Path, slug: str) -> SourceAnalysisResult:
         raise CreativeWriterError(f"Unable to read final validation artifacts from trusted HEAD blobs: {exc}") from exc
     if final_ledger.stage != "validated" or final_ledger.study_id != config.study_id:
         raise CreativeWriterError("Final evidence ledger must be validated and match the study")
+    try:
+        controls_text = _trusted_controls_bytes.decode("utf-8")
+    except UnicodeError as exc:
+        raise CreativeWriterError(
+            f"Final period-controls artifact is not valid UTF-8: {exc}"
+        ) from exc
+    validate_period_controls(
+        controls_text,
+        validation.control_comparisons,
+        file=period_controls_path,
+    )
     if hashlib.sha256(final_profile_bytes).hexdigest() != validation.final_profile_sha256:
         raise CreativeWriterError("Final profile SHA-256 does not match validation.md")
     if hashlib.sha256(final_ledger_bytes).hexdigest() != validation.final_ledger_sha256:
@@ -1389,7 +1441,17 @@ def open_heldout_wells(capability: VerifiedFreeze) -> HeldoutCorpus:
 def authorize_control_access(capability: VerifiedFreeze, heldout: HeldoutCorpus) -> VerifiedControlAccess:
     if not _genuine(capability, VerifiedFreeze) or not _genuine(heldout, HeldoutCorpus) or heldout.freeze is not capability:
         raise CreativeWriterError("control authorization requires the genuine freeze and its held-out corpus")
+    if capability.validation.validation_step not in {"heldout_assessed", "complete"}:
+        raise CreativeWriterError(
+            "Tier 4 control authorization is unavailable before complete held-out assessment"
+        )
     candidate_claim_ids = {claim.id for claim in capability.candidate_ledger.claims}
+    _require_validation_treatment(
+        capability.validation,
+        capability.candidate_ledger.claims,
+        require_controls=False,
+        require_reviewers=False,
+    )
     _validate_record_partitions(capability.validation, _ValidationCorpus(capability.lock, None, list(heldout.records), set(heldout.ids), set(), heldout.witness_tiers, heldout.witness_roles, heldout.registry), candidate_claim_ids=candidate_claim_ids, candidate_claims=capability.candidate_ledger.claims, include_controls=False)
     generated = _resolve_generated_paths(capability.root, capability.slug, capability.config)
     manifest_bytes = _head_model_bytes(capability.root, capability.manifest_path, "Holdout manifest")

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -50,7 +51,7 @@ def _analysis_config() -> dict[str, object]:
     return {
         "schema_version": 1,
         "study_id": "time-expedition-wells-phase-2b",
-        "composition_window": {"start": 1895, "end": 1899},
+        "composition_window": {"start": 1897, "end": 1899},
         "study_status": "protocol",
         "admission_registry": {"path": "source-study/admission.yml", "sha256": HASH},
         "source_registry": {"path": "original/sources.yml", "sha256": HASH},
@@ -163,37 +164,46 @@ def _validation() -> dict[str, object]:
     }
 
 
+def _holdout_manifest() -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "partition_seed": "wells-phase-2b-v1",
+        "algorithm_version": "tertile-hash-v1",
+        "tool_version": "creative-writer 1",
+        "created_at": datetime(2026, 7, 15, 10, tzinfo=timezone.utc),
+        "registry_hashes": {"original/sources.yml": HASH},
+        "source_fingerprints": {
+            "selected-short-fiction/the-star": HASH,
+            "the-time-machine": HASH,
+        },
+        "whole_work_holdouts": ["selected-short-fiction/the-star"],
+        "witnesses": [
+            {
+                "witness_id": "selected-short-fiction/the-star",
+                "development_windows": [],
+                "holdout_windows": [
+                    {"id": "star-holdout", "passage_ids": ["star:1"]}
+                ],
+            },
+            {
+                "witness_id": "the-time-machine",
+                "development_windows": [
+                    {"id": "tm-dev-1", "passage_ids": ["tm:1"]}
+                ],
+                "holdout_windows": [
+                    {"id": "tm-holdout-1", "passage_ids": ["tm:2"]}
+                ],
+            },
+        ],
+    }
+
+
 def test_complete_yaml_fixtures_parse(tmp_path: Path) -> None:
     fixtures = [
         ("analysis.yml", _analysis_config(), AnalysisConfig),
         (
             "holdouts.yml",
-            {
-                "schema_version": 1,
-                "partition_seed": "wells-phase-2b-v1",
-                "algorithm_version": "tertile-hash-v1",
-                "tool_version": "creative-writer 1",
-                "created_at": "2026-07-15T10:00:00Z",
-                "registry_hashes": {"original/sources.yml": HASH},
-                "source_fingerprints": {"the-time-machine": HASH},
-                "whole_work_holdouts": ["selected-short-fiction/the-star"],
-                "witnesses": [
-                    {
-                        "witness_id": "the-time-machine",
-                        "development_windows": [
-                            {"id": "tm-dev-1", "passage_ids": [_reference()["passage_id"]]}
-                        ],
-                        "holdout_windows": [
-                            {
-                                "id": "tm-holdout-1",
-                                "passage_ids": [
-                                    "the-time-machine:chapter-one:2:cccccccccccc"
-                                ],
-                            }
-                        ],
-                    }
-                ],
-            },
+            _holdout_manifest(),
             HoldoutManifest,
         ),
         (
@@ -240,6 +250,25 @@ def test_validation_document_requires_strict_front_matter_and_preserves_body() -
     assert body == "# Review surface\n\nProtocol state.\n"
 
 
+def test_analysis_fixture_uses_canonical_composition_window() -> None:
+    config = load_yaml_model(
+        Path("stories/time-expedition/source-study/analysis.yml"), AnalysisConfig
+    )
+
+    assert config.composition_window.start == 1897
+    assert config.composition_window.end == 1899
+
+
+def test_partition_rejects_string_holdout_fraction() -> None:
+    payload = _analysis_config()
+    partition = payload["partition"]
+    assert isinstance(partition, dict)
+    partition["holdout_fraction"] = "0.2"
+
+    with pytest.raises(ValidationError, match="holdout_fraction"):
+        AnalysisConfig.model_validate(payload)
+
+
 @pytest.mark.parametrize(
     ("field", "value"),
     [
@@ -265,24 +294,47 @@ def test_analysis_rejects_duplicate_dimension_ids() -> None:
         AnalysisConfig.model_validate(payload)
 
 
-def test_passage_rejects_malformed_hash_empty_text_and_selection_mismatch() -> None:
+def test_passage_rejects_malformed_hash() -> None:
     payload = _passage()
     payload["source_fingerprint"] = "not-a-sha256"
-    payload["normalized_text"] = ""
-    payload["selection_id"] = "different-selection"
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match="source_fingerprint"):
         PassageRecord.model_validate(payload)
 
 
-def test_ledger_rejects_duplicate_claim_ids_and_operational_instruction_field() -> None:
+def test_passage_rejects_empty_text() -> None:
+    payload = _passage()
+    payload["normalized_text"] = ""
+
+    with pytest.raises(ValidationError, match="normalized_text"):
+        PassageRecord.model_validate(payload)
+
+
+def test_passage_rejects_selection_mismatch() -> None:
+    payload = _passage()
+    payload["selection_id"] = "different-selection"
+
+    with pytest.raises(ValidationError, match="mismatched selection identity"):
+        PassageRecord.model_validate(payload)
+
+
+def test_ledger_rejects_duplicate_claim_ids() -> None:
     payload = _ledger()
     claims = payload["claims"]
     assert isinstance(claims, list)
     claims.append(dict(claims[0]))
-    claims[1]["operational_use"] = "none"
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match="claim IDs must be unique"):
+        EvidenceLedger.model_validate(payload)
+
+
+def test_ledger_rejects_forbidden_extra_field() -> None:
+    payload = _ledger()
+    claims = payload["claims"]
+    assert isinstance(claims, list)
+    claims[0]["operational_use"] = "none"
+
+    with pytest.raises(ValidationError, match="operational_use"):
         EvidenceLedger.model_validate(payload)
 
 
@@ -308,3 +360,147 @@ def test_ledger_rejects_mismatched_selection_identity() -> None:
 
     with pytest.raises(ValidationError, match="selection identity"):
         EvidenceLedger.model_validate(payload)
+
+
+def test_holdout_manifest_accepts_whole_work_and_partitioned_witnesses() -> None:
+    manifest = HoldoutManifest.model_validate(_holdout_manifest())
+
+    whole_work = next(
+        item for item in manifest.witnesses if item.witness_id == "selected-short-fiction/the-star"
+    )
+    partitioned = next(item for item in manifest.witnesses if item.witness_id == "the-time-machine")
+    assert whole_work.development_windows == []
+    assert whole_work.holdout_windows
+    assert partitioned.development_windows
+    assert partitioned.holdout_windows
+
+
+def test_holdout_manifest_rejects_undeclared_whole_work_witness() -> None:
+    payload = _holdout_manifest()
+    witnesses = payload["witnesses"]
+    assert isinstance(witnesses, list)
+    witnesses.pop(0)
+
+    with pytest.raises(ValidationError, match="whole-work holdouts must be represented"):
+        HoldoutManifest.model_validate(payload)
+
+
+def test_holdout_manifest_rejects_development_windows_for_whole_work() -> None:
+    payload = _holdout_manifest()
+    witnesses = payload["witnesses"]
+    assert isinstance(witnesses, list)
+    whole_work = witnesses[0]
+    assert isinstance(whole_work, dict)
+    whole_work["development_windows"] = [
+        {"id": "star-dev", "passage_ids": ["star:development"]}
+    ]
+
+    with pytest.raises(ValidationError, match="whole-work witnesses must not have development windows"):
+        HoldoutManifest.model_validate(payload)
+
+
+def test_holdout_manifest_rejects_non_whole_work_without_development_windows() -> None:
+    payload = _holdout_manifest()
+    witnesses = payload["witnesses"]
+    assert isinstance(witnesses, list)
+    partitioned = witnesses[1]
+    assert isinstance(partitioned, dict)
+    partitioned["development_windows"] = []
+
+    with pytest.raises(ValidationError, match="non-whole-work witnesses require development windows"):
+        HoldoutManifest.model_validate(payload)
+
+
+def test_holdout_manifest_rejects_non_whole_work_without_holdout_windows() -> None:
+    payload = _holdout_manifest()
+    witnesses = payload["witnesses"]
+    assert isinstance(witnesses, list)
+    partitioned = witnesses[1]
+    assert isinstance(partitioned, dict)
+    partitioned["holdout_windows"] = []
+
+    with pytest.raises(ValidationError, match="holdout_windows"):
+        HoldoutManifest.model_validate(payload)
+
+
+def test_development_validation_allows_absent_candidate_hashes() -> None:
+    payload = _validation()
+    payload["stage"] = "development"
+
+    record = ValidationRecord.model_validate(payload)
+
+    assert record.stage == "development"
+    assert record.candidate_commit is None
+
+
+def test_candidate_frozen_validation_requires_candidate_hashes() -> None:
+    payload = _validation()
+    payload["stage"] = "candidate_frozen"
+
+    with pytest.raises(ValidationError, match="candidate freeze hashes"):
+        ValidationRecord.model_validate(payload)
+
+
+def test_candidate_frozen_validation_accepts_candidate_hashes_without_final_hash() -> None:
+    payload = _validation()
+    payload.update(
+        {
+            "stage": "candidate_frozen",
+            "candidate_commit": COMMIT,
+            "candidate_profile_sha256": HASH,
+            "candidate_ledger_sha256": HASH,
+        }
+    )
+
+    record = ValidationRecord.model_validate(payload)
+
+    assert record.final_profile_sha256 is None
+
+
+def test_validation_rejects_final_profile_hash_before_validated() -> None:
+    payload = _validation()
+    payload.update(
+        {
+            "stage": "candidate_frozen",
+            "candidate_commit": COMMIT,
+            "candidate_profile_sha256": HASH,
+            "candidate_ledger_sha256": HASH,
+            "final_profile_sha256": HASH,
+        }
+    )
+
+    with pytest.raises(ValidationError, match="final profile hash must be absent before validation"):
+        ValidationRecord.model_validate(payload)
+
+
+def test_validated_validation_requires_final_profile_hash() -> None:
+    payload = _validation()
+    payload.update(
+        {
+            "stage": "validated",
+            "candidate_commit": COMMIT,
+            "candidate_profile_sha256": HASH,
+            "candidate_ledger_sha256": HASH,
+        }
+    )
+
+    with pytest.raises(ValidationError, match="final profile hash is required"):
+        ValidationRecord.model_validate(payload)
+
+
+def test_validated_validation_accepts_complete_hash_lifecycle() -> None:
+    payload = _validation()
+    payload.update(
+        {
+            "stage": "validated",
+            "candidate_commit": COMMIT,
+            "candidate_profile_sha256": HASH,
+            "candidate_ledger_sha256": HASH,
+            "final_profile_sha256": HASH,
+        }
+    )
+
+    record = ValidationRecord.model_validate(payload)
+
+    assert record.stage == "validated"
+    assert record.final_profile_sha256 == HASH

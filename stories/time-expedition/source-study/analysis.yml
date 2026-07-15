@@ -1,7 +1,7 @@
 schema_version: 1
 study_id: time-expedition-wells-phase-2b
 composition_window:
-  start: 1895
+  start: 1897
   end: 1899
 study_status: protocol
 admission_registry:

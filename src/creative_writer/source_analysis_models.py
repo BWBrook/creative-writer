@@ -22,14 +22,11 @@ from pydantic import (
 )
 
 from creative_writer.exceptions import CreativeWriterError
-from creative_writer.models import CompositionWindow
-
-
-Slug = Annotated[str, Field(pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")]
-SHA256 = Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
-GitHash = Annotated[str, Field(pattern=r"^[0-9a-f]{40}(?:[0-9a-f]{24})?$")]
-NonEmptyText = Annotated[str, Field(min_length=1, pattern=r"(?s).*\S.*")]
-RelativePath = Annotated[str, Field(min_length=1, pattern=r"^[^/].*")]
+Slug = Annotated[StrictStr, Field(pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")]
+SHA256 = Annotated[StrictStr, Field(pattern=r"^[0-9a-f]{64}$")]
+GitHash = Annotated[StrictStr, Field(pattern=r"^[0-9a-f]{40}(?:[0-9a-f]{24})?$")]
+NonEmptyText = Annotated[StrictStr, Field(min_length=1, pattern=r"(?s).*\S.*")]
+RelativePath = Annotated[StrictStr, Field(min_length=1, pattern=r"^[^/].*")]
 Stage = Literal["protocol", "development", "candidate_frozen", "validated"]
 
 DIMENSION_IDS = {
@@ -47,7 +44,18 @@ DIMENSION_IDS = {
 
 
 class StrictModel(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+
+class StrictCompositionWindow(StrictModel):
+    start: StrictInt = Field(ge=1800, le=2100)
+    end: StrictInt = Field(ge=1800, le=2100)
+
+    @model_validator(mode="after")
+    def validate_order(self) -> "StrictCompositionWindow":
+        if self.end < self.start:
+            raise ValueError("composition window end must not precede start")
+        return self
 
 
 def _validate_relative_path(value: str) -> str:
@@ -106,7 +114,7 @@ class PassageRules(StrictModel):
     passage_id_template: Literal[
         "<witness-id>:<heading-slug>:<source-ordinal>:<hash12>"
     ]
-    context_radius: int = Field(ge=0, le=2)
+    context_radius: StrictInt = Field(ge=0, le=2)
 
     @field_validator("substantive_block_types")
     @classmethod
@@ -117,7 +125,7 @@ class PassageRules(StrictModel):
 class PartitionRules(StrictModel):
     seed: NonEmptyText
     algorithm_version: NonEmptyText
-    holdout_fraction: float
+    holdout_fraction: StrictFloat
     max_blocks_per_window: Literal[5]
     whole_work_holdouts: list[NonEmptyText] = Field(min_length=1)
 
@@ -161,7 +169,7 @@ class AnalyticalDimension(StrictModel):
 class AnalysisConfig(StrictModel):
     schema_version: Literal[1]
     study_id: Slug
-    composition_window: CompositionWindow
+    composition_window: StrictCompositionWindow
     study_status: Stage
     admission_registry: RegistryReference
     source_registry: RegistryReference
@@ -236,11 +244,11 @@ class PassageRecord(StrictModel):
     heading_path: list[NonEmptyText] = Field(min_length=1)
     heading_label: NonEmptyText
     block_type: Literal["paragraph", "block_quote", "verse", "list_item"]
-    source_ordinal: int = Field(ge=1)
-    heading_ordinal: int = Field(ge=1)
+    source_ordinal: StrictInt = Field(ge=1)
+    heading_ordinal: StrictInt = Field(ge=1)
     normalized_text: NonEmptyText
     original_text: NonEmptyText
-    word_count: int = Field(ge=1)
+    word_count: StrictInt = Field(ge=1)
     direct_dialogue: Literal["direct", "none", "mixed", "unknown"]
     content_hash: SHA256
     passage_id: NonEmptyText
@@ -269,7 +277,7 @@ class HoldoutWindow(StrictModel):
 
 class WitnessHoldouts(StrictModel):
     witness_id: NonEmptyText
-    development_windows: list[HoldoutWindow] = Field(min_length=1)
+    development_windows: list[HoldoutWindow] = Field(default_factory=list)
     holdout_windows: list[HoldoutWindow] = Field(min_length=1)
 
     @model_validator(mode="after")
@@ -317,6 +325,27 @@ class HoldoutManifest(StrictModel):
     def unique_witnesses(cls, value: list[WitnessHoldouts]) -> list[WitnessHoldouts]:
         _validate_unique([item.witness_id for item in value], "witness IDs")
         return value
+
+    @model_validator(mode="after")
+    def validate_whole_work_topology(self) -> "HoldoutManifest":
+        declared_whole_work = set(self.whole_work_holdouts)
+        witness_ids = {witness.witness_id for witness in self.witnesses}
+        missing_witnesses = declared_whole_work - witness_ids
+        if missing_witnesses:
+            missing = ", ".join(sorted(missing_witnesses))
+            raise ValueError(f"whole-work holdouts must be represented by witnesses: {missing}")
+
+        for witness in self.witnesses:
+            if witness.witness_id in declared_whole_work:
+                if witness.development_windows:
+                    raise ValueError(
+                        "whole-work witnesses must not have development windows"
+                    )
+            elif not witness.development_windows:
+                raise ValueError(
+                    "non-whole-work witnesses require development windows"
+                )
+        return self
 
 
 MetricValue = StrictInt | StrictFloat | StrictBool | StrictStr | None
@@ -462,6 +491,9 @@ class ValidationRecord(StrictModel):
 
     @model_validator(mode="after")
     def validate_stage_hashes(self) -> "ValidationRecord":
+        if self.stage != "validated" and self.final_profile_sha256 is not None:
+            raise ValueError("final profile hash must be absent before validation")
+
         if self.stage == "protocol":
             if any(
                 value is not None
@@ -473,7 +505,7 @@ class ValidationRecord(StrictModel):
                 )
             ):
                 raise ValueError("protocol validation records cannot contain freeze hashes")
-        elif not (
+        elif self.stage in {"candidate_frozen", "validated"} and not (
             self.candidate_commit
             and self.candidate_profile_sha256
             and self.candidate_ledger_sha256

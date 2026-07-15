@@ -13,6 +13,8 @@ from creative_writer.files import load_yaml_model
 from creative_writer.source_analysis_models import (
     AnalysisConfig,
     AnalyticalDimension,
+    ClaimJurisdiction,
+    CounterexampleSearch,
     EvidenceLedger,
     EvidenceClaim,
     HoldoutManifest,
@@ -184,13 +186,25 @@ def _ledger() -> dict[str, object]:
                 "id": "claim-frame-1",
                 "dimension": "frame-architecture",
                 "statement": "The frame is a declared continuity jurisdiction.",
-                "jurisdiction": "The Time Machine continuity and frame authority.",
+                "jurisdiction": {
+                    "scope": "continuity",
+                    "roles": ["declared role"],
+                    "eligible_witness_ids": ["the-time-machine"],
+                },
                 "classification": "role_specific",
                 "status": "candidate",
                 "confidence": "tentative",
                 "supporting_passages": [_reference()],
                 "counterexample_passages": [],
-                "counterexample_search": "Searched the declared frame passages; no material counterexample was reviewed at protocol stage.",
+                "counterexample_search": {
+                    "witness_ids": ["the-time-machine"],
+                    "dimensions": ["frame-architecture"],
+                    "method": "manual_close_reading",
+                    "coverage": "targeted",
+                    "searched_passage_ids": ["the-time-machine:chapter-one:1:" + HASH[:12]],
+                    "outcome": "no_material_counterexample",
+                    "notes": "Searched the declared frame passages; no material counterexample was reviewed at protocol stage.",
+                },
                 "control_results": [],
                 "scope_and_limits": "This claim is limited to the declared source jurisdiction.",
                 "validation_expectation": "Presence across an unseen role-matched passage set.",
@@ -653,6 +667,61 @@ def test_ledger_rejects_duplicate_claim_ids() -> None:
 
     with pytest.raises(ValidationError, match="claim IDs must be unique"):
         EvidenceLedger.model_validate(payload)
+
+
+def test_claim_jurisdiction_and_counterexample_search_are_structured() -> None:
+    payload = _ledger()["claims"][0]
+    assert isinstance(payload, list) is False
+    claim = EvidenceLedger.model_validate(_ledger()).claims[0]
+
+    assert isinstance(claim.jurisdiction, ClaimJurisdiction)
+    assert isinstance(claim.counterexample_search, CounterexampleSearch)
+    assert claim.jurisdiction.scope == "continuity"
+    assert claim.counterexample_search.outcome == "no_material_counterexample"
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("roles", ["declared role", "declared role"], "roles must be unique"),
+        (
+            "eligible_witness_ids",
+            ["the-time-machine", "the-time-machine"],
+            "eligible_witness_ids must be unique",
+        ),
+    ],
+)
+def test_claim_jurisdiction_rejects_duplicate_members(
+    field: str, value: list[str], message: str
+) -> None:
+    payload = {
+        "scope": "continuity",
+        "roles": ["declared role"],
+        "eligible_witness_ids": ["the-time-machine"],
+    }
+    payload[field] = value
+    with pytest.raises(ValidationError, match=message):
+        ClaimJurisdiction.model_validate(payload)
+
+
+def test_counterexample_search_rejects_duplicate_dimensions_and_passages() -> None:
+    payload = {
+        "witness_ids": ["the-time-machine"],
+        "dimensions": ["frame-architecture"],
+        "method": "manual_close_reading",
+        "coverage": "targeted",
+        "searched_passage_ids": ["the-time-machine:chapter-one:1:" + HASH[:12]],
+        "outcome": "no_material_counterexample",
+        "notes": "A documented search.",
+    }
+    payload["dimensions"] = ["frame-architecture", "frame-architecture"]
+    with pytest.raises(ValidationError, match="dimensions must be unique"):
+        CounterexampleSearch.model_validate(payload)
+
+    payload["dimensions"] = ["frame-architecture"]
+    payload["searched_passage_ids"] = ["p", "p"]
+    with pytest.raises(ValidationError, match="searched_passage_ids must be unique"):
+        CounterexampleSearch.model_validate(payload)
 
 
 def test_ledger_rejects_forbidden_extra_field() -> None:

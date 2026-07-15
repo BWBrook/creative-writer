@@ -651,12 +651,46 @@ class EvidenceReference(StrictModel):
         return self
 
 
+class ClaimJurisdiction(StrictModel):
+    """The declared scope and source-role boundary of one evidence claim."""
+
+    scope: Literal["cross_work", "source_specific", "role_specific", "continuity"]
+    roles: list[NonEmptyText] = Field(min_length=1)
+    eligible_witness_ids: list[NonEmptyText] = Field(min_length=1)
+
+    @field_validator("roles", "eligible_witness_ids")
+    @classmethod
+    def unique_members(cls, value: list[str], info) -> list[str]:
+        return _validate_unique(value, f"{info.field_name}")
+
+
+class CounterexampleSearch(StrictModel):
+    """A reproducible close-reading search used when no material variation is cited."""
+
+    witness_ids: list[NonEmptyText] = Field(min_length=1)
+    dimensions: list[DimensionId] = Field(min_length=1)
+    method: Literal[
+        "manual_close_reading",
+        "metric_guided_close_reading",
+        "exhaustive_close_reading",
+    ]
+    coverage: Literal["targeted", "all_eligible_passages"]
+    searched_passage_ids: list[NonEmptyText] = Field(min_length=1)
+    outcome: Literal["no_material_counterexample", "material_counterexample_found"]
+    notes: NonEmptyText
+
+    @field_validator("witness_ids", "dimensions", "searched_passage_ids")
+    @classmethod
+    def unique_members(cls, value: list[str], info) -> list[str]:
+        return _validate_unique(value, f"{info.field_name}")
+
+
 class EvidenceClaim(StrictModel):
     id: Slug
     dimension: DimensionId
     statement: NonEmptyText
     mode: Literal["descriptive"] = "descriptive"
-    jurisdiction: NonEmptyText
+    jurisdiction: ClaimJurisdiction
     classification: Literal[
         "wells_distinctive",
         "wells_characteristic_but_shared",
@@ -668,7 +702,7 @@ class EvidenceClaim(StrictModel):
     confidence: Literal["tentative", "moderate", "strong"]
     supporting_passages: list[EvidenceReference] = Field(default_factory=list)
     counterexample_passages: list[EvidenceReference] = Field(default_factory=list)
-    counterexample_search: NonEmptyText | None = None
+    counterexample_search: CounterexampleSearch | None = None
     control_results: list[NonEmptyText] = Field(default_factory=list)
     scope_and_limits: NonEmptyText
     validation_expectation: NonEmptyText

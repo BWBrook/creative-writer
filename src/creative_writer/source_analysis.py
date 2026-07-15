@@ -29,9 +29,11 @@ from creative_writer.source_admission import check_source_admission
 from creative_writer.source_analysis_models import (
     AnalysisConfig,
     CorpusLock,
+    EvidenceLedger,
     HoldoutManifest,
     HoldoutWindow,
     PassageRecord,
+    QuantitativeProfile,
     WitnessDescriptor,
     WitnessHoldouts,
 )
@@ -41,6 +43,18 @@ from creative_writer.source_passages import (
     serialize_passage_index,
 )
 from creative_writer.source_metrics import measure_development
+from creative_writer.source_evidence import (
+    ValidationResult,
+    collect_evidence_issues,
+    collect_leakage_issues,
+    collect_observation_issues,
+    collect_profile_issues,
+    collect_quantitative_profile_issues,
+    raise_for_issues,
+    validate_evidence_ledger,
+    validate_observation_dossiers,
+    validate_profile_claim_links,
+)
 
 
 TOOL_VERSION = f"creative-writer {__version__}"
@@ -844,6 +858,42 @@ def _require_committed_holdout(root: Path, holdout_path: Path) -> None:
         )
 
 
+def _load_optional_yaml_model(path: Path, model: type[Any]) -> Any | None:
+    if not path.exists():
+        return None
+    return load_yaml_model(path, model)
+
+
+def _tracked_evidence_paths(story_dir: Path) -> list[Path]:
+    source_study = story_dir / "source-study"
+    paths = [
+        source_study / "quantitative-profile.yml",
+        source_study / "evidence-ledger.yml",
+        source_study / "wells-profile.md",
+    ]
+    observation_dir = source_study / "observations"
+    if observation_dir.exists():
+        paths.extend(sorted(observation_dir.glob("*.md")))
+    return [path for path in paths if path.exists()]
+
+
+def _append_development_diagnostics(path: Path, validation: ValidationResult) -> None:
+    """Append counts only; no authored interpretation, IDs, or locators."""
+
+    try:
+        current = path.read_text(encoding="utf-8")
+        path.write_text(
+            current.rstrip() + "\n\n## Evidence validation diagnostics\n\n"
+            f"- Blocking errors: **{len(validation.errors)}**\n"
+            f"- Warnings: **{len(validation.warnings)}**\n",
+            encoding="utf-8",
+        )
+    except (OSError, UnicodeError) as exc:
+        raise CreativeWriterError(
+            f"Unable to append deterministic evidence diagnostics to {path}: {exc}"
+        ) from exc
+
+
 def _develop(root: Path, slug: str) -> SourceAnalysisResult:
     story_dir = _story_path(root, slug)
     analysis_path = story_dir / "source-study" / "analysis.yml"
@@ -949,6 +999,113 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
         index_path=index_path.relative_to(root).as_posix(),
         manifest_path=holdout_path.relative_to(root).as_posix(),
     )
+
+    evidence_result = ValidationResult()
+    ledger_path = story_dir / "source-study" / "evidence-ledger.yml"
+    profile_path = story_dir / "source-study" / "wells-profile.md"
+    quantitative_path = story_dir / "source-study" / "quantitative-profile.yml"
+    ledger = _load_optional_yaml_model(ledger_path, EvidenceLedger)
+    if ledger is not None:
+        evidence_result.extend(
+            collect_evidence_issues(
+                ledger,
+                passages,
+                config=config,
+                stage="development",
+                admission=admission,
+                registry=registry,
+                manifest=manifest,
+                development_passage_ids=development_ids,
+                file=ledger_path,
+            )
+        )
+
+    if profile_path.exists() and ledger is not None:
+        evidence_result.extend(
+            collect_profile_issues(
+                profile_path,
+                ledger,
+                config,
+                stage="development",
+            )
+        )
+
+    observation_paths = sorted((story_dir / "source-study" / "observations").glob("*.md"))
+    if observation_paths:
+        evidence_result.extend(
+            collect_observation_issues(
+                observation_paths,
+                passages,
+                config,
+                stage="development",
+                development_passage_ids=development_ids,
+                manifest=manifest,
+                claim_ids={claim.id for claim in ledger.claims} if ledger is not None else None,
+            )
+        )
+
+    if quantitative_path.exists():
+        quantitative_profile = load_yaml_model(quantitative_path, QuantitativeProfile)
+        if quantitative_profile.stage == "development" or quantitative_profile.generated_metrics or quantitative_profile.witnesses:
+            forbidden_witness_ids = {
+                witness_id
+                for witness_id, tier in source_tiers.items()
+                if tier == 4
+            }
+            forbidden_witness_ids.update(
+                witness.witness_id
+                for witness in manifest.witnesses
+                if not witness.development_windows
+            )
+            evidence_result.extend(
+                collect_quantitative_profile_issues(
+                    quantitative_profile,
+                    root=root,
+                    metrics_path=generated_paths["development_metrics"],
+                    config=config,
+                    passages=passages,
+                    development_witness_ids={current_by_id[passage_id].witness_id for passage_id in development_ids},
+                    forbidden_witness_ids=forbidden_witness_ids,
+                )
+            )
+
+    forbidden_witness_ids = {
+        witness_id
+        for witness_id, tier in source_tiers.items()
+        if tier == 4
+    }
+    forbidden_witness_ids.update(
+        witness.witness_id
+        for witness in manifest.witnesses
+        if not witness.development_windows
+    )
+    manifest_holdout_ids = {
+        passage_id
+        for witness in manifest.witnesses
+        for window in witness.holdout_windows
+        for passage_id in window.passage_ids
+    }
+    forbidden_passages = [
+        passage
+        for passage in passages
+        if passage.witness_id in forbidden_witness_ids or passage.passage_id in manifest_holdout_ids
+    ]
+    evidence_result.extend(
+        collect_leakage_issues(
+            _tracked_evidence_paths(story_dir),
+            forbidden_witness_ids=forbidden_witness_ids,
+            forbidden_passages=forbidden_passages,
+        )
+    )
+    evidence_result.extend(
+        collect_leakage_issues(
+            [generated_paths["development_report"]],
+            forbidden_witness_ids=forbidden_witness_ids,
+            forbidden_passages=forbidden_passages,
+        )
+    )
+    raise_for_issues(evidence_result, "Development source-analysis validation")
+    _append_development_diagnostics(generated_paths["development_report"], evidence_result)
     return SourceAnalysisResult(
         stage="develop",
         story_slug=slug,

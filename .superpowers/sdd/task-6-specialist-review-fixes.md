@@ -43,3 +43,37 @@ Base/adjudication HEAD: `50ce74b`. Prior final-audit commits corrected in the ap
 ## Concerns
 
 - None. The repair did not run or alter the real corpus, create real holdouts, touch real source-study/story artifacts, interpret Wells prose, implement Phase 2C, or plan the Permian story.
+
+## Bounded TDD follow-up appended 2026-07-16
+
+Status: DONE
+
+### Commits
+
+- `5d61e4f` — node-identity-aware Tier 4 leakage accounting and publication-boundary regressions.
+- The report-only commit containing this appended evidence is self-referential; its exact ID is returned in the task status alongside `5d61e4f`.
+
+### RED evidence
+
+- `uv run pytest tests/test_source_analysis.py::test_yaml_alias_at_two_exact_control_target_paths_counts_one_lexical_scalar tests/test_source_analysis.py::test_yaml_alias_reuse_cannot_escape_the_exact_control_target_path tests/test_source_analysis.py::test_yaml_dotted_bracketed_key_cannot_spoof_control_target_path tests/test_source_validation.py::test_concurrent_readers_observe_only_complete_old_or_new_generations tests/test_source_validation.py::test_existing_generation_current_swap_failure_preserves_old_pointer_and_retries -q`
+  - Result: `1 failed, 4 passed in 0.31s`.
+  - Expected failure: one anchored Tier 4 witness scalar aliased at a second exact allowed control-target path was rejected because raw lexical occurrences were reconciled against path occurrences instead of unique composed scalar nodes.
+  - Preservation and publication evidence already passed RED: an alias occurrence at a disallowed path and a dotted/bracketed key remained rejected; real concurrent publication exposed only complete snapshots; and injected `os.replace(temp_current, validation/current)` failure preserved the old pointer and allowed generation reuse.
+
+### GREEN evidence
+
+- The exact five-test RED command above passed: `5 passed in 0.17s`.
+- YAML traversal continues to authorize every occurrence using its typed path, while raw-text reconciliation now counts each composed scalar node identity once.
+- The concurrent readers and publisher are barrier-controlled, all thread futures are resolved in the test thread, and observations are asserted to equal the complete old or complete new byte mapping only.
+- The direct pointer-swap failure test verifies old-current preservation, `.current-*` cleanup, retention of the complete new generation, and successful identical retry with the same generation ID.
+
+### Final verification
+
+- `uv run pytest tests/test_source_validation.py tests/test_source_analysis.py -q` -> `231 passed in 65.39s (0:01:05)`.
+- `uv run pytest -q` -> `474 passed in 77.40s (0:01:17)`.
+- `uv run python -m compileall -q src tests` -> exit `0`, no output.
+- `git diff --check` -> exit `0`, no output.
+
+### Follow-up concerns
+
+- None. Only the three authorized source/test files and these two evidence reports were changed; no real corpus, holdouts, generated source-study/story artifacts, Wells prose, Phase 2C work, or Permian planning was touched or run.

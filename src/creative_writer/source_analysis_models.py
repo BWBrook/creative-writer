@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
+import re
 from datetime import datetime
 from pathlib import Path
-import re
 from typing import Annotated, Literal, get_args
 
 import yaml
@@ -134,6 +135,7 @@ class WitnessDescriptor(StrictModel):
     """Identity and retained-text fingerprint supplied to the passage parser."""
 
     witness_id: NonEmptyText
+    witness_ordinal: StrictInt = Field(ge=1)
     source_id: NonEmptyText
     selection_id: Slug | None = None
     source_fingerprint: SHA256
@@ -273,6 +275,7 @@ class AnalysisConfig(StrictModel):
 
 class PassageRecord(StrictModel):
     witness_id: NonEmptyText
+    witness_ordinal: StrictInt = Field(ge=1)
     source_id: NonEmptyText
     selection_id: Slug | None = None
     source_fingerprint: SHA256
@@ -291,9 +294,17 @@ class PassageRecord(StrictModel):
     @model_validator(mode="after")
     def validate_identity_and_id(self) -> "PassageRecord":
         _validate_selection_identity(self.witness_id, self.source_id, self.selection_id)
+        if self.heading_label != self.heading_path[-1]:
+            raise ValueError("heading_label must equal the final heading_path label")
+        expected_hash = hashlib.sha256(self.normalized_text.encode("utf-8")).hexdigest()
+        if self.content_hash != expected_hash:
+            raise ValueError("content_hash must be the SHA-256 hash of normalized_text")
+        expected_word_count = len(re.findall(r"\S+", self.normalized_text))
+        if self.word_count != expected_word_count:
+            raise ValueError("word_count must match normalized_text")
         expected = (
             f"{self.witness_id}:{_heading_slug(self.heading_label)}:"
-            f"{self.source_ordinal}:{self.content_hash[:12]}"
+            f"{self.source_ordinal}:{expected_hash[:12]}"
         )
         if self.passage_id != expected:
             raise ValueError(f"passage ID must be {expected}")

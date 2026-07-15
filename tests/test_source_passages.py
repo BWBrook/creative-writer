@@ -21,13 +21,14 @@ from creative_writer.source_passages import (
 FINGERPRINT = "a" * 64
 
 
-def _witness(witness_id: str = "the-time-machine") -> WitnessDescriptor:
+def _witness(witness_id: str = "the-time-machine", witness_ordinal: int = 1) -> WitnessDescriptor:
     if "/" in witness_id:
         source_id, selection_id = witness_id.split("/", 1)
     else:
         source_id, selection_id = witness_id, None
     return WitnessDescriptor(
         witness_id=witness_id,
+        witness_ordinal=witness_ordinal,
         source_id=source_id,
         selection_id=selection_id,
         source_fingerprint=FINGERPRINT,
@@ -70,7 +71,7 @@ def _fixture_ast() -> dict[str, object]:
                     {"t": "Space"},
                     {"t": "Str", "c": "the"},
                     {"t": "Space"},
-                    {"t": "Quoted", "c": ["DoubleQuote", _text("Traveller")]},
+                    {"t": "Quoted", "c": [{"t": "DoubleQuote"}, _text("Traveller")]},
                     {"t": "Space"},
                     {
                         "t": "Note",
@@ -208,6 +209,32 @@ def test_real_pandoc_handles_malformed_heading_jumps_and_empty_blocks(tmp_path: 
     assert all(passage.block_type == "paragraph" for passage in passages)
 
 
+def test_real_pandoc_heading_stack_discards_stale_siblings_by_level(tmp_path: Path) -> None:
+    markdown = tmp_path / "heading-stack.md"
+    markdown.write_text(
+        "# A\n\nA text.\n\n"
+        "#### H4 A\n\nH4 A text.\n\n"
+        "#### H4 B\n\nH4 B text.\n\n"
+        "### H3\n\nH3 text.\n\n"
+        "##### H5 A\n\nH5 A text.\n\n"
+        "##### H5 B\n\nH5 B text.\n\n"
+        "### H3 again\n\nH3 again text.\n",
+        encoding="utf-8",
+    )
+
+    passages = parse_markdown_witness(markdown, _witness())
+
+    assert [passage.heading_path for passage in passages] == [
+        ["A"],
+        ["A", "H4 A"],
+        ["A", "H4 B"],
+        ["A", "H3"],
+        ["A", "H3", "H5 A"],
+        ["A", "H3", "H5 B"],
+        ["A", "H3 again"],
+    ]
+
+
 def test_dialogue_heuristic_distinguishes_mixed_speech(tmp_path: Path) -> None:
     markdown = tmp_path / "dialogue.md"
     markdown.write_text('He said "Go."\n\n"Stay," she replied.\n', encoding="utf-8")
@@ -215,6 +242,34 @@ def test_dialogue_heuristic_distinguishes_mixed_speech(tmp_path: Path) -> None:
     passages = parse_markdown_witness(markdown, _witness())
 
     assert [passage.direct_dialogue for passage in passages] == ["mixed", "direct"]
+
+
+def test_pandoc_tagged_quoted_inlines_are_rendered_without_changing_literal_quotes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    markdown = tmp_path / "quotes.md"
+    markdown.write_text('A literal "quote".\n', encoding="utf-8")
+    _stub_pandoc(
+        monkeypatch,
+        {
+            "blocks": [
+                {
+                    "t": "Para",
+                    "c": [
+                        {"t": "Quoted", "c": [{"t": "DoubleQuote"}, _text("double")]},
+                        {"t": "Space"},
+                        {"t": "Quoted", "c": [{"t": "SingleQuote"}, _text("single")]},
+                        {"t": "Space"},
+                        {"t": "Str", "c": 'literal "quote"'},
+                    ],
+                }
+            ]
+        },
+    )
+
+    passages = parse_markdown_witness(markdown, _witness())
+
+    assert passages[0].original_text == '"double" \'single\' literal "quote"'
 
 
 def test_real_pandoc_preserves_selected_short_fiction_identity(tmp_path: Path) -> None:
@@ -300,6 +355,160 @@ def test_index_round_trip_is_deterministic_and_rejects_duplicate_ids(tmp_path: P
     )
     with pytest.raises(CreativeWriterError, match="duplicate passage ID"):
         read_passage_index(duplicate)
+
+
+def test_index_uses_explicit_global_witness_ordinals_for_write_and_read(tmp_path: Path) -> None:
+    first_path = tmp_path / "first.md"
+    second_path = tmp_path / "second.md"
+    first_path.write_text("First.", encoding="utf-8")
+    second_path.write_text("Second.", encoding="utf-8")
+    first = parse_markdown_witness(first_path, _witness("z-witness", 2))[0]
+    second = parse_markdown_witness(second_path, _witness("a-witness", 1))[0]
+    output = tmp_path / "ordered.jsonl"
+
+    write_passage_index(output, [first, second])
+
+    records = read_passage_index(output)
+    assert [record.witness_id for record in records] == ["a-witness", "z-witness"]
+    assert [record.witness_ordinal for record in records] == [1, 2]
+
+
+@pytest.mark.parametrize(
+    "bad_records",
+    [
+        pytest.param([], id="empty"),
+        pytest.param("duplicate", id="duplicate-id"),
+        pytest.param("inconsistent-witness", id="inconsistent-witness-mapping"),
+        pytest.param("duplicate-ordinal", id="duplicate-ordinal-mapping"),
+        pytest.param("missing-ordinal", id="non-contiguous-ordinals"),
+    ],
+)
+def test_write_rejects_invalid_collections_before_replacing_existing_artifact(
+    tmp_path: Path, bad_records: object
+) -> None:
+    markdown = tmp_path / "fixture.md"
+    markdown.write_text("Text.", encoding="utf-8")
+    passage = parse_markdown_witness(markdown, _witness("first", 1))[0]
+    other = parse_markdown_witness(markdown, _witness("second", 2))[0]
+    output = tmp_path / "passages.jsonl"
+    output.write_text("existing artifact\n", encoding="utf-8")
+
+    if bad_records == "duplicate":
+        records = [passage, passage]
+    elif bad_records == "inconsistent-witness":
+        records = [passage, passage.model_copy(update={"witness_ordinal": 2})]
+    elif bad_records == "duplicate-ordinal":
+        records = [passage, other.model_copy(update={"witness_ordinal": 1})]
+    elif bad_records == "missing-ordinal":
+        records = [passage, other.model_copy(update={"witness_ordinal": 3})]
+    else:
+        records = []
+
+    with pytest.raises(CreativeWriterError):
+        write_passage_index(output, records)
+    assert output.read_text(encoding="utf-8") == "existing artifact\n"
+
+
+def test_read_rejects_empty_file_and_non_reading_order(tmp_path: Path) -> None:
+    empty = tmp_path / "empty.jsonl"
+    empty.write_text("", encoding="utf-8")
+    with pytest.raises(CreativeWriterError, match="empty"):
+        read_passage_index(empty)
+
+    markdown = tmp_path / "fixture.md"
+    markdown.write_text("Text.", encoding="utf-8")
+    first = parse_markdown_witness(markdown, _witness("first", 1))[0]
+    second = parse_markdown_witness(markdown, _witness("second", 2))[0]
+    unordered = tmp_path / "unordered.jsonl"
+    unordered.write_text(
+        "".join(
+            json.dumps(record.model_dump(mode="json"), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+            + "\n"
+            for record in [second, first]
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(CreativeWriterError, match="order"):
+        read_passage_index(unordered)
+
+
+@pytest.mark.parametrize("field", ["heading_label", "normalized_text", "word_count", "content_hash", "passage_id"])
+def test_read_rejects_isolated_record_tampering(tmp_path: Path, field: str) -> None:
+    markdown = tmp_path / "fixture.md"
+    markdown.write_text("# Heading\n\nText.", encoding="utf-8")
+    passage = parse_markdown_witness(markdown, _witness())[0]
+    payload = passage.model_dump(mode="json")
+    payload[field] = {
+        "heading_label": "Tampered",
+        "normalized_text": "Tampered.",
+        "word_count": passage.word_count + 1,
+        "content_hash": "b" * 64,
+        "passage_id": "tampered",
+    }[field]
+    index = tmp_path / f"tampered-{field}.jsonl"
+    index.write_text(json.dumps(payload) + "\n", encoding="utf-8")
+
+    with pytest.raises(CreativeWriterError):
+        read_passage_index(index)
+
+
+def test_write_rejects_isolated_record_tampering_before_replacing_artifact(tmp_path: Path) -> None:
+    markdown = tmp_path / "fixture.md"
+    markdown.write_text("# Heading\n\nText.", encoding="utf-8")
+    passage = parse_markdown_witness(markdown, _witness())[0]
+    output = tmp_path / "passages.jsonl"
+    output.write_text("existing artifact\n", encoding="utf-8")
+    tampered = passage.model_copy(update={"word_count": passage.word_count + 1})
+
+    with pytest.raises(CreativeWriterError):
+        write_passage_index(output, [tampered])
+    assert output.read_text(encoding="utf-8") == "existing artifact\n"
+
+
+@pytest.mark.parametrize("max_blocks", [True, False, 0, 6])
+def test_partition_windows_rejects_non_strict_or_out_of_range_max_blocks(
+    max_blocks: object,
+) -> None:
+    with pytest.raises(CreativeWriterError, match="max_blocks"):
+        partition_windows([], max_blocks=max_blocks)  # type: ignore[arg-type]
+
+
+def test_write_preserves_existing_artifact_when_atomic_replace_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    markdown = tmp_path / "fixture.md"
+    markdown.write_text("Text.", encoding="utf-8")
+    passage = parse_markdown_witness(markdown, _witness())[0]
+    output = tmp_path / "passages.jsonl"
+    output.write_text("existing artifact\n", encoding="utf-8")
+
+    def fail_replace(*args: object, **kwargs: object) -> None:
+        raise OSError("replace failed")
+
+    monkeypatch.setattr("creative_writer.source_passages.os.replace", fail_replace)
+
+    with pytest.raises(CreativeWriterError, match="replace"):
+        write_passage_index(output, [passage])
+    assert output.read_text(encoding="utf-8") == "existing artifact\n"
+    assert list(tmp_path.glob(f".{output.name}.*.tmp")) == []
+
+
+def test_write_wraps_directory_creation_failures(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    markdown = tmp_path / "fixture.md"
+    markdown.write_text("Text.", encoding="utf-8")
+    passage = parse_markdown_witness(markdown, _witness())[0]
+    output = tmp_path / "new-directory" / "passages.jsonl"
+
+    def fail_mkdir(*args: object, **kwargs: object) -> None:
+        raise OSError("mkdir failed")
+
+    monkeypatch.setattr(Path, "mkdir", fail_mkdir)
+
+    with pytest.raises(CreativeWriterError, match="directory"):
+        write_passage_index(output, [passage])
 
 
 def test_context_window_is_two_sided_and_heading_bounded(tmp_path: Path) -> None:

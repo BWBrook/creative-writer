@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import hashlib
 from pathlib import Path
 
 import pytest
@@ -15,6 +16,7 @@ from creative_writer.source_analysis_models import (
     EvidenceClaim,
     HoldoutManifest,
     PassageRecord,
+    WitnessDescriptor,
     QuantitativeProfile,
     ValidationRecord,
     parse_validation_document,
@@ -99,8 +101,11 @@ def _analysis_config() -> dict[str, object]:
 
 
 def _passage() -> dict[str, object]:
+    text = "The sky was clear."
+    content_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
     return {
         "witness_id": "selected-short-fiction/the-star",
+        "witness_ordinal": 1,
         "source_id": "selected-short-fiction",
         "selection_id": "the-star",
         "source_fingerprint": HASH,
@@ -109,12 +114,12 @@ def _passage() -> dict[str, object]:
         "block_type": "paragraph",
         "source_ordinal": 1,
         "heading_ordinal": 1,
-        "normalized_text": "The sky was clear.",
-        "original_text": "The sky was clear.",
+        "normalized_text": text,
+        "original_text": text,
         "word_count": 4,
         "direct_dialogue": "none",
-        "content_hash": HASH,
-        "passage_id": f"selected-short-fiction/the-star:the-star:1:{HASH[:12]}",
+        "content_hash": content_hash,
+        "passage_id": f"selected-short-fiction/the-star:the-star:1:{content_hash[:12]}",
     }
 
 
@@ -430,6 +435,44 @@ def test_passage_rejects_malformed_hash() -> None:
     payload["source_fingerprint"] = "not-a-sha256"
 
     with pytest.raises(ValidationError, match="source_fingerprint"):
+        PassageRecord.model_validate(payload)
+
+
+def test_witness_descriptor_requires_one_based_global_ordinal() -> None:
+    with pytest.raises(ValidationError, match="witness_ordinal"):
+        WitnessDescriptor.model_validate(
+            {
+                "witness_id": "the-time-machine",
+                "source_id": "the-time-machine",
+                "source_fingerprint": HASH,
+            }
+        )
+    with pytest.raises(ValidationError, match="witness_ordinal"):
+        WitnessDescriptor.model_validate(
+            {
+                "witness_id": "the-time-machine",
+                "witness_ordinal": 0,
+                "source_id": "the-time-machine",
+                "source_fingerprint": HASH,
+            }
+        )
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("heading_label", "Wrong heading"),
+        ("normalized_text", "Tampered text."),
+        ("word_count", 99),
+        ("content_hash", "b" * 64),
+        ("passage_id", "tampered"),
+    ],
+)
+def test_passage_rejects_integrity_tampering(field: str, value: object) -> None:
+    payload = _passage()
+    payload[field] = value
+
+    with pytest.raises(ValidationError):
         PassageRecord.model_validate(payload)
 
 

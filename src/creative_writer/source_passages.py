@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import subprocess
+import tempfile
 import unicodedata
 from pathlib import Path
 from typing import Any, Iterable
@@ -79,9 +81,12 @@ def _inline_text(inlines: Any) -> str:
                 result.append(_inline_text(content))
         elif kind == "Quoted":
             parts = _require_list(content, "Quoted content")
-            if len(parts) != 2 or not isinstance(parts[0], str):
-                raise _MalformedAst("Quoted content must contain a quote type and inlines")
-            quote = {"SingleQuote": "'", "DoubleQuote": '"'}.get(parts[0], "")
+            if len(parts) != 2 or not isinstance(parts[0], dict):
+                raise _MalformedAst("Quoted content must contain a tagged quote type and inlines")
+            quote_type = parts[0].get("t")
+            if quote_type not in {"SingleQuote", "DoubleQuote"}:
+                raise _MalformedAst("Quoted content must contain a tagged quote type")
+            quote = {"SingleQuote": "'", "DoubleQuote": '"'}[quote_type]
             result.append(f"{quote}{_inline_text(parts[1])}{quote}")
         elif kind == "Cite":
             parts = _require_list(content, "Cite content")
@@ -251,6 +256,7 @@ def _passage(
     )
     return PassageRecord(
         witness_id=witness.witness_id,
+        witness_ordinal=witness.witness_ordinal,
         source_id=witness.source_id,
         selection_id=witness.selection_id,
         source_fingerprint=witness.source_fingerprint,
@@ -300,14 +306,14 @@ def parse_markdown_witness(
         raise CreativeWriterError("Malformed Pandoc AST: blocks must be a list")
 
     passages: list[PassageRecord] = []
-    heading_stack: list[str] = []
+    heading_stack: list[tuple[int, str]] = []
     previous_path: tuple[str, ...] | None = None
     source_ordinal = 0
     heading_ordinal = 0
 
     def add(block_type: str, original_text: str) -> None:
         nonlocal heading_ordinal, previous_path, source_ordinal
-        path_value = tuple(heading_stack) or ("Untitled",)
+        path_value = tuple(label for _, label in heading_stack) or ("Untitled",)
         next_heading_ordinal = 1 if path_value != previous_path else heading_ordinal + 1
         candidate = _passage(
             witness=witness,
@@ -340,8 +346,9 @@ def parse_markdown_witness(
                     raise _MalformedAst("Header content must contain level, attributes, and inlines")
                 label = _normalize_text(_inline_text(parts[2]))
                 if label:
-                    del heading_stack[max(parts[0] - 1, 0) :]
-                    heading_stack.append(label)
+                    while heading_stack and heading_stack[-1][0] >= parts[0]:
+                        heading_stack.pop()
+                    heading_stack.append((parts[0], label))
                 continue
             if kind in {"Para", "Plain"}:
                 add("paragraph", _inline_text(content))
@@ -370,17 +377,72 @@ def parse_markdown_witness(
     return passages
 
 
+def _validate_index_records(
+    records: list[PassageRecord], *, require_reading_order: bool
+) -> None:
+    if not records:
+        raise CreativeWriterError("passage index must contain at least one passage")
+
+    seen_ids: set[str] = set()
+    witness_ordinals: dict[str, int] = {}
+    ordinal_witnesses: dict[int, str] = {}
+    for record in records:
+        if record.passage_id in seen_ids:
+            raise CreativeWriterError(f"duplicate passage ID: {record.passage_id}")
+        seen_ids.add(record.passage_id)
+        existing_ordinal = witness_ordinals.setdefault(record.witness_id, record.witness_ordinal)
+        if existing_ordinal != record.witness_ordinal:
+            raise CreativeWriterError(
+                f"witness {record.witness_id} maps to multiple witness ordinals"
+            )
+        existing_witness = ordinal_witnesses.setdefault(
+            record.witness_ordinal, record.witness_id
+        )
+        if existing_witness != record.witness_id:
+            raise CreativeWriterError(
+                f"witness ordinal {record.witness_ordinal} maps to multiple witnesses"
+            )
+
+    expected_ordinals = set(range(1, len(witness_ordinals) + 1))
+    if set(ordinal_witnesses) != expected_ordinals:
+        raise CreativeWriterError("witness ordinals must be contiguous from 1")
+
+    if require_reading_order:
+        keys = [(record.witness_ordinal, record.source_ordinal) for record in records]
+        if keys != sorted(keys):
+            raise CreativeWriterError(
+                "passage index records must be ordered by witness_ordinal then source_ordinal"
+            )
+
+
 def write_passage_index(path: Path, passages: Iterable[PassageRecord]) -> None:
     """Write validated passage records as deterministic UTF-8 JSON Lines."""
 
     try:
         records = [PassageRecord.model_validate(passage) for passage in passages]
-    except ValidationError as exc:
+    except (ValidationError, TypeError) as exc:
         raise CreativeWriterError(f"Invalid passage record: {exc}") from exc
-    records.sort(key=lambda item: (item.source_id, item.witness_id, item.source_ordinal))
-    path.parent.mkdir(parents=True, exist_ok=True)
+    _validate_index_records(records, require_reading_order=False)
+    records.sort(key=lambda item: (item.witness_ordinal, item.source_ordinal))
+
+    temporary_path: Path | None = None
     try:
-        with path.open("w", encoding="utf-8", newline="\n") as handle:
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            raise CreativeWriterError(
+                f"Unable to create passage index directory {path.parent}: {exc}"
+            ) from exc
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            newline="\n",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as handle:
+            temporary_path = Path(handle.name)
             for record in records:
                 handle.write(
                     json.dumps(
@@ -391,8 +453,20 @@ def write_passage_index(path: Path, passages: Iterable[PassageRecord]) -> None:
                     )
                     + "\n"
                 )
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary_path, path)
+        temporary_path = None
+    except CreativeWriterError:
+        raise
     except OSError as exc:
         raise CreativeWriterError(f"Unable to write passage index {path}: {exc}") from exc
+    finally:
+        if temporary_path is not None:
+            try:
+                temporary_path.unlink()
+            except OSError:
+                pass
 
 
 def read_passage_index(path: Path) -> list[PassageRecord]:
@@ -404,6 +478,8 @@ def read_passage_index(path: Path) -> list[PassageRecord]:
         lines = path.read_text(encoding="utf-8").splitlines()
     except (OSError, UnicodeError) as exc:
         raise CreativeWriterError(f"Unable to read passage index {path}: {exc}") from exc
+    if not lines:
+        raise CreativeWriterError(f"Passage index {path} is empty")
     for line_number, line in enumerate(lines, start=1):
         if not line.strip():
             raise CreativeWriterError(f"Malformed passage index line {line_number}: blank line")
@@ -418,6 +494,7 @@ def read_passage_index(path: Path) -> list[PassageRecord]:
             raise CreativeWriterError(f"duplicate passage ID: {record.passage_id}")
         seen.add(record.passage_id)
         records.append(record)
+    _validate_index_records(records, require_reading_order=True)
     return records
 
 
@@ -458,8 +535,8 @@ def partition_windows(
 ) -> list[list[PassageRecord]]:
     """Partition reading-order passages into non-overlapping section windows."""
 
-    if max_blocks < 1:
-        raise CreativeWriterError("max_blocks must be at least 1")
+    if type(max_blocks) is not int or not 1 <= max_blocks <= 5:
+        raise CreativeWriterError("max_blocks must be a strict integer between 1 and 5")
     windows: list[list[PassageRecord]] = []
     current: list[PassageRecord] = []
     for passage in passages:

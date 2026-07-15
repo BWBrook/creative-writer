@@ -1964,6 +1964,11 @@ def _validate(root: Path, slug: str) -> SourceAnalysisResult:
             include_controls=False,
         )
         corpus = _load_validation_corpus(root, slug, config, include_controls=True)
+        _validate_record_partitions(
+            validation,
+            corpus,
+            candidate_claim_ids={claim.id for claim in candidate_claims},
+        )
         metrics = _build_validation_metrics(config, validation, generated_paths, corpus)
         _write_validation_outputs(
             generated_paths,

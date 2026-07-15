@@ -4033,6 +4033,99 @@ def test_validate_heldout_assessed_adds_separate_control_partition(tmp_path: Pat
     assert "tier-four" in packet
 
 
+@pytest.mark.parametrize(
+    ("invalid_field", "expected_message"),
+    [
+        ("passage", "non-control passage"),
+        ("witness", "outside the tier4_controls partition"),
+        ("role", "undeclared witness role"),
+        ("tier_partition", "non-control passage"),
+        ("cross_witness_passage", "non-control passage"),
+    ],
+)
+def test_validate_heldout_assessed_rejects_invalid_control_comparison_after_control_open(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    invalid_field: str,
+    expected_message: str,
+) -> None:
+    story, _ = _prepare_committed_candidate_fixture(tmp_path, with_claim=True)
+    _replace_validation_step(story, "heldout_assessed")
+    validation_path = story / "source-study/validation.md"
+    validation = yaml.safe_load(validation_path.read_text(encoding="utf-8").split("---", 2)[1])
+    heldout_records = parse_passage_partition(
+        (tmp_path / "build/fixture/source-study/indexes/heldout-wells.jsonl").read_bytes()
+    )
+    heldout = next(item for item in heldout_records if item.witness_id == "wells-alpha")
+    control_records = parse_passage_partition(
+        (tmp_path / "build/fixture/source-study/indexes/tier4-controls.jsonl").read_bytes()
+    )
+    control = next(item for item in control_records if item.witness_id == "tier-four")
+    comparison = {
+        "id": "control-fixture-claim",
+        "claim_id": "fixture-claim",
+        "witness_id": control.witness_id,
+        "authority_tier": 4,
+        "role": "tier-four role",
+        "passage_ids": [control.passage_id],
+        "comparison": "The negative control provides comparative material and does not authorize positive use.",
+        "result": "not_shared",
+        "notes": "Synthetic control comparison.",
+    }
+    if invalid_field == "passage":
+        comparison["passage_ids"] = ["missing-control-passage"]
+    elif invalid_field == "witness":
+        comparison["witness_id"] = heldout.witness_id
+    elif invalid_field == "role":
+        comparison["role"] = "undeclared control role"
+    elif invalid_field == "tier_partition":
+        comparison["passage_ids"] = [heldout.passage_id]
+    else:
+        comparison["passage_ids"] = [control.passage_id, heldout.passage_id]
+    validation["heldout_claim_results"] = [{
+        "id": "heldout-fixture-claim",
+        "claim_id": "fixture-claim",
+        "witness_id": heldout.witness_id,
+        "authority_tier": 1,
+        "role": "wells-alpha role",
+        "passage_ids": [heldout.passage_id],
+        "assessment": "qualifies",
+        "observed_tendency": "The bounded tendency is present with synthetic variation.",
+        "notes": "Synthetic held-out assessment.",
+    }]
+    validation["control_comparisons"] = [comparison]
+    validation_path.write_text(
+        "---\n" + yaml.safe_dump(validation, sort_keys=False) + "---\n\n# Synthetic validation\n",
+        encoding="utf-8",
+    )
+
+    output_paths = [
+        tmp_path / "build/fixture/source-study/validation/current/validation-metrics.json",
+        tmp_path / "build/fixture/source-study/validation/current/validation-packet.md",
+        tmp_path / "build/fixture/source-study/validation/current/analysis-report.md",
+    ]
+    for path in output_paths:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"sentinel:{path.name}\n", encoding="utf-8")
+
+    read_trace: list[str] = []
+    read_bound_partition = source_analysis._read_bound_partition
+
+    def trace_bound_partition(*args: object, **kwargs: object) -> list[PassageRecord]:
+        read_trace.append(str(kwargs["expected_partition"]))
+        return read_bound_partition(*args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(source_analysis, "_read_bound_partition", trace_bound_partition)
+
+    with pytest.raises(CreativeWriterError, match=expected_message):
+        run_source_analysis(tmp_path, "fixture", "validate")
+
+    assert read_trace == ["heldout_wells", "heldout_wells", "tier4_controls"]
+    assert [path.read_text(encoding="utf-8") for path in output_paths] == [
+        f"sentinel:{path.name}\n" for path in output_paths
+    ]
+
+
 @pytest.mark.parametrize("validation_step", ["heldout_assessed", "complete"])
 def test_validate_rejects_present_wrong_partition_result_before_opening_controls(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, validation_step: str

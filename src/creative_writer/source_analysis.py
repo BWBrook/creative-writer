@@ -43,6 +43,16 @@ from creative_writer.source_passages import (
 
 TOOL_VERSION = f"creative-writer {__version__}"
 ALGORITHM_VERSION = "tertile-hash-v1"
+GENERATED_FILENAMES = {
+    "corpus_lock": "corpus-lock.json",
+    "passage_index": "passage-index.jsonl",
+    "development_metrics": "development-metrics.json",
+    "development_metrics_csv": "development-metrics.csv",
+    "development_report": "development-report.md",
+    "validation_metrics": "validation-metrics.json",
+    "validation_packet": "validation-packet.md",
+    "analysis_report": "analysis-report.md",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -109,6 +119,115 @@ def _verify_registry_hash(path: Path, expected: str, label: str) -> None:
         raise CreativeWriterError(
             f"{label} SHA-256 mismatch for {path}: expected {expected}, got {actual}"
         )
+
+
+def _validate_analysis_authority(
+    config: AnalysisConfig, admission: SourceStudyAdmission
+) -> None:
+    if (
+        config.composition_window.start != admission.composition_window.start
+        or config.composition_window.end != admission.composition_window.end
+    ):
+        raise CreativeWriterError(
+            "Analysis composition window does not match source admission "
+            f"({config.composition_window.start}-{config.composition_window.end} vs "
+            f"{admission.composition_window.start}-{admission.composition_window.end})"
+        )
+
+    admission_roles: dict[int, set[str]] = {tier: set() for tier in range(1, 6)}
+    for source in admission.sources:
+        admission_roles[source.authority.tier].update(source.analytical_roles)
+        for selection in source.selections:
+            admission_roles[source.authority.tier].update(selection.analytical_roles)
+    configured_roles = {
+        policy.tier: set(policy.analytical_roles) for policy in config.authority_tiers
+    }
+    if configured_roles != admission_roles:
+        differences = [
+            f"Tier {tier}: expected {sorted(admission_roles[tier])}, "
+            f"configured {sorted(configured_roles[tier])}"
+            for tier in range(1, 6)
+            if configured_roles[tier] != admission_roles[tier]
+        ]
+        raise CreativeWriterError(
+            "Configured authority tier roles do not match admission source and "
+            "selection roles: " + "; ".join(differences)
+        )
+
+
+def _validate_expected_corpus(
+    config: AnalysisConfig,
+    admission: SourceStudyAdmission,
+    registry: SourcesRegistry,
+    witnesses: list[_ExpandedWitness],
+) -> None:
+    expected = config.expected_corpus
+    actual_counts = {
+        "admission_records": len(admission.sources),
+        "retained_sources": len(registry.sources),
+        "retained_epubs": len(registry.sources),
+        "retained_markdown": len(witnesses),
+        "full_work_witnesses": sum(
+            item.descriptor.selection_id is None for item in witnesses
+        ),
+        "selected_witnesses": sum(
+            item.descriptor.selection_id is not None for item in witnesses
+        ),
+    }
+    for key, actual in actual_counts.items():
+        expected_value = getattr(expected, key)
+        if actual != expected_value:
+            raise CreativeWriterError(
+                f"Expected corpus {key}={expected_value}, got {actual}"
+            )
+
+    actual_witness_ids = [item.descriptor.witness_id for item in witnesses]
+    if actual_witness_ids != expected.witness_ids:
+        raise CreativeWriterError(
+            "Expected corpus witness IDs/order do not match: "
+            f"expected {expected.witness_ids}, got {actual_witness_ids}"
+        )
+
+    actual_excluded_ids = [
+        source.id
+        for source in admission.sources
+        if source.status == "excluded" and source.authority.tier == 5
+    ]
+    if actual_excluded_ids != expected.excluded_tier5_ids:
+        raise CreativeWriterError(
+            "Expected corpus excluded Tier 5 IDs do not match: "
+            f"expected {expected.excluded_tier5_ids}, got {actual_excluded_ids}"
+        )
+    if list(config.partition.whole_work_holdouts) != expected.whole_work_holdouts:
+        raise CreativeWriterError(
+            "Expected corpus whole_work_holdouts do not match the partition: "
+            f"expected {expected.whole_work_holdouts}, "
+            f"configured {config.partition.whole_work_holdouts}"
+        )
+
+
+def _resolve_generated_paths(
+    root: Path, slug: str, config: AnalysisConfig
+) -> dict[str, Path]:
+    resolved_root = root.resolve(strict=False)
+    resolved: dict[str, Path] = {}
+    for key, relative in config.generated_paths.items():
+        expected_relative = f"build/{slug}/source-study/{GENERATED_FILENAMES[key]}"
+        if relative != expected_relative:
+            raise CreativeWriterError(
+                f"Configured generated path for {key} is `{relative}`; "
+                f"expected `{expected_relative}`"
+            )
+        target = (root / relative).resolve(strict=False)
+        try:
+            target.relative_to(resolved_root)
+        except ValueError as exc:
+            raise CreativeWriterError(
+                f"Generated path for {key} escapes repository root through a "
+                f"symlink: {relative} -> {target}"
+            ) from exc
+        resolved[key] = target
+    return resolved
 
 
 def _expanded_witnesses(
@@ -310,7 +429,7 @@ def select_holdouts(
         else:
             if len(windows) < 2:
                 raise CreativeWriterError(
-                    f"Wells witness `{witness_id}` must have at least two holdout windows"
+                    f"Wells witness `{witness_id}` must have at least two partition windows"
                 )
             holdout_count = max(1, math.floor(0.2 * len(windows) + 0.5))
             source_id = witness_passages[0].source_id
@@ -434,7 +553,17 @@ def _stage_file(path: Path, payload: bytes) -> Path:
 def _commit_staged(staged: list[tuple[Path, Path]]) -> None:
     backups: dict[Path, Path] = {}
     installed: list[Path] = []
+    restored: set[Path] = set()
     transaction_id = uuid.uuid4().hex
+    original_failure: OSError | None = None
+    recovery_errors: list[str] = []
+
+    def remove_path(path: Path, label: str) -> None:
+        try:
+            path.unlink(missing_ok=True)
+        except OSError as exc:
+            recovery_errors.append(f"{label} `{path}` failed: {exc}")
+
     try:
         for target, temporary in staged:
             if target.exists():
@@ -444,18 +573,47 @@ def _commit_staged(staged: list[tuple[Path, Path]]) -> None:
             os.replace(temporary, target)
             installed.append(target)
     except OSError as exc:
+        original_failure = exc
         for target in reversed(installed):
-            if target.exists():
-                target.unlink(missing_ok=True)
+            remove_path(target, "removal during rollback")
         for target, backup in backups.items():
             if backup.exists():
-                os.replace(backup, target)
-        raise CreativeWriterError(f"Unable to replace generated artifacts atomically: {exc}") from exc
+                try:
+                    os.replace(backup, target)
+                except OSError as restore_error:
+                    recovery_errors.append(
+                        f"restoration of backup `{backup}` to `{target}` failed: "
+                        f"{restore_error}; backup remains at `{backup}`"
+                    )
+                else:
+                    restored.add(target)
     finally:
         for _, temporary in staged:
-            temporary.unlink(missing_ok=True)
-        for backup in backups.values():
-            backup.unlink(missing_ok=True)
+            remove_path(temporary, "temporary cleanup")
+        for target, backup in backups.items():
+            if original_failure is not None and target not in restored:
+                if backup.exists():
+                    recovery_errors.append(
+                        f"residual un-restored backup `{backup}` remains"
+                    )
+                continue
+            remove_path(backup, "backup cleanup")
+
+    if original_failure is not None:
+        detail = (
+            "Unable to replace generated artifacts atomically: "
+            f"{original_failure}"
+        )
+        if recovery_errors:
+            detail += "\nRecovery errors:\n" + "\n".join(
+                f"- {error}" for error in recovery_errors
+            )
+        raise CreativeWriterError(detail) from original_failure
+    if recovery_errors:
+        raise CreativeWriterError(
+            "Generated artifacts installed, but cleanup left residual paths or "
+            "errors:\n" + "\n".join(f"- {error}" for error in recovery_errors)
+        ) from OSError(recovery_errors[0])
 
 
 def _prepare(root: Path, slug: str) -> SourceAnalysisResult:
@@ -467,6 +625,7 @@ def _prepare(root: Path, slug: str) -> SourceAnalysisResult:
     story_dir = _story_path(root, slug)
     analysis_path = story_dir / "source-study" / "analysis.yml"
     config = load_yaml_model(analysis_path, AnalysisConfig)
+    generated_paths = _resolve_generated_paths(root, slug, config)
     admission_path = _registry_path(story_dir, config.admission_registry.path)
     source_path = _registry_path(story_dir, config.source_registry.path)
     _verify_registry_hash(
@@ -475,7 +634,9 @@ def _prepare(root: Path, slug: str) -> SourceAnalysisResult:
     _verify_registry_hash(source_path, config.source_registry.sha256, "Source registry")
     admission = load_yaml_model(admission_path, SourceStudyAdmission)
     registry = load_yaml_model(source_path, SourcesRegistry)
+    _validate_analysis_authority(config, admission)
     witnesses, source_tiers = _expanded_witnesses(story_dir=story_dir, registry=registry)
+    _validate_expected_corpus(config, admission, registry, witnesses)
     registry_hashes = {
         config.admission_registry.path: config.admission_registry.sha256,
         config.source_registry.path: config.source_registry.sha256,
@@ -534,14 +695,6 @@ def _prepare(root: Path, slug: str) -> SourceAnalysisResult:
         created_at=datetime.now(timezone.utc),
     )
 
-    generated_paths = {
-        "corpus_lock": root / config.generated_paths.get(
-            "corpus_lock", f"build/{slug}/source-study/corpus-lock.json"
-        ),
-        "passage_index": root / config.generated_paths.get(
-            "passage_index", f"build/{slug}/source-study/passage-index.jsonl"
-        ),
-    }
     lock_path = generated_paths["corpus_lock"]
     index_path = generated_paths["passage_index"]
     holdout_path = story_dir / "source-study" / "holdouts.yml"
@@ -556,8 +709,14 @@ def _prepare(root: Path, slug: str) -> SourceAnalysisResult:
     existing_manifest = _load_existing_manifest(holdout_path)
     if existing_manifest is not None:
         _validate_manifest_passages(existing_manifest, seen_passage_ids)
-        expected_manifest = expected_manifest.model_copy(
-            update={"created_at": existing_manifest.created_at}
+        expected_manifest = _build_holdout_manifest(
+            config=config,
+            registry_hashes=registry_hashes,
+            registry=registry,
+            witnesses=witnesses,
+            passages=passages,
+            source_tiers=source_tiers,
+            created_at=existing_manifest.created_at,
         )
         if existing_manifest.model_dump(mode="json") != expected_manifest.model_dump(mode="json"):
             raise CreativeWriterError("Existing holdout manifest differs from the current partition")

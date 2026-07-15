@@ -2,16 +2,14 @@ from __future__ import annotations
 
 import hashlib
 import json
-import math
 import zipfile
-from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 import yaml
 
 from creative_writer.exceptions import CreativeWriterError
-from creative_writer.source_analysis import run_source_analysis, select_holdouts
+from creative_writer.source_analysis import _commit_staged, run_source_analysis, select_holdouts
 from creative_writer.source_analysis_models import (
     AnalysisConfig,
     PassageRecord,
@@ -85,11 +83,35 @@ def _analysis_config(admission_hash: str, source_hash: str, *, seed: str = "fixt
         "admission_registry": {"path": "source-study/admission.yml", "sha256": admission_hash},
         "source_registry": {"path": "original/sources.yml", "sha256": source_hash},
         "authority_policy_version": "fixture-v1",
+        "expected_corpus": {
+            "admission_records": 4,
+            "retained_sources": 3,
+            "retained_epubs": 3,
+            "retained_markdown": 6,
+            "full_work_witnesses": 2,
+            "selected_witnesses": 4,
+            "witness_ids": [
+                "wells-alpha",
+                "selected-short-fiction/the-plattner-story",
+                "selected-short-fiction/the-sea-raiders",
+                "selected-short-fiction/the-crystal-egg",
+                "selected-short-fiction/the-star",
+                "control",
+            ],
+            "excluded_tier5_ids": ["the-lost-world"],
+            "whole_work_holdouts": ["selected-short-fiction/the-star"],
+        },
         "authority_tiers": [
             {
                 "tier": tier,
                 "jurisdiction": f"Tier {tier} jurisdiction.",
-                "analytical_roles": [f"tier {tier} role"],
+                "analytical_roles": {
+                    1: ["wells-alpha role"],
+                    2: ["selected-short-fiction role", "fixture role"],
+                    3: [],
+                    4: ["control role"],
+                    5: ["later diagnostic"],
+                }[tier],
                 "evidence_rule": f"Tier {tier} rule.",
             }
             for tier in range(1, 6)
@@ -124,6 +146,12 @@ def _analysis_config(admission_hash: str, source_hash: str, *, seed: str = "fixt
         "generated_paths": {
             "corpus_lock": "build/fixture/source-study/corpus-lock.json",
             "passage_index": "build/fixture/source-study/passage-index.jsonl",
+            "development_metrics": "build/fixture/source-study/development-metrics.json",
+            "development_metrics_csv": "build/fixture/source-study/development-metrics.csv",
+            "development_report": "build/fixture/source-study/development-report.md",
+            "validation_metrics": "build/fixture/source-study/validation-metrics.json",
+            "validation_packet": "build/fixture/source-study/validation-packet.md",
+            "analysis_report": "build/fixture/source-study/analysis-report.md",
         },
     }
 
@@ -318,8 +346,16 @@ def _fixture(root: Path) -> tuple[Path, object]:
     return story, result
 
 
-def _passage(witness_id: str, ordinal: int, index: int, *, source_id: str | None = None) -> PassageRecord:
+def _passage(
+    witness_id: str,
+    ordinal: int,
+    index: int,
+    *,
+    source_id: str | None = None,
+    heading: str | None = None,
+) -> PassageRecord:
     source_id = source_id or witness_id
+    heading = heading or f"Heading {index}"
     text = f"Passage {index}."
     digest = hashlib.sha256(text.encode()).hexdigest()
     return PassageRecord(
@@ -328,8 +364,8 @@ def _passage(witness_id: str, ordinal: int, index: int, *, source_id: str | None
         source_id=source_id,
         selection_id=None,
         source_fingerprint=HASH,
-        heading_path=[f"Heading {index}"],
-        heading_label=f"Heading {index}",
+        heading_path=[heading],
+        heading_label=heading,
         block_type="paragraph",
         source_ordinal=index,
         heading_ordinal=1,
@@ -338,7 +374,8 @@ def _passage(witness_id: str, ordinal: int, index: int, *, source_id: str | None
         word_count=2,
         direct_dialogue="none",
         content_hash=digest,
-        passage_id=f"{witness_id}:heading-{index}:{index}:{digest[:12]}",
+        passage_id=f"{witness_id}:{heading.lower().replace(' ', '-')}:" \
+        f"{index}:{digest[:12]}",
     )
 
 
@@ -436,19 +473,25 @@ def test_holdout_manifest_has_all_fingerprints_and_quarantines_controls(tmp_path
 
 def test_holdout_count_uses_round_half_up_and_hash_selection() -> None:
     config = _config_for_selection()
-    passages = [_passage("wells-alpha", 1, index) for index in range(1, 11)]
+    passages = [
+        _passage("wells-alpha", 1, index, heading=f"Heading {(index - 1) // 5}")
+        for index in range(1, 41)
+    ]
     partitions = select_holdouts(passages, config, {"wells-alpha": 1})
     assert len(partitions) == 1
-    assert len(partitions[0].holdout_windows) == max(
-        1, math.floor(0.2 * len(partitions[0].development_windows + partitions[0].holdout_windows) + 0.5)
-    )
+    assert len(partitions[0].development_windows + partitions[0].holdout_windows) == 8
+    assert len(partitions[0].holdout_windows) == 2
     expected = sorted(
-        passages,
+        passages[::5],
         key=lambda item: hashlib.sha256(
             f"fixture-seed:wells-alpha:{item.passage_id}".encode()
         ).hexdigest(),
     )[0].passage_id
-    assert expected in partitions[0].holdout_windows[0].passage_ids
+    assert expected in {
+        passage_id
+        for window in partitions[0].holdout_windows
+        for passage_id in window.passage_ids
+    }
 
 
 def test_holdout_tertile_coverage_and_tie_order(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -473,6 +516,130 @@ def test_holdout_tertile_coverage_and_tie_order(monkeypatch: pytest.MonkeyPatch)
     )
     tied = select_holdouts(passages[:5], config, {"wells-alpha": 1})
     assert tied[0].holdout_windows[0].passage_ids == [passages[0].passage_id]
+
+
+def test_selected_short_fiction_hash_uses_parent_source_id() -> None:
+    config = _config_for_selection()
+    witness_id = "selected-short-fiction/the-plattner-story"
+    passages = []
+    for index in range(1, 11):
+        text = f"Selected passage {index}."
+        digest = hashlib.sha256(text.encode()).hexdigest()
+        passages.append(
+            PassageRecord(
+                witness_id=witness_id,
+                witness_ordinal=2,
+                source_id="selected-short-fiction",
+                selection_id="the-plattner-story",
+                source_fingerprint=HASH,
+                heading_path=["Selected"],
+                heading_label="Selected",
+                block_type="paragraph",
+                source_ordinal=index,
+                heading_ordinal=index,
+                normalized_text=text,
+                original_text=text,
+                word_count=3,
+                direct_dialogue="none",
+                content_hash=digest,
+                passage_id=f"{witness_id}:selected:{index}:{digest[:12]}",
+            )
+        )
+
+    partitions = select_holdouts(passages, config, {"selected-short-fiction": 2})
+    selected = {
+        passage_id
+        for window in partitions[0].holdout_windows
+        for passage_id in window.passage_ids
+    }
+    window_starts = [passages[0], passages[5]]
+    parent_rank = sorted(
+        window_starts,
+        key=lambda item: hashlib.sha256(
+            f"fixture-seed:selected-short-fiction:{item.passage_id}".encode()
+        ).hexdigest(),
+    )[0].passage_id
+    witness_rank = sorted(
+        window_starts,
+        key=lambda item: hashlib.sha256(
+            f"fixture-seed:{witness_id}:{item.passage_id}".encode()
+        ).hexdigest(),
+    )[0].passage_id
+
+    assert parent_rank != witness_rank
+    assert parent_rank in selected
+    assert witness_rank not in selected
+
+
+@pytest.mark.parametrize(
+    ("mutation", "needle"),
+    [
+        ("composition", "composition window"),
+        ("roles", "authority tier"),
+        ("whole_work", "whole_work_holdouts"),
+        ("topology", "witness IDs"),
+        ("excluded", "excluded Tier 5"),
+        ("counts", "retained_sources"),
+        ("order", "witness IDs"),
+    ],
+)
+def test_prepare_rejects_wrong_story_local_corpus_authority(
+    tmp_path: Path, mutation: str, needle: str
+) -> None:
+    story = _write_fixture(tmp_path)
+    config_path = story / "source-study/analysis.yml"
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    if mutation == "composition":
+        config["composition_window"]["start"] = 1898
+    elif mutation == "roles":
+        config["authority_tiers"][0]["analytical_roles"] = ["wrong role"]
+    elif mutation == "whole_work":
+        config["partition"]["whole_work_holdouts"] = ["wells-alpha"]
+    elif mutation == "topology":
+        config["expected_corpus"]["witness_ids"][-1] = "missing-witness"
+    elif mutation == "excluded":
+        config["expected_corpus"]["excluded_tier5_ids"] = ["wrong-exclusion"]
+    elif mutation == "counts":
+        config["expected_corpus"]["retained_sources"] = 2
+    elif mutation == "order":
+        config["expected_corpus"]["witness_ids"] = list(
+            reversed(config["expected_corpus"]["witness_ids"])
+        )
+    config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(CreativeWriterError, match=needle):
+        run_source_analysis(tmp_path, "fixture", "prepare")
+
+
+def test_prepare_rejects_cross_story_generated_path(tmp_path: Path) -> None:
+    story = _write_fixture(tmp_path)
+    config_path = story / "source-study/analysis.yml"
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    config["generated_paths"]["corpus_lock"] = "build/other/source-study/corpus-lock.json"
+    config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(CreativeWriterError, match="generated path.*corpus_lock"):
+        run_source_analysis(tmp_path, "fixture", "prepare")
+
+
+def test_prepare_rejects_generated_path_symlink_escape(tmp_path: Path) -> None:
+    story = _write_fixture(tmp_path)
+    outside = tmp_path.parent / f"{tmp_path.name}-outside"
+    outside.mkdir()
+    generated_dir = tmp_path / "build" / "fixture"
+    generated_dir.mkdir(parents=True)
+    (generated_dir / "source-study").symlink_to(outside, target_is_directory=True)
+
+    with pytest.raises(CreativeWriterError, match="symlink|escapes repository root"):
+        run_source_analysis(tmp_path, "fixture", "prepare")
+
+
+def test_holdout_partition_error_names_partition_windows() -> None:
+    config = _config_for_selection()
+    passages = [_passage("wells-alpha", 1, 1)]
+
+    with pytest.raises(CreativeWriterError, match="at least two partition windows"):
+        select_holdouts(passages, config, {"wells-alpha": 1})
 
 
 def test_prepare_rerun_is_byte_stable_and_verifies_existing_manifest(tmp_path: Path) -> None:
@@ -620,6 +787,114 @@ def test_prepare_rollback_preserves_existing_artifacts_when_replace_fails(
     with pytest.raises(CreativeWriterError, match="atomically"):
         run_source_analysis(tmp_path, "fixture", "prepare")
     assert {path: path.read_bytes() for path in paths} == before
+
+
+def test_first_install_rollback_removes_completed_artifact_and_temps(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _write_fixture(tmp_path)
+    import creative_writer.source_analysis as source_analysis
+
+    real_replace = source_analysis.os.replace
+    calls = 0
+
+    def fail_after_first_install(source: str | bytes | Path, target: str | bytes | Path) -> None:
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise OSError("first-install failure")
+        real_replace(source, target)
+
+    monkeypatch.setattr(source_analysis.os, "replace", fail_after_first_install)
+    with pytest.raises(CreativeWriterError, match="first-install failure"):
+        run_source_analysis(tmp_path, "fixture", "prepare")
+
+    assert not list((tmp_path / "build/fixture/source-study").glob("corpus-lock.json"))
+    assert not list((tmp_path / "build/fixture/source-study").glob(".*.tmp"))
+    assert not (tmp_path / "stories/fixture/source-study/holdouts.yml").exists()
+
+
+def test_rerun_late_failure_restores_all_existing_artifacts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    story, _ = _fixture(tmp_path)
+    paths = [
+        tmp_path / "build/fixture/source-study/corpus-lock.json",
+        tmp_path / "build/fixture/source-study/passage-index.jsonl",
+        story / "source-study/holdouts.yml",
+    ]
+    before = {path: path.read_bytes() for path in paths}
+    import creative_writer.source_analysis as source_analysis
+
+    real_replace = source_analysis.os.replace
+    calls = 0
+
+    def fail_late(source: str | bytes | Path, target: str | bytes | Path) -> None:
+        nonlocal calls
+        calls += 1
+        if calls == 4:
+            raise OSError("late rerun failure")
+        real_replace(source, target)
+
+    monkeypatch.setattr(source_analysis.os, "replace", fail_late)
+    with pytest.raises(CreativeWriterError, match="late rerun failure"):
+        run_source_analysis(tmp_path, "fixture", "prepare")
+
+    assert {path: path.read_bytes() for path in paths} == before
+
+
+def test_rollback_reports_forced_restoration_failure_and_keeps_backup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    story, _ = _fixture(tmp_path)
+    target = tmp_path / "build/fixture/source-study/corpus-lock.json"
+    before = target.read_bytes()
+    import creative_writer.source_analysis as source_analysis
+
+    real_replace = source_analysis.os.replace
+    calls = 0
+    def fail_restore(source: str | bytes | Path, target_path: str | bytes | Path) -> None:
+        nonlocal calls
+        calls += 1
+        if calls == 4:
+            raise OSError("install failure before restore")
+        if calls == 5:
+            raise OSError("forced restoration failure")
+        real_replace(source, target_path)
+
+    monkeypatch.setattr(source_analysis.os, "replace", fail_restore)
+    with pytest.raises(CreativeWriterError, match="forced restoration failure") as caught:
+        run_source_analysis(tmp_path, "fixture", "prepare")
+
+    assert "residual" in str(caught.value)
+    backups = list(target.parent.glob(f".{target.name}.*.bak"))
+    assert backups
+    assert not target.exists()
+    assert backups[0].read_bytes() == before
+
+
+def test_cleanup_failure_reports_residual_temp_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    target = tmp_path / "target.txt"
+    temporary = tmp_path / "temporary.tmp"
+    target.write_bytes(b"old")
+    temporary.write_bytes(b"new")
+    import creative_writer.source_analysis as source_analysis
+
+    real_unlink = Path.unlink
+
+    def fail_temp_cleanup(path: Path, missing_ok: bool = False) -> None:
+        if path == temporary:
+            raise OSError("temporary cleanup failure")
+        real_unlink(path, missing_ok=missing_ok)
+
+    monkeypatch.setattr(Path, "unlink", fail_temp_cleanup)
+    with pytest.raises(CreativeWriterError, match="temporary cleanup failure") as caught:
+        _commit_staged([(target, temporary)])
+
+    assert str(temporary) in str(caught.value)
+    assert target.read_bytes() == b"new"
 
 
 def test_prepare_rejects_unresolved_committed_passage_and_preserves_manifest(tmp_path: Path) -> None:

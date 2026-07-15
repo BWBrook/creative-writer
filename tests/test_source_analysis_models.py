@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import hashlib
 import unicodedata
 from pathlib import Path
@@ -62,6 +62,33 @@ def _analysis_config() -> dict[str, object]:
         "admission_registry": {"path": "source-study/admission.yml", "sha256": HASH},
         "source_registry": {"path": "original/sources.yml", "sha256": HASH},
         "authority_policy_version": "phase-2a-v1",
+        "expected_corpus": {
+            "admission_records": 13,
+            "retained_sources": 12,
+            "retained_epubs": 12,
+            "retained_markdown": 15,
+            "full_work_witnesses": 11,
+            "selected_witnesses": 4,
+            "witness_ids": [
+                "the-time-machine",
+                "the-invisible-man",
+                "the-island-of-doctor-moreau",
+                "the-war-of-the-worlds",
+                "certain-personal-matters",
+                "text-book-of-biology-part-1",
+                "the-first-witness",
+                "the-second-witness",
+                "the-third-witness",
+                "the-fourth-witness",
+                "the-fifth-witness",
+                "selected-short-fiction/the-plattner-story",
+                "selected-short-fiction/the-sea-raiders",
+                "selected-short-fiction/the-crystal-egg",
+                "selected-short-fiction/the-star",
+            ],
+            "excluded_tier5_ids": ["the-lost-world"],
+            "whole_work_holdouts": ["selected-short-fiction/the-star"],
+        },
         "authority_tiers": [
             {
                 "tier": tier,
@@ -98,7 +125,16 @@ def _analysis_config() -> dict[str, object]:
             "unsupported",
         ],
         "evidence_roles": ["support", "counterexample", "variation", "control", "validation"],
-        "generated_paths": {"passage_index": "build/time-expedition/source-study/passage-index.jsonl"},
+        "generated_paths": {
+            "corpus_lock": "build/time-expedition/source-study/corpus-lock.json",
+            "passage_index": "build/time-expedition/source-study/passage-index.jsonl",
+            "development_metrics": "build/time-expedition/source-study/development-metrics.json",
+            "development_metrics_csv": "build/time-expedition/source-study/development-metrics.csv",
+            "development_report": "build/time-expedition/source-study/development-report.md",
+            "validation_metrics": "build/time-expedition/source-study/validation-metrics.json",
+            "validation_packet": "build/time-expedition/source-study/validation-packet.md",
+            "analysis_report": "build/time-expedition/source-study/analysis-report.md",
+        },
     }
 
 
@@ -277,6 +313,40 @@ def test_analysis_fixture_uses_canonical_composition_window() -> None:
     assert config.composition_window.end == 1899
 
 
+def test_analysis_fixture_declares_exact_time_expedition_corpus_authority() -> None:
+    config = load_yaml_model(
+        Path("stories/time-expedition/source-study/analysis.yml"), AnalysisConfig
+    )
+
+    assert config.expected_corpus.model_dump() == {
+        "admission_records": 13,
+        "retained_sources": 12,
+        "retained_epubs": 12,
+        "retained_markdown": 15,
+        "full_work_witnesses": 11,
+        "selected_witnesses": 4,
+        "witness_ids": [
+            "the-time-machine",
+            "selected-short-fiction/the-plattner-story",
+            "selected-short-fiction/the-sea-raiders",
+            "selected-short-fiction/the-crystal-egg",
+            "selected-short-fiction/the-star",
+            "certain-personal-matters",
+            "text-book-of-biology-part-1",
+            "the-british-barbarians",
+            "a-desert-drama",
+            "the-days-work",
+            "the-beetle",
+            "king-solomons-mines",
+            "the-invisible-man",
+            "the-island-of-doctor-moreau",
+            "the-war-of-the-worlds",
+        ],
+        "excluded_tier5_ids": ["the-lost-world"],
+        "whole_work_holdouts": ["selected-short-fiction/the-star"],
+    }
+
+
 def test_analysis_requires_authority_tiers() -> None:
     payload = _analysis_config()
     payload.pop("authority_tiers")
@@ -405,6 +475,63 @@ def test_partition_rejects_string_holdout_fraction() -> None:
 
     with pytest.raises(ValidationError, match="holdout_fraction"):
         AnalysisConfig.model_validate(payload)
+
+
+def test_expected_corpus_requires_consistent_nonempty_identity_lists() -> None:
+    payload = _analysis_config()
+    expected = payload["expected_corpus"]
+    assert isinstance(expected, dict)
+    expected["selected_witnesses"] = 2
+
+    with pytest.raises(ValidationError, match="selected_witnesses|witness_ids"):
+        AnalysisConfig.model_validate(payload)
+
+
+def test_expected_corpus_rejects_duplicate_witness_ids() -> None:
+    payload = _analysis_config()
+    expected = payload["expected_corpus"]
+    assert isinstance(expected, dict)
+    expected["witness_ids"] = ["the-time-machine", "the-time-machine"]
+
+    with pytest.raises(ValidationError, match="witness IDs must be unique"):
+        AnalysisConfig.model_validate(payload)
+
+
+def test_expected_corpus_requires_all_known_generated_paths() -> None:
+    payload = _analysis_config()
+    generated_paths = payload["generated_paths"]
+    assert isinstance(generated_paths, dict)
+    generated_paths.pop("analysis_report")
+
+    with pytest.raises(ValidationError, match="generated paths must declare exactly"):
+        AnalysisConfig.model_validate(payload)
+
+
+@pytest.mark.parametrize(
+    "created_at",
+    [
+        datetime(2026, 7, 15, 10),
+        datetime(2026, 7, 15, 10, tzinfo=timezone(timedelta(hours=10))),
+    ],
+)
+def test_holdout_manifest_rejects_naive_and_non_utc_created_at(created_at: datetime) -> None:
+    payload = _holdout_manifest()
+    payload["created_at"] = created_at
+
+    with pytest.raises(ValidationError, match="UTC"):
+        HoldoutManifest.model_validate(payload)
+
+
+def test_holdout_manifest_preserves_valid_z_utc_timestamp() -> None:
+    payload = _holdout_manifest()
+    parsed = yaml.safe_load("created_at: 2026-07-15T10:00:00Z\n")
+    payload["created_at"] = parsed["created_at"]
+
+    manifest = HoldoutManifest.model_validate(payload)
+
+    assert manifest.created_at == parsed["created_at"]
+    assert manifest.created_at.tzinfo is not None
+    assert manifest.created_at.utcoffset() == timedelta(0)
 
 
 @pytest.mark.parametrize(

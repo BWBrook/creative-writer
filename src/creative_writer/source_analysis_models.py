@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import re
 import unicodedata
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Annotated, Literal, get_args
 
@@ -176,7 +176,7 @@ class PartitionRules(StrictModel):
 class AuthorityTierPolicy(StrictModel):
     tier: Literal[1, 2, 3, 4, 5]
     jurisdiction: NonEmptyText
-    analytical_roles: list[NonEmptyText] = Field(min_length=1)
+    analytical_roles: list[NonEmptyText] = Field(default_factory=list)
     evidence_rule: NonEmptyText
 
     @field_validator("analytical_roles")
@@ -197,6 +197,53 @@ class AnalyticalDimension(StrictModel):
         return _validate_unique(value, "dimension roles")
 
 
+class ExpectedCorpus(StrictModel):
+    """Story-local authority for the physical and analytical corpus topology."""
+
+    admission_records: StrictInt = Field(ge=1)
+    retained_sources: StrictInt = Field(ge=1)
+    retained_epubs: StrictInt = Field(ge=1)
+    retained_markdown: StrictInt = Field(ge=1)
+    full_work_witnesses: StrictInt = Field(ge=1)
+    selected_witnesses: StrictInt = Field(ge=1)
+    witness_ids: list[NonEmptyText] = Field(min_length=1)
+    excluded_tier5_ids: list[NonEmptyText] = Field(min_length=1)
+    whole_work_holdouts: list[NonEmptyText] = Field(min_length=1)
+
+    @field_validator("witness_ids")
+    @classmethod
+    def unique_witness_ids(cls, value: list[str]) -> list[str]:
+        return _validate_unique(value, "expected witness IDs")
+
+    @field_validator("excluded_tier5_ids")
+    @classmethod
+    def unique_excluded_ids(cls, value: list[str]) -> list[str]:
+        return _validate_unique(value, "expected excluded Tier 5 IDs")
+
+    @field_validator("whole_work_holdouts")
+    @classmethod
+    def unique_whole_work_ids(cls, value: list[str]) -> list[str]:
+        return _validate_unique(value, "expected whole-work holdout IDs")
+
+    @model_validator(mode="after")
+    def validate_topology(self) -> "ExpectedCorpus":
+        if self.retained_sources != self.retained_epubs:
+            raise ValueError("retained_sources and retained_epubs counts must agree")
+        if self.full_work_witnesses + self.selected_witnesses != self.retained_markdown:
+            raise ValueError(
+                "full_work_witnesses plus selected_witnesses must equal retained_markdown"
+            )
+        if len(self.witness_ids) != self.retained_markdown:
+            raise ValueError("witness_ids count must equal retained_markdown")
+        missing_holdouts = set(self.whole_work_holdouts) - set(self.witness_ids)
+        if missing_holdouts:
+            raise ValueError(
+                "whole-work holdout IDs must be present in witness_ids: "
+                + ", ".join(sorted(missing_holdouts))
+            )
+        return self
+
+
 class AnalysisConfig(StrictModel):
     schema_version: Literal[1]
     study_id: Slug
@@ -205,6 +252,7 @@ class AnalysisConfig(StrictModel):
     admission_registry: RegistryReference
     source_registry: RegistryReference
     authority_policy_version: NonEmptyText
+    expected_corpus: ExpectedCorpus
     authority_tiers: list[AuthorityTierPolicy] = Field(min_length=5)
     passage_rules: PassageRules
     partition: PartitionRules
@@ -254,7 +302,33 @@ class AnalysisConfig(StrictModel):
     @field_validator("generated_paths")
     @classmethod
     def validate_generated_paths(cls, value: dict[str, str]) -> dict[str, str]:
-        return {key: _validate_generated_path(path) for key, path in value.items()}
+        expected_files = {
+            "corpus_lock": "corpus-lock.json",
+            "passage_index": "passage-index.jsonl",
+            "development_metrics": "development-metrics.json",
+            "development_metrics_csv": "development-metrics.csv",
+            "development_report": "development-report.md",
+            "validation_metrics": "validation-metrics.json",
+            "validation_packet": "validation-packet.md",
+            "analysis_report": "analysis-report.md",
+        }
+        if set(value) != set(expected_files):
+            raise ValueError(
+                "generated paths must declare exactly the known corpus-analysis keys"
+            )
+        validated: dict[str, str] = {}
+        for key, path in value.items():
+            path = _validate_generated_path(path)
+            filename = expected_files[key]
+            if not re.fullmatch(
+                rf"build/[a-z0-9]+(?:-[a-z0-9]+)*/source-study/{re.escape(filename)}",
+                path,
+            ):
+                raise ValueError(
+                    f"generated path for {key} must be build/<slug>/source-study/{filename}"
+                )
+            validated[key] = path
+        return validated
 
     @field_validator("authority_tiers")
     @classmethod
@@ -443,6 +517,15 @@ class HoldoutManifest(StrictModel):
     source_fingerprints: dict[NonEmptyText, SHA256] = Field(min_length=1)
     whole_work_holdouts: list[NonEmptyText] = Field(min_length=1)
     witnesses: list[WitnessHoldouts] = Field(min_length=1)
+
+    @field_validator("created_at")
+    @classmethod
+    def require_utc_timestamp(cls, value: datetime) -> datetime:
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("created_at must be timezone-aware UTC")
+        if value.utcoffset() != timedelta(0):
+            raise ValueError("created_at must use UTC offset zero")
+        return value
 
     @field_validator("registry_hashes")
     @classmethod

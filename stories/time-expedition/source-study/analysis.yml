@@ -11,6 +11,31 @@ source_registry:
   path: original/sources.yml
   sha256: a5ae71f7f2437e3309ab7ff638388c7623214fd095544ff6470cdb7ad34e9677
 authority_policy_version: phase-2a-v1
+expected_corpus:
+  admission_records: 13
+  retained_sources: 12
+  retained_epubs: 12
+  retained_markdown: 15
+  full_work_witnesses: 11
+  selected_witnesses: 4
+  witness_ids:
+    - the-time-machine
+    - selected-short-fiction/the-plattner-story
+    - selected-short-fiction/the-sea-raiders
+    - selected-short-fiction/the-crystal-egg
+    - selected-short-fiction/the-star
+    - certain-personal-matters
+    - text-book-of-biology-part-1
+    - the-british-barbarians
+    - a-desert-drama
+    - the-days-work
+    - the-beetle
+    - king-solomons-mines
+    - the-invisible-man
+    - the-island-of-doctor-moreau
+    - the-war-of-the-worlds
+  excluded_tier5_ids: [the-lost-world]
+  whole_work_holdouts: [selected-short-fiction/the-star]
 authority_tiers:
   - tier: 1
     jurisdiction: "Continuity, frame, reported testimony, the Time Traveller, and primary voice evidence."

@@ -417,9 +417,9 @@ def _ledger() -> dict[str, object]:
                 "control_results": [],
                 "scope_and_limits": "This claim is limited to the declared source jurisdiction.",
                 "validation_expectation": {
-                    "expected_heldout_tendency": "Presence across an unseen role-matched passage set.",
-                    "eligible_roles": ["declared role"],
-                    "eligible_witness_ids": ["the-time-machine"],
+                    "heldout_targets": [{"id": "heldout-frame", "witness_id": "the-time-machine", "role": "declared role"}],
+                    "control_targets": [{"id": "control-frame", "witness_id": "the-time-machine", "role": "declared role"}],
+                    "heldout_tendency": "Presence across an unseen role-matched passage set.",
                     "disconfirming_result": "The tendency is absent or contradicted in the eligible holdout.",
                     "control_expectation": "The tendency is not reproduced by the negative control.",
                 },
@@ -1163,9 +1163,9 @@ def test_validated_validation_accepts_complete_hash_lifecycle() -> None:
 def test_validation_expectation_is_structured_and_strict() -> None:
     payload = _ledger()
     payload["claims"][0]["validation_expectation"] = {
-        "expected_heldout_tendency": "The tendency recurs in eligible held-out Wells passages.",
-        "eligible_roles": ["fixture role"],
-        "eligible_witness_ids": ["the-time-machine"],
+        "heldout_targets": [{"id": "heldout-frame", "witness_id": "the-time-machine", "role": "fixture role"}],
+        "control_targets": [{"id": "control-frame", "witness_id": "the-time-machine", "role": "fixture role"}],
+        "heldout_tendency": "The tendency recurs in eligible held-out Wells passages.",
         "disconfirming_result": "The tendency is absent or contradicted in the eligible holdout.",
         "control_expectation": "The negative control does not reproduce the tendency in the same role.",
     }
@@ -1174,8 +1174,8 @@ def test_validation_expectation_is_structured_and_strict() -> None:
 
     expectation = ledger.claims[0].validation_expectation
     assert not isinstance(expectation, str)
-    assert expectation.expected_heldout_tendency.startswith("The tendency")
-    assert expectation.eligible_witness_ids == ["the-time-machine"]
+    assert expectation.heldout_tendency.startswith("The tendency")
+    assert expectation.heldout_targets[0].witness_id == "the-time-machine"
 
 
 def test_validation_record_has_two_pass_step_and_final_ledger_hash() -> None:

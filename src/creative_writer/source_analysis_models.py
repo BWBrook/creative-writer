@@ -900,32 +900,32 @@ class EvidenceReference(StrictModel):
         return self
 
 
-class ValidationExpectation(StrictModel):
-    """A claim's predeclared, non-adaptive held-out validation contract."""
+class ValidationTarget(StrictModel):
+    """One predeclared witness/role target for a validation expectation."""
 
-    expected_heldout_tendency: NonEmptyText = Field(
-        validation_alias=AliasChoices(
-            "expected_heldout_tendency", "expected_tendency", "heldout_tendency"
-        )
-    )
-    eligible_roles: list[NonEmptyText] = Field(
-        min_length=1,
-        validation_alias=AliasChoices("eligible_roles", "eligible_heldout_roles"),
-    )
-    eligible_witness_ids: list[NonEmptyText] = Field(
-        min_length=1,
-        validation_alias=AliasChoices(
-            "eligible_witness_ids", "eligible_witnesses", "eligible_heldout_witnesses"
-        ),
-    )
+    id: Slug
+    witness_id: NonEmptyText
+    role: NonEmptyText
+
+
+class ValidationExpectation(StrictModel):
+    """A claim's explicit, non-adaptive held-out/control validation contract."""
+
+    heldout_targets: list[ValidationTarget] = Field(min_length=1)
+    control_targets: list[ValidationTarget] = Field(min_length=1)
+    heldout_tendency: NonEmptyText
     disconfirming_result: NonEmptyText
     control_expectation: NonEmptyText
 
-    @field_validator("eligible_roles", "eligible_witness_ids")
+    @field_validator("heldout_targets", "control_targets")
     @classmethod
-    def unique_members(cls, value: list[str], info) -> list[str]:
-        return _validate_unique(value, info.field_name)
-
+    def unique_targets(cls, value: list[ValidationTarget], info) -> list[ValidationTarget]:
+        _validate_unique([target.id for target in value], f"{info.field_name} IDs")
+        _validate_unique(
+            [(target.witness_id, target.role) for target in value],
+            f"{info.field_name} witness/role pairs",
+        )
+        return value
 
 class ClaimJurisdiction(StrictModel):
     """The declared scope and source-role boundary of one evidence claim."""
@@ -1053,10 +1053,12 @@ class ClaimTransition(StrictModel):
 class HeldoutClaimResult(StrictModel):
     id: Slug
     claim_id: Slug
+    expectation_target_id: Slug = Field(
+        validation_alias=AliasChoices("expectation_target_id", "target_id")
+    )
     witness_id: NonEmptyText = Field(
         validation_alias=AliasChoices("witness_id", "heldout_witness_id")
     )
-    authority_tier: Literal[1, 2, 3]
     role: NonEmptyText
     passage_ids: list[NonEmptyText] = Field(min_length=1)
     assessment: Literal["supports", "qualifies", "disconfirms", "inconclusive"]
@@ -1072,10 +1074,12 @@ class HeldoutClaimResult(StrictModel):
 class ControlComparison(StrictModel):
     id: Slug
     claim_id: Slug
+    expectation_target_id: Slug = Field(
+        validation_alias=AliasChoices("expectation_target_id", "target_id")
+    )
     witness_id: NonEmptyText = Field(
         validation_alias=AliasChoices("witness_id", "control_witness_id")
     )
-    authority_tier: Literal[4]
     role: NonEmptyText = Field(
         validation_alias=AliasChoices("role", "control_role")
     )
@@ -1097,8 +1101,8 @@ class ReviewerRecord(StrictModel):
     claim_id: Slug
     reviewer_id: NonEmptyText
     outcome: Literal["approved", "qualified", "rejected", "inconclusive"]
-    heldout_result_ids: list[Slug] = Field(default_factory=list)
-    control_comparison_ids: list[Slug] = Field(default_factory=list)
+    heldout_result_ids: list[Slug] = Field(min_length=1)
+    control_comparison_ids: list[Slug] = Field(min_length=1)
     notes: NonEmptyText
 
     @field_validator("heldout_result_ids", "control_comparison_ids")
@@ -1151,6 +1155,10 @@ class ValidationRecord(StrictModel):
         cls, value: list[ReviewerRecord]
     ) -> list[ReviewerRecord]:
         _validate_unique([item.id for item in value], "reviewer record IDs")
+        _validate_unique(
+            [(item.claim_id, item.reviewer_id) for item in value],
+            "claim/reviewer record pairs",
+        )
         return value
 
     @field_validator("claim_transitions")

@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Iterable, Sequence
 
 from pydantic import ValidationError
+import yaml
 
 from creative_writer.exceptions import CreativeWriterError
 from creative_writer.models import SourceStudyAdmission, SourcesRegistry
@@ -1202,9 +1203,36 @@ def collect_leakage_issues(
             forbidden_sequences.append((passage.passage_id, tokens))
     for path in sorted(paths, key=lambda item: item.as_posix()):
         text = _read(path)
+        structured_control_target_ids: set[str] = set()
+        structured_control_target_counts: dict[str, int] = {}
+        if path.name == "evidence-ledger.yml":
+            try:
+                raw = yaml.safe_load(text)
+            except yaml.YAMLError:
+                raw = None
+            if isinstance(raw, dict) and isinstance(raw.get("claims"), list):
+                for claim in raw["claims"]:
+                    if not isinstance(claim, dict):
+                        continue
+                    expectation = claim.get("validation_expectation")
+                    if not isinstance(expectation, dict):
+                        continue
+                    targets = expectation.get("control_targets")
+                    if not isinstance(targets, list):
+                        continue
+                    for target in targets:
+                        if not isinstance(target, dict) or not isinstance(target.get("witness_id"), str):
+                            continue
+                        witness_id = target["witness_id"]
+                        structured_control_target_ids.add(witness_id)
+                        structured_control_target_counts[witness_id] = structured_control_target_counts.get(witness_id, 0) + 1
         for witness_id in sorted(forbidden_witness_ids):
             boundary = rf"(?<![A-Za-z0-9_-]){re.escape(witness_id)}(?![A-Za-z0-9_-])"
-            if re.search(boundary, text):
+            occurrences = len(re.findall(boundary, text))
+            if witness_id in structured_control_target_ids:
+                if occurrences != structured_control_target_counts[witness_id]:
+                    result.errors.append(_error(path, "Predeclared Tier 4 target witness ID appears outside its structured control-target declaration", locator=witness_id))
+            elif occurrences:
                 result.errors.append(_error(path, "Forbidden holdout or Tier 4 witness ID appears in tracked development content", locator=witness_id))
         for passage in forbidden_passages:
             boundary = rf"(?<![A-Za-z0-9_-]){re.escape(passage.passage_id)}(?![A-Za-z0-9_-])"

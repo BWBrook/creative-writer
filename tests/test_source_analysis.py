@@ -2485,9 +2485,9 @@ def test_profile_validator_accepts_contiguous_findings_and_links_existing_claims
                 "control_results": [],
                 "scope_and_limits": "Fixture limit.",
                 "validation_expectation": {
-                    "expected_heldout_tendency": "Fixture expectation.",
-                    "eligible_roles": ["fixture role"],
-                    "eligible_witness_ids": ["wells-alpha"],
+                    "heldout_targets": [{"id": "heldout-frame", "witness_id": "wells-alpha", "role": "fixture role"}],
+                    "control_targets": [{"id": "control-frame", "witness_id": "wells-alpha", "role": "fixture role"}],
+                    "heldout_tendency": "Fixture expectation.",
                     "disconfirming_result": "The fixture tendency is absent in the held-out witness.",
                     "control_expectation": "The fixture tendency is not reproduced by the control.",
                 },
@@ -2533,9 +2533,9 @@ def test_evidence_validator_aggregates_authority_and_locator_diagnostics(tmp_pat
             "control_results": [],
             "scope_and_limits": "bounded scope",
             "validation_expectation": {
-                "expected_heldout_tendency": "unseen witness",
-                "eligible_roles": ["fixture role"],
-                "eligible_witness_ids": ["wells-alpha"],
+                "heldout_targets": [{"id": "heldout-frame", "witness_id": "wells-alpha", "role": "fixture role"}],
+                "control_targets": [{"id": "control-frame", "witness_id": "wells-alpha", "role": "fixture role"}],
+                "heldout_tendency": "unseen witness",
                 "disconfirming_result": "The tendency is absent.",
                 "control_expectation": "The control does not reproduce it.",
             },
@@ -2689,9 +2689,9 @@ def _fixture_claim(
         "control_results": [],
         "scope_and_limits": "The claim is bounded to the declared jurisdiction.",
         "validation_expectation": {
-            "expected_heldout_tendency": "Presence in an unseen role-matched passage.",
-            "eligible_roles": ["fixture role"],
-            "eligible_witness_ids": ["wells-alpha"],
+            "heldout_targets": [{"id": "heldout-fixture", "witness_id": "wells-alpha", "role": "wells-alpha role"}],
+            "control_targets": [{"id": "control-fixture", "witness_id": "tier-four", "role": "tier-four role"}],
+            "heldout_tendency": "Presence in an unseen role-matched passage.",
             "disconfirming_result": "The tendency is absent in the held-out material.",
             "control_expectation": "The negative control does not show the same tendency.",
         },
@@ -3881,6 +3881,15 @@ def _replace_validation_step(story: Path, step: str) -> None:
         "---\n" + yaml.safe_dump(payload, sort_keys=False) + "---\n\n# Synthetic validation\n",
         encoding="utf-8",
     )
+    root = story.parents[1]
+    subprocess.run(["git", "add", "stories/fixture/source-study/validation.md"], cwd=root, check=True)
+    subprocess.run(["git", "commit", "-qm", f"set validation step {step}"], cwd=root, check=True)
+
+
+def _commit_fixture_validation(story: Path, message: str = "update validation fixture") -> None:
+    root = story.parents[1]
+    subprocess.run(["git", "add", "stories/fixture/source-study/validation.md"], cwd=root, check=True)
+    subprocess.run(["git", "commit", "-qm", message], cwd=root, check=True)
 
 
 def _complete_committed_candidate_fixture(root: Path) -> Path:
@@ -3932,8 +3941,8 @@ def _complete_committed_candidate_fixture(root: Path) -> Path:
         "heldout_claim_results": [{
             "id": "heldout-fixture-claim",
             "claim_id": "fixture-claim",
+            "expectation_target_id": "heldout-fixture",
             "witness_id": heldout.witness_id,
-            "authority_tier": 1,
             "role": "wells-alpha role",
             "passage_ids": [heldout.passage_id],
             "assessment": "qualifies",
@@ -3943,8 +3952,8 @@ def _complete_committed_candidate_fixture(root: Path) -> Path:
         "control_comparisons": [{
             "id": "control-fixture-claim",
             "claim_id": "fixture-claim",
+            "expectation_target_id": "control-fixture",
             "witness_id": control.witness_id,
-            "authority_tier": 4,
             "role": "tier-four role",
             "passage_ids": [control.passage_id],
             "comparison": "The negative control provides comparative material and does not authorize positive use.",
@@ -4064,8 +4073,8 @@ def test_validate_heldout_assessed_rejects_invalid_control_comparison_after_cont
     comparison = {
         "id": "control-fixture-claim",
         "claim_id": "fixture-claim",
+        "expectation_target_id": "control-fixture",
         "witness_id": control.witness_id,
-        "authority_tier": 4,
         "role": "tier-four role",
         "passage_ids": [control.passage_id],
         "comparison": "The negative control provides comparative material and does not authorize positive use.",
@@ -4085,8 +4094,8 @@ def test_validate_heldout_assessed_rejects_invalid_control_comparison_after_cont
     validation["heldout_claim_results"] = [{
         "id": "heldout-fixture-claim",
         "claim_id": "fixture-claim",
+        "expectation_target_id": "heldout-fixture",
         "witness_id": heldout.witness_id,
-        "authority_tier": 1,
         "role": "wells-alpha role",
         "passage_ids": [heldout.passage_id],
         "assessment": "qualifies",
@@ -4098,6 +4107,7 @@ def test_validate_heldout_assessed_rejects_invalid_control_comparison_after_cont
         "---\n" + yaml.safe_dump(validation, sort_keys=False) + "---\n\n# Synthetic validation\n",
         encoding="utf-8",
     )
+    _commit_fixture_validation(story, "record invalid control comparison")
 
     output_paths = [
         tmp_path / "build/fixture/source-study/validation/current/validation-metrics.json",
@@ -4120,7 +4130,7 @@ def test_validate_heldout_assessed_rejects_invalid_control_comparison_after_cont
     with pytest.raises(CreativeWriterError, match=expected_message):
         run_source_analysis(tmp_path, "fixture", "validate")
 
-    assert read_trace == ["heldout_wells", "heldout_wells", "tier4_controls"]
+    assert read_trace == ["heldout_wells", "tier4_controls"]
     assert [path.read_text(encoding="utf-8") for path in output_paths] == [
         f"sentinel:{path.name}\n" for path in output_paths
     ]
@@ -4146,8 +4156,8 @@ def test_validate_rejects_present_wrong_partition_result_before_opening_controls
         validation["heldout_claim_results"] = [{
             "id": "heldout-fixture-claim",
             "claim_id": "fixture-claim",
+            "expectation_target_id": "heldout-fixture",
             "witness_id": heldout.witness_id,
-            "authority_tier": 1,
             "role": "wells-alpha role",
             "passage_ids": [heldout.passage_id],
             "assessment": "qualifies",
@@ -4158,6 +4168,7 @@ def test_validate_rejects_present_wrong_partition_result_before_opening_controls
             "---\n" + yaml.safe_dump(validation, sort_keys=False) + "---\n\n# Synthetic validation\n",
             encoding="utf-8",
         )
+        _commit_fixture_validation(story, "record heldout validation")
     validation_path = story / "source-study/validation.md"
     validation = yaml.safe_load(validation_path.read_text(encoding="utf-8").split("---", 2)[1])
     control_records = parse_passage_partition(
@@ -4170,6 +4181,7 @@ def test_validate_rejects_present_wrong_partition_result_before_opening_controls
         "---\n" + yaml.safe_dump(validation, sort_keys=False) + "---\n\n# Synthetic final validation\n",
         encoding="utf-8",
     )
+    _commit_fixture_validation(story, "record wrong partition validation")
     read_trace: list[str] = []
     read_bound_partition = source_analysis._read_bound_partition
 

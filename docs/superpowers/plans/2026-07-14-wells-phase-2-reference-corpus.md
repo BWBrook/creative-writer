@@ -33,7 +33,7 @@
 - `tests/test_source_admission.py`: admission checker and report behavior tests.
 - `stories/time-expedition/source-study/admission.yml`: final thirteen-record authority and admission boundary.
 - `stories/time-expedition/original/sources.yml`: exact metadata for the twelve retained artifacts.
-- `stories/time-expedition/original/filters/remove-project-gutenberg-boilerplate.lua`: deterministic removal of Project Gutenberg header/footer containers and terminal transcriber notes.
+- `stories/time-expedition/original/filters/remove-project-gutenberg-boilerplate.lua`: deterministic removal of Project Gutenberg boilerplate containers, images, cover headings, and terminal transcriber notes while preserving non-empty literary `pgmonospaced` blocks.
 - `stories/time-expedition/original/README.md`: final corpus inventory and exact regeneration instructions.
 - `stories/time-expedition/source-study/README.md`: final admission-gate state and stop condition.
 - `stories/time-expedition/source-study/method.md`: final corpus boundary and continued prohibition on detailed analysis.
@@ -862,7 +862,7 @@ local function has_class(div, wanted)
 end
 
 function Div(div)
-  if has_class(div, "pg-boilerplate") or has_class(div, "pgmonospaced") then
+  if has_class(div, "pg-boilerplate") then
     return {}
   end
 end
@@ -923,6 +923,10 @@ header, `Front Cover:` heading and image, literary paragraph,
 `TRANSCRIBER'S NOTES`, editorial paragraph, `Back Cover:` heading, and
 `pg-boilerplate` footer. Pandoc output must contain only the literary
 paragraph.
+
+Add a durable regression fixture with literary paragraphs before and after a
+non-empty mid-document `pgmonospaced` block. The block must survive intact;
+the class alone is not packaging evidence.
 
 Add a second synthetic fixture in which Project Gutenberg credits and a
 singular `Transcriber's Note:` precede a horizontal rule and literary text.

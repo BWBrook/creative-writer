@@ -78,10 +78,11 @@ remain the archival authorities.
 Standard Ebooks apparatus. `filters/remove-project-gutenberg-boilerplate.lua`
 also removes Project Gutenberg boilerplate containers, images, front-cover
 headings, leading singular transcriber notes, and terminal transcriber/back
-cover matter. A singular transcriber-note marker triggers leading-preamble
-removal only when it occurs before the first horizontal rule; once that rule
-has been reached, a later marker cannot move the document start or discard
-preceding literary text. Project Gutenberg derivations apply the
+cover matter. Non-empty literary `pgmonospaced` Divs are retained; that class
+alone does not identify packaging. A singular transcriber-note marker triggers
+leading-preamble removal only when it occurs before the first horizontal rule;
+once that rule has been reached, a later marker cannot move the document start
+or discard preceding literary text. Project Gutenberg derivations apply the
 packaging-link filter first and the Gutenberg filter second. In *A Desert
 Drama*, `OEBPS/6605053776549637356_21768-h-6.htm.html` is the final linear
 literary member and must be included; the second filter removes the terminal

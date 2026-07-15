@@ -24,7 +24,7 @@ local function has_class(div, wanted)
 end
 
 function Div(div)
-  if has_class(div, "pg-boilerplate") or has_class(div, "pgmonospaced") then
+  if has_class(div, "pg-boilerplate") then
     return {}
   end
 end

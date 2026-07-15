@@ -190,6 +190,26 @@ S. W. “*Korosko*,” February 13TH.
 
 PASSENGERS.
 
+     Colonel Cochrane Cochrane         London\
+\
+     Mr. Cecil Brown                   London\
+\
+     John H. Headingly                 Boston, USA\
+\
+     Miss Adams                        Boston, USA\
+\
+     Miss S. Adams                     Worcester, Mass,  USA\
+\
+     Mons Fardet                       Paris\
+\
+     Mr. and Mrs. Belmont              Dublin\
+\
+     James Stephens                    Manchester\
+\
+     Rev. John Stuart                  Birmingham\
+\
+     Mrs. Shlesinger, nurse and child  Florence\
+
 This was the party as it started from Shellal with the intention of travelling up the two hundred miles of Nubian Nile which lie between the first and the second cataract.
 
 It is a singular country, this Nubia. Varying in breadth from a few miles to as many yards (for the name is only applied to the narrow portion which is capable of cultivation), it extends in a thin, green, palm-fringed strip upon either side of the broad coffee-coloured river. Beyond it there stretches on the Libyan bank a savage and illimitable desert, extending to the whole breadth of Africa. On the other side an equally desolate wilderness is bounded only by the distant Red Sea. Between these two huge and barren expanses Nubia writhes like a green sandworm along the course of the river. Here and there it disappears altogether, and the Nile runs between black and sun-cracked hills, with the orange drift-sand lying like glaciers in their valleys. Everywhere one sees traces of vanished races and submerged civilisations. Grotesque graves dot the hills or stand up against the sky-line: pyramidal graves, tumulus graves, rock graves,—everywhere, graves. And, occasionally, as the boat rounds a rocky point, one sees a deserted city up above,—houses, walls, battlements, with the sun shining through the empty window squares. Sometimes you learn that it has been Roman, sometimes Egyptian, sometimes all record of its name or origin has been absolutely lost, You ask yourself in amazement why any race should build in so uncouth a solitude, and you find it difficult to accept the theory that this has only been of value as a guard-house to the richer country down below, and that these frequent cities have been so many fortresses to hold off the wild and predatory men of the south. But whatever be their explanation, be it a fierce neighbour, or be it a climatic change, there they stand, these grim and silent cities, and up on the hills you can see the graves of their people, like the port-holes of a man-of-war. It is through this weird, dead country that the tourists smoke and gossip and flirt as they pass up to the Egyptian frontier.
@@ -2029,11 +2049,24 @@ He Delivered Them from Their Distress P273 \
 
 “It sounds as if it were composed for us, and yet it was written two thousand years ago,” said the clergyman, as he closed the book. “In every age man has been forced to acknowledge the guiding hand which leads him. For my part I don't believe that inspiration stopped two thousand years ago. When Tennyson wrote with such fervour and conviction,—
 
+     'Oh, yet we trust that somehow good\
+     Will be the final goal of ill.'\
+
 he was repeating the message which had been given to him, just as Micah or Ezekiel when the world was younger repeated some cruder and more elementary lesson.”
 
 “That is all very well, Mr. Stuart,” said the Frenchman; “you ask me to praise God for taking me out of danger and pain, but what I want to know is why, since He has arranged all things, He ever put me into that pain and danger. I have in my opinion more occasion to blame than to praise. You would not thank me for pulling you out of that river if it was also I who pushed you in. The most which you can claim for your Providence is that it has healed the wound which its own hand inflicted.”
 
 “I don't deny the difficulty,” said the clergyman, slowly; “no one who is not self-deceived *can* deny the difficulty. Look how boldly Tennyson faced it in that same poem, the grandest and deepest and most obviously inspired in our language. Remember the effect which it had upon him.
+
+     'I falter where I firmly trod,\
+     And falling with my weight of cares\
+     Upon the great world's altar stairs,\
+     Which slope through darkness up to God,\
+\
+     'I stretch lame hands of faith and grope\
+     And gather dust and chaff, and call\
+     To what I feel is Lord of all,\
+     And faintly trust the larger hope.'\
 
 It is the central mystery of mysteries—the problem of sin and suffering, the one huge difficulty which the reasoner has to solve in order to vindicate the dealings of God with man. But take our own case as an example. I, for one, am very clear what I have got out of our experience. I say it with all humility, but I have a clearer view of my duties than ever I had before. It has taught me to be less remiss in saying what I think to be true, less indolent in doing what I feel to be rightful.”
 

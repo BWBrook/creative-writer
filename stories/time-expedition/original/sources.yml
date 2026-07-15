@@ -208,7 +208,7 @@ sources:
       epub: "grant-allen_the-british-barbarians.epub"
       epub_sha256: "92fc56e7de3c7d40e906dbc0dbf742a23e6dc6fdfec6ef5edfd9bd5310afdb36"
       markdown: "text/the-british-barbarians.md"
-      markdown_sha256: "9e135e3e6fd6c54a5d0e67c72bc9344358685e64d11b2259d7975e2ec4e034ca"
+      markdown_sha256: "4a185a26fd827576f5f6f5ad0540a2fcf68da2d26339f762f347f013105ae04c"
     derivation:
       tool: "Pandoc 3.10"
       input: "OEBPS/137036109479442431_4340-h-0.htm.html through OEBPS/137036109479442431_4340-h-4.htm.html in numeric order"
@@ -248,7 +248,7 @@ sources:
       epub: "arthur-conan-doyle_a-desert-drama.epub"
       epub_sha256: "81a9a608446676e48b33c575660843af6b1ee266631a3aabdf648667a6ebfaa1"
       markdown: "text/a-desert-drama.md"
-      markdown_sha256: "0e44ed2d8c0ef3e05952bfc3aeda27f781b7c9f27b0e6b3b9f7a536d8920064c"
+      markdown_sha256: "94d9b0a9a40cb209d1dd7f01a5cfc77edb2c3d3ad50c60981d49cdfb74023e4f"
     derivation:
       tool: "Pandoc 3.10"
       input: "OEBPS/6605053776549637356_21768-h-0.htm.html through OEBPS/6605053776549637356_21768-h-6.htm.html in numeric order"

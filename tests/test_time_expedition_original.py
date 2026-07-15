@@ -126,6 +126,58 @@ def test_desert_drama_derivation_declares_final_member_and_removes_gutenberg_lic
     assert "Section 1. Project Gutenberg License" not in markdown
 
 
+def test_desert_drama_retains_passenger_list_and_tennyson_quotations() -> None:
+    root = Path(__file__).resolve().parents[1]
+    markdown = (
+        root / "stories" / "time-expedition" / "original" / "text" / "a-desert-drama.md"
+    ).read_text(encoding="utf-8")
+
+    for passage in (
+        "PASSENGERS.",
+        "Colonel Cochrane",
+        "Mr. Cecil Brown",
+        "Oh, yet we trust that somehow good",
+        "I falter where I firmly trod",
+        "And faintly trust the larger hope.",
+    ):
+        assert passage in markdown
+    for forbidden in (
+        "PROJECT GUTENBERG",
+        "FULL LICENSE",
+        "TRANSCRIBER",
+        "Front Cover",
+        "Back Cover",
+    ):
+        assert forbidden not in markdown
+
+
+def test_british_barbarians_retains_literary_quotations() -> None:
+    root = Path(__file__).resolve().parents[1]
+    markdown = (
+        root
+        / "stories"
+        / "time-expedition"
+        / "original"
+        / "text"
+        / "the-british-barbarians.md"
+    ).read_text(encoding="utf-8")
+
+    for passage in (
+        "Singing songs unbidden",
+        "Nature is made better by no mean",
+        "Because right is right, to follow right",
+    ):
+        assert passage in markdown
+    for forbidden in (
+        "PROJECT GUTENBERG",
+        "FULL LICENSE",
+        "TRANSCRIBER",
+        "Front Cover",
+        "Back Cover",
+    ):
+        assert forbidden not in markdown
+
+
 def test_project_gutenberg_filter_removes_leading_transcriber_note_preamble() -> None:
     output = _run_project_gutenberg_filter(
         """<div class="pg-boilerplate">Project Gutenberg credits.</div>
@@ -158,4 +210,20 @@ def test_project_gutenberg_filter_preserves_later_transcriber_note_and_rules() -
         "Editorial text after the marker.\n\n"
         "------------------------------------------------------------------------\n\n"
         "Second literary paragraph.\n"
+    )
+
+
+def test_project_gutenberg_filter_preserves_non_empty_mid_document_pgmonospaced_literature() -> None:
+    output = _run_project_gutenberg_filter(
+        """<p>Before the verse.</p>
+<div class="pgmonospaced">A literary line<br/>B literary line</div>
+<p>After the verse.</p>
+"""
+    )
+
+    assert output == (
+        "Before the verse.\n\n"
+        "A literary line\\\n"
+        "B literary line\n\n"
+        "After the verse.\n"
     )

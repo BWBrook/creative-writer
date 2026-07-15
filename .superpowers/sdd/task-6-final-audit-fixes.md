@@ -4,7 +4,8 @@ Status: DONE
 
 ## Commits created
 
-- Pending final commit ID for the verified source/test repair; the report-only follow-up will record the exact IDs.
+- `3c45a09` — verified source/test implementation and regression coverage.
+- The report-only commit below records this report's final exact evidence.
 
 ## RED evidence
 

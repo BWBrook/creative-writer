@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+import creative_writer.cli as cli
 import creative_writer.source_analysis as source_analysis
 import creative_writer.source_evidence as source_evidence
 import creative_writer.source_validation as source_validation
@@ -900,6 +901,204 @@ def test_prepare_rerun_is_byte_stable_and_verifies_existing_manifest(tmp_path: P
 def test_unsupported_stages_raise_clear_error(tmp_path: Path, stage: str) -> None:
     with pytest.raises(CreativeWriterError, match=f"stage.*{stage}.*not implemented"):
         run_source_analysis(tmp_path, "fixture", stage)
+
+
+@pytest.mark.parametrize("stage", ["prepare", "develop", "validate"])
+def test_source_analysis_cli_parser_accepts_each_stage(stage: str) -> None:
+    args = cli.build_parser().parse_args(
+        ["source-analysis", "--story", "fixture", "--stage", stage]
+    )
+
+    assert args.command == "source-analysis"
+    assert args.story == "fixture"
+    assert args.stage == stage
+
+
+def test_source_analysis_cli_parser_rejects_unknown_stage() -> None:
+    with pytest.raises(SystemExit) as exc_info:
+        cli.build_parser().parse_args(
+            ["source-analysis", "--story", "fixture", "--stage", "inspect"]
+        )
+
+    assert exc_info.value.code == 2
+
+
+@pytest.mark.parametrize("stage", ["prepare", "develop", "validate"])
+def test_source_analysis_cli_dispatches_and_reports_stage_outputs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    stage: str,
+) -> None:
+    generated_path = tmp_path / f"build/{stage}.out"
+    output_key = {
+        "prepare": "corpus_lock",
+        "develop": "development_metrics",
+        "validate": "validation_metrics",
+    }[stage]
+    result = SimpleNamespace(
+        stage=stage,
+        generated_paths={output_key: generated_path},
+        holdout_path=tmp_path / "stories/fixture/source-study/holdouts.yml",
+        holdout_manifest_created=stage == "prepare",
+        generation_id="f" * 64 if stage == "validate" else None,
+    )
+    monkeypatch.setattr(cli, "repo_root", lambda: tmp_path)
+    monkeypatch.setattr(cli, "run_source_analysis", lambda root, slug, requested_stage: result)
+
+    assert cli.main(["source-analysis", "--story", "fixture", "--stage", stage]) == 0
+
+    output = capsys.readouterr().out
+    assert f"Source analysis stage `{stage}` completed" in output
+    assert "Generated output:" in output
+    assert f"build/{stage}.out" in output
+    if stage == "prepare":
+        assert "Tracked holdout manifest created:" in output
+    else:
+        assert "Tracked holdout manifest verified:" in output
+    if stage == "validate":
+        assert f"Validation generation: {'f' * 64}" in output
+
+
+@pytest.mark.parametrize("stage", ["prepare", "develop", "validate"])
+def test_source_analysis_cli_reports_blocking_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    stage: str,
+) -> None:
+    monkeypatch.setattr(cli, "repo_root", lambda: tmp_path)
+
+    def fail(*args: object, **kwargs: object) -> object:
+        raise CreativeWriterError(f"{stage} fixture is blocked")
+
+    monkeypatch.setattr(cli, "run_source_analysis", fail)
+
+    assert cli.main(["source-analysis", "--story", "fixture", "--stage", stage]) == 1
+
+    captured = capsys.readouterr()
+    assert f"{stage} fixture is blocked" in captured.err
+
+
+def test_source_analysis_cli_runs_complete_committed_lifecycle(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    story = _write_fixture(tmp_path)
+    monkeypatch.setattr(cli, "repo_root", lambda: tmp_path)
+
+    def run_cli(stage: str) -> str:
+        assert cli.main(["source-analysis", "--story", "fixture", "--stage", stage]) == 0
+        return capsys.readouterr().out
+
+    prepare_output = run_cli("prepare")
+    assert "stage `prepare`" in prepare_output
+    _commit_fixture_holdouts(tmp_path)
+    subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "fixture corpus baseline"], cwd=tmp_path, check=True)
+
+    develop_output = run_cli("develop")
+    assert "stage `develop`" in develop_output
+    ledger_path = story / "source-study/evidence-ledger.yml"
+    analysis_path = story / "source-study/analysis.yml"
+    profile_path = story / "source-study/wells-profile.md"
+    development_index = read_passage_index(
+        tmp_path / "build/fixture/source-study/indexes/development.jsonl"
+    )
+    development_passage = next(item for item in development_index if item.witness_id == "wells-alpha")
+    ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
+    ledger["stage"] = "development"
+    ledger["claims"] = [
+        _fixture_claim(
+            claim_id="fixture-claim",
+            jurisdiction={
+                "scope": "role_specific",
+                "roles": ["wells-alpha role"],
+                "eligible_witness_ids": ["wells-alpha"],
+            },
+            classification="role_specific",
+            support=[_fixture_reference(development_passage)],
+            search={
+                "witness_ids": ["wells-alpha"],
+                "dimensions": ["frame-architecture"],
+                "method": "manual_close_reading",
+                "coverage": "targeted",
+                "searched_passage_ids": [development_passage.passage_id],
+                "outcome": "no_material_counterexample",
+                "notes": "Synthetic candidate search.",
+            },
+        )
+    ]
+    ledger_path.write_text(yaml.safe_dump(ledger, sort_keys=False), encoding="utf-8")
+    analysis = yaml.safe_load(analysis_path.read_text(encoding="utf-8"))
+    analysis["study_status"] = "candidate_frozen"
+    analysis_path.write_text(yaml.safe_dump(analysis, sort_keys=False), encoding="utf-8")
+    subprocess.run(
+        [
+            "git",
+            "add",
+            "stories/fixture/source-study/analysis.yml",
+            "stories/fixture/source-study/evidence-ledger.yml",
+            "stories/fixture/source-study/wells-profile.md",
+        ],
+        cwd=tmp_path,
+        check=True,
+    )
+    subprocess.run(["git", "commit", "-qm", "freeze candidate evidence"], cwd=tmp_path, check=True)
+    candidate_commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=tmp_path, check=True, text=True, capture_output=True
+    ).stdout.strip()
+    validation = {
+        "schema_version": 1,
+        "study_id": "fixture-wells-phase-2b",
+        "stage": "candidate_frozen",
+        "validation_step": "frozen",
+        "candidate_commit": candidate_commit,
+        "candidate_analysis_sha256": _sha256(analysis_path),
+        "candidate_manifest_sha256": _sha256(story / "source-study/holdouts.yml"),
+        "candidate_profile_sha256": _sha256(profile_path),
+        "candidate_ledger_sha256": _sha256(ledger_path),
+        "holdout_summary": "Synthetic held-out Wells material is pending assessment.",
+        "control_summary": "Tier 4 controls remain quarantined until held-out assessment is recorded.",
+        "reviewer_summary": "Independent review is pending.",
+        "heldout_claim_results": [],
+        "control_comparisons": [],
+        "reviewer_records": [],
+        "claim_transitions": [],
+        "unresolved_uncertainty": "Synthetic fixture has no authored claim outcomes.",
+        "final_profile_sha256": None,
+        "final_ledger_sha256": None,
+    }
+    _write_validation_payload(story, validation)
+    _commit_fixture_validation(story, "record candidate freeze")
+
+    frozen_output = run_cli("validate")
+    assert "stage `validate`" in frozen_output
+    assert "Validation generation: " in frozen_output
+    frozen_metrics = json.loads(
+        (tmp_path / "build/fixture/source-study/validation/current/validation-metrics.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert "tier4_controls" not in frozen_metrics
+
+    _record_heldout_assessed(story)
+    heldout_output = run_cli("validate")
+    assert "Validation generation: " in heldout_output
+    heldout_metrics = json.loads(
+        (tmp_path / "build/fixture/source-study/validation/current/validation-metrics.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert heldout_metrics["tier4_controls"] is not None
+
+    _record_complete(story)
+    complete_output = run_cli("validate")
+    assert "Validation generation: " in complete_output
+    complete_report = (
+        tmp_path / "build/fixture/source-study/validation/current/analysis-report.md"
+    ).read_text(encoding="utf-8")
+    assert "Final compiled status" in complete_report
+    assert "Phase 2C stop boundary" in complete_report
 
 
 def test_prepare_blocks_before_analysis_outputs_when_admission_fails(tmp_path: Path) -> None:

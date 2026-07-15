@@ -66,8 +66,28 @@ make pdf STORY=mars-2044-cave
 make stats STORY=mars-2044-cave
 make ai-audit STORY=mars-2044-cave
 make review-pack STORY=mars-2044-cave PACK=first-human-pass
+make source-analysis STORY=time-expedition STAGE=prepare
 make test
 ```
+
+Phase 2B source analysis is staged explicitly:
+
+```bash
+creative-writer source-analysis --story <slug> --stage prepare
+creative-writer source-analysis --story <slug> --stage develop
+creative-writer source-analysis --story <slug> --stage validate
+```
+
+`prepare` creates the corpus lock and three physical passage indexes;
+`develop` reads only the development index; `validate` reports the managed
+validation generation. The validation record advances in order from `frozen`
+to `heldout_assessed` to `complete`, so held-out Wells material is assessed
+before Tier 4 controls can be opened. Candidate `analysis.yml` and
+`holdouts.yml` remain immutable for that validation run. At `complete`, the
+writer-facing profile and evidence ledger may be the separately hash-checked
+final versions required by the approved workflow. Phase 2B produces
+descriptive evidence only and stops before Phase 2C style guidance, planning,
+or manuscript changes.
 
 For a simple script wrapper, you can also run:
 

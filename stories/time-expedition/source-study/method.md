@@ -15,13 +15,49 @@ corpus is closed at twelve retained, admitted records plus one excluded,
 unacquired Tier 5 record. No records remain `approved` or `proposed`, and the
 excluded record has no source artifact or positive authority.
 
-## Later analytical method
+## Phase 2B lifecycle
 
-The next phase will preserve works separately, retain locators, calculate per-work measurements, close-read representative and contrary passages, record evidence and counterexamples, and validate the resulting profile against held-out Wells passages and period controls.
+The command-line interface is:
 
-## Current prohibition
+```bash
+creative-writer source-analysis --story time-expedition --stage prepare
+creative-writer source-analysis --story time-expedition --stage develop
+creative-writer source-analysis --story time-expedition --stage validate
+```
 
-The completed admission boundary does not authorise detailed analysis. Until
-the generated admission report receives human review, this phase performs no
-quantitative profile, close-reading findings, evidence-ledger claims, style
-guidance, Permian research, narrative planning, or manuscript drafting.
+Preparation freezes the admitted corpus and writes three canonical physical
+indexes: a Tier 1-3 development index, a held-out Wells index, and a Tier 4
+control index. Their passage IDs, ordered records, partition membership, and
+SHA-256 bindings are checked as separate artifacts. No later stage reparses
+retained source Markdown.
+
+Development reads only the development index and keeps measurements and
+observations per witness. The candidate freeze then records a reachable Git
+commit plus exact hashes for `analysis.yml`, `holdouts.yml`, the candidate
+profile, and the candidate evidence ledger. The candidate `analysis.yml` and
+holdout manifest are immutable authorities; validation cannot replace them or
+their bound indexes under the same candidate.
+
+Validation is a two-pass quarantine boundary. The validation record must move
+from `frozen` to `heldout_assessed` to `complete`:
+
+1. `frozen` opens and assesses held-out Wells passages only.
+2. `heldout_assessed` is committed only after the held-out treatment is complete;
+   that record authorises the separate Tier 4 control pass.
+3. `complete` requires final claim outcomes, reviewer treatment, control
+   comparisons, and the final compiled report.
+
+The candidate profile and ledger remain available from their immutable Git
+objects throughout validation. At `complete`, the writer-facing
+`wells-profile.md` and `evidence-ledger.yml` may be reviewed final versions;
+they are read from trusted Git blobs and checked against separately recorded
+final SHA-256 values before parsing. The generated validation triple is
+published atomically through `validation/current`.
+
+## Phase 2C stop
+
+Phase 2B remains descriptive. It does not produce style guidance, style-card
+changes, phrase banks, Permian research or planning, operational instructions,
+or manuscript prose. The complete validation report is the explicit Phase 2C
+stop boundary; Phase 2C requires separate design approval and human approval
+of the Phase 2B evidence layer.

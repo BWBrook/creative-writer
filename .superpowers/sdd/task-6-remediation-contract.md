@@ -88,6 +88,22 @@ body is read. Candidate-frozen equality uses clean paths and equality of
 `HEAD` and candidate blob IDs. Final files are read from verified `HEAD` blobs,
 not untrusted worktree bodies.
 
+### Candidate-time configuration freeze
+
+The candidate record pins four candidate-commit blobs and their exact SHA-256
+values: `analysis.yml`, `holdouts.yml`, the candidate profile, and the evidence
+ledger. Verification hashes each blob before parsing its body, then requires
+the clean `HEAD` blob ID for every one of those paths to equal the candidate
+blob ID whenever the validation step is `candidate_frozen` or later.
+
+The candidate-time holdout manifest is therefore the immutable authority for
+partition paths, partition hashes, witness membership, and the corpus-lock
+hash. Validation must prove the current generated corpus lock and all opened
+partition bytes match that candidate manifest. A later commit may advance the
+validation record and assessment artifacts, but it may not replace the
+candidate analysis configuration, manifest, profile, ledger, corpus lock, or
+partition indexes under the same frozen candidate.
+
 ## Exact targets and treatment
 
 Validation expectations use explicit target records:
@@ -135,8 +151,40 @@ atomically replace one relative `current` symlink and fsync its parent.
 
 Before the pointer swap, readers see the old complete generation or no first
 generation. After it, readers see the complete new generation. Failed runs
-remove their staging path and leave `current` unchanged. Identical reruns reuse
-the verified generation. Complete generations are retained.
+before the pointer swap remove their staging path and leave `current`
+unchanged. The atomic `current` swap is the publication commit point. Every
+fallible integrity check occurs before that point. A parent-directory fsync
+failure after the swap is reported distinctly as committed with durability
+uncertain; it must never be reported as an uncommitted rollback failure.
+Identical reruns reuse the verified generation. Complete generations are
+retained.
+
+`validation/` and `validation/generations/` must be real directories with no
+symlinked parent component. The managed pointer is the sole permitted symlink:
+`validation/current` may be absent or must be the exact relative target
+`generations/<64-lowercase-hex-generation-id>`. Resolution verifies that
+generation and its manifest before returning files. Any absolute target,
+different relative shape, symlinked generation, or symlinked parent fails
+closed. Production reruns resolve and reuse this managed pointer normally.
+
+## Structured leakage and control notes
+
+Tier 4 witness IDs may occur in structured frozen inputs only at the exact YAML
+node path
+`claims[i].validation_expectation.control_targets[j].witness_id`. Leakage
+checking traverses the composed YAML node graph with the current document path;
+an alias is examined at every occurrence, so placing an anchored Tier 4 value
+at an allowed path cannot legalize the same node at a disallowed path. Every
+other Tier 4 identifier, key, hash, path, metric, or text remains forbidden in
+the frozen generation.
+
+Final `period-controls.md` is a validated writer-facing artifact, not a mere
+tracked-file presence check. It begins with `# Period Controls` and contains
+exactly one nonempty ``## Claim `<claim-id>` `` section for each claim that has
+control comparisons, with exactly one nonempty
+``### Comparison `<comparison-id>` `` subsection for every comparison belonging
+to that claim. Duplicate, missing, extra, misassociated, malformed, or empty
+sections fail closed.
 
 ## Module boundary
 
@@ -167,6 +215,13 @@ the verified generation. Complete generations are retained.
 - publication failure at every staging/rename/pointer boundary
 - concurrent readers observe only old or new triples
 - deterministic rerun and stale-staging cleanup
+- candidate-time analysis/manifest drift and partition swaps after freezing
+- a second identical production run through the managed `current` pointer
+- zero-claim frozen state cannot authorize Tier 4 control access
+- YAML anchor/alias reuse cannot escape the exact control-target node path
+- empty/malformed/missing/extra/misassociated period-control sections
+- post-swap fsync failure reports committed-but-durability-uncertain state
+- full committed `candidate_frozen -> heldout_assessed -> complete` lifecycle
 
 The real protocol-only `analysis.yml` may receive schema-v2 path declarations,
 but this task must not run real `prepare`, create real `holdouts.yml`, or open

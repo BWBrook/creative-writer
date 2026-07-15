@@ -36,6 +36,24 @@ _TOKEN_RE = re.compile(r"[^\W_]+(?:['’][^\W_]+)*", re.UNICODE)
 _PLACEHOLDER_RE = re.compile(r"\b(?:tbd|todo|placeholder|no reviewed|reserved for)\b", re.I)
 
 
+def _normalized_heading(line: str) -> str:
+    """Normalize only Markdown ATX trailing spaces for semantic matching."""
+
+    return line.rstrip(" \t")
+
+
+def _heading_match(line: str, pattern: re.Pattern[str]) -> re.Match[str] | None:
+    return pattern.fullmatch(_normalized_heading(line))
+
+
+def _is_atx_heading(line: str) -> bool:
+    return bool(re.match(r"^#{1,6} ", _normalized_heading(line)))
+
+
+def _noncanonical_heading(line: str) -> bool:
+    return _is_atx_heading(line) and line != _normalized_heading(line)
+
+
 @dataclass(frozen=True, slots=True)
 class ValidationIssue:
     severity: str
@@ -192,12 +210,12 @@ def _content_is_human(text: str) -> bool:
 
 def _extract_section(text: str, heading: str) -> str | None:
     lines = text.splitlines()
-    start = next((i for i, line in enumerate(lines) if line == heading), None)
+    start = next((i for i, line in enumerate(lines) if _normalized_heading(line) == heading), None)
     if start is None:
         return None
     end = len(lines)
     for i in range(start + 1, len(lines)):
-        if lines[i].startswith("## "):
+        if _normalized_heading(lines[i]).startswith("## "):
             end = i
             break
     return "\n".join(lines[start + 1 : end]).strip()
@@ -208,7 +226,7 @@ def _entry_blocks(section: str, heading_re: re.Pattern[str]) -> list[tuple[int, 
     matches = [
         (i, match)
         for i, line in enumerate(lines)
-        if (match := heading_re.fullmatch(line)) is not None
+        if (match := _heading_match(line, heading_re)) is not None
     ]
     blocks: list[tuple[int, str, str]] = []
     for index, (line_number, match) in enumerate(matches):
@@ -276,8 +294,11 @@ def _observation_entry_issues(
         "Candidate claims",
     ]
     blocks = _entry_blocks(content, re.compile(r"^#### (.+)$"))
+    for line in content.splitlines():
+        if _heading_match(line, re.compile(r"^#### .+$")) and _noncanonical_heading(line):
+            issues.append(_error(path, "Canonical heading spelling is required without trailing whitespace", locator=f"Observation {number}"))
     first_field_line = next(
-        (index for index, line in enumerate(content.splitlines()) if re.fullmatch(r"#### .+", line)),
+        (index for index, line in enumerate(content.splitlines()) if _heading_match(line, re.compile(r"^#### .+$"))),
         None,
     )
     if first_field_line is not None and any(
@@ -285,7 +306,7 @@ def _observation_entry_issues(
     ):
         issues.append(_error(path, "Observation entries may not have stray prose before the first expected field", locator=f"Observation {number}"))
     if any(
-        re.match(r"^#{4,} ", line) and not re.fullmatch(r"#### .+", line)
+        re.match(r"^#{4,} ", _normalized_heading(line)) and not _heading_match(line, re.compile(r"^#### .+"))
         for line in content.splitlines()
     ):
         issues.append(_error(path, "Observation entry contains an unrecognised heading", locator=f"Observation {number}"))
@@ -383,13 +404,24 @@ def collect_observation_issues(
     )
     for path in sorted(paths, key=lambda item: item.as_posix()):
         text = _read(path)
-        if sum(line == "## Observations" for line in text.splitlines()) > 1:
+        observation_headings = [
+            line for line in text.splitlines()
+            if _normalized_heading(line) == "## Observations"
+        ]
+        if len(observation_headings) > 1:
             result.errors.append(_error(path, "Tracked dossier must contain exactly one ## Observations section"))
+        if any(_noncanonical_heading(line) for line in observation_headings):
+            result.errors.append(_error(path, "Canonical heading spelling is required without trailing whitespace in the Observations section"))
         section = _extract_section(text, "## Observations")
         if section is None:
             result.errors.append(_error(path, "Missing exact ## Observations section"))
             continue
         entries = _entry_blocks(section, re.compile(r"^### Observation (\d+)$"))
+        if any(
+            _heading_match(line, re.compile(r"^### Observation \d+$")) and _noncanonical_heading(line)
+            for line in section.splitlines()
+        ):
+            result.errors.append(_error(path, "Canonical heading spelling is required without trailing whitespace in observation entries"))
         if not entries:
             if section.strip() != PROTOCOL_OBSERVATION_SENTINEL:
                 result.errors.append(_error(path, "Observations must be the exact protocol sentinel or contiguous ### Observation N entries"))
@@ -400,7 +432,7 @@ def collect_observation_issues(
         if admission is None or registry is None:
             result.errors.append(_error(path, "Populated observation dossiers require admission and source registry authority"))
         if any(
-            line.startswith("### ") and not re.fullmatch(r"### Observation \d+", line)
+            _normalized_heading(line).startswith("### ") and not _heading_match(line, re.compile(r"^### Observation \d+$"))
             for line in section.splitlines()
         ):
             result.errors.append(_error(path, "Observation section contains an unrecognised third-level heading"))
@@ -537,6 +569,8 @@ def _eligible_authorities(
     for witness_id in jurisdiction.eligible_witness_ids:
         if witness_id not in authorities:
             issues.append(_error(file, "Eligible witness is absent from retained authority registries", claim=claim.id, locator=witness_id))
+        elif not set(jurisdiction.roles).intersection(authorities[witness_id].roles):
+            issues.append(_error(file, "Eligible witness does not exercise a declared jurisdiction role", claim=claim.id, locator=witness_id))
     return issues
 
 
@@ -717,8 +751,18 @@ def _profile_finding_issues(
     dimension_matches = [
         (index, match)
         for index, line in enumerate(lines)
-        if (match := dimension_section_re.fullmatch(line)) is not None
+        if (match := _heading_match(line, dimension_section_re)) is not None
     ]
+    dimension_heading_numbers: list[int] = []
+    for line in lines:
+        match = _heading_match(line, dimension_section_re)
+        if match is None:
+            continue
+        dimension_heading_numbers.append(int(match.group(1)))
+        if _noncanonical_heading(line):
+            result.errors.append(_error(path, "Canonical heading spelling is required without trailing whitespace in profile dimensions", locator=f"dimension {match.group(1)}"))
+    for ordinal in sorted({number for number in dimension_heading_numbers if dimension_heading_numbers.count(number) > 1}):
+        result.errors.append(_error(path, "Profile contains a duplicate dimension heading", locator=f"dimension {ordinal}"))
     sections = []
     for index, (line_number, match) in enumerate(dimension_matches):
         end = dimension_matches[index + 1][0] if index + 1 < len(dimension_matches) else len(lines)
@@ -756,14 +800,21 @@ def _profile_finding_issues(
         if numbers != list(range(1, len(numbers) + 1)):
             result.errors.append(_error(path, "Profile finding ordinals must be contiguous from 1", locator=f"dimension {ordinal}"))
         for _, finding_number, finding_content in findings:
+            finding_heading_re = re.compile(r"^#### Finding \d+$")
+            for line in section_content.splitlines():
+                if _heading_match(line, finding_heading_re) and _noncanonical_heading(line):
+                    result.errors.append(_error(path, "Canonical heading spelling is required without trailing whitespace in profile findings", locator=f"dimension {ordinal} finding {finding_number}"))
             fields = _entry_blocks(finding_content, re.compile(r"^##### (.+)$"))
+            for line in finding_content.splitlines():
+                if _heading_match(line, re.compile(r"^##### .+$")) and _noncanonical_heading(line):
+                    result.errors.append(_error(path, "Canonical heading spelling is required without trailing whitespace in profile fields", locator=f"dimension {ordinal} finding {finding_number}"))
             actual_fields = [name for _, name, _ in fields]
             expected_field_headings = {f"##### {name}" for name in expected_fields}
             first_expected_field = next(
                 (
                     index
                     for index, line in enumerate(finding_content.splitlines())
-                    if line in expected_field_headings
+                    if _normalized_heading(line) in expected_field_headings
                 ),
                 None,
             )
@@ -773,7 +824,7 @@ def _profile_finding_issues(
             ):
                 result.errors.append(_error(path, "Profile finding contains stray or unparsed content before the first expected field", locator=f"dimension {ordinal} finding {finding_number}"))
             if any(
-                re.match(r"^#{1,6} ", line) and line not in expected_field_headings
+                re.match(r"^#{1,6} ", _normalized_heading(line)) and _normalized_heading(line) not in expected_field_headings
                 for line in finding_content.splitlines()
             ):
                 result.errors.append(_error(path, "Profile finding contains an unexpected heading or unparsed record content", locator=f"dimension {ordinal} finding {finding_number}"))
@@ -906,11 +957,21 @@ def collect_quantitative_profile_issues(
     except (OSError, UnicodeError, ValueError) as exc:
         result.errors.append(_error(metrics_path, f"Unable to read generated metric JSON: {exc}"))
         return result.sorted()
+    if not isinstance(document, dict):
+        result.errors.append(_error(metrics_path, "Generated development metric JSON must be a JSON object with a witnesses list"))
+        return result.sorted()
+    metric_records = document.get("witnesses")
+    if not isinstance(metric_records, list) or any(not isinstance(item, dict) for item in metric_records):
+        result.errors.append(_error(metrics_path, "Generated development metric JSON must contain a list of object witness records"))
+        return result.sorted()
+    provenance = document.get("provenance", {})
+    if not isinstance(provenance, dict):
+        result.errors.append(_error(metrics_path, "Generated development metric JSON provenance must be an object"))
+        return result.sorted()
     if document.get("stage") != "development":
         result.errors.append(_error(metrics_path, "Quantitative profile must reference current development metric output"))
     if document.get("study_id") != config.study_id or profile.study_id != config.study_id:
         result.errors.append(_error(metrics_path, "Quantitative metric study identity is stale"))
-    metric_records = document.get("witnesses", [])
     metric_witness_ids = [item.get("witness_id") for item in metric_records]
     if len(metric_witness_ids) != len(set(metric_witness_ids)):
         result.errors.append(_error(metrics_path, "Generated development metric witness IDs must be unique"))
@@ -988,7 +1049,6 @@ def collect_quantitative_profile_issues(
                 result.errors.append(_error(metrics_csv_path, "Current development CSV has invalid provenance columns"))
             if not rows:
                 result.errors.append(_error(metrics_csv_path, "Current development CSV must contain data rows"))
-            provenance = document.get("provenance", {})
             csv_identities = [
                 (row.get("witness_id"), row.get("source_id"), row.get("selection_id") or None)
                 for row in rows
@@ -1046,11 +1106,11 @@ def collect_leakage_issues(
     for path in sorted(paths, key=lambda item: item.as_posix()):
         text = _read(path)
         for witness_id in sorted(forbidden_witness_ids):
-            boundary = rf"(?<![A-Za-z0-9_/-]){re.escape(witness_id)}(?![A-Za-z0-9_/-])"
+            boundary = rf"(?<![A-Za-z0-9_-]){re.escape(witness_id)}(?![A-Za-z0-9_-])"
             if re.search(boundary, text):
                 result.errors.append(_error(path, "Forbidden holdout or Tier 4 witness ID appears in tracked development content", locator=witness_id))
         for passage in forbidden_passages:
-            boundary = rf"(?<![A-Za-z0-9_:/-]){re.escape(passage.passage_id)}(?![A-Za-z0-9_:/-])"
+            boundary = rf"(?<![A-Za-z0-9_-]){re.escape(passage.passage_id)}(?![A-Za-z0-9_-])"
             if re.search(boundary, text):
                 result.errors.append(_error(path, "Forbidden holdout passage ID appears in tracked development content", locator=passage.passage_id))
         tokens = tuple(token.casefold() for token in _TOKEN_RE.findall(unicodedata.normalize("NFC", text)))

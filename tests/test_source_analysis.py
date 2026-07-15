@@ -1339,6 +1339,222 @@ def test_develop_accepts_protocol_body_line_endings_and_missing_final_newline(
     assert result.stage == "develop"
 
 
+@pytest.mark.parametrize(
+    ("configured_status", "mutation"),
+    [
+        ("development", "stage"),
+        ("development", "summary"),
+        ("development", "body"),
+    ],
+)
+def test_develop_keeps_protocol_validation_seal_for_protocol_and_development_config(
+    tmp_path: Path, configured_status: str, mutation: str
+) -> None:
+    story, _ = _fixture(tmp_path)
+    config_path = story / "source-study/analysis.yml"
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    config["study_status"] = configured_status
+    config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+    validation_path = story / "source-study/validation.md"
+    validation_text = validation_path.read_text(encoding="utf-8")
+    if mutation == "stage":
+        validation_text = validation_text.replace("stage: protocol", "stage: development")
+    elif mutation == "summary":
+        validation_text = validation_text.replace(
+            "holdout_summary: Held-out material has not been opened at protocol stage.",
+            "holdout_summary: A substantive conclusion was reviewed.",
+        )
+    else:
+        validation_text = validation_text.replace(
+            "The strict YAML front matter records the adopted protocol state.",
+            "The study concludes that the source has a distinctive structure.",
+        )
+    validation_path.write_text(validation_text, encoding="utf-8")
+    _commit_fixture_holdouts(tmp_path)
+
+    with pytest.raises(CreativeWriterError, match="(?i)protocol validation|protocol stage"):
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+
+def test_develop_recursively_scans_nested_observation_markdown_for_topology_and_leakage(
+    tmp_path: Path,
+) -> None:
+    story, _ = _fixture(tmp_path)
+    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    holdout = next(
+        item for item in index if item.witness_id == "selected-short-fiction/the-star"
+    )
+    nested = story / "source-study/observations/archive/rogue.md"
+    nested.parent.mkdir(parents=True)
+    nested.write_text(
+        f"archive/{holdout.witness_id}.md\n{holdout.passage_id}\n",
+        encoding="utf-8",
+    )
+    _commit_fixture_holdouts(tmp_path)
+
+    with pytest.raises(CreativeWriterError, match="(?i)topology|forbidden|passage ID"):
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+    report = tmp_path / "build/fixture/source-study/development-report.md"
+    report_text = report.read_text(encoding="utf-8")
+    assert "Evidence validation diagnostics" in report_text
+    assert "Blocking errors: **" in report_text
+
+
+def test_leakage_id_boundaries_accept_locator_punctuation_but_reject_prefixes(
+    tmp_path: Path,
+) -> None:
+    text = "one two three four five six seven eight nine"
+    digest = hashlib.sha256(text.encode()).hexdigest()
+    passage = PassageRecord(
+        witness_id="holdout",
+        witness_ordinal=1,
+        source_id="holdout",
+        selection_id=None,
+        source_fingerprint=HASH,
+        heading_path=["Heading"],
+        heading_label="Heading",
+        block_type="paragraph",
+        source_ordinal=1,
+        heading_ordinal=1,
+        normalized_text=text,
+        original_text=text,
+        word_count=9,
+        direct_dialogue="none",
+        content_hash=digest,
+        passage_id=f"holdout:heading:1:{digest[:12]}",
+    )
+    cases = {
+        "witness-colon.md": "ref:holdout",
+        "witness-slash.md": "archive/holdout.md",
+        "passage-colon.md": f"ref:{passage.passage_id}",
+        "passage-slash.md": f"archive/{passage.passage_id}.md",
+    }
+    for filename, content in cases.items():
+        path = tmp_path / filename
+        path.write_text(content, encoding="utf-8")
+        result = collect_leakage_issues(
+            [path], forbidden_witness_ids={"holdout"}, forbidden_passages=[passage]
+        )
+        assert result.errors, filename
+
+    safe = tmp_path / "prefix.md"
+    safe.write_text("holdout-extra holdout_extra holdout2", encoding="utf-8")
+    assert not collect_leakage_issues(
+        [safe], forbidden_witness_ids={"holdout"}, forbidden_passages=[passage]
+    ).errors
+
+
+def test_observation_heading_trailing_space_is_noncanonical_not_missing(
+    tmp_path: Path,
+) -> None:
+    story, _ = _fixture(tmp_path)
+    path = story / "source-study/observations/wells-alpha.md"
+    path.write_text(
+        path.read_text(encoding="utf-8").replace("## Observations\n", "## Observations   \n"),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(CreativeWriterError, match="(?i)canonical.*heading"):
+        validate_observation_dossiers([path], read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl"), _config_for_selection())
+
+
+def test_profile_heading_trailing_space_duplicate_is_rejected_deterministically(
+    tmp_path: Path,
+) -> None:
+    story, _ = _fixture(tmp_path)
+    config = _config_for_selection()
+    profile = story / "source-study/wells-profile.md"
+    profile_text = profile.read_text(encoding="utf-8").replace(
+        "### 2. narrator-distance\n",
+        "### 1. frame-architecture   \n\n#### Finding 1\nRogue finding.\n\n### 2. narrator-distance\n",
+    )
+    profile.write_text(profile_text, encoding="utf-8")
+    ledger = EvidenceLedger.model_validate(
+        {"schema_version": 1, "study_id": config.study_id, "stage": "development", "mode": "descriptive", "claims": []}
+    )
+
+    with pytest.raises(CreativeWriterError, match="(?i)duplicate.*dimension|canonical.*heading"):
+        validate_profile_claim_links(profile, ledger, config, stage="development")
+
+
+def test_develop_malformed_generated_json_writes_deterministic_diagnostics(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    story, _ = _fixture(tmp_path)
+    config_path = story / "source-study/analysis.yml"
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    config["study_status"] = "development"
+    config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+    _commit_fixture_holdouts(tmp_path)
+    run_source_analysis(tmp_path, "fixture", "develop")
+
+    config_model = load_yaml_model(config_path, AnalysisConfig)
+    metrics_path = tmp_path / "build/fixture/source-study/development-metrics.json"
+    csv_path = tmp_path / "build/fixture/source-study/development-metrics.csv"
+    metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+    profile = _complete_quantitative_profile(config_model, metrics, metrics_path, csv_path)
+    profile_path = story / "source-study/quantitative-profile.yml"
+    profile_path.write_text(yaml.safe_dump(profile.model_dump(mode="json"), sort_keys=False), encoding="utf-8")
+
+    original_measure_development = source_analysis.measure_development
+
+    def mutate_metrics(*args: object, **kwargs: object) -> object:
+        result = original_measure_development(*args, **kwargs)
+        output_paths = kwargs["output_paths"]
+        assert isinstance(output_paths, dict)
+        generated = output_paths["development_metrics"]
+        assert isinstance(generated, Path)
+        generated.write_text("[]\n", encoding="utf-8")
+        return result
+
+    monkeypatch.setattr(source_analysis, "measure_development", mutate_metrics)
+    reports: list[str] = []
+    for _ in range(2):
+        with pytest.raises(CreativeWriterError, match="(?i)JSON object|generated metric"):
+            run_source_analysis(tmp_path, "fixture", "develop")
+        report = tmp_path / "build/fixture/source-study/development-report.md"
+        report_text = report.read_text(encoding="utf-8")
+        assert "Evidence validation diagnostics" in report_text
+        assert "Blocking errors: **1**" in report_text
+        reports.append(report_text)
+    assert reports[0] == reports[1]
+
+
+def test_eligible_witness_must_exercise_a_declared_claim_role(tmp_path: Path) -> None:
+    story, _ = _fixture(tmp_path)
+    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    config = _config_for_selection()
+    config.dimensions[0].roles[:] = ["wells-alpha role"]
+    admission, registry = _fixture_authority(story)
+    alpha = next(item for item in index if item.witness_id == "wells-alpha")
+    claim = _fixture_claim(
+        claim_id="inflated-eligibility",
+        jurisdiction={
+            "scope": "role_specific",
+            "roles": ["wells-alpha role"],
+            "eligible_witness_ids": ["wells-alpha", "selected-short-fiction/the-plattner-story"],
+        },
+        classification="role_specific",
+        support=[_fixture_reference(alpha)],
+        search={
+            "witness_ids": ["wells-alpha"],
+            "dimensions": ["frame-architecture"],
+            "method": "manual_close_reading",
+            "coverage": "targeted",
+            "searched_passage_ids": [alpha.passage_id],
+            "outcome": "no_material_counterexample",
+            "notes": "The targeted search found no material counterexample.",
+        },
+    )
+    ledger = EvidenceLedger.model_validate(
+        {"schema_version": 1, "study_id": config.study_id, "stage": "development", "mode": "descriptive", "claims": [claim]}
+    )
+
+    with pytest.raises(CreativeWriterError, match="(?i)eligible witness.*declared.*role"):
+        validate_evidence_ledger(ledger, index, config=config, admission=admission, registry=registry)
+
+
 def test_develop_writes_diagnostics_when_ledger_schema_read_fails_after_metrics(
     tmp_path: Path,
 ) -> None:

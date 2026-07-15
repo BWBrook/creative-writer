@@ -908,7 +908,7 @@ def _tracked_evidence_paths(story_dir: Path) -> list[Path]:
     ]
     observation_dir = source_study / "observations"
     if observation_dir.exists():
-        paths.extend(sorted(observation_dir.glob("*.md")))
+        paths.extend(sorted(observation_dir.rglob("*.md")))
     return [path for path in paths if path.exists()]
 
 
@@ -1015,7 +1015,7 @@ def _validate_development_dossier_set(
 ) -> tuple[list[Path], ValidationResult]:
     expected = _expected_observation_paths(story_dir, registry)
     observation_dir = story_dir / "source-study" / "observations"
-    actual = sorted(observation_dir.glob("*.md")) if observation_dir.exists() else []
+    actual = sorted(observation_dir.rglob("*.md")) if observation_dir.exists() else []
     expected_set = set(expected)
     actual_set = set(actual)
     result = ValidationResult()
@@ -1083,6 +1083,8 @@ def _validate_artifact_lifecycle(
                 result.errors.append(ValidationIssue("error", str(validation_path), message="Protocol validation record must not contain hashes"))
             if validation_body is None or _normalize_markdown_body(validation_body) != _normalize_markdown_body(CANONICAL_PROTOCOL_VALIDATION_BODY):
                 result.errors.append(ValidationIssue("error", str(validation_path), message="Protocol validation Markdown body must match the canonical protocol body"))
+        if configured in {"protocol", "development"} and validation_record.stage != "protocol":
+            result.errors.append(ValidationIssue("error", str(validation_path), message="Protocol/development analysis requires a protocol validation record"))
         if configured == "candidate_frozen" and validation_record.stage != "candidate_frozen":
             result.errors.append(ValidationIssue("error", str(validation_path), message="Candidate-frozen analysis requires a candidate_frozen validation record"))
         if configured == "validated" and validation_record.stage != "validated":
@@ -1268,7 +1270,7 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
             )
         )
 
-    observation_paths = sorted((story_dir / "source-study" / "observations").glob("*.md"))
+    observation_paths = sorted((story_dir / "source-study" / "observations").rglob("*.md"))
     if observation_paths:
         evidence_result.extend(
             _post_metric_call(
@@ -1300,8 +1302,8 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
                 for witness in manifest.witnesses
                 if not witness.development_windows
             )
-            evidence_result.extend(
-                collect_quantitative_profile_issues(
+            def validate_current_quantitative_profile() -> ValidationResult:
+                result = collect_quantitative_profile_issues(
                     quantitative_profile,
                     root=root,
                     metrics_path=generated_paths["development_metrics"],
@@ -1310,6 +1312,14 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
                     development_witness_ids={current_by_id[passage_id].witness_id for passage_id in development_ids},
                     forbidden_witness_ids=forbidden_witness_ids,
                     metrics_csv_path=generated_paths["development_metrics_csv"],
+                )
+                return raise_for_issues(result, "Quantitative profile validation")
+
+            evidence_result.extend(
+                _post_metric_call(
+                    quantitative_path,
+                    development_report,
+                    validate_current_quantitative_profile,
                 )
             )
 

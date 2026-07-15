@@ -333,7 +333,7 @@ def _punctuation(passages: Sequence[PassageRecord]) -> dict[str, Any]:
     result["per_1000_words"] = {
         key: value / denominator_words * 1000 if denominator_words else 0.0
         for key, value in result.items()
-        if isinstance(value, (int, float))
+        if key != "denominator_words" and isinstance(value, (int, float))
     }
     return result
 
@@ -871,6 +871,9 @@ def _commit_metric_artifacts(staged: Sequence[tuple[Path, Path]]) -> None:
     installed: list[Path] = []
     restored: set[Path] = set()
     transaction_id = uuid.uuid4().hex
+    original_failure: OSError | None = None
+    recovery_errors: list[str] = []
+
     try:
         for target, temporary in staged:
             if target.exists():
@@ -880,35 +883,43 @@ def _commit_metric_artifacts(staged: Sequence[tuple[Path, Path]]) -> None:
             os.replace(temporary, target)
             installed.append(target)
     except OSError as exc:
-        recovery_errors: list[str] = []
+        original_failure = exc
         recovery_errors.extend(
             _cleanup_artifact_paths([target for target in reversed(installed)])
         )
         for target, backup in backups.items():
-            if not backup.exists():
-                continue
-            try:
-                os.replace(backup, target)
-            except OSError as restore_error:
-                recovery_errors.append(f"restoration of {target} failed: {restore_error}")
-            else:
-                restored.add(target)
-        cleanup_paths = [temporary for _, temporary in staged]
-        cleanup_paths.extend(
-            backup for target, backup in backups.items() if target in restored or backup.exists()
+            if backup.exists():
+                try:
+                    os.replace(backup, target)
+                except OSError as restore_error:
+                    recovery_errors.append(
+                        f"restoration of backup `{backup}` to `{target}` failed: "
+                        f"{restore_error}; residual path: `{backup}`"
+                    )
+                else:
+                    restored.add(target)
+    finally:
+        recovery_errors.extend(
+            _cleanup_artifact_paths([temporary for _, temporary in staged])
         )
-        recovery_errors.extend(_cleanup_artifact_paths(cleanup_paths))
-        detail = f"Unable to replace metric artifacts atomically: {exc}"
+        for target, backup in backups.items():
+            if original_failure is not None and target not in restored:
+                if backup.exists():
+                    recovery_errors.append(
+                        f"residual un-restored backup `{backup}` remains; "
+                        f"residual path: `{backup}`"
+                    )
+                continue
+            recovery_errors.extend(_cleanup_artifact_paths([backup]))
+
+    if original_failure is not None:
+        detail = f"Unable to replace metric artifacts atomically: {original_failure}"
         if recovery_errors:
             detail += "\nRecovery errors:\n" + "\n".join(recovery_errors)
-        raise CreativeWriterError(detail) from exc
-    cleanup_errors = _cleanup_artifact_paths(
-        [temporary for _, temporary in staged]
-        + list(backups.values())
-    )
-    if cleanup_errors:
+        raise CreativeWriterError(detail) from original_failure
+    if recovery_errors:
         raise CreativeWriterError(
-            "Metric artifacts installed, but cleanup failed:\n" + "\n".join(cleanup_errors)
+            "Metric artifacts installed, but cleanup failed:\n" + "\n".join(recovery_errors)
         )
 
 

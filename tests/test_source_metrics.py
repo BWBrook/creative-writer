@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from creative_writer.exceptions import CreativeWriterError
 from creative_writer.files import load_yaml_model
 from creative_writer.source_analysis_models import AnalysisConfig, PassageRecord
 from creative_writer.source_metrics import measure_development, measure_witness, sentence_token_lengths
@@ -268,7 +269,33 @@ def test_punctuation_events_reset_at_passage_boundaries_and_report_rates() -> No
     assert punctuation["periods"] == 4
     assert punctuation["ellipsis_ascii"] == 0
     assert punctuation["denominator_words"] == 2
-    assert punctuation["per_1000_words"]["periods"] == 2000
+    assert punctuation["per_1000_words"] == {
+        "periods_raw": 2000.0,
+        "periods": 2000.0,
+        "question_marks": 0.0,
+        "exclamation_marks": 0.0,
+        "colons": 0.0,
+        "semicolons": 0.0,
+        "parentheses_open": 0.0,
+        "parentheses_close": 0.0,
+        "hyphen": 0.0,
+        "en_dash": 0.0,
+        "em_dash": 0.0,
+        "ellipsis_unicode": 0.0,
+        "ellipsis_ascii": 0.0,
+        "double_quote_open": 0.0,
+        "double_quote_close": 0.0,
+        "single_quote_open": 0.0,
+        "single_quote_close": 0.0,
+        "straight_double_quote": 0.0,
+        "straight_single_quote": 0.0,
+        "guillemet_open": 0.0,
+        "guillemet_close": 0.0,
+        "parentheses_total": 0.0,
+        "dash_total": 0.0,
+        "ellipsis_total": 0.0,
+    }
+    assert "denominator_words" not in punctuation["per_1000_words"]
     assert result.total_sentences == 3
 
 
@@ -391,3 +418,73 @@ def test_metric_artifacts_roll_back_together_on_third_install_failure(
     assert {path: path.read_bytes() for path in output_paths.values()} == before
     assert not list(tmp_path.glob(".*.tmp"))
     assert not list(tmp_path.glob(".*.bak"))
+
+
+def test_metric_rollback_keeps_backup_when_restoration_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _config()
+    output_paths = {
+        "development_metrics": tmp_path / "development-metrics.json",
+        "development_metrics_csv": tmp_path / "development-metrics.csv",
+        "development_report": tmp_path / "development-report.md",
+    }
+    passage = _passage("Plain narrative.", 1)
+    kwargs = {
+        "output_paths": output_paths,
+        "config_sha256": "config-hash",
+        "index_sha256": "index-hash",
+        "manifest_sha256": "manifest-hash",
+        "config_path": "source-study/analysis.yml",
+        "index_path": "build/fixture/source-study/passage-index.jsonl",
+        "manifest_path": "source-study/holdouts.yml",
+    }
+    measure_development([passage], config, {passage.passage_id}, **kwargs)
+    before = {path: path.read_bytes() for path in output_paths.values()}
+
+    import creative_writer.source_metrics as source_metrics
+
+    real_replace = source_metrics.os.replace
+    restore_failed = False
+
+    def fail_install_and_restore(source: str | Path, target: str | Path) -> None:
+        nonlocal restore_failed
+        source_path = Path(source)
+        target_path = Path(target)
+        if (
+            target_path == output_paths["development_report"]
+            and source_path.name.endswith(".tmp")
+        ):
+            raise OSError("forced third-install failure")
+        if (
+            target_path == output_paths["development_metrics"]
+            and source_path.name.startswith(".development-metrics.json.")
+            and source_path.name.endswith(".bak")
+            and not restore_failed
+        ):
+            restore_failed = True
+            raise OSError("forced restoration failure")
+        real_replace(source, target)
+
+    monkeypatch.setattr(source_metrics.os, "replace", fail_install_and_restore)
+    changed_kwargs = {**kwargs, "config_sha256": "new-config-hash"}
+    with pytest.raises(CreativeWriterError) as caught:
+        measure_development([passage], config, {passage.passage_id}, **changed_kwargs)
+
+    residual_backups = list(tmp_path.glob(".development-metrics.json.*.bak"))
+    assert len(residual_backups) == 1
+    residual_backup = residual_backups[0]
+    message = str(caught.value)
+    assert "forced third-install failure" in message
+    assert "forced restoration failure" in message
+    assert str(residual_backup) in message
+    assert not output_paths["development_metrics"].exists()
+    assert output_paths["development_metrics_csv"].read_bytes() == before[
+        output_paths["development_metrics_csv"]
+    ]
+    assert output_paths["development_report"].read_bytes() == before[
+        output_paths["development_report"]
+    ]
+    assert not list(tmp_path.glob(".*.tmp"))
+    assert not list(tmp_path.glob(".development-metrics.csv.*.bak"))
+    assert not list(tmp_path.glob(".development-report.md.*.bak"))

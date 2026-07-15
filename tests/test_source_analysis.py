@@ -3388,6 +3388,28 @@ def test_yaml_alias_reuse_cannot_escape_the_exact_control_target_path(tmp_path: 
     assert any("witness ID" in issue.message for issue in result.errors)
 
 
+def test_yaml_alias_at_two_exact_control_target_paths_counts_one_lexical_scalar(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "evidence-ledger.yml"
+    path.write_text(
+        "claims:\n"
+        "  - validation_expectation:\n"
+        "      control_targets:\n"
+        "        - witness_id: &control period-alpha\n"
+        "  - validation_expectation:\n"
+        "      control_targets:\n"
+        "        - witness_id: *control\n",
+        encoding="utf-8",
+    )
+
+    result = validate_leakage(
+        [path], forbidden_witness_ids={"period-alpha"}, forbidden_passages=[]
+    )
+
+    assert not result.errors
+
+
 def test_yaml_dotted_bracketed_key_cannot_spoof_control_target_path(
     tmp_path: Path,
 ) -> None:

@@ -306,6 +306,7 @@ def _parse_candidate_claims(content: str) -> list[str] | None:
 
 
 _YamlPath = tuple[str | int, ...]
+_YamlScalarOccurrence = tuple[_YamlPath, str, int]
 
 
 def _is_allowed_control_witness_path(path: _YamlPath) -> bool:
@@ -320,20 +321,20 @@ def _is_allowed_control_witness_path(path: _YamlPath) -> bool:
     )
 
 
-def _yaml_scalar_occurrences(text: str) -> list[tuple[_YamlPath, str]]:
+def _yaml_scalar_occurrences(text: str) -> list[_YamlScalarOccurrence]:
     """Return every composed YAML scalar and its document path."""
 
     root = yaml.compose(text)
     if root is None:
         return []
-    occurrences: list[tuple[_YamlPath, str]] = []
+    occurrences: list[_YamlScalarOccurrence] = []
 
     def visit(node: object, path: _YamlPath) -> None:
         node_id = getattr(node, "id", None)
         if node_id == "scalar":
             value = getattr(node, "value", None)
             if isinstance(value, str):
-                occurrences.append((path, value))
+                occurrences.append((path, value, id(node)))
             return
         if node_id == "sequence":
             for index, child in enumerate(getattr(node, "value", [])):
@@ -1248,7 +1249,7 @@ def collect_leakage_issues(
             forbidden_sequences.append((passage.passage_id, tokens))
     for path in sorted(paths, key=lambda item: item.as_posix()):
         text = _read(path)
-        yaml_occurrences: list[tuple[_YamlPath, str]] = []
+        yaml_occurrences: list[_YamlScalarOccurrence] = []
         if path.name.endswith((".yml", ".yaml")):
             try:
                 yaml_occurrences = _yaml_scalar_occurrences(text)
@@ -1257,17 +1258,18 @@ def collect_leakage_issues(
         for witness_id in sorted(forbidden_witness_ids):
             boundary = rf"(?<![A-Za-z0-9_-]){re.escape(witness_id)}(?![A-Za-z0-9_-])"
             occurrences = len(re.findall(boundary, text))
-            allowed = [
-                document_path
-                for document_path, value in yaml_occurrences
-                if value == witness_id and _is_allowed_control_witness_path(document_path)
-            ]
+            allowed_node_ids = {
+                node_id
+                for document_path, value, node_id in yaml_occurrences
+                if value == witness_id
+                and _is_allowed_control_witness_path(document_path)
+            }
             disallowed = [
                 document_path
-                for document_path, value in yaml_occurrences
+                for document_path, value, _node_id in yaml_occurrences
                 if value == witness_id and not _is_allowed_control_witness_path(document_path)
             ]
-            if disallowed or occurrences != len(allowed):
+            if disallowed or occurrences != len(allowed_node_ids):
                 result.errors.append(_error(path, "Forbidden holdout or Tier 4 witness ID appears in tracked development content", locator=witness_id))
         for passage in forbidden_passages:
             boundary = rf"(?<![A-Za-z0-9_-]){re.escape(passage.passage_id)}(?![A-Za-z0-9_-])"

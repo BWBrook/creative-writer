@@ -1523,6 +1523,100 @@ def test_develop_malformed_generated_json_writes_deterministic_diagnostics(
     assert reports[0] == reports[1]
 
 
+def test_run_source_analysis_converts_truncated_metrics_json_to_atomic_diagnostics(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _story, _ = _fixture(tmp_path)
+    _commit_fixture_holdouts(tmp_path)
+    metrics_path = tmp_path / "build/fixture/source-study/development-metrics.json"
+    report_path = tmp_path / "build/fixture/source-study/development-report.md"
+    original_measure_development = source_analysis.measure_development
+
+    def write_truncated_metrics(*args: object, **kwargs: object) -> object:
+        result = original_measure_development(*args, **kwargs)
+        assert metrics_path.exists()
+        assert (tmp_path / "build/fixture/source-study/development-metrics.csv").exists()
+        assert report_path.exists()
+        metrics_path.write_text('{"schema_version": 1,\n', encoding="utf-8")
+        return result
+
+    monkeypatch.setattr(source_analysis, "measure_development", write_truncated_metrics)
+    with pytest.raises(CreativeWriterError) as raised:
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+    assert type(raised.value) is CreativeWriterError
+    assert not isinstance(raised.value, json.JSONDecodeError)
+    report_text = report_path.read_text(encoding="utf-8")
+    assert report_text.count("## Evidence validation diagnostics") == 1
+    assert "Blocking errors: **1**" in report_text
+    assert "Warnings: **0**" in report_text
+    assert not list(report_path.parent.glob(f".{report_path.name}.*.tmp"))
+
+
+def test_run_source_analysis_converts_non_list_metrics_return_to_atomic_diagnostics(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _story, _ = _fixture(tmp_path)
+    _commit_fixture_holdouts(tmp_path)
+    metrics_path = tmp_path / "build/fixture/source-study/development-metrics.json"
+    csv_path = tmp_path / "build/fixture/source-study/development-metrics.csv"
+    report_path = tmp_path / "build/fixture/source-study/development-report.md"
+    original_measure_development = source_analysis.measure_development
+
+    def return_non_list(*args: object, **kwargs: object) -> object:
+        original_result = original_measure_development(*args, **kwargs)
+        assert isinstance(original_result, list)
+        assert metrics_path.exists()
+        assert csv_path.exists()
+        assert report_path.exists()
+        assert json.loads(metrics_path.read_text(encoding="utf-8"))["stage"] == "development"
+        return {"witnesses": original_result}
+
+    monkeypatch.setattr(source_analysis, "measure_development", return_non_list)
+    with pytest.raises(CreativeWriterError) as raised:
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+    assert type(raised.value) is CreativeWriterError
+    assert not isinstance(raised.value, TypeError)
+    report_text = report_path.read_text(encoding="utf-8")
+    assert report_text.count("## Evidence validation diagnostics") == 1
+    assert "Blocking errors: **1**" in report_text
+    assert "Warnings: **0**" in report_text
+    assert not list(report_path.parent.glob(f".{report_path.name}.*.tmp"))
+
+
+def test_run_source_analysis_converts_empty_metrics_return_to_atomic_diagnostics(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _story, _ = _fixture(tmp_path)
+    _commit_fixture_holdouts(tmp_path)
+    metrics_path = tmp_path / "build/fixture/source-study/development-metrics.json"
+    csv_path = tmp_path / "build/fixture/source-study/development-metrics.csv"
+    report_path = tmp_path / "build/fixture/source-study/development-report.md"
+    original_measure_development = source_analysis.measure_development
+
+    def return_empty_list(*args: object, **kwargs: object) -> object:
+        original_result = original_measure_development(*args, **kwargs)
+        assert isinstance(original_result, list)
+        assert metrics_path.exists()
+        assert csv_path.exists()
+        assert report_path.exists()
+        assert json.loads(metrics_path.read_text(encoding="utf-8"))["witnesses"]
+        return []
+
+    monkeypatch.setattr(source_analysis, "measure_development", return_empty_list)
+    with pytest.raises(CreativeWriterError) as raised:
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+    assert type(raised.value) is CreativeWriterError
+    assert not isinstance(raised.value, ValueError)
+    report_text = report_path.read_text(encoding="utf-8")
+    assert report_text.count("## Evidence validation diagnostics") == 1
+    assert "Blocking errors: **1**" in report_text
+    assert "Warnings: **0**" in report_text
+    assert not list(report_path.parent.glob(f".{report_path.name}.*.tmp"))
+
+
 @pytest.mark.parametrize(
     "mutation",
     ["witness_id", "source_id", "selection_id", "provenance", "witness_record"],

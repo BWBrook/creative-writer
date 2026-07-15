@@ -280,6 +280,87 @@ class AnalysisConfig(StrictModel):
         return self
 
 
+class CorpusAnalysisIdentity(StrictModel):
+    study_id: Slug
+    story_slug: Slug
+    composition_window: StrictCompositionWindow
+    authority_policy_version: NonEmptyText
+
+
+class CorpusSourceFingerprint(StrictModel):
+    id: Slug
+    tier: Literal[1, 2, 3, 4]
+    analytical_roles: list[NonEmptyText] = Field(min_length=1)
+    permitted_uses: list[NonEmptyText] = Field(min_length=1)
+    prohibited_uses: list[NonEmptyText] = Field(min_length=1)
+    epub_path: RelativePath
+    epub_sha256: SHA256
+
+    _path = field_validator("epub_path")(_validate_relative_path)
+
+
+class CorpusWitnessFingerprint(StrictModel):
+    witness_id: NonEmptyText
+    witness_ordinal: StrictInt = Field(ge=1)
+    source_id: Slug
+    selection_id: Slug | None = None
+    markdown_path: RelativePath
+    markdown_sha256: SHA256
+
+    _path = field_validator("markdown_path")(_validate_relative_path)
+
+    @model_validator(mode="after")
+    def validate_identity(self) -> "CorpusWitnessFingerprint":
+        _validate_selection_identity(self.witness_id, self.source_id, self.selection_id)
+        return self
+
+
+class CorpusCounts(StrictModel):
+    admission_records: StrictInt = Field(ge=0)
+    retained_sources: StrictInt = Field(ge=0)
+    retained_epubs: StrictInt = Field(ge=0)
+    retained_markdown: StrictInt = Field(ge=0)
+    full_work_witnesses: StrictInt = Field(ge=0)
+    selected_short_fiction_witnesses: StrictInt = Field(ge=0)
+    witnesses: StrictInt = Field(ge=0)
+    excluded_tier5_records: StrictInt = Field(ge=0)
+
+
+class CorpusLock(StrictModel):
+    schema_version: Literal[1]
+    analysis: CorpusAnalysisIdentity
+    registry_hashes: dict[RelativePath, SHA256] = Field(min_length=2)
+    sources: list[CorpusSourceFingerprint] = Field(min_length=1)
+    witnesses: list[CorpusWitnessFingerprint] = Field(min_length=1)
+    excluded_tier5_ids: list[NonEmptyText] = Field(min_length=1)
+    counts: CorpusCounts
+
+    @field_validator("registry_hashes")
+    @classmethod
+    def validate_registry_paths(cls, value: dict[str, str]) -> dict[str, str]:
+        return {_validate_relative_path(path): digest for path, digest in value.items()}
+
+    @field_validator("excluded_tier5_ids")
+    @classmethod
+    def unique_excluded_ids(cls, value: list[str]) -> list[str]:
+        return _validate_unique(value, "excluded Tier 5 IDs")
+
+    @field_validator("sources")
+    @classmethod
+    def unique_source_ids(cls, value: list[CorpusSourceFingerprint]) -> list[CorpusSourceFingerprint]:
+        _validate_unique([item.id for item in value], "corpus source IDs")
+        return value
+
+    @field_validator("witnesses")
+    @classmethod
+    def unique_witness_ids(cls, value: list[CorpusWitnessFingerprint]) -> list[CorpusWitnessFingerprint]:
+        _validate_unique([item.witness_id for item in value], "corpus witness IDs")
+        ordinals = [item.witness_ordinal for item in value]
+        if ordinals != list(range(1, len(ordinals) + 1)):
+            raise ValueError("corpus witness ordinals must be contiguous from 1")
+        return value
+
+
 class PassageRecord(StrictModel):
     witness_id: NonEmptyText
     witness_ordinal: StrictInt = Field(ge=1)

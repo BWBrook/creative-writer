@@ -445,9 +445,8 @@ def _validate_index_records(
         previous_heading_path = heading_path
 
 
-def write_passage_index(path: Path, passages: Iterable[PassageRecord]) -> None:
-    """Write validated passage records as deterministic UTF-8 JSON Lines."""
-
+def serialize_passage_index(passages: Iterable[PassageRecord]) -> bytes:
+    """Validate and serialize passage records as deterministic JSON Lines."""
     try:
         records = [
             PassageRecord.model_validate(
@@ -461,6 +460,22 @@ def write_passage_index(path: Path, passages: Iterable[PassageRecord]) -> None:
         raise CreativeWriterError(f"Invalid passage record: {exc}") from exc
     records.sort(key=lambda item: (item.witness_ordinal, item.source_ordinal))
     _validate_index_records(records, require_reading_order=True)
+    return "".join(
+        json.dumps(
+            record.model_dump(mode="json"),
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        + "\n"
+        for record in records
+    ).encode("utf-8")
+
+
+def write_passage_index(path: Path, passages: Iterable[PassageRecord]) -> None:
+    """Write validated passage records as deterministic UTF-8 JSON Lines."""
+
+    serialized = serialize_passage_index(passages)
 
     temporary_path: Path | None = None
     write_error: CreativeWriterError | None = None
@@ -481,16 +496,7 @@ def write_passage_index(path: Path, passages: Iterable[PassageRecord]) -> None:
             delete=False,
         ) as handle:
             temporary_path = Path(handle.name)
-            for record in records:
-                handle.write(
-                    json.dumps(
-                        record.model_dump(mode="json"),
-                        ensure_ascii=False,
-                        sort_keys=True,
-                        separators=(",", ":"),
-                    )
-                    + "\n"
-                )
+            handle.write(serialized.decode("utf-8"))
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temporary_path, path)

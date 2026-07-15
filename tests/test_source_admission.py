@@ -222,6 +222,7 @@ def _make_witness_omnibus(story: Path) -> None:
     markdown = story / "original" / "text" / "selected-short-fiction" / "the-star.md"
     markdown.parent.mkdir(parents=True)
     markdown.write_text("The selected star witness.\n", encoding="utf-8")
+    (story / "original" / "text" / "witness.md").unlink()
 
     admission_path = story / "source-study" / "admission.yml"
     admission = yaml.safe_load(admission_path.read_text(encoding="utf-8"))
@@ -269,6 +270,7 @@ def _mutate_omnibus_fixture(story: Path, mutation: str) -> None:
 
     if mutation == "missing-retained-selection":
         full_markdown = story / "original" / "text" / "witness.md"
+        full_markdown.write_text("The full witness.\n", encoding="utf-8")
         retained["files"]["markdown"] = "text/witness.md"
         retained["files"]["markdown_sha256"] = hashlib.sha256(
             full_markdown.read_bytes()
@@ -575,6 +577,35 @@ def test_source_admission_blocks_full_work_markdown_hash_mismatch(tmp_path: Path
     assert any("Markdown SHA-256 mismatch" in issue for issue in result.errors)
 
 
+def test_source_admission_blocks_undeclared_epub(tmp_path: Path) -> None:
+    story = _write_fixture(tmp_path)
+    _write_minimal_epub(story / "original" / "undeclared.epub")
+
+    result = check_source_admission(tmp_path, "source-test")
+
+    assert not result.ok
+    assert any(
+        "Undeclared retained EPUB: original/undeclared.epub" in issue
+        for issue in result.errors
+    )
+
+
+def test_source_admission_blocks_undeclared_markdown(tmp_path: Path) -> None:
+    story = _write_fixture(tmp_path)
+    (story / "original" / "text" / "undeclared.md").write_text(
+        "Undeclared literary text.\n",
+        encoding="utf-8",
+    )
+
+    result = check_source_admission(tmp_path, "source-test")
+
+    assert not result.ok
+    assert any(
+        "Undeclared derived Markdown: original/text/undeclared.md" in issue
+        for issue in result.errors
+    )
+
+
 def test_source_admission_accumulates_checks_with_unsafe_planned_epub(
     tmp_path: Path,
 ) -> None:
@@ -734,11 +765,18 @@ def test_source_admission_reports_non_regular_epub_path(tmp_path: Path) -> None:
 
 def test_time_expedition_admission_passes() -> None:
     root = Path(__file__).resolve().parents[1]
+    story = root / "stories" / "time-expedition"
 
     result = check_source_admission(root, "time-expedition")
 
     assert result.ok
     report = result.report_path.read_text(encoding="utf-8")
+    admission = yaml.safe_load(
+        (story / "source-study" / "admission.yml").read_text(encoding="utf-8")
+    )
+    registry = yaml.safe_load(
+        (story / "original" / "sources.yml").read_text(encoding="utf-8")
+    )
     assert "- Admitted: 12" in report
     assert "- Approved, awaiting retention: 0" in report
     assert "- Proposed: 0" in report
@@ -751,10 +789,61 @@ def test_time_expedition_admission_passes() -> None:
     assert report.count(
         "- Tier 5 restriction: **Excluded influence only; no retained artifact or positive authority.**"
     ) == 1
-    for selection_id in (
+    expected_haggard_permitted_uses = [
+        "adventure motivation",
+        "expedition assembly",
+        "discovery sequence",
+        "danger escalation",
+        "journey architecture",
+        "period framing of mysterious travel",
+    ]
+    expected_haggard_prohibited_uses = [
+        "style prescription",
+        "Time Expedition continuity",
+        "phrase borrowing",
+        "characters",
+        "places",
+        "incidents",
+        "lost-world content",
+        "imperial assumptions",
+        "racial ideology",
+        "override of a Wells source",
+    ]
+    admission_haggard = next(
+        source for source in admission["sources"] if source["id"] == "king-solomons-mines"
+    )
+    retained_haggard = next(
+        source for source in registry["sources"] if source["id"] == "king-solomons-mines"
+    )
+    assert admission_haggard["permitted_uses"] == expected_haggard_permitted_uses
+    assert retained_haggard["role"]["permitted_uses"] == expected_haggard_permitted_uses
+    assert admission_haggard["prohibited_uses"] == expected_haggard_prohibited_uses
+    assert retained_haggard["role"]["prohibited_uses"] == expected_haggard_prohibited_uses
+
+    assert len(registry["sources"]) == 12
+    assert len(list((story / "original").rglob("*.epub"))) == 12
+    assert len(list((story / "original" / "text").rglob("*.md"))) == 15
+
+    expected_selection_ids = [
         "the-plattner-story",
         "the-sea-raiders",
         "the-crystal-egg",
         "the-star",
-    ):
+    ]
+    admission_omnibus = next(
+        source for source in admission["sources"] if source["id"] == "selected-short-fiction"
+    )
+    retained_omnibus = next(
+        source for source in registry["sources"] if source["id"] == "selected-short-fiction"
+    )
+    assert retained_omnibus["files"].get("markdown") is None
+    assert retained_omnibus["files"].get("markdown_sha256") is None
+    assert not (story / "original" / "text" / "selected-short-fiction.md").exists()
+    assert [selection["id"] for selection in admission_omnibus["selections"]] == (
+        expected_selection_ids
+    )
+    assert [selection["id"] for selection in retained_omnibus["selections"]] == (
+        expected_selection_ids
+    )
+    for selection_id in expected_selection_ids:
         assert f"text/selected-short-fiction/{selection_id}.md" in report

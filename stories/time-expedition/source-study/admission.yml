@@ -245,7 +245,7 @@ sources:
     work: {title: "King Solomon's Mines", author: "H. Rider Haggard", first_published: 1885}
     analytical_roles: ["adventure motivation", "expedition assembly", "discovery sequence", "danger escalation", "journey architecture", "period framing of mysterious travel"]
     permitted_uses: ["adventure motivation", "expedition assembly", "discovery sequence", "danger escalation", "journey architecture", "period framing of mysterious travel"]
-    prohibited_uses: ["style prescription", "phrase borrowing", "characters", "places", "incidents", "lost-world content", "imperial assumptions", "racial ideology", "override of a Wells source"]
+    prohibited_uses: ["style prescription", "Time Expedition continuity", "phrase borrowing", "characters", "places", "incidents", "lost-world content", "imperial assumptions", "racial ideology", "override of a Wells source"]
     rationale: "A pre-window control for adventure architecture and motivation, admitted only as negative or comparative evidence."
     edition:
       publisher: "Standard Ebooks"

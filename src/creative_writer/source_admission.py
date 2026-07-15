@@ -475,5 +475,42 @@ def check_source_admission(root: Path, slug: str) -> SourceAdmissionResult:
             f"Retained source `{source_id}` is not marked admitted in source-study/admission.yml."
         )
 
+    original_dir = story_dir / "original"
+    declared_epubs = {str(source.files.epub) for source in registry.sources}
+    physical_epubs = {
+        path.relative_to(original_dir).as_posix()
+        for path in original_dir.rglob("*.epub")
+        if path.is_file()
+    }
+    for path in sorted(physical_epubs - declared_epubs):
+        result.errors.append(f"Undeclared retained EPUB: original/{path}")
+    for path in sorted(declared_epubs - physical_epubs):
+        result.errors.append(
+            f"Declared retained EPUB is not a physical file: original/{path}"
+        )
+
+    declared_markdown = {
+        str(source.files.markdown)
+        for source in registry.sources
+        if source.files.markdown is not None
+    }
+    declared_markdown.update(
+        str(selection.markdown)
+        for source in registry.sources
+        for selection in source.selections
+    )
+    text_dir = original_dir / "text"
+    physical_markdown = {
+        path.relative_to(original_dir).as_posix()
+        for path in text_dir.rglob("*.md")
+        if path.is_file()
+    }
+    for path in sorted(physical_markdown - declared_markdown):
+        result.errors.append(f"Undeclared derived Markdown: original/{path}")
+    for path in sorted(declared_markdown - physical_markdown):
+        result.errors.append(
+            f"Declared derived Markdown is not a physical file: original/{path}"
+        )
+
     report_path.write_text(_render_report(admission, registry, result), encoding="utf-8")
     return result

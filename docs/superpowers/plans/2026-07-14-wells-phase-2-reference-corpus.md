@@ -4,7 +4,7 @@
 
 **Goal:** Retain, fingerprint, and validate the closed twelve-source *Time Expedition* reference corpus while recording *The Lost World* as an unacquired Tier 5 diagnostic and stopping before detailed Wells analysis.
 
-**Architecture:** Extend the retained-source model so full works and bounded omnibus selections have mutually exclusive, fingerprinted derived-text interfaces. Harden the existing `source-admission` command to validate those interfaces and report them, then acquire and deterministically convert the approved editions into the story-local corpus. Keep publication commands unchanged and use the admission report as the sole corpus trust surface.
+**Architecture:** Extend the retained-source model so full works and bounded omnibus selections have mutually exclusive, fingerprinted derived-text interfaces. Harden the existing `source-admission` command to validate those interfaces, require exact declared-versus-physical EPUB and `original/text` Markdown sets, and report them, then acquire and deterministically convert the approved editions into the story-local corpus. Keep publication commands unchanged and use the admission report as the sole corpus trust surface.
 
 **Tech Stack:** Python 3.12, Pydantic 2, PyYAML, pytest, Pandoc 3.10, Lua filters, ZIP/EPUB, GNU Make, Git.
 
@@ -330,7 +330,7 @@ git commit -m "Model fingerprinted source selections"
 
 **Interfaces:**
 - Consumes: `RetainedSourceRecord.files.markdown`, `.markdown_sha256`, and `.selections` from Task 1.
-- Produces: blocking archive-member, path, UTF-8, content, packaging, fingerprint, parity, and excluded-artifact validation; full-work and selected-witness report rendering.
+- Produces: blocking archive-member, path, UTF-8, content, packaging, fingerprint, parity, excluded-artifact, and exact physical-inventory validation; full-work and selected-witness report rendering.
 
 - [ ] **Step 1: Extend the admission fixture with selected-witness helpers**
 
@@ -534,6 +534,24 @@ def test_source_admission_blocks_full_work_markdown_hash_mismatch(tmp_path: Path
     assert any("Markdown SHA-256 mismatch" in issue for issue in result.errors)
 
 
+def test_source_admission_blocks_undeclared_epub(tmp_path: Path) -> None:
+    story = _write_fixture(tmp_path)
+    _write_minimal_epub(story / "original" / "undeclared.epub")
+    result = check_source_admission(tmp_path, "source-test")
+    assert not result.ok
+    assert any("Undeclared retained EPUB" in issue for issue in result.errors)
+
+
+def test_source_admission_blocks_undeclared_markdown(tmp_path: Path) -> None:
+    story = _write_fixture(tmp_path)
+    (story / "original" / "text" / "undeclared.md").write_text(
+        "Undeclared literary text.\n", encoding="utf-8"
+    )
+    result = check_source_admission(tmp_path, "source-test")
+    assert not result.ok
+    assert any("Undeclared derived Markdown" in issue for issue in result.errors)
+
+
 def test_source_admission_blocks_excluded_artifact(tmp_path: Path) -> None:
     story = _write_fixture(tmp_path)
     admission_path = story / "source-study" / "admission.yml"
@@ -647,6 +665,14 @@ Catch `_story_path` failures for every Markdown path and continue accumulating e
 
 Treat every non-admitted artifact at its `planned_path` as blocking. Use status-specific messages so excluded artifacts say `Artifact exists for excluded source` and proposed or approved artifacts say `artifact exists before corpus admission`.
 
+After record-level validation, derive the declared EPUB set from every
+`registry.sources[*].files.epub` value and the declared Markdown set from every
+full-work `files.markdown` plus every selected witness `selections[*].markdown`.
+Require those sets to equal the regular `*.epub` files physically below
+`original/` and the regular `*.md` files physically below `original/text/`,
+respectively. Report both undeclared physical files and declared paths that are
+not physical files as blocking issues.
+
 - [ ] **Step 5: Render full-work and selected-witness records safely**
 
 Replace the unconditional full-work Markdown line in `_render_report` with:
@@ -751,6 +777,19 @@ for selection_id in (
     assert f"text/selected-short-fiction/{selection_id}.md" in report
 ```
 
+Load both YAML records in the same integration test and additionally require:
+
+- exactly twelve retained records, twelve physical EPUBs, and fifteen physical
+  Markdown files below `original/text/`;
+- no aggregate Markdown fields or physical aggregate Markdown file for
+  `selected-short-fiction`;
+- exactly the ordered selection IDs `the-plattner-story`, `the-sea-raiders`,
+  `the-crystal-egg`, and `the-star` in both admission and retained records;
+- exact Haggard permitted uses in both records and exact prohibited uses in
+  both records: `style prescription`, `Time Expedition continuity`, `phrase
+  borrowing`, `characters`, `places`, `incidents`, `lost-world content`,
+  `imperial assumptions`, `racial ideology`, and `override of a Wells source`.
+
 Run:
 
 ```zsh
@@ -845,11 +884,13 @@ function Pandoc(doc)
   local dropping_terminal_notes = false
 
   for index, block in ipairs(doc.blocks) do
-    if leading_note_markers[normalized_text(block)] then
-      leading_note_seen = true
-    elseif leading_note_seen and block.t == "HorizontalRule" then
-      start_index = index + 1
+    if block.t == "HorizontalRule" then
+      if leading_note_seen then
+        start_index = index + 1
+      end
       break
+    elseif leading_note_markers[normalized_text(block)] then
+      leading_note_seen = true
     end
   end
 
@@ -889,6 +930,13 @@ The output must begin with the literary text and contain none of the leading
 editorial preamble. Run both fixtures under the inherited locale; no
 `LC_ALL=C` workaround may be required.
 
+Add a third destructive-case fixture with literary text and a horizontal rule
+before a mid-document singular `Transcriber's Note:` marker, followed by
+another horizontal rule and more literary text. The output must retain every
+block, especially all literary text preceding the later marker. This proves
+that leading-note detection stops at the first horizontal rule and no later
+marker can move the document start.
+
 - [ ] **Step 4: Extract only the fixed literary inputs**
 
 Unzip each archive beneath the temporary directory and invoke Pandoc with `--from=html --to=gfm-raw_html --wrap=none`. Use both Lua filters for Project Gutenberg sources and the existing packaging-link filter for Standard Ebooks.
@@ -915,7 +963,7 @@ GUTENBERG`, `FULL LICENSE`, `TRANSCRIBER`, `Front Cover`, `Back Cover`,
 In `admission.yml`:
 
 - change all seven approved candidate records from `proposed` to `admitted`;
-- add `king-solomons-mines` as Tier 4 with the exact restrictions in Global Constraints, first publication 1885, Standard Ebooks provenance, and planned path `original/h-rider-haggard_king-solomons-mines.epub`;
+- add `king-solomons-mines` as Tier 4 with the exact restrictions in Global Constraints, including the explicit `Time Expedition continuity` prohibition, first publication 1885, Standard Ebooks provenance, and planned path `original/h-rider-haggard_king-solomons-mines.epub`;
 - add `the-lost-world` as Tier 5, excluded, first publication 1912, metadata homepage `https://www.gutenberg.org/ebooks/139`, an unacquired planned path `original/arthur-conan-doyle_the-lost-world.epub`, permitted use `post-window negative diagnostic only`, and prohibited uses covering acquisition in Phase 2A, positive style evidence, continuity, phrase borrowing, and story architecture prescription.
 
 In `sources.yml`:
@@ -964,7 +1012,11 @@ test "$(fd -e epub . stories/time-expedition/original | wc -l | tr -d ' ')" -eq 
 test "$(fd -e md . stories/time-expedition/original/text | wc -l | tr -d ' ')" -eq 15
 ```
 
-The Markdown count is fifteen: eleven full-work texts plus four selected-story witnesses. Confirm `ms_statistics.md` still counts only manuscript chapters and does not mention `original/` or any reference title.
+The Markdown count is fifteen: eleven full-work texts plus four selected-story
+witnesses. Also require no aggregate omnibus Markdown and require exactly the
+four admission/retained selection IDs in their fixed order. Confirm
+`ms_statistics.md` still counts only manuscript chapters and does not mention
+`original/` or any reference title.
 
 Inspect the generated source admission report and require:
 

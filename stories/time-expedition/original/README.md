@@ -78,8 +78,11 @@ remain the archival authorities.
 Standard Ebooks apparatus. `filters/remove-project-gutenberg-boilerplate.lua`
 also removes Project Gutenberg boilerplate containers, images, front-cover
 headings, leading singular transcriber notes, and terminal transcriber/back
-cover matter. Project Gutenberg derivations apply the packaging-link filter
-first and the Gutenberg filter second.
+cover matter. A singular transcriber-note marker triggers leading-preamble
+removal only when it occurs before the first horizontal rule; once that rule
+has been reached, a later marker cannot move the document start or discard
+preceding literary text. Project Gutenberg derivations apply the
+packaging-link filter first and the Gutenberg filter second.
 
 The retained short-fiction EPUB contains works that are not admitted. It has
 no aggregate Markdown file. Only these four fingerprinted selections enter

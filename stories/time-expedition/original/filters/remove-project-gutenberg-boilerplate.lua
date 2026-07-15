@@ -46,11 +46,13 @@ function Pandoc(doc)
   local dropping_terminal_notes = false
 
   for index, block in ipairs(doc.blocks) do
-    if leading_note_markers[normalized_text(block)] then
-      leading_note_seen = true
-    elseif leading_note_seen and block.t == "HorizontalRule" then
-      start_index = index + 1
+    if block.t == "HorizontalRule" then
+      if leading_note_seen then
+        start_index = index + 1
+      end
       break
+    elseif leading_note_markers[normalized_text(block)] then
+      leading_note_seen = true
     end
   end
 

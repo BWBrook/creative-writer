@@ -228,10 +228,10 @@ def _parse_candidate_claims(content: str) -> list[str] | None:
         return []
     claims: list[str] = []
     for line in lines:
-        match = re.fullmatch(r"- (?:`([^`]+)`|([^\s`]+))", line)
+        match = re.fullmatch(r"- `([^`]+)`", line)
         if not match:
             return None
-        claims.append(match.group(1) or match.group(2))
+        claims.append(match.group(1))
     return claims if claims else None
 
 
@@ -323,11 +323,11 @@ def _observation_entry_issues(
             elif dimension_id is not None:
                 dimension = next((item for item in config.dimensions if item.id == dimension_id), None)
                 comparison_authority = authorities.get(passages_by_id[locator].witness_id)
-                if dimension is not None and (
+                if dimension is not None and declared_role is not None and (
                     comparison_authority is None
-                    or not set(dimension.roles).intersection(comparison_authority.roles)
+                    or declared_role not in comparison_authority.roles
                 ):
-                    issues.append(_error(path, "Comparison witness has no configured role intersecting the observation dimension", locator=locator))
+                    issues.append(_error(path, "Comparison witness does not exercise the declared jurisdiction role", locator=locator))
     claims = _parse_candidate_claims(values["Candidate claims"])
     if claims is None:
         issues.append(_error(path, "Candidate claims must contain claim-ID bullets or exact None.", locator=f"Observation {number}"))
@@ -363,6 +363,8 @@ def collect_observation_issues(
     )
     for path in sorted(paths, key=lambda item: item.as_posix()):
         text = _read(path)
+        if sum(line == "## Observations" for line in text.splitlines()) > 1:
+            result.errors.append(_error(path, "Tracked dossier must contain exactly one ## Observations section"))
         section = _extract_section(text, "## Observations")
         if section is None:
             result.errors.append(_error(path, "Missing exact ## Observations section"))
@@ -578,9 +580,8 @@ def collect_evidence_issues(
                 result.errors.append(_error(file, "Counterexample passages must use counterexample or variation evidence_role", claim=claim.id, locator=reference.passage_id))
             if reference.witness_id not in eligible:
                 result.errors.append(_error(file, "Counterexample witness is outside claim eligible_witness_ids", claim=claim.id, locator=reference.witness_id))
-            dimension = dimension_roles.get(claim.dimension, set())
-            if reference.witness_id in authorities and not dimension.intersection(authorities[reference.witness_id].roles):
-                result.errors.append(_error(file, "Counterexample or variation witness has no configured role intersecting the claim dimension", claim=claim.id, locator=reference.witness_id))
+            if reference.witness_id in authorities and not set(jurisdiction.roles).intersection(authorities[reference.witness_id].roles):
+                result.errors.append(_error(file, "Counterexample or variation witness does not exercise a declared jurisdiction role", claim=claim.id, locator=reference.witness_id))
         if claim.status != "rejected":
             if not claim.supporting_passages:
                 result.errors.append(_error(file, "Non-rejected claims require support", claim=claim.id))
@@ -650,8 +651,8 @@ def collect_evidence_issues(
             for witness_id in search.witness_ids:
                 if witness_id not in authorities:
                     result.errors.append(_error(file, "Counterexample search witness is not retained", claim=claim.id, locator=witness_id))
-                elif not dimension_roles.get(claim.dimension, set()).intersection(authorities[witness_id].roles):
-                    result.errors.append(_error(file, "Counterexample search witness has no configured role intersecting the claim dimension", claim=claim.id, locator=witness_id))
+                elif not set(jurisdiction.roles).intersection(authorities[witness_id].roles):
+                    result.errors.append(_error(file, "Counterexample search witness does not exercise a declared jurisdiction role", claim=claim.id, locator=witness_id))
             if searched_witnesses != set(search.witness_ids):
                 result.errors.append(_error(file, "Every counterexample-search witness must contribute a searched passage", claim=claim.id))
             if search.outcome == "material_counterexample_found" and not claim.counterexample_passages:
@@ -723,11 +724,14 @@ def _profile_finding_issues(
         ordinal = int(ordinal_text)
         findings = _entry_blocks(section_content, re.compile(r"^#### Finding (\d+)$"))
         if not findings:
-            if section_content.strip() not in {"", PROTOCOL_PROFILE_SENTINEL, "Protocol placeholder."}:
+            if section_content.strip() not in {PROTOCOL_PROFILE_SENTINEL, "Protocol placeholder."}:
                 result.errors.append(_error(path, "Profile dimension must contain contiguous findings or the exact protocol placeholder", locator=f"dimension {ordinal}"))
             elif stage in {"candidate_frozen", "validated"}:
                 result.errors.append(_error(path, "Candidate/final profile cannot retain protocol placeholders", locator=f"dimension {ordinal}"))
             continue
+        first_finding_line = findings[0][0]
+        if any(line.strip() for line in section_content.splitlines()[:first_finding_line]):
+            result.errors.append(_error(path, "Profile findings may not have stray prose before the first finding", locator=f"dimension {ordinal}"))
         numbers = [int(number) for _, number, _ in findings]
         if numbers != list(range(1, len(numbers) + 1)):
             result.errors.append(_error(path, "Profile finding ordinals must be contiguous from 1", locator=f"dimension {ordinal}"))
@@ -741,18 +745,21 @@ def _profile_finding_issues(
             claim_lines = _nonblank_lines(values["Claim IDs"])
             if not claim_lines:
                 result.errors.append(_error(path, "Finding Claim IDs must contain one or more nonempty bullets", locator=f"dimension {ordinal} finding {finding_number}"))
+            linked_claims: list[EvidenceClaim] = []
             for line in claim_lines:
-                match = re.fullmatch(r"- (?:`([^`]+)`|([^\s`]+))", line)
+                match = re.fullmatch(r"- `([^`]+)`", line)
                 if not match:
                     result.errors.append(_error(path, "Claim IDs must be nonempty claim-ID bullets", locator=f"dimension {ordinal} finding {finding_number}"))
                     continue
-                claim_id = match.group(1) or match.group(2)
+                claim_id = match.group(1)
                 linked.add(claim_id)
                 claim = claims.get(claim_id)
                 if claim is None:
                     result.errors.append(_error(path, "Profile links an unknown claim ID", claim=claim_id, locator=f"dimension {ordinal}"))
                 elif claim.dimension != config.dimensions[ordinal - 1].id:
                     result.errors.append(_error(path, "Profile claim link is mismatched to the configured dimension", claim=claim_id, locator=f"dimension {ordinal}"))
+                else:
+                    linked_claims.append(claim)
             for field_name, field_value in values.items():
                 if field_name == "Control distinction" and field_value.strip() == "Deferred until validation." and stage != "validated":
                     continue
@@ -760,12 +767,38 @@ def _profile_finding_issues(
                     result.errors.append(_error(path, f"{field_name} must contain non-placeholder prose", locator=f"dimension {ordinal} finding {finding_number}"))
             if stage == "validated" and values["Control distinction"].strip() == "Deferred until validation.":
                 result.errors.append(_error(path, "Validated profile findings require a completed control distinction", locator=f"dimension {ordinal} finding {finding_number}"))
-            classification_match = re.search(r"Classification:\s*`([^`]+)`", values["Classification and confidence"])
-            if classification_match and classification_match.group(1) not in config.claim_classifications:
-                result.errors.append(_error(path, "Profile finding classification is not configured", locator=f"dimension {ordinal} finding {finding_number}"))
-            confidence_match = re.search(r"Confidence:\s*`([^`]+)`", values["Classification and confidence"])
-            if confidence_match and confidence_match.group(1) not in config.confidence_levels:
-                result.errors.append(_error(path, "Profile finding confidence is not configured", locator=f"dimension {ordinal} finding {finding_number}"))
+            classification_lines = _nonblank_lines(values["Classification and confidence"])
+            classification_match = (
+                re.fullmatch(r"Classification: `([^`]+)`", classification_lines[0])
+                if len(classification_lines) == 2
+                else None
+            )
+            confidence_match = (
+                re.fullmatch(r"Confidence: `([^`]+)`", classification_lines[1])
+                if len(classification_lines) == 2
+                else None
+            )
+            if classification_match is None or confidence_match is None:
+                result.errors.append(_error(path, "Profile finding must declare Classification and Confidence exactly", locator=f"dimension {ordinal} finding {finding_number}"))
+            else:
+                declared_classification = classification_match.group(1)
+                declared_confidence = confidence_match.group(1)
+                if declared_classification not in config.claim_classifications:
+                    result.errors.append(_error(path, "Profile finding classification is not configured", locator=f"dimension {ordinal} finding {finding_number}"))
+                if declared_confidence not in config.confidence_levels:
+                    result.errors.append(_error(path, "Profile finding confidence is not configured", locator=f"dimension {ordinal} finding {finding_number}"))
+                ordered_claims = sorted(linked_claims, key=lambda claim: claim.id)
+                declared_pairs = {
+                    (claim.classification, claim.confidence) for claim in ordered_claims
+                }
+                if len(declared_pairs) > 1:
+                    details = ", ".join(
+                        f"{claim.id}=({claim.classification},{claim.confidence})"
+                        for claim in ordered_claims
+                    )
+                    result.errors.append(_error(path, f"Linked claims disagree deterministically: {details}", locator=f"dimension {ordinal} finding {finding_number}"))
+                elif ordered_claims and declared_pairs != {(declared_classification, declared_confidence)}:
+                    result.errors.append(_error(path, "Profile classification and confidence do not match linked claim", locator=f"dimension {ordinal} finding {finding_number}"))
             if stage == "development":
                 words = {word.casefold() for word in re.findall(r"[A-Za-z]+", finding_content)}
                 if words.intersection({"always", "never", "invariably"}):
@@ -820,14 +853,13 @@ def collect_quantitative_profile_issues(
     metrics_csv_path = metrics_csv_path or root / configured_csv
     if metrics_path.resolve(strict=False) != (root / configured_json).resolve(strict=False):
         result.errors.append(_error(metrics_path, "Quantitative profile JSON path is not the configured development output", locator=str(metrics_path)))
-    if profile.stage == "development":
-        expected_references = {
-            "development-metrics": configured_json,
-            "development-metrics-csv": configured_csv,
-        }
-        actual_references = {reference.id: reference.path for reference in profile.generated_metrics}
-        if len(profile.generated_metrics) != 2 or actual_references != expected_references:
-            result.errors.append(_error(metrics_path, "Development quantitative profile must contain exactly the JSON and CSV metric references with configured IDs and paths"))
+    expected_references = {
+        "development-metrics": configured_json,
+        "development-metrics-csv": configured_csv,
+    }
+    actual_references = {reference.id: reference.path for reference in profile.generated_metrics}
+    if len(profile.generated_metrics) != 2 or actual_references != expected_references:
+        result.errors.append(_error(metrics_path, "Populated quantitative profile must contain exactly the JSON and CSV metric references with configured IDs and paths"))
     try:
         document = json.loads(metrics_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, ValueError) as exc:
@@ -843,8 +875,8 @@ def collect_quantitative_profile_issues(
         result.errors.append(_error(metrics_path, "Generated development metric witness IDs must be unique"))
     metric_witnesses = set(metric_witness_ids)
     profile_witnesses = {item.witness_id for item in profile.witnesses}
-    if profile.stage == "development" and profile_witnesses != development_witness_ids:
-        result.errors.append(_error(metrics_path, "Development quantitative profile witness set must exactly equal current development metric witnesses"))
+    if profile_witnesses != development_witness_ids:
+        result.errors.append(_error(metrics_path, "Quantitative profile witness set must exactly equal current development metric witnesses"))
     if metric_witnesses != development_witness_ids:
         result.errors.append(_error(metrics_path, "Generated development metric witness set is not the current development witness set"))
     passage_by_witness = {passage.witness_id: passage for passage in passages}
@@ -862,27 +894,26 @@ def collect_quantitative_profile_issues(
             result.errors.append(_error(metrics_path, "Quantitative profile witness is absent from the verified passage registry", locator=witness.witness_id))
         elif passage.source_id != witness.source_id or passage.selection_id != witness.selection_id:
             result.errors.append(_error(metrics_path, "Quantitative profile witness identity does not match verified passage registry", locator=witness.witness_id))
-        if profile.stage == "development":
-            if not witness.values:
-                result.errors.append(_error(metrics_path, "Development quantitative profile witness values must be nonempty", locator=witness.witness_id))
-            for metric_path, stored_value in witness.values.items():
-                parts = metric_path.split(".")
-                current: object = metric
-                if not metric_path.strip() or any(not part for part in parts):
-                    result.errors.append(_error(metrics_path, "Quantitative profile metric paths must be nonempty dotted paths", locator=metric_path))
-                    continue
-                try:
-                    for part in parts:
-                        if not isinstance(current, dict) or part not in current:
-                            raise KeyError(part)
-                        current = current[part]
-                except KeyError:
-                    result.errors.append(_error(metrics_path, "Quantitative profile metric path does not resolve in current witness output", locator=f"{witness.witness_id}:{metric_path}"))
-                    continue
-                if current is None or isinstance(current, (dict, list)):
-                    result.errors.append(_error(metrics_path, "Quantitative profile values must resolve to nonempty scalar output values", locator=f"{witness.witness_id}:{metric_path}"))
-                elif type(stored_value) is not type(current) or stored_value != current:
-                    result.errors.append(_error(metrics_path, "Quantitative profile stored value does not exactly equal current witness output", locator=f"{witness.witness_id}:{metric_path}"))
+        if not witness.values:
+            result.errors.append(_error(metrics_path, "Quantitative profile witness values must be nonempty", locator=witness.witness_id))
+        for metric_path, stored_value in witness.values.items():
+            parts = metric_path.split(".")
+            current: object = metric
+            if not metric_path.strip() or any(not part for part in parts):
+                result.errors.append(_error(metrics_path, "Quantitative profile metric paths must be nonempty dotted paths", locator=metric_path))
+                continue
+            try:
+                for part in parts:
+                    if not isinstance(current, dict) or part not in current:
+                        raise KeyError(part)
+                    current = current[part]
+            except KeyError:
+                result.errors.append(_error(metrics_path, "Quantitative profile metric path does not resolve in current witness output", locator=f"{witness.witness_id}:{metric_path}"))
+                continue
+            if current is None or isinstance(current, (dict, list)):
+                result.errors.append(_error(metrics_path, "Quantitative profile values must resolve to nonempty scalar output values", locator=f"{witness.witness_id}:{metric_path}"))
+            elif type(stored_value) is not type(current) or stored_value != current:
+                result.errors.append(_error(metrics_path, "Quantitative profile stored value does not exactly equal current witness output", locator=f"{witness.witness_id}:{metric_path}"))
     for reference in profile.generated_metrics:
         allowed_metric_paths = {
             configured_json,
@@ -901,28 +932,27 @@ def collect_quantitative_profile_issues(
             actual = hashlib.sha256(target.read_bytes()).hexdigest()
             if actual != reference.sha256:
                 result.errors.append(_error(metrics_path, "Quantitative profile metric fingerprint is stale", locator=reference.path))
-    if profile.stage == "development":
-        try:
-            with metrics_csv_path.open(newline="", encoding="utf-8") as handle:
-                reader = csv.DictReader(handle)
-                rows = list(reader)
-                required = {"study_id", "stage", "config_sha256", "index_sha256", "manifest_sha256", "config_path", "index_path", "manifest_path", "witness_id", "source_id", "selection_id"}
-                if not reader.fieldnames or not required <= set(reader.fieldnames):
-                    result.errors.append(_error(metrics_csv_path, "Current development CSV has invalid provenance columns"))
-                if not rows:
-                    result.errors.append(_error(metrics_csv_path, "Current development CSV must contain data rows"))
-                provenance = document.get("provenance", {})
-                for row in rows:
-                    if (
-                        row.get("study_id") != config.study_id
-                        or row.get("stage") != "development"
-                        or any(row.get(key) != document.get(key, provenance.get(key, "")) for key in ("config_sha256", "index_sha256", "manifest_sha256"))
-                        or any(row.get(key) != provenance.get(key, "") for key in ("config_path", "index_path", "manifest_path"))
-                    ):
-                        result.errors.append(_error(metrics_csv_path, "Current development CSV contains stale or invalid provenance"))
-                        break
-        except (OSError, UnicodeError, csv.Error) as exc:
-            result.errors.append(_error(metrics_csv_path, f"Unable to inspect current development CSV: {exc}"))
+    try:
+        with metrics_csv_path.open(newline="", encoding="utf-8") as handle:
+            reader = csv.DictReader(handle)
+            rows = list(reader)
+            required = {"study_id", "stage", "config_sha256", "index_sha256", "manifest_sha256", "config_path", "index_path", "manifest_path", "witness_id", "source_id", "selection_id"}
+            if not reader.fieldnames or not required <= set(reader.fieldnames):
+                result.errors.append(_error(metrics_csv_path, "Current development CSV has invalid provenance columns"))
+            if not rows:
+                result.errors.append(_error(metrics_csv_path, "Current development CSV must contain data rows"))
+            provenance = document.get("provenance", {})
+            for row in rows:
+                if (
+                    row.get("study_id") != config.study_id
+                    or row.get("stage") != "development"
+                    or any(row.get(key) != document.get(key, provenance.get(key, "")) for key in ("config_sha256", "index_sha256", "manifest_sha256"))
+                    or any(row.get(key) != provenance.get(key, "") for key in ("config_path", "index_path", "manifest_path"))
+                ):
+                    result.errors.append(_error(metrics_csv_path, "Current development CSV contains stale or invalid provenance"))
+                    break
+    except (OSError, UnicodeError, csv.Error) as exc:
+        result.errors.append(_error(metrics_csv_path, f"Unable to inspect current development CSV: {exc}"))
     return result.sorted()
 
 
@@ -955,6 +985,10 @@ def collect_leakage_issues(
             boundary = rf"(?<![A-Za-z0-9_/-]){re.escape(witness_id)}(?![A-Za-z0-9_/-])"
             if re.search(boundary, text):
                 result.errors.append(_error(path, "Forbidden holdout or Tier 4 witness ID appears in tracked development content", locator=witness_id))
+        for passage in forbidden_passages:
+            boundary = rf"(?<![A-Za-z0-9_:/-]){re.escape(passage.passage_id)}(?![A-Za-z0-9_:/-])"
+            if re.search(boundary, text):
+                result.errors.append(_error(path, "Forbidden holdout passage ID appears in tracked development content", locator=passage.passage_id))
         tokens = tuple(token.casefold() for token in _TOKEN_RE.findall(unicodedata.normalize("NFC", text)))
         for locator, sequence in forbidden_sequences:
             if any(

@@ -70,6 +70,13 @@ GENERATED_FILENAMES = {
     "validation_packet": "validation-packet.md",
     "analysis_report": "analysis-report.md",
 }
+CANONICAL_EVIDENCE_FILENAMES = (
+    "evidence-ledger.yml",
+    "quantitative-profile.yml",
+    "wells-profile.md",
+    "period-controls.md",
+    "validation.md",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -964,6 +971,25 @@ def _append_development_diagnostics(path: Path, validation: ValidationResult) ->
     _write_development_diagnostics(path, validation)
 
 
+def _post_metric_call(path: Path, report: Path, operation: Any) -> Any:
+    """Run evidence IO/grammar work and record one atomic diagnostic on failure."""
+
+    try:
+        return operation()
+    except (CreativeWriterError, OSError, UnicodeError) as exc:
+        diagnostic = ValidationResult(
+            errors=[
+                ValidationIssue(
+                    "error",
+                    str(path),
+                    message="Post-metric evidence validation failed",
+                )
+            ]
+        )
+        _write_development_diagnostics(report, diagnostic)
+        raise
+
+
 def _validate_development_dossier_set(
     story_dir: Path,
     registry: SourcesRegistry,
@@ -999,22 +1025,28 @@ def _validate_artifact_lifecycle(
             result.errors.append(ValidationIssue("error", str(ledger_path), locator=ledger.study_id, message="Evidence ledger study identity does not match analysis configuration"))
         if order[ledger.stage] > order[configured]:
             result.errors.append(ValidationIssue("error", str(ledger_path), message="Evidence ledger stage leads configured analysis stage"))
-        if configured == "development" and ledger.stage == "protocol" and ledger.claims:
-            result.errors.append(ValidationIssue("error", str(ledger_path), message="Populated protocol evidence ledger cannot lag development stage"))
+        if ledger.stage == "protocol" and ledger.claims:
+            result.errors.append(ValidationIssue("error", str(ledger_path), message="Populated protocol evidence ledger is not an empty template"))
         if configured == "candidate_frozen" and ledger.stage != "candidate_frozen":
             result.errors.append(ValidationIssue("error", str(ledger_path), message="Candidate-frozen analysis requires a candidate_frozen evidence ledger"))
         if configured == "validated" and ledger.stage != "validated":
             result.errors.append(ValidationIssue("error", str(ledger_path), message="Validated analysis requires a validated evidence ledger"))
     if quantitative_profile is not None:
+        if quantitative_profile.study_id != config.study_id:
+            result.errors.append(ValidationIssue("error", str(quantitative_path), locator=quantitative_profile.study_id, message="Quantitative profile study identity does not match analysis configuration"))
         if order[quantitative_profile.stage] > order[configured]:
             result.errors.append(ValidationIssue("error", str(quantitative_path), message="Quantitative profile stage leads configured analysis stage"))
-        if configured == "development" and quantitative_profile.stage == "protocol" and (
+        if quantitative_profile.stage == "protocol" and (
             quantitative_profile.generated_metrics or quantitative_profile.witnesses
         ):
-            result.errors.append(ValidationIssue("error", str(quantitative_path), message="Populated protocol quantitative profile cannot lag development stage"))
+            result.errors.append(ValidationIssue("error", str(quantitative_path), message="Populated protocol quantitative profile is not an empty template"))
     if validation_record is not None:
+        if validation_record.study_id != config.study_id:
+            result.errors.append(ValidationIssue("error", str(validation_path), locator=validation_record.study_id, message="Validation record study identity does not match analysis configuration"))
         if order[validation_record.stage] > order[configured]:
             result.errors.append(ValidationIssue("error", str(validation_path), message="Validation artifact stage leads configured analysis stage"))
+        if validation_record.stage == "protocol" and validation_record.claim_transitions:
+            result.errors.append(ValidationIssue("error", str(validation_path), message="Populated protocol validation record is not an empty template"))
         if configured == "candidate_frozen" and validation_record.stage != "candidate_frozen":
             result.errors.append(ValidationIssue("error", str(validation_path), message="Candidate-frozen analysis requires a candidate_frozen validation record"))
         if configured == "validated" and validation_record.stage != "validated":
@@ -1135,13 +1167,32 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
     profile_path = story_dir / "source-study" / "wells-profile.md"
     quantitative_path = story_dir / "source-study" / "quantitative-profile.yml"
     validation_path = story_dir / "source-study" / "validation.md"
-    ledger = _load_optional_yaml_model(ledger_path, EvidenceLedger)
-    quantitative_profile = _load_optional_yaml_model(quantitative_path, QuantitativeProfile)
-    validation_record: ValidationRecord | None = None
-    if validation_path.exists():
-        validation_record, _ = parse_validation_document(
+    development_report = generated_paths["development_report"]
+    required_evidence_paths = [story_dir / "source-study" / name for name in CANONICAL_EVIDENCE_FILENAMES]
+    for path in required_evidence_paths:
+        if not path.exists():
+            evidence_result.errors.append(ValidationIssue("error", str(path), message="Required canonical evidence artifact is missing"))
+    if evidence_result.errors:
+        _write_development_diagnostics(development_report, evidence_result)
+        raise_for_issues(evidence_result, "Development source-analysis validation")
+
+    ledger = _post_metric_call(
+        ledger_path,
+        development_report,
+        lambda: _load_optional_yaml_model(ledger_path, EvidenceLedger),
+    )
+    quantitative_profile = _post_metric_call(
+        quantitative_path,
+        development_report,
+        lambda: _load_optional_yaml_model(quantitative_path, QuantitativeProfile),
+    )
+    validation_record: ValidationRecord | None = _post_metric_call(
+        validation_path,
+        development_report,
+        lambda: parse_validation_document(
             validation_path.read_text(encoding="utf-8"), validation_path
-        )
+        ),
+    )[0]
     evidence_result.extend(
         _validate_artifact_lifecycle(
             config,
@@ -1168,34 +1219,42 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
             )
         )
 
-    if profile_path.exists() and ledger is not None:
+    if ledger is not None:
         evidence_result.extend(
-            collect_profile_issues(
+            _post_metric_call(
                 profile_path,
-                ledger,
-                config,
-                stage="development",
+                development_report,
+                lambda: collect_profile_issues(
+                    profile_path,
+                    ledger,
+                    config,
+                    stage="development",
+                ),
             )
         )
 
     observation_paths = sorted((story_dir / "source-study" / "observations").glob("*.md"))
     if observation_paths:
         evidence_result.extend(
-            collect_observation_issues(
-                observation_paths,
-                passages,
-                config,
-                stage="development",
-                development_passage_ids=development_ids,
-                manifest=manifest,
-                claim_ids={claim.id for claim in ledger.claims} if ledger is not None else None,
-                admission=admission,
-                registry=registry,
+            _post_metric_call(
+                observation_paths[0],
+                development_report,
+                lambda: collect_observation_issues(
+                    observation_paths,
+                    passages,
+                    config,
+                    stage="development",
+                    development_passage_ids=development_ids,
+                    manifest=manifest,
+                    claim_ids={claim.id for claim in ledger.claims} if ledger is not None else None,
+                    admission=admission,
+                    registry=registry,
+                ),
             )
         )
 
     if quantitative_profile is not None:
-        if quantitative_profile.stage == "development" or quantitative_profile.generated_metrics or quantitative_profile.witnesses:
+        if quantitative_profile.stage != "protocol" or quantitative_profile.generated_metrics or quantitative_profile.witnesses:
             forbidden_witness_ids = {
                 witness_id
                 for witness_id, tier in source_tiers.items()
@@ -1244,21 +1303,29 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
         if passage.witness_id in forbidden_witness_ids or passage.passage_id in manifest_holdout_ids
     ]
     evidence_result.extend(
-        collect_leakage_issues(
-            _tracked_evidence_paths(story_dir),
-            forbidden_witness_ids=forbidden_witness_ids,
-            forbidden_passages=forbidden_passages,
+        _post_metric_call(
+            story_dir / "source-study",
+            development_report,
+            lambda: collect_leakage_issues(
+                _tracked_evidence_paths(story_dir),
+                forbidden_witness_ids=forbidden_witness_ids,
+                forbidden_passages=forbidden_passages,
+            ),
         )
     )
     evidence_result.extend(
-        collect_leakage_issues(
-            [
-                generated_paths["development_metrics"],
-                generated_paths["development_metrics_csv"],
-                generated_paths["development_report"],
-            ],
-            forbidden_witness_ids=forbidden_witness_ids,
-            forbidden_passages=forbidden_passages,
+        _post_metric_call(
+            development_report,
+            development_report,
+            lambda: collect_leakage_issues(
+                [
+                    generated_paths["development_metrics"],
+                    generated_paths["development_metrics_csv"],
+                    generated_paths["development_report"],
+                ],
+                forbidden_witness_ids=forbidden_witness_ids,
+                forbidden_passages=forbidden_passages,
+            ),
         )
     )
     _write_development_diagnostics(generated_paths["development_report"], evidence_result)

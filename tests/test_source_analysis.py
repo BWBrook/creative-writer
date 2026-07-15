@@ -1521,6 +1521,69 @@ def test_develop_malformed_generated_json_writes_deterministic_diagnostics(
     assert reports[0] == reports[1]
 
 
+@pytest.mark.parametrize(
+    "mutation",
+    ["witness_id", "source_id", "selection_id", "provenance", "witness_record"],
+)
+def test_develop_malformed_generated_metrics_with_empty_protocol_profile_writes_diagnostics(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mutation: str
+) -> None:
+    story, _ = _fixture(tmp_path)
+    _commit_fixture_holdouts(tmp_path)
+    metrics_path = tmp_path / "build/fixture/source-study/development-metrics.json"
+    original_measure_development = source_analysis.measure_development
+
+    def mutate_metrics(*args: object, **kwargs: object) -> object:
+        result = original_measure_development(*args, **kwargs)
+        document = json.loads(metrics_path.read_text(encoding="utf-8"))
+        if mutation == "witness_id":
+            document["witnesses"][0]["witness_id"] = []
+        elif mutation == "source_id":
+            document["witnesses"][0]["source_id"] = {}
+        elif mutation == "selection_id":
+            document["witnesses"][1]["selection_id"] = None
+        elif mutation == "provenance":
+            document["provenance"] = "malformed"
+        else:
+            document["witnesses"][0] = []
+        metrics_path.write_text(json.dumps(document) + "\n", encoding="utf-8")
+        return result
+
+    monkeypatch.setattr(source_analysis, "measure_development", mutate_metrics)
+    with pytest.raises(CreativeWriterError, match="(?i)generated development metric JSON|identity|provenance"):
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+    report = tmp_path / "build/fixture/source-study/development-report.md"
+    report_text = report.read_text(encoding="utf-8")
+    assert "Evidence validation diagnostics" in report_text
+    assert "Blocking errors: **" in report_text
+    assert "Warnings: **0**" in report_text
+
+
+def test_develop_empty_protocol_profile_still_rejects_non_object_generated_metrics(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    story, _ = _fixture(tmp_path)
+    _commit_fixture_holdouts(tmp_path)
+    metrics_path = tmp_path / "build/fixture/source-study/development-metrics.json"
+    original_measure_development = source_analysis.measure_development
+
+    def mutate_metrics(*args: object, **kwargs: object) -> object:
+        result = original_measure_development(*args, **kwargs)
+        metrics_path.write_text("[]\n", encoding="utf-8")
+        return result
+
+    monkeypatch.setattr(source_analysis, "measure_development", mutate_metrics)
+    with pytest.raises(CreativeWriterError, match="(?i)JSON object|generated metric"):
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+    report = tmp_path / "build/fixture/source-study/development-report.md"
+    report_text = report.read_text(encoding="utf-8")
+    assert "Evidence validation diagnostics" in report_text
+    assert "Blocking errors: **" in report_text
+    assert "Warnings: **0**" in report_text
+
+
 def test_eligible_witness_must_exercise_a_declared_claim_role(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
     index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
@@ -1553,6 +1616,150 @@ def test_eligible_witness_must_exercise_a_declared_claim_role(tmp_path: Path) ->
 
     with pytest.raises(CreativeWriterError, match="(?i)eligible witness.*declared.*role"):
         validate_evidence_ledger(ledger, index, config=config, admission=admission, registry=registry)
+
+
+def test_eligible_witness_must_be_an_explicitly_retained_registry_identity(
+    tmp_path: Path,
+) -> None:
+    story, _ = _fixture(tmp_path)
+    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    config = _config_for_selection()
+    config.dimensions[0].roles[:] = ["selected-short-fiction role"]
+    admission, registry = _fixture_authority(story)
+    registry.sources[:] = [
+        source for source in registry.sources if source.id != "selected-short-fiction"
+    ]
+    selected = next(item for item in index if item.witness_id.endswith("/the-plattner-story"))
+    claim = _fixture_claim(
+        claim_id="unretained-eligibility",
+        jurisdiction={
+            "scope": "role_specific",
+            "roles": ["selected-short-fiction role"],
+            "eligible_witness_ids": [selected.witness_id],
+        },
+        classification="role_specific",
+        support=[_fixture_reference(selected, 2)],
+        search={
+            "witness_ids": [selected.witness_id],
+            "dimensions": ["frame-architecture"],
+            "method": "manual_close_reading",
+            "coverage": "targeted",
+            "searched_passage_ids": [selected.passage_id],
+            "outcome": "no_material_counterexample",
+            "notes": "The targeted search found no material counterexample.",
+        },
+    )
+    ledger = EvidenceLedger.model_validate(
+        {
+            "schema_version": 1,
+            "study_id": config.study_id,
+            "stage": "development",
+            "mode": "descriptive",
+            "claims": [claim],
+        }
+    )
+
+    with pytest.raises(CreativeWriterError, match="(?i)retained authority|eligible witness"):
+        validate_evidence_ledger(
+            ledger, index, config=config, admission=admission, registry=registry
+        )
+
+
+def test_develop_passes_expanded_retained_registry_to_evidence_validator(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    story, _ = _fixture(tmp_path)
+    _commit_fixture_holdouts(tmp_path)
+    seen: dict[str, SourcesRegistry] = {}
+    original_collect = source_analysis.collect_evidence_issues
+
+    def capture_registry(*args: object, **kwargs: object):
+        registry = kwargs["registry"]
+        assert isinstance(registry, SourcesRegistry)
+        seen["registry"] = registry
+        return original_collect(*args, **kwargs)
+
+    monkeypatch.setattr(source_analysis, "collect_evidence_issues", capture_registry)
+    run_source_analysis(tmp_path, "fixture", "develop")
+
+    assert "registry" in seen
+    retained = seen["registry"]
+    selected_source = next(item for item in retained.sources if item.id == "selected-short-fiction")
+    assert {item.id for item in selected_source.selections} == {
+        "the-plattner-story",
+        "the-sea-raiders",
+        "the-crystal-egg",
+        "the-star",
+    }
+
+
+def test_develop_rejects_forbidden_locator_with_prefix_boundary_mutation(
+    tmp_path: Path,
+) -> None:
+    story, _ = _fixture(tmp_path)
+    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    holdout = next(item for item in index if item.witness_id.endswith("/the-star"))
+    controls = story / "source-study/period-controls.md"
+    controls.write_text(
+        controls.read_text(encoding="utf-8")
+        + f"\nArchive locator: archive/{holdout.witness_id}.md\n",
+        encoding="utf-8",
+    )
+    _commit_fixture_holdouts(tmp_path)
+
+    with pytest.raises(CreativeWriterError, match="(?i)witness ID|forbidden"):
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+    report = tmp_path / "build/fixture/source-study/development-report.md"
+    report_text = report.read_text(encoding="utf-8")
+    assert "Evidence validation diagnostics" in report_text
+    assert "Blocking errors: **" in report_text
+
+
+def test_develop_rejects_observation_trailing_space_duplicate_end_to_end(
+    tmp_path: Path,
+) -> None:
+    story, _ = _fixture(tmp_path)
+    path = story / "source-study/observations/wells-alpha.md"
+    path.write_text(
+        path.read_text(encoding="utf-8").replace(
+            "## Observations\n", "## Observations\n\n## Observations   \n", 1
+        ),
+        encoding="utf-8",
+    )
+    _commit_fixture_holdouts(tmp_path)
+
+    with pytest.raises(CreativeWriterError, match="(?i)canonical|exactly one|observation"):
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+    report = tmp_path / "build/fixture/source-study/development-report.md"
+    report_text = report.read_text(encoding="utf-8")
+    assert "Evidence validation diagnostics" in report_text
+    assert "Blocking errors: **" in report_text
+
+
+def test_develop_rejects_profile_trailing_space_duplicate_end_to_end(
+    tmp_path: Path,
+) -> None:
+    story, _ = _fixture(tmp_path)
+    profile = story / "source-study/wells-profile.md"
+    profile.write_text(
+        profile.read_text(encoding="utf-8").replace(
+            "### 2. narrator-distance\n",
+            "### 1. frame-architecture   \n\n### 2. narrator-distance\n",
+            1,
+        ),
+        encoding="utf-8",
+    )
+    _commit_fixture_holdouts(tmp_path)
+
+    with pytest.raises(CreativeWriterError, match="(?i)duplicate|canonical|profile"):
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+    report = tmp_path / "build/fixture/source-study/development-report.md"
+    report_text = report.read_text(encoding="utf-8")
+    assert "Evidence validation diagnostics" in report_text
+    assert "Blocking errors: **" in report_text
 
 
 def test_develop_writes_diagnostics_when_ledger_schema_read_fails_after_metrics(

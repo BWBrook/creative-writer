@@ -1291,37 +1291,36 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
         )
 
     if quantitative_profile is not None:
-        if quantitative_profile.stage != "protocol" or quantitative_profile.generated_metrics or quantitative_profile.witnesses:
-            forbidden_witness_ids = {
-                witness_id
-                for witness_id, tier in source_tiers.items()
-                if tier == 4
-            }
-            forbidden_witness_ids.update(
-                witness.witness_id
-                for witness in manifest.witnesses
-                if not witness.development_windows
+        forbidden_witness_ids = {
+            witness_id
+            for witness_id, tier in source_tiers.items()
+            if tier == 4
+        }
+        forbidden_witness_ids.update(
+            witness.witness_id
+            for witness in manifest.witnesses
+            if not witness.development_windows
+        )
+        def validate_current_quantitative_profile() -> ValidationResult:
+            result = collect_quantitative_profile_issues(
+                quantitative_profile,
+                root=root,
+                metrics_path=generated_paths["development_metrics"],
+                config=config,
+                passages=passages,
+                development_witness_ids={current_by_id[passage_id].witness_id for passage_id in development_ids},
+                forbidden_witness_ids=forbidden_witness_ids,
+                metrics_csv_path=generated_paths["development_metrics_csv"],
             )
-            def validate_current_quantitative_profile() -> ValidationResult:
-                result = collect_quantitative_profile_issues(
-                    quantitative_profile,
-                    root=root,
-                    metrics_path=generated_paths["development_metrics"],
-                    config=config,
-                    passages=passages,
-                    development_witness_ids={current_by_id[passage_id].witness_id for passage_id in development_ids},
-                    forbidden_witness_ids=forbidden_witness_ids,
-                    metrics_csv_path=generated_paths["development_metrics_csv"],
-                )
-                return raise_for_issues(result, "Quantitative profile validation")
+            return raise_for_issues(result, "Quantitative profile validation")
 
-            evidence_result.extend(
-                _post_metric_call(
-                    quantitative_path,
-                    development_report,
-                    validate_current_quantitative_profile,
-                )
+        evidence_result.extend(
+            _post_metric_call(
+                quantitative_path,
+                development_report,
+                validate_current_quantitative_profile,
             )
+        )
 
     _, dossier_result = _validate_development_dossier_set(story_dir, registry)
     evidence_result.extend(dossier_result)

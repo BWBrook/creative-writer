@@ -34,6 +34,10 @@ PROTOCOL_PROFILE_SENTINEL = "No reviewed descriptive synthesis is recorded at pr
 FORBIDDEN_TEXT_MIN_TOKENS = 8
 _TOKEN_RE = re.compile(r"[^\W_]+(?:['’][^\W_]+)*", re.UNICODE)
 _PLACEHOLDER_RE = re.compile(r"\b(?:tbd|todo|placeholder|no reviewed|reserved for)\b", re.I)
+_METRIC_IDENTITY_RE = re.compile(
+    r"^[a-z0-9]+(?:-[a-z0-9]+)*(?:/[a-z0-9]+(?:-[a-z0-9]+)*)?$"
+)
+_METRIC_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
 def _normalized_heading(line: str) -> str:
@@ -478,33 +482,51 @@ def _authority_index(
     registry: SourcesRegistry | None,
 ) -> dict[str, _WitnessAuthority]:
     admission_by_source = {source.id: source for source in admission.sources} if admission else {}
-    registry_by_source = {source.id: source for source in registry.sources} if registry else {}
     result: dict[str, _WitnessAuthority] = {}
-    for passage in passages:
-        retained = registry_by_source.get(passage.source_id)
-        admitted = admission_by_source.get(passage.source_id)
-        tier = retained.role.tier if retained else None
-        roles = set(retained.role.analytical_roles) if retained else set()
-        fingerprint: str | None = None
-        if retained:
-            if passage.selection_id is None:
-                fingerprint = retained.files.markdown_sha256
-            else:
-                selection = next((item for item in retained.selections if item.id == passage.selection_id), None)
-                fingerprint = selection.markdown_sha256 if selection else None
-        if admitted:
-            roles.update(admitted.analytical_roles)
-            if passage.selection_id is not None:
-                selection = next((item for item in admitted.selections if item.id == passage.selection_id), None)
-                if selection:
-                    roles.update(selection.analytical_roles)
-        result[passage.witness_id] = _WitnessAuthority(
-            passage.witness_id,
-            passage.source_id,
-            passage.selection_id,
-            tier,
+    if registry is None:
+        return result
+    for retained in registry.sources:
+        base_roles = set(retained.role.analytical_roles)
+        if retained.files.markdown is not None:
+            result[retained.id] = _WitnessAuthority(
+                retained.id,
+                retained.id,
+                None,
+                retained.role.tier,
+                frozenset(base_roles),
+                retained.files.markdown_sha256,
+            )
+        else:
+            for selection in retained.selections:
+                witness_id = f"{retained.id}/{selection.id}"
+                result[witness_id] = _WitnessAuthority(
+                    witness_id,
+                    retained.id,
+                    selection.id,
+                    retained.role.tier,
+                    frozenset(base_roles),
+                    selection.markdown_sha256,
+                )
+    for witness_id, authority in list(result.items()):
+        admitted = admission_by_source.get(authority.source_id)
+        if admitted is None:
+            continue
+        roles = set(authority.roles)
+        roles.update(admitted.analytical_roles)
+        if authority.selection_id is not None:
+            selection = next(
+                (item for item in admitted.selections if item.id == authority.selection_id),
+                None,
+            )
+            if selection is not None:
+                roles.update(selection.analytical_roles)
+        result[witness_id] = _WitnessAuthority(
+            authority.witness_id,
+            authority.source_id,
+            authority.selection_id,
+            authority.tier,
             frozenset(roles),
-            fingerprint,
+            authority.fingerprint,
         )
     return result
 
@@ -936,8 +958,117 @@ def collect_quantitative_profile_issues(
     stage_order = {"protocol": 0, "development": 1, "candidate_frozen": 2, "validated": 3}
     if stage_order[profile.stage] > stage_order[config.study_status]:
         result.errors.append(_error(metrics_path, "Quantitative profile stage cannot lead configured analysis stage"))
+    try:
+        document = json.loads(metrics_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, ValueError) as exc:
+        result.errors.append(_error(metrics_path, f"Unable to read generated metric JSON: {exc}"))
+        return result.sorted()
+    if not isinstance(document, dict):
+        result.errors.append(_error(metrics_path, "Generated development metric JSON must be a JSON object with a witnesses list"))
+        return result.sorted()
+    scalar_fields = (
+        "stage",
+        "study_id",
+        "config_sha256",
+        "index_sha256",
+        "manifest_sha256",
+    )
+    for field in scalar_fields:
+        value = document.get(field)
+        if not isinstance(value, str) or not value.strip():
+            result.errors.append(_error(metrics_path, "Generated development metric JSON scalar field must be a nonempty string", locator=field))
+    for field in ("config_sha256", "index_sha256", "manifest_sha256"):
+        value = document.get(field)
+        if isinstance(value, str) and not _METRIC_SHA256_RE.fullmatch(value):
+            result.errors.append(_error(metrics_path, "Generated development metric JSON provenance hash must be a SHA-256 string", locator=field))
+    if type(document.get("schema_version")) is not int or document.get("schema_version") != 1:
+        result.errors.append(_error(metrics_path, "Generated development metric JSON schema_version must be integer 1", locator="schema_version"))
+    if not isinstance(document.get("enabled_measurements"), list) or any(
+        not isinstance(item, str) or not item.strip()
+        for item in document.get("enabled_measurements", [])
+    ):
+        result.errors.append(_error(metrics_path, "Generated development metric JSON enabled_measurements must be a list of nonempty strings", locator="enabled_measurements"))
+    if not isinstance(document.get("candidate_heuristics"), dict):
+        result.errors.append(_error(metrics_path, "Generated development metric JSON candidate_heuristics must be an object", locator="candidate_heuristics"))
+    provenance = document.get("provenance")
+    if not isinstance(provenance, dict):
+        result.errors.append(_error(metrics_path, "Generated development metric JSON provenance must be an object", locator="provenance"))
+    else:
+        for field, value in provenance.items():
+            if not isinstance(field, str) or not isinstance(value, str) or not value.strip():
+                result.errors.append(_error(metrics_path, "Generated development metric JSON provenance must contain only nonempty scalar strings", locator=str(field)))
+        for field in (
+            "study_id",
+            "stage",
+            "config_sha256",
+            "index_sha256",
+            "manifest_sha256",
+            "config_path",
+            "index_path",
+            "manifest_path",
+        ):
+            value = provenance.get(field)
+            if not isinstance(value, str) or not value.strip():
+                result.errors.append(_error(metrics_path, "Generated development metric JSON provenance fields must be nonempty strings", locator=field))
+    metric_records = document.get("witnesses")
+    if not isinstance(metric_records, list):
+        result.errors.append(_error(metrics_path, "Generated development metric JSON must contain a list of object witness records"))
+        return result.sorted()
+    if any(not isinstance(item, dict) for item in metric_records):
+        result.errors.append(_error(metrics_path, "Generated development metric JSON must contain a list of object witness records"))
+        return result.sorted()
+    metric_identities: list[tuple[str, str, str | None]] = []
+    for ordinal, item in enumerate(metric_records, 1):
+        witness_id = item.get("witness_id")
+        source_id = item.get("source_id")
+        selection_id = item.get("selection_id")
+        valid_identity = (
+            isinstance(witness_id, str)
+            and bool(_METRIC_IDENTITY_RE.fullmatch(witness_id))
+            and isinstance(source_id, str)
+            and bool(re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", source_id))
+            and (selection_id is None or (
+                isinstance(selection_id, str)
+                and bool(re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", selection_id))
+            ))
+            and (
+                (selection_id is None and witness_id == source_id)
+                or (
+                    isinstance(selection_id, str)
+                    and witness_id == f"{source_id}/{selection_id}"
+                )
+            )
+        )
+        if not valid_identity:
+            result.errors.append(_error(metrics_path, "Generated development metric witness identity must contain hashable strings matching the retained source/selection grammar", locator=f"witness {ordinal}"))
+            continue
+        metric_identities.append((witness_id, source_id, selection_id))
+    if len(metric_identities) != len(metric_records):
+        return result.sorted()
+    if result.errors:
+        return result.sorted()
+    if document.get("stage") != "development":
+        result.errors.append(_error(metrics_path, "Quantitative profile must reference current development metric output"))
+    if document.get("study_id") != config.study_id:
+        result.errors.append(_error(metrics_path, "Quantitative metric study identity is stale"))
+    if profile.study_id != config.study_id:
+        result.errors.append(_error(metrics_path, "Quantitative profile study identity is stale"))
     if profile.stage == "protocol" and not profile.generated_metrics and not profile.witnesses:
         return result.sorted()
+    metric_witness_ids = [item.get("witness_id") for item in metric_records]
+    if len(metric_witness_ids) != len(set(metric_witness_ids)):
+        result.errors.append(_error(metrics_path, "Generated development metric witness IDs must be unique"))
+    metric_witnesses = set(metric_witness_ids)
+    if len(metric_identities) != len(set(metric_identities)):
+        result.errors.append(_error(metrics_path, "Generated development metric witness identities must be unique"))
+    profile_witnesses = {item.witness_id for item in profile.witnesses}
+    profile_identities = [_profile_identity_tuple(item) for item in profile.witnesses]
+    if len(profile_identities) != len(set(profile_identities)):
+        result.errors.append(_error(metrics_path, "Quantitative profile witness identities must be unique"))
+    if profile_witnesses != development_witness_ids:
+        result.errors.append(_error(metrics_path, "Quantitative profile witness set must exactly equal current development metric witnesses"))
+    if metric_witnesses != development_witness_ids:
+        result.errors.append(_error(metrics_path, "Generated development metric witness set is not the current development witness set"))
     configured_json = config.generated_paths["development_metrics"]
     configured_csv = config.generated_paths["development_metrics_csv"]
     metrics_csv_path = metrics_csv_path or root / configured_csv
@@ -952,41 +1083,6 @@ def collect_quantitative_profile_issues(
     actual_references = {reference.id: reference.path for reference in profile.generated_metrics}
     if len(profile.generated_metrics) != 2 or actual_references != expected_references:
         result.errors.append(_error(metrics_path, "Populated quantitative profile must contain exactly the JSON and CSV metric references with configured IDs and paths"))
-    try:
-        document = json.loads(metrics_path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, ValueError) as exc:
-        result.errors.append(_error(metrics_path, f"Unable to read generated metric JSON: {exc}"))
-        return result.sorted()
-    if not isinstance(document, dict):
-        result.errors.append(_error(metrics_path, "Generated development metric JSON must be a JSON object with a witnesses list"))
-        return result.sorted()
-    metric_records = document.get("witnesses")
-    if not isinstance(metric_records, list) or any(not isinstance(item, dict) for item in metric_records):
-        result.errors.append(_error(metrics_path, "Generated development metric JSON must contain a list of object witness records"))
-        return result.sorted()
-    provenance = document.get("provenance", {})
-    if not isinstance(provenance, dict):
-        result.errors.append(_error(metrics_path, "Generated development metric JSON provenance must be an object"))
-        return result.sorted()
-    if document.get("stage") != "development":
-        result.errors.append(_error(metrics_path, "Quantitative profile must reference current development metric output"))
-    if document.get("study_id") != config.study_id or profile.study_id != config.study_id:
-        result.errors.append(_error(metrics_path, "Quantitative metric study identity is stale"))
-    metric_witness_ids = [item.get("witness_id") for item in metric_records]
-    if len(metric_witness_ids) != len(set(metric_witness_ids)):
-        result.errors.append(_error(metrics_path, "Generated development metric witness IDs must be unique"))
-    metric_witnesses = set(metric_witness_ids)
-    metric_identities = [_identity_tuple(item) for item in metric_records]
-    if len(metric_identities) != len(set(metric_identities)):
-        result.errors.append(_error(metrics_path, "Generated development metric witness identities must be unique"))
-    profile_witnesses = {item.witness_id for item in profile.witnesses}
-    profile_identities = [_profile_identity_tuple(item) for item in profile.witnesses]
-    if len(profile_identities) != len(set(profile_identities)):
-        result.errors.append(_error(metrics_path, "Quantitative profile witness identities must be unique"))
-    if profile_witnesses != development_witness_ids:
-        result.errors.append(_error(metrics_path, "Quantitative profile witness set must exactly equal current development metric witnesses"))
-    if metric_witnesses != development_witness_ids:
-        result.errors.append(_error(metrics_path, "Generated development metric witness set is not the current development witness set"))
     passage_by_witness = {passage.witness_id: passage for passage in passages}
     for witness in profile.witnesses:
         if witness.witness_id in forbidden_witness_ids:

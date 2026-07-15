@@ -13,12 +13,14 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import io
 import json
 import math
 import os
 import re
 import tempfile
 import unicodedata
+import uuid
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -38,6 +40,7 @@ _TERMINAL = ".?!…"
 _CLOSERS = "\"'”’»’)]}"
 _OPENING_QUOTES = "\"'“‘«"
 _SUPPORTED_QUOTE_PAIRS = {"“": "”", "‘": "’", "«": "»"}
+_SUPPORTED_QUOTE_CLOSERS = frozenset({"\"", "'", "”", "’", "»"})
 _TITLES = {"mr", "mrs", "ms", "dr"}
 
 
@@ -123,6 +126,34 @@ def _terminal_runs(text: str) -> Iterable[tuple[int, int, str]]:
         yield start, index, kind
 
 
+def _is_quote_attribution(
+    text: str,
+    event_end: int,
+    speech_attribution_verbs: set[str],
+) -> bool:
+    """Return whether a terminal immediately closes a quoted utterance."""
+
+    if event_end >= len(text) or text[event_end] not in _SUPPORTED_QUOTE_CLOSERS:
+        return False
+    cursor = event_end + 1
+    while cursor < len(text) and text[cursor] in _CLOSERS:
+        cursor += 1
+    while cursor < len(text) and text[cursor] in ",;:—–-":
+        cursor += 1
+        while cursor < len(text) and text[cursor] in _CLOSERS:
+            cursor += 1
+    cursor = _skip_after_terminal(text, cursor)
+    next_word = _next_word(text, cursor)
+    if next_word is None or not next_word[0][:1].islower():
+        return False
+    next_terminal = next(
+        (start for start, _, _ in _terminal_runs(text) if start >= next_word[1]),
+        len(text),
+    )
+    attribution_tokens = set(_casefold_tokens(text[cursor:next_terminal]))
+    return bool(attribution_tokens & speech_attribution_verbs)
+
+
 def sentence_spans(text: str, speech_attribution_verbs: Sequence[str]) -> list[tuple[int, int]]:
     """Return sentence-like spans using the adopted left-to-right scanner."""
 
@@ -146,11 +177,8 @@ def sentence_spans(text: str, speech_attribution_verbs: Sequence[str]) -> list[t
         if kind in {"ascii_ellipsis", "ellipsis"} and next_word is not None:
             if next_word[0][:1].islower():
                 continue
-        if next_word is not None and next_word[0][:1].islower():
-            attribution_text = normalized[after_cursor : next_word[1] + 160]
-            attribution_tokens = set(_casefold_tokens(attribution_text))
-            if attribution_tokens & verbs:
-                continue
+        if _is_quote_attribution(normalized, event_end, verbs):
+            continue
         boundary = max(cursor, event_end)
         while boundary < len(normalized) and normalized[boundary] in _CLOSERS:
             boundary += 1
@@ -196,16 +224,21 @@ def _distribution(values: Sequence[int | float]) -> dict[str, int | float]:
     }).model_dump(mode="json")
 
 
-def _quote_token_indexes(text: str, token_matches: Sequence[re.Match[str]]) -> set[int]:
+def _quote_token_indexes(
+    text: str, token_matches: Sequence[re.Match[str]]
+) -> set[int] | None:
     stack: list[str] = []
     quoted: set[int] = set()
     cursor = 0
-    for index, match in enumerate(token_matches):
-        for position in range(cursor, match.start()):
+
+    def consume(start: int, end: int) -> bool:
+        for position in range(start, end):
             character = text[position]
             if character in _SUPPORTED_QUOTE_PAIRS:
                 stack.append(_SUPPORTED_QUOTE_PAIRS[character])
-            elif character in _SUPPORTED_QUOTE_PAIRS.values() and stack and character == stack[-1]:
+            elif character in _SUPPORTED_QUOTE_PAIRS.values():
+                if not stack or character != stack[-1]:
+                    return False
                 stack.pop()
             elif character == '"':
                 if stack and stack[-1] == '"':
@@ -213,16 +246,25 @@ def _quote_token_indexes(text: str, token_matches: Sequence[re.Match[str]]) -> s
                 else:
                     stack.append('"')
             elif character == "'" and not (
-                position > 0 and position + 1 < len(text)
-                and text[position - 1].isalnum() and text[position + 1].isalnum()
+                position > 0
+                and position + 1 < len(text)
+                and text[position - 1].isalnum()
+                and text[position + 1].isalnum()
             ):
                 if stack and stack[-1] == "'":
                     stack.pop()
                 else:
                     stack.append("'")
+        return True
+
+    for index, match in enumerate(token_matches):
+        if not consume(cursor, match.start()):
+            return None
         if stack:
             quoted.add(index)
         cursor = match.end()
+    if not consume(cursor, len(text)) or stack:
+        return None
     return quoted
 
 
@@ -235,15 +277,16 @@ def _dialogue_words(passage: PassageRecord, tokens: Sequence[str]) -> tuple[int,
         return 0, len(tokens)
     matches = list(TOKEN_RE.finditer(unicodedata.normalize("NFC", passage.normalized_text)))
     quoted = _quote_token_indexes(passage.normalized_text, matches)
-    if not quoted:
+    if quoted is None or not quoted:
         return 0, len(tokens)
     return len(quoted), 0
 
 
 def _punctuation(passages: Sequence[PassageRecord]) -> dict[str, Any]:
-    normalized = "".join(passage.normalized_text for passage in passages)
+    normalized_texts = [unicodedata.normalize("NFC", passage.normalized_text) for passage in passages]
     original = "".join(passage.original_text for passage in passages)
-    ascii_ellipsis = len(re.findall(r"\.\.\.", normalized))
+    ascii_ellipsis = sum(len(re.findall(r"\.\.\.", text)) for text in normalized_texts)
+    normalized = "".join(normalized_texts)
     result: dict[str, Any] = {
         "periods_raw": normalized.count("."),
         "periods": normalized.count(".") - (ascii_ellipsis * 3),
@@ -284,6 +327,13 @@ def _punctuation(passages: Sequence[PassageRecord]) -> dict[str, Any]:
         "U+0022": result["straight_double_quote"],
         "U+00AB": result["guillemet_open"],
         "U+00BB": result["guillemet_close"],
+    }
+    denominator_words = sum(len(tokenize(text)) for text in normalized_texts)
+    result["denominator_words"] = denominator_words
+    result["per_1000_words"] = {
+        key: value / denominator_words * 1000 if denominator_words else 0.0
+        for key, value in result.items()
+        if isinstance(value, (int, float))
     }
     return result
 
@@ -381,7 +431,7 @@ def _extreme_flags(
         for passage, value in entries:
             if value == minimum:
                 flags.append(_flag(passage, metric, value, "within-witness minimum", "length_extreme"))
-            if value == maximum and maximum != minimum:
+            if value == maximum:
                 flags.append(_flag(passage, metric, value, "within-witness maximum", "length_extreme"))
     return flags
 
@@ -672,6 +722,79 @@ def measure_witness(passages: Sequence[PassageRecord], config: AnalysisConfig) -
             if value == maximum:
                 flags.append(_flag(record, name, value, "within-witness maximum marker rate", "marker_cluster"))
 
+    def add_density_flags(
+        metric: str,
+        values: Sequence[tuple[PassageRecord, float]],
+        reason: str,
+        kind: str = "marker_cluster",
+    ) -> None:
+        if not values:
+            return
+        maximum = max(value for _, value in values)
+        if maximum <= 0:
+            return
+        for record, value in values:
+            if value == maximum:
+                flags.append(_flag(record, metric, value, reason, kind))
+
+    marker_terms = {
+        *(
+            term.casefold()
+            for term in config.lexicons.get("modal_verbs", [])
+        ),
+        *(
+            term.casefold()
+            for term in config.lexicons.get("epistemic_markers", [])
+        ),
+    }
+    add_density_flags(
+        "modality_qualification_density",
+        [
+            (record, sum(token in marker_terms for token in folded) / len(folded))
+            for record, folded in zip(records, folded_by_passage)
+            if folded
+        ],
+        "within-witness maximum declared modality/qualification rate",
+    )
+    add_density_flags(
+        "dialogue_density",
+        [
+            (record, _dialogue_words(record, tokens)[0] / len(tokens))
+            for record, tokens in zip(records, tokens_by_passage)
+            if tokens
+        ],
+        "within-witness maximum observable dialogue rate",
+        kind="dialogue_cluster",
+    )
+    add_density_flags(
+        "question_exclamation_density",
+        [
+            (
+                record,
+                (record.normalized_text.count("?") + record.normalized_text.count("!"))
+                / len(tokens),
+            )
+            for record, tokens in zip(records, tokens_by_passage)
+            if tokens
+        ],
+        "within-witness maximum question/exclamation rate",
+        kind="punctuation_cluster",
+    )
+    add_density_flags(
+        "parenthesis_density",
+        [
+            (
+                record,
+                (record.normalized_text.count("(") + record.normalized_text.count(")"))
+                / len(tokens),
+            )
+            for record, tokens in zip(records, tokens_by_passage)
+            if tokens
+        ],
+        "within-witness maximum parenthesis rate",
+        kind="punctuation_cluster",
+    )
+
     punctuation = _punctuation(records)
     return WitnessMetrics(
         witness_id=first.witness_id,
@@ -714,28 +837,92 @@ def measure_witness(passages: Sequence[PassageRecord], config: AnalysisConfig) -
     )
 
 
-def _atomic_write(path: Path, payload: bytes) -> None:
+def _stage_artifact(path: Path, payload: bytes) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary: Path | None = None
     try:
-        with tempfile.NamedTemporaryFile(mode="wb", dir=path.parent, prefix=f".{path.name}.", suffix=".tmp", delete=False) as handle:
+        with tempfile.NamedTemporaryFile(
+            mode="wb", dir=path.parent, prefix=f".{path.name}.", suffix=".tmp", delete=False
+        ) as handle:
             temporary = Path(handle.name)
             handle.write(payload)
             handle.flush()
             os.fsync(handle.fileno())
-        os.replace(temporary, path)
     except OSError as exc:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
-        raise CreativeWriterError(f"Unable to write metric artifact {path}: {exc}") from exc
+        raise CreativeWriterError(f"Unable to stage metric artifact {path}: {exc}") from exc
+    assert temporary is not None
+    return temporary
 
 
-def _metric_rows(metrics: WitnessMetrics) -> list[dict[str, str]]:
+def _cleanup_artifact_paths(paths: Sequence[Path]) -> list[str]:
+    failures: list[str] = []
+    for path in paths:
+        try:
+            path.unlink(missing_ok=True)
+        except OSError as exc:
+            failures.append(f"{path}: {exc}")
+    return failures
+
+
+def _commit_metric_artifacts(staged: Sequence[tuple[Path, Path]]) -> None:
+    backups: dict[Path, Path] = {}
+    installed: list[Path] = []
+    restored: set[Path] = set()
+    transaction_id = uuid.uuid4().hex
+    try:
+        for target, temporary in staged:
+            if target.exists():
+                backup = target.parent / f".{target.name}.{transaction_id}.bak"
+                os.replace(target, backup)
+                backups[target] = backup
+            os.replace(temporary, target)
+            installed.append(target)
+    except OSError as exc:
+        recovery_errors: list[str] = []
+        recovery_errors.extend(
+            _cleanup_artifact_paths([target for target in reversed(installed)])
+        )
+        for target, backup in backups.items():
+            if not backup.exists():
+                continue
+            try:
+                os.replace(backup, target)
+            except OSError as restore_error:
+                recovery_errors.append(f"restoration of {target} failed: {restore_error}")
+            else:
+                restored.add(target)
+        cleanup_paths = [temporary for _, temporary in staged]
+        cleanup_paths.extend(
+            backup for target, backup in backups.items() if target in restored or backup.exists()
+        )
+        recovery_errors.extend(_cleanup_artifact_paths(cleanup_paths))
+        detail = f"Unable to replace metric artifacts atomically: {exc}"
+        if recovery_errors:
+            detail += "\nRecovery errors:\n" + "\n".join(recovery_errors)
+        raise CreativeWriterError(detail) from exc
+    cleanup_errors = _cleanup_artifact_paths(
+        [temporary for _, temporary in staged]
+        + list(backups.values())
+    )
+    if cleanup_errors:
+        raise CreativeWriterError(
+            "Metric artifacts installed, but cleanup failed:\n" + "\n".join(cleanup_errors)
+        )
+
+
+def _metric_rows(
+    metrics: WitnessMetrics,
+    config: AnalysisConfig,
+    provenance: dict[str, str],
+) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     identity = {
         "witness_id": metrics.witness_id,
         "source_id": metrics.source_id,
         "selection_id": metrics.selection_id or "",
+        **provenance,
     }
 
     def add(metric: str, submetric: str, value: Any, passage_id: str = "", section_id: str = "") -> None:
@@ -749,45 +936,66 @@ def _metric_rows(metrics: WitnessMetrics) -> list[dict[str, str]]:
             "notes": "sampling aid" if metric == "candidate_flags" else "",
         })
 
-    for name in ("total_words", "total_passages", "total_sentences", "total_sections"):
-        add(name, "value", getattr(metrics, name))
-    for name in (
-        "sentence_length_distribution", "paragraph_length_distribution", "passage_length_distribution",
-        "dialogue_proportion", "punctuation_frequencies", "block_proportions", "section_level_variation",
-    ):
-        add(name, "summary", getattr(metrics, name))
-    add("dialogue_run_lengths", "values", metrics.dialogue_run_lengths)
-    for group, counts in metrics.lexicon_frequencies.items():
-        for term, count in counts.items():
-            add(group, term, count)
-    for group, payload in metrics.normalized_frequencies.items():
-        for term, rate in payload["per_1000_words"].items():
-            add(f"{group}_per_1000_words", term, rate)
-    for term, count in metrics.function_word_frequencies.items():
-        add("function_word_frequencies", term, count)
-    for bigram, count in metrics.function_word_sequence_frequencies.items():
-        add("function_word_sequence_frequencies", bigram, count)
-    for name, values in (
-        ("paragraph_openings", metrics.paragraph_openings),
-        ("paragraph_transitions", metrics.paragraph_transitions),
-    ):
-        for key, value in values.items():
-            add(name, key, value)
-    for section in metrics.moving_window_lexical_concentration["sections"]:
-        add(
-            "moving_window_lexical_concentration",
-            "summary",
-            section,
-            section_id=section["section_id"],
-        )
-    for flag in metrics.candidate_flags:
-        add(
-            "candidate_flags",
-            flag["metric"],
-            flag["value"],
-            passage_id=flag["passage_id"],
-            section_id=flag["section_id"],
-        )
+    scalar_names = {"total_words", "total_passages", "total_sentences", "total_sections"}
+    distribution_names = {
+        "sentence_length_distribution",
+        "paragraph_length_distribution",
+        "passage_length_distribution",
+    }
+    lexicon_names = {
+        "speech_attribution_verbs": "speech_attribution_verbs",
+        "reporting_verbs": "reporting_verbs",
+        "first_person_pronoun_frequencies": "first_person_pronouns",
+        "third_person_pronoun_frequencies": "third_person_pronouns",
+        "demonstrative_frequencies": "demonstratives",
+        "modal_frequencies": "modal_verbs",
+        "epistemic_frequencies": "epistemic_markers",
+    }
+    mapping_values = {
+        "function_word_frequencies": metrics.function_word_frequencies,
+        "function_word_sequence_frequencies": metrics.function_word_sequence_frequencies,
+        "paragraph_openings": metrics.paragraph_openings,
+        "paragraph_transitions": metrics.paragraph_transitions,
+    }
+    for public_name in config.enabled_measurements:
+        if public_name == "word_count":
+            add(public_name, "value", metrics.total_words)
+        elif public_name in scalar_names:
+            add(public_name, "value", getattr(metrics, public_name))
+        elif public_name in distribution_names:
+            add(public_name, "summary", getattr(metrics, public_name))
+        elif public_name in {
+            "dialogue_proportion",
+            "punctuation_frequencies",
+            "block_proportions",
+            "section_level_variation",
+        }:
+            add(public_name, "summary", getattr(metrics, public_name))
+        elif public_name == "dialogue_run_lengths":
+            add(public_name, "values", metrics.dialogue_run_lengths)
+        elif public_name in lexicon_names:
+            values = metrics.lexicon_frequencies[lexicon_names[public_name]]
+            if values:
+                for term, count in values.items():
+                    add(public_name, term, count)
+            else:
+                add(public_name, "values", {})
+        elif public_name == "moving_window_lexical_concentration":
+            sections = metrics.moving_window_lexical_concentration["sections"]
+            if sections:
+                for section in sections:
+                    add(public_name, "summary", section, section_id=section["section_id"])
+            else:
+                add(public_name, "values", [])
+        elif public_name in mapping_values:
+            values = mapping_values[public_name]
+            if values:
+                for key, value in sorted(values.items()):
+                    add(public_name, key, value)
+            else:
+                add(public_name, "values", {})
+        else:
+            raise CreativeWriterError(f"Unsupported public measurement mapping: {public_name}")
     return rows
 
 
@@ -800,6 +1008,9 @@ def measure_development(
     config_sha256: str = "",
     index_sha256: str = "",
     manifest_sha256: str = "",
+    config_path: str = "",
+    index_path: str = "",
+    manifest_path: str = "",
 ) -> list[WitnessMetrics]:
     """Measure only supplied development IDs and write auditable artifacts."""
 
@@ -819,29 +1030,59 @@ def measure_development(
     ]
     if output_paths is None:
         return metrics
-    document = {
-        "schema_version": 1,
+    provenance = {
+        "study_id": config.study_id,
         "stage": "development",
         "config_sha256": config_sha256,
         "index_sha256": index_sha256,
         "manifest_sha256": manifest_sha256,
+        "config_path": config_path,
+        "index_path": index_path,
+        "manifest_path": manifest_path,
+    }
+    document = {
+        "schema_version": 1,
+        "stage": "development",
+        "study_id": config.study_id,
+        "config_sha256": config_sha256,
+        "index_sha256": index_sha256,
+        "manifest_sha256": manifest_sha256,
+        "provenance": provenance,
         "enabled_measurements": list(config.enabled_measurements),
+        "candidate_heuristics": {
+            "observation_to_explanation_movement": {
+                "status": "deferred",
+                "reason": "Deferred to human close reading because it cannot be measured from declared lexicons without interpretation.",
+            }
+        },
         "witnesses": [metric.to_dict() for metric in metrics],
     }
-    _atomic_write(
-        output_paths["development_metrics"],
-        (json.dumps(document, ensure_ascii=False, indent=2, sort_keys=False) + "\n").encode("utf-8"),
+    rows = [
+        row
+        for metric in metrics
+        for row in _metric_rows(metric, config, provenance)
+    ]
+    metric_order = {name: index for index, name in enumerate(config.enabled_measurements)}
+    rows.sort(
+        key=lambda row: (
+            next(metric.witness_ordinal for metric in metrics if metric.witness_id == row["witness_id"]),
+            metric_order[row["metric"]],
+            row["submetric"],
+            row["passage_id"],
+        )
     )
-    rows = [row for metric in metrics for row in _metric_rows(metric)]
-    rows.sort(key=lambda row: (next(metric.witness_ordinal for metric in metrics if metric.witness_id == row["witness_id"]), row["metric"], row["submetric"], row["passage_id"]))
-    csv_path = output_paths["development_metrics_csv"]
-    output = tempfile.SpooledTemporaryFile(mode="w+", encoding="utf-8", newline="")
-    writer = csv.DictWriter(output, fieldnames=["witness_id", "source_id", "selection_id", "section_id", "metric", "submetric", "value", "passage_id", "notes"])
+    output = io.StringIO(newline="")
+    writer = csv.DictWriter(
+        output,
+        fieldnames=[
+            "study_id", "stage", "config_sha256", "index_sha256", "manifest_sha256",
+            "config_path", "index_path", "manifest_path",
+            "witness_id", "source_id", "selection_id", "section_id", "metric",
+            "submetric", "value", "passage_id", "notes",
+        ],
+    )
     writer.writeheader()
     writer.writerows(rows)
-    output.seek(0)
-    _atomic_write(csv_path, output.read().encode("utf-8"))
-    output.close()
     report_lines = [
         "# Phase 2B development metrics",
         "",
@@ -853,9 +1094,16 @@ def measure_development(
         "",
         "Tokens use NFC-normalized text and `[^\\W_]+(?:['’][^\\W_]+)*`; sequences reset at passage boundaries. Punctuation is counted by exact code point. Dialogue is quoted-span based for mixed passages, all-token based for direct passages, and unknown passages remain in the denominator with zero numerator.",
         "",
+        f"Study ID: `{config.study_id}`  ",
+        "Stage: `development`  ",
         f"Configuration SHA-256: `{config_sha256}`  ",
         f"Passage-index SHA-256: `{index_sha256}`  ",
         f"Holdout-manifest SHA-256: `{manifest_sha256}`",
+        f"Configuration path: `{config_path}`  ",
+        f"Passage-index path: `{index_path}`  ",
+        f"Holdout-manifest path: `{manifest_path}`",
+        "",
+        "Observation-to-explanation movement is deferred to human close reading because it cannot be measured from declared lexicons without interpretation.",
         "",
     ]
     for metric in metrics:
@@ -874,7 +1122,22 @@ def measure_development(
         if not metric.candidate_flags:
             report_lines.append("- No candidate sampling flags.")
         report_lines.append("")
-    _atomic_write(output_paths["development_report"], ("\n".join(report_lines) + "\n").encode("utf-8"))
+    payloads = [
+        (
+            output_paths["development_metrics"],
+            (json.dumps(document, ensure_ascii=False, indent=2, sort_keys=False) + "\n").encode("utf-8"),
+        ),
+        (output_paths["development_metrics_csv"], output.getvalue().encode("utf-8")),
+        (output_paths["development_report"], ("\n".join(report_lines) + "\n").encode("utf-8")),
+    ]
+    staged: list[tuple[Path, Path]] = []
+    try:
+        for path, payload in payloads:
+            staged.append((path, _stage_artifact(path, payload)))
+        _commit_metric_artifacts(staged)
+    except CreativeWriterError:
+        _cleanup_artifact_paths([temporary for _, temporary in staged])
+        raise
     return metrics
 
 

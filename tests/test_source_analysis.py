@@ -1050,3 +1050,28 @@ def test_develop_requires_committed_holdouts_and_writes_development_only_outputs
     )
     assert "approximation" in report.lower()
     assert "pooled wells target" in report.lower()
+
+
+def test_develop_reparses_and_rejects_index_direct_dialogue_drift(tmp_path: Path) -> None:
+    story, _ = _fixture(tmp_path)
+    index_path = tmp_path / "build/fixture/source-study/passage-index.jsonl"
+    lines = index_path.read_text(encoding="utf-8").splitlines()
+    first = json.loads(lines[0])
+    first["direct_dialogue"] = "unknown" if first["direct_dialogue"] != "unknown" else "none"
+    lines[0] = json.dumps(first, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    index_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "fixture@example.test"], cwd=tmp_path, check=True
+    )
+    subprocess.run(["git", "config", "user.name", "Fixture"], cwd=tmp_path, check=True)
+    subprocess.run(
+        ["git", "add", "stories/fixture/source-study/holdouts.yml"],
+        cwd=tmp_path,
+        check=True,
+    )
+    subprocess.run(["git", "commit", "-qm", "lock fixture holdouts"], cwd=tmp_path, check=True)
+
+    with pytest.raises(CreativeWriterError, match="reparsed.*passage index|canonical.*differs"):
+        run_source_analysis(tmp_path, "fixture", "develop")

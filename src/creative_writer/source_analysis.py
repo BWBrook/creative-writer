@@ -38,7 +38,6 @@ from creative_writer.source_analysis_models import (
 from creative_writer.source_passages import (
     parse_markdown_witness,
     partition_windows,
-    read_passage_index,
     serialize_passage_index,
 )
 from creative_writer.source_metrics import measure_development
@@ -558,6 +557,46 @@ def _validate_manifest_passages(manifest: HoldoutManifest, passage_ids: set[str]
                     )
 
 
+def _parse_retained_witnesses(witnesses: list[_ExpandedWitness]) -> list[PassageRecord]:
+    """Reparse and validate every current retained witness in reading order."""
+
+    passages: list[PassageRecord] = []
+    seen_passage_ids: set[str] = set()
+    for witness in witnesses:
+        try:
+            parsed = parse_markdown_witness(witness.markdown_path, witness.descriptor)
+        except CreativeWriterError as exc:
+            raise CreativeWriterError(
+                f"Pandoc parsing failed for witness `{witness.descriptor.witness_id}` "
+                f"({witness.markdown_path}): {exc}"
+            ) from exc
+        if not parsed:
+            raise CreativeWriterError(
+                f"Pandoc produced an empty passage index for witness "
+                f"`{witness.descriptor.witness_id}`"
+            )
+        for passage in parsed:
+            if passage.passage_id in seen_passage_ids:
+                raise CreativeWriterError(
+                    f"Duplicate passage ID `{passage.passage_id}` for witness "
+                    f"`{witness.descriptor.witness_id}`"
+                )
+            if (
+                passage.witness_id != witness.descriptor.witness_id
+                or passage.witness_ordinal != witness.descriptor.witness_ordinal
+                or passage.source_fingerprint != witness.descriptor.source_fingerprint
+            ):
+                raise CreativeWriterError(
+                    f"Stale or unresolved passage identity for witness "
+                    f"`{witness.descriptor.witness_id}`: {passage.passage_id}"
+                )
+            seen_passage_ids.add(passage.passage_id)
+            passages.append(passage)
+    if not passages:
+        raise CreativeWriterError("The passage index is empty")
+    return passages
+
+
 def _stage_file(path: Path, payload: bytes) -> Path:
     temporary_path: Path | None = None
     try:
@@ -686,40 +725,8 @@ def _prepare(root: Path, slug: str) -> SourceAnalysisResult:
         registry_hashes=registry_hashes,
     )
 
-    passages: list[PassageRecord] = []
-    seen_passage_ids: set[str] = set()
-    for witness in witnesses:
-        try:
-            parsed = parse_markdown_witness(witness.markdown_path, witness.descriptor)
-        except CreativeWriterError as exc:
-            raise CreativeWriterError(
-                f"Pandoc parsing failed for witness `{witness.descriptor.witness_id}` "
-                f"({witness.markdown_path}): {exc}"
-            ) from exc
-        if not parsed:
-            raise CreativeWriterError(
-                f"Pandoc produced an empty passage index for witness "
-                f"`{witness.descriptor.witness_id}`"
-            )
-        for passage in parsed:
-            if passage.passage_id in seen_passage_ids:
-                raise CreativeWriterError(
-                    f"Duplicate passage ID `{passage.passage_id}` for witness "
-                    f"`{witness.descriptor.witness_id}`"
-                )
-            if (
-                passage.witness_id != witness.descriptor.witness_id
-                or passage.witness_ordinal != witness.descriptor.witness_ordinal
-                or passage.source_fingerprint != witness.descriptor.source_fingerprint
-            ):
-                raise CreativeWriterError(
-                    f"Stale or unresolved passage identity for witness "
-                    f"`{witness.descriptor.witness_id}`: {passage.passage_id}"
-                )
-            seen_passage_ids.add(passage.passage_id)
-            passages.append(passage)
-    if not passages:
-        raise CreativeWriterError("The passage index is empty")
+    passages = _parse_retained_witnesses(witnesses)
+    seen_passage_ids = {passage.passage_id for passage in passages}
     index_payload = serialize_passage_index(passages)
     expected_manifest = _build_holdout_manifest(
         config=config,
@@ -878,9 +885,18 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
     )
     _validate_existing_json(lock_path, expected_lock, "corpus lock")
     try:
-        passages = read_passage_index(index_path)
-    except CreativeWriterError as exc:
-        raise CreativeWriterError(f"Development passage index verification failed: {exc}") from exc
+        regenerated_passages = _parse_retained_witnesses(witnesses)
+        regenerated_index = serialize_passage_index(regenerated_passages)
+        existing_index = index_path.read_bytes()
+    except (CreativeWriterError, OSError) as exc:
+        raise CreativeWriterError(
+            f"Development passage index verification failed: {exc}"
+        ) from exc
+    if existing_index != regenerated_index:
+        raise CreativeWriterError(
+            "Reparsed canonical passage index differs from the build passage index"
+        )
+    passages = regenerated_passages
     passage_ids = {passage.passage_id for passage in passages}
     manifest = _load_existing_manifest(holdout_path)
     if manifest is None:
@@ -929,6 +945,9 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
         config_sha256=_sha256(analysis_path),
         index_sha256=_sha256(index_path),
         manifest_sha256=_sha256(holdout_path),
+        config_path=analysis_path.relative_to(root).as_posix(),
+        index_path=index_path.relative_to(root).as_posix(),
+        manifest_path=holdout_path.relative_to(root).as_posix(),
     )
     return SourceAnalysisResult(
         stage="develop",

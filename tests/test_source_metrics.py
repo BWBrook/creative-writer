@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import csv
 import hashlib
+import json
 import re
 from pathlib import Path
 
+import pytest
+
 from creative_writer.files import load_yaml_model
 from creative_writer.source_analysis_models import AnalysisConfig, PassageRecord
-from creative_writer.source_metrics import measure_witness
+from creative_writer.source_metrics import measure_development, measure_witness, sentence_token_lengths
 
 
 HASH = "a" * 64
@@ -222,3 +226,168 @@ def test_two_witness_measurements_keep_section_variation_local() -> None:
     assert (b.total_words, b.total_passages, b.total_sections) == (3, 1, 1)
     assert a.section_level_variation["total_words"]["range"] == 1
     assert b.section_level_variation["total_words"]["range"] == 0
+
+
+def test_nonquoted_lowercase_continuation_with_later_said_starts_a_new_sentence() -> None:
+    assert sentence_token_lengths(
+        "The rain stopped. and later he said hello.",
+        _config().lexicons["speech_attribution_verbs"],
+    ) == [3, 5]
+
+
+def test_invalid_mixed_quotes_are_unknown_and_contribute_no_dialogue_words() -> None:
+    for text in (
+        "Narration “unclosed words.",
+        "Narration “mismatched words’.",
+        "Narration “quoted words” and stray close”.",
+    ):
+        result = measure_witness([_passage(text, 1, dialogue="mixed")], _config())
+        assert result.dialogue_proportion["dialogue_words"] == 0
+        assert result.dialogue_proportion["unknown_words"] == result.total_words
+        assert result.dialogue_proportion["unknown_passages"] == 1
+
+
+def test_supported_nested_quotes_remain_measureable_dialogue() -> None:
+    result = measure_witness(
+        [_passage('Narration “outer "inner" words”.', 1, dialogue="mixed")],
+        _config(),
+    )
+
+    assert result.dialogue_proportion["dialogue_words"] == 3
+    assert result.dialogue_proportion["unknown_words"] == 0
+
+
+def test_punctuation_events_reset_at_passage_boundaries_and_report_rates() -> None:
+    result = measure_witness(
+        [_passage("Wait..", 1), _passage(". Next.", 2)],
+        _config(),
+    )
+
+    punctuation = result.punctuation_frequencies
+    assert punctuation["periods_raw"] == 4
+    assert punctuation["periods"] == 4
+    assert punctuation["ellipsis_ascii"] == 0
+    assert punctuation["denominator_words"] == 2
+    assert punctuation["per_1000_words"]["periods"] == 2000
+    assert result.total_sentences == 3
+
+
+def test_candidate_flags_cover_declared_density_clusters_and_defer_interpretation() -> None:
+    result = measure_witness(
+        [
+            _passage('“Could perhaps?” said he!', 1, dialogue="mixed"),
+            _passage("Could perhaps? (Maybe)!", 2),
+        ],
+        _config(),
+    )
+
+    flag_metrics = {flag["metric"] for flag in result.candidate_flags}
+    assert "modality_qualification_density" in flag_metrics
+    assert "dialogue_density" in flag_metrics
+    assert "question_exclamation_density" in flag_metrics
+    assert "parenthesis_density" in flag_metrics
+    assert all(flag["sampling_aid"] is True for flag in result.candidate_flags)
+    assert all(flag["interpretive_finding"] is False for flag in result.candidate_flags)
+
+
+def test_csv_maps_every_public_measurement_with_provenance_and_empty_rows(tmp_path: Path) -> None:
+    config = _config()
+    output_paths = {
+        "development_metrics": tmp_path / "development-metrics.json",
+        "development_metrics_csv": tmp_path / "development-metrics.csv",
+        "development_report": tmp_path / "development-report.md",
+    }
+    passage = _passage("Plain narrative.", 1)
+    measure_development(
+        [passage],
+        config,
+        {passage.passage_id},
+        output_paths=output_paths,
+        config_sha256="config-hash",
+        index_sha256="index-hash",
+        manifest_sha256="manifest-hash",
+        config_path="source-study/analysis.yml",
+        index_path="build/fixture/source-study/passage-index.jsonl",
+        manifest_path="source-study/holdouts.yml",
+    )
+
+    rows = list(csv.DictReader(output_paths["development_metrics_csv"].open(encoding="utf-8")))
+    assert {row["metric"] for row in rows} == set(config.enabled_measurements)
+    assert all(row["study_id"] == config.study_id for row in rows)
+    assert all(row["stage"] == "development" for row in rows)
+    assert all(row["config_sha256"] == "config-hash" for row in rows)
+    assert all(row["index_sha256"] == "index-hash" for row in rows)
+    assert all(row["manifest_sha256"] == "manifest-hash" for row in rows)
+    assert all(row["config_path"] == "source-study/analysis.yml" for row in rows)
+    assert all(row["index_path"] == "build/fixture/source-study/passage-index.jsonl" for row in rows)
+    assert all(row["manifest_path"] == "source-study/holdouts.yml" for row in rows)
+    assert any(
+        row["metric"] == "function_word_sequence_frequencies"
+        and json.loads(row["value"]) == {}
+        for row in rows
+    )
+    assert any(
+        row["metric"] == "paragraph_transitions" and json.loads(row["value"]) == {}
+        for row in rows
+    )
+
+    document = json.loads(output_paths["development_metrics"].read_text(encoding="utf-8"))
+    assert document["provenance"] == {
+        "study_id": config.study_id,
+        "stage": "development",
+        "config_sha256": "config-hash",
+        "index_sha256": "index-hash",
+        "manifest_sha256": "manifest-hash",
+        "config_path": "source-study/analysis.yml",
+        "index_path": "build/fixture/source-study/passage-index.jsonl",
+        "manifest_path": "source-study/holdouts.yml",
+    }
+    report = output_paths["development_report"].read_text(encoding="utf-8")
+    assert f"Study ID: `{config.study_id}`" in report
+    assert "Stage: `development`" in report
+    assert "observation-to-explanation movement" in report.lower()
+    assert "deferred to human close reading" in report.lower()
+
+
+def test_metric_artifacts_roll_back_together_on_third_install_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _config()
+    output_paths = {
+        "development_metrics": tmp_path / "development-metrics.json",
+        "development_metrics_csv": tmp_path / "development-metrics.csv",
+        "development_report": tmp_path / "development-report.md",
+    }
+    passage = _passage("Plain narrative.", 1)
+    kwargs = {
+        "output_paths": output_paths,
+        "config_sha256": "config-hash",
+        "index_sha256": "index-hash",
+        "manifest_sha256": "manifest-hash",
+        "config_path": "source-study/analysis.yml",
+        "index_path": "build/fixture/source-study/passage-index.jsonl",
+        "manifest_path": "source-study/holdouts.yml",
+    }
+    measure_development([passage], config, {passage.passage_id}, **kwargs)
+    before = {path: path.read_bytes() for path in output_paths.values()}
+
+    import creative_writer.source_metrics as source_metrics
+
+    real_replace = source_metrics.os.replace
+    failed = False
+
+    def fail_report_install(source: str | Path, target: str | Path) -> None:
+        nonlocal failed
+        if Path(target).name == "development-report.md" and not failed:
+            failed = True
+            raise OSError("forced third-install failure")
+        real_replace(source, target)
+
+    monkeypatch.setattr(source_metrics.os, "replace", fail_report_install)
+    changed_kwargs = {**kwargs, "config_sha256": "new-config-hash"}
+    with pytest.raises(Exception, match="third-install failure"):
+        measure_development([passage], config, {passage.passage_id}, **changed_kwargs)
+
+    assert {path: path.read_bytes() for path in output_paths.values()} == before
+    assert not list(tmp_path.glob(".*.tmp"))
+    assert not list(tmp_path.glob(".*.bak"))

@@ -64,6 +64,8 @@ Phase 2B will not:
 
 - revise `style-guide.md` or `style-card.md`;
 - produce an operational phrase bank, imitation prompt, or prose recipe;
+- implement an author-specific style linter, drift score, or Wells-compliance
+  threshold;
 - plan the Permian expedition, anthology spine, frame scenes, or editorial
   preface;
 - perform end-Permian scientific research;
@@ -890,6 +892,7 @@ Phase 2C will decide how validated description becomes:
 - operational style rules;
 - anti-drift warnings;
 - bounded tolerances rather than rigid averages;
+- a reusable style-lint profile backed by evidence-ledger claim IDs;
 - role-matched reference packets;
 - chapter, story, and anthology authenticity gates;
 - revisions to `style-guide.md` and `style-card.md`.
@@ -902,6 +905,148 @@ evidence claim.
 
 Phase 2C requires a separate design approval. Phase 2B completion does not
 authorise it automatically.
+
+### Deferred General Style-Linter Handoff
+
+A general stylistic linter is a valuable Phase 2C application of the evidence
+layer. It is deliberately deferred because an 1890s Wells profile must be
+derived from validated findings, not encoded from prior impressions and then
+used to confirm those impressions.
+
+The repository already has two partial mechanisms:
+
+- `make check` runs contract-configured em-dash and contrastive-parallelism
+  heuristics as non-blocking style warnings;
+- `make ai-audit` runs the local `audit-ai-writing` narrative scanner and
+  generates a manual-review report.
+
+Phase 2C should unify their useful ideas without making either mechanism a
+style authority. The likely public interface is:
+
+```text
+creative-writer style-lint --story <slug> [--profile <profile-id>]
+make style-lint STORY=<slug> [PROFILE=<profile-id>]
+```
+
+The final Phase 2C design should use composable profiles rather than a single
+hard-coded Wells checker:
+
+- a general manuscript-hygiene profile for tool residue, placeholders,
+  malformed markup, and objective contract violations;
+- an AI-surface-risk profile derived from the `audit-ai-writing` rubric,
+  including stock vocabulary clusters, false balance, over-neat cadence,
+  theme explanation, bodily-emotion shorthand, sealed-world symptoms, and
+  other narrative signals;
+- a story-selected authorial profile compiled only from validated Phase 2B
+  claims and per-witness ranges;
+- negative drift controls that can warn about generic Victorianism,
+  neighbouring adventure prose, or resemblance to a Tier 4 control without
+  treating that control as a positive writing model.
+
+The linter should support three complementary rule families:
+
+1. deterministic rules for exact residues, configured phrases, punctuation,
+   repetition, and transparent counts;
+2. distributional diagnostics comparing a draft with per-witness ranges and
+   authentic Wells variation, never with one pooled target;
+3. evidence-guided review prompts for phenomena that require interpretation,
+   such as over-explained theme, implausibly smooth epistemic progression, or
+   drift toward another author.
+
+Style results should use distinct severities:
+
+- `error` only for objective failures such as malformed configuration, tool
+  residue explicitly prohibited by contract, or an unresolved source/profile
+  reference;
+- `warning` for strong rule clusters or material departure from a configured
+  authorial profile;
+- `advisory` for weak signals, authentic-tail observations, and passages that
+  need human reading.
+
+Authorial deviations and AI-surface signs are warnings or advisories by
+default. They are not proof of AI authorship, bad prose, or inauthenticity. A
+single word, em dash, sentence length, or rhetorical pattern must never be
+treated as decisive. Reports should emphasise converging clusters and show the
+surrounding passage.
+
+Every Wells-specific lint rule should record:
+
+- the Phase 2B evidence-ledger claim IDs from which it was derived;
+- analytical dimension and jurisdiction;
+- applicable narrative modes;
+- measurement or heuristic definition;
+- authentic Wells range and material counterexamples;
+- warning threshold and reason for that threshold;
+- known false-positive conditions;
+- whether the feature is Wells-distinctive, shared, role-specific, or merely
+  period-general;
+- revision guidance that describes the mismatch without supplying imitation
+  phrases.
+
+The linter must preserve the distinction between absence and excess. For
+example, a device frequent in one Wells witness may be optional rather than
+required, while an excessive concentration may still indicate mechanical
+imitation. Authentic passages in the tails of Wells's own distribution must
+remain visible as counterexamples rather than being labelled failures.
+
+AI-surface checks should retain the `audit-ai-writing` skill's governing
+cautions:
+
+- risk signals are not authorship detection;
+- clusters matter more than isolated tokens;
+- genre and intended voice change interpretation;
+- revision should restore concrete intention rather than synonym-swap flagged
+  words;
+- fluent, polished, historically mannered prose is not suspicious merely for
+  being fluent, polished, or mannered.
+
+Calibration against the authentic target is mandatory. On 2026-07-15, the
+current generic narrative scanner rated the retained *Time Machine* witness
+`high surface risk`. Its reasons included 175 em dashes, 222 triad-like
+sentences, 28 parallelism hits, and 13 Markdown headings. Those results do not
+make Wells's prose machine-like. They demonstrate that raw generic risk labels
+cannot be imported into an author-specific workflow.
+
+Before a general AI-surface rule enters a story profile, Phase 2C must run it
+over the canonical and bounded source witnesses and record its authentic
+baseline, document-structure sensitivity, and known false positives. The
+combined linter may then:
+
+- preserve a modern residue rule when the pattern has no authentic target
+  analogue;
+- assess concentration or clustering relative to genuine per-witness ranges;
+- restrict a rule to a narrative mode where it remains discriminating;
+- downgrade it to a manual-review prompt;
+- disable it for that authorial profile while retaining it in the general
+  profile.
+
+The external scanner's aggregate `risk` label must not become an input to a
+Wells authenticity judgement. Its individual observations may contribute only
+after this calibration and with their original caution intact.
+
+The final report should separate rather than collapse:
+
+- objective manuscript hygiene;
+- general AI-surface risk;
+- departure from the selected authorial profile;
+- resemblance to negative controls;
+- unresolved interpretive questions.
+
+A single aggregate authenticity score is prohibited. Such a score would hide
+authority, genre, uncertainty, and contradictory evidence. The report should
+instead give passage-level findings, chapter summaries, cumulative drift
+signals, evidence provenance, and explicit manual-review questions.
+
+The Phase 2C design must decide whether to internalise a stable rule pack from
+the external `audit-ai-writing` scanner or retain it through an adapter. Phase
+2B imposes only two requirements on that decision: the repository must remain
+usable without silently depending on mutable external rules, and the original
+skill must remain available as the richer manual editorial workflow.
+
+No linter work begins in Phase 2B. This section records the required handoff so
+the measurements, evidence classifications, counterexamples, and validation
+results produced now will support a general system later without biasing the
+forensic analysis.
 
 ## Explicit Stop Point
 

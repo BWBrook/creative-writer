@@ -305,20 +305,30 @@ def _parse_candidate_claims(content: str) -> list[str] | None:
     return claims if claims else None
 
 
-_ALLOWED_CONTROL_WITNESS_PATH = re.compile(
-    r"^claims\[\d+\]\.validation_expectation\.control_targets\[\d+\]\.witness_id$"
-)
+_YamlPath = tuple[str | int, ...]
 
 
-def _yaml_scalar_occurrences(text: str) -> list[tuple[str, str]]:
+def _is_allowed_control_witness_path(path: _YamlPath) -> bool:
+    return (
+        len(path) == 6
+        and path[0] == "claims"
+        and isinstance(path[1], int)
+        and path[2] == "validation_expectation"
+        and path[3] == "control_targets"
+        and isinstance(path[4], int)
+        and path[5] == "witness_id"
+    )
+
+
+def _yaml_scalar_occurrences(text: str) -> list[tuple[_YamlPath, str]]:
     """Return every composed YAML scalar and its document path."""
 
     root = yaml.compose(text)
     if root is None:
         return []
-    occurrences: list[tuple[str, str]] = []
+    occurrences: list[tuple[_YamlPath, str]] = []
 
-    def visit(node: object, path: str) -> None:
+    def visit(node: object, path: _YamlPath) -> None:
         node_id = getattr(node, "id", None)
         if node_id == "scalar":
             value = getattr(node, "value", None)
@@ -327,16 +337,15 @@ def _yaml_scalar_occurrences(text: str) -> list[tuple[str, str]]:
             return
         if node_id == "sequence":
             for index, child in enumerate(getattr(node, "value", [])):
-                visit(child, f"{path}[{index}]")
+                visit(child, (*path, index))
             return
         if node_id == "mapping":
             for key_node, value_node in getattr(node, "value", []):
                 key = getattr(key_node, "value", None)
-                key_path = f"{path}.{key}" if path else str(key)
-                visit(key_node, f"{path}.<key>" if path else "<key>")
-                visit(value_node, key_path)
+                visit(key_node, (*path, "<key>"))
+                visit(value_node, (*path, str(key)))
 
-    visit(root, "")
+    visit(root, ())
     return occurrences
 
 
@@ -1239,7 +1248,7 @@ def collect_leakage_issues(
             forbidden_sequences.append((passage.passage_id, tokens))
     for path in sorted(paths, key=lambda item: item.as_posix()):
         text = _read(path)
-        yaml_occurrences: list[tuple[str, str]] = []
+        yaml_occurrences: list[tuple[_YamlPath, str]] = []
         if path.name.endswith((".yml", ".yaml")):
             try:
                 yaml_occurrences = _yaml_scalar_occurrences(text)
@@ -1251,12 +1260,12 @@ def collect_leakage_issues(
             allowed = [
                 document_path
                 for document_path, value in yaml_occurrences
-                if value == witness_id and _ALLOWED_CONTROL_WITNESS_PATH.fullmatch(document_path)
+                if value == witness_id and _is_allowed_control_witness_path(document_path)
             ]
             disallowed = [
                 document_path
                 for document_path, value in yaml_occurrences
-                if value == witness_id and not _ALLOWED_CONTROL_WITNESS_PATH.fullmatch(document_path)
+                if value == witness_id and not _is_allowed_control_witness_path(document_path)
             ]
             if disallowed or occurrences != len(allowed):
                 result.errors.append(_error(path, "Forbidden holdout or Tier 4 witness ID appears in tracked development content", locator=witness_id))

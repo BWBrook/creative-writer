@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import re
@@ -47,7 +46,6 @@ class VerifiedFreeze:
     heldout_index_path: Path
     heldout_index_binding: PassageIndexBinding
     heldout_witnesses: tuple[WitnessHoldouts, ...]
-    manifest_path: Path
     lock: CorpusLock
     def __post_init__(self) -> None:
         if self._seal is not _CAPABILITY_SEAL:
@@ -1336,17 +1334,31 @@ def _validate(root: Path, slug: str) -> SourceAnalysisResult:
     final_ledger_path = story_dir / "source-study" / "evidence-ledger.yml"
     period_controls_path = story_dir / "source-study" / "period-controls.md"
     try:
+        _profile_mode, _profile_oid, final_profile_bytes = _head_blob(
+            root, _relative_to_root(final_profile_path, root)
+        )
+    except CreativeWriterError as exc:
+        raise CreativeWriterError(
+            f"Unable to read final profile from its trusted HEAD blob: {exc}"
+        ) from exc
+    if sha256_bytes(final_profile_bytes) != validation.final_profile_sha256:
+        raise CreativeWriterError("Final profile SHA-256 does not match validation.md")
+    try:
+        _ledger_mode, _ledger_oid, final_ledger_bytes = _head_blob(
+            root, _relative_to_root(final_ledger_path, root)
+        )
+    except CreativeWriterError as exc:
+        raise CreativeWriterError(
+            f"Unable to read final ledger from its trusted HEAD blob: {exc}"
+        ) from exc
+    if sha256_bytes(final_ledger_bytes) != validation.final_ledger_sha256:
+        raise CreativeWriterError("Final ledger SHA-256 does not match validation.md")
+    try:
         _validation_mode, _validation_oid, _trusted_validation_bytes = _head_blob(
             root, _relative_to_root(story_dir / "source-study" / "validation.md", root)
         )
         _controls_mode, _controls_oid, _trusted_controls_bytes = _head_blob(
             root, _relative_to_root(period_controls_path, root)
-        )
-        _profile_mode, _profile_oid, final_profile_bytes = _head_blob(
-            root, _relative_to_root(final_profile_path, root)
-        )
-        _ledger_mode, _ledger_oid, final_ledger_bytes = _head_blob(
-            root, _relative_to_root(final_ledger_path, root)
         )
         final_ledger = EvidenceLedger.model_validate(
             yaml.safe_load(final_ledger_bytes.decode("utf-8"))
@@ -1366,10 +1378,6 @@ def _validate(root: Path, slug: str) -> SourceAnalysisResult:
         validation.control_comparisons,
         file=period_controls_path,
     )
-    if hashlib.sha256(final_profile_bytes).hexdigest() != validation.final_profile_sha256:
-        raise CreativeWriterError("Final profile SHA-256 does not match validation.md")
-    if hashlib.sha256(final_ledger_bytes).hexdigest() != validation.final_ledger_sha256:
-        raise CreativeWriterError("Final ledger SHA-256 does not match validation.md")
     _validate_final_claims(candidate=preflight.candidate_ledger, final=final_ledger, validation=validation)
     metrics = _build_validation_metrics(config, validation, generated_paths, corpus)
     generation_id = _write_validation_outputs(
@@ -1395,7 +1403,14 @@ def _write_validation_outputs(generated_paths: dict[str, Path], *, metrics: Vali
 
 def _freeze_from_preflight(preflight: _ValidationPreflight) -> VerifiedFreeze:
     generated = _resolve_generated_paths(preflight.root, preflight.slug, preflight.config)
-    return VerifiedFreeze(_CAPABILITY_SEAL, preflight.root, preflight.slug, preflight.config, preflight.validation, preflight.candidate_ledger, preflight.candidate_profile_bytes, preflight.candidate_ledger_bytes, preflight.candidate_profile_path, preflight.candidate_ledger_path, generated["heldout_wells_passage_index"], preflight.manifest.heldout_wells_passage_index, tuple(preflight.manifest.witnesses), preflight.manifest_path, preflight.lock)
+    heldout_binding = preflight.manifest.heldout_wells_passage_index
+    heldout_witness_ids = set(heldout_binding.witness_ids)
+    heldout_witnesses = tuple(
+        witness
+        for witness in preflight.manifest.witnesses
+        if witness.witness_id in heldout_witness_ids
+    )
+    return VerifiedFreeze(_CAPABILITY_SEAL, preflight.root, preflight.slug, preflight.config, preflight.validation, preflight.candidate_ledger, preflight.candidate_profile_bytes, preflight.candidate_ledger_bytes, preflight.candidate_profile_path, preflight.candidate_ledger_path, generated["heldout_wells_passage_index"], heldout_binding, heldout_witnesses, preflight.lock)
 
 def open_heldout_wells(capability: VerifiedFreeze) -> HeldoutCorpus:
     if not _genuine(capability, VerifiedFreeze):
@@ -1454,8 +1469,28 @@ def authorize_control_access(capability: VerifiedFreeze, heldout: HeldoutCorpus)
     )
     _validate_record_partitions(capability.validation, _ValidationCorpus(capability.lock, None, list(heldout.records), set(heldout.ids), set(), heldout.witness_tiers, heldout.witness_roles, heldout.registry), candidate_claim_ids=candidate_claim_ids, candidate_claims=capability.candidate_ledger.claims, include_controls=False)
     generated = _resolve_generated_paths(capability.root, capability.slug, capability.config)
-    manifest_bytes = _head_model_bytes(capability.root, capability.manifest_path, "Holdout manifest")
-    manifest = HoldoutManifest.model_validate(yaml.safe_load(manifest_bytes.decode("utf-8")))
+    candidate_commit = capability.validation.candidate_commit
+    if candidate_commit is None:
+        raise CreativeWriterError("Verified freeze is missing its pinned candidate commit")
+    manifest_path = _story_path(capability.root, capability.slug) / "source-study/holdouts.yml"
+    _manifest_object_id, manifest_bytes = _candidate_git_blob_record(
+        capability.root,
+        candidate_commit,
+        _relative_to_root(manifest_path, capability.root),
+    )
+    actual_manifest_hash = sha256_bytes(manifest_bytes)
+    if actual_manifest_hash != capability.validation.candidate_manifest_sha256:
+        raise CreativeWriterError(
+            "Candidate manifest SHA-256 changed before control authorization"
+        )
+    try:
+        manifest = HoldoutManifest.model_validate(
+            yaml.safe_load(manifest_bytes.decode("utf-8"))
+        )
+    except (UnicodeError, yaml.YAMLError, ValidationError, TypeError) as exc:
+        raise CreativeWriterError(
+            f"Pinned candidate holdout manifest is invalid: {exc}"
+        ) from exc
     if manifest.heldout_wells_passage_index != capability.heldout_index_binding:
         raise CreativeWriterError("Held-out binding changed before control authorization")
     control_binding = manifest.tier4_control_passage_index

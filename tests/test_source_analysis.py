@@ -13,6 +13,7 @@ import pytest
 import yaml
 import creative_writer.source_analysis as source_analysis
 import creative_writer.source_evidence as source_evidence
+import creative_writer.source_validation as source_validation
 
 from creative_writer.exceptions import CreativeWriterError
 from creative_writer.files import load_yaml_model
@@ -3387,6 +3388,22 @@ def test_yaml_alias_reuse_cannot_escape_the_exact_control_target_path(tmp_path: 
     assert any("witness ID" in issue.message for issue in result.errors)
 
 
+def test_yaml_dotted_bracketed_key_cannot_spoof_control_target_path(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "evidence-ledger.yml"
+    path.write_text(
+        '"claims[0].validation_expectation.control_targets[0].witness_id": period-alpha\n',
+        encoding="utf-8",
+    )
+
+    result = collect_leakage_issues(
+        [path], forbidden_witness_ids={"period-alpha"}, forbidden_passages=[]
+    )
+
+    assert any("witness ID" in issue.message for issue in result.errors)
+
+
 def test_period_controls_require_exact_claim_and_comparison_sections() -> None:
     comparison = ControlComparison.model_validate(
         {
@@ -3931,15 +3948,27 @@ def _prepare_committed_candidate_fixture(
     return story, candidate_commit
 
 
-def _replace_validation_step(story: Path, step: str) -> None:
+def _read_validation_payload(story: Path) -> dict[str, object]:
     path = story / "source-study/validation.md"
-    text = path.read_text(encoding="utf-8")
-    payload = yaml.safe_load(text.split("---", 2)[1])
-    payload["validation_step"] = step
-    path.write_text(
-        "---\n" + yaml.safe_dump(payload, sort_keys=False) + "---\n\n# Synthetic validation\n",
+    return yaml.safe_load(path.read_text(encoding="utf-8").split("---", 2)[1])
+
+
+def _write_validation_payload(
+    story: Path,
+    payload: dict[str, object],
+    *,
+    heading: str = "# Synthetic validation",
+) -> None:
+    (story / "source-study/validation.md").write_text(
+        "---\n" + yaml.safe_dump(payload, sort_keys=False) + f"---\n\n{heading}\n",
         encoding="utf-8",
     )
+
+
+def _replace_validation_step(story: Path, step: str) -> None:
+    payload = _read_validation_payload(story)
+    payload["validation_step"] = step
+    _write_validation_payload(story, payload)
     root = story.parents[1]
     subprocess.run(["git", "add", "stories/fixture/source-study/validation.md"], cwd=root, check=True)
     subprocess.run(["git", "commit", "-qm", f"set validation step {step}"], cwd=root, check=True)
@@ -3951,11 +3980,9 @@ def _commit_fixture_validation(story: Path, message: str = "update validation fi
     subprocess.run(["git", "commit", "-qm", message], cwd=root, check=True)
 
 
-def _complete_committed_candidate_fixture(root: Path) -> Path:
-    story, candidate_commit = _prepare_committed_candidate_fixture(root, with_claim=True)
-    candidate_ledger_hash = _sha256(story / "source-study/evidence-ledger.yml")
-    candidate_analysis_hash = _sha256(story / "source-study/analysis.yml")
-    candidate_manifest_hash = _sha256(story / "source-study/holdouts.yml")
+def _validation_fixture_records(
+    root: Path, story: Path
+) -> tuple[PassageRecord, PassageRecord]:
     heldout_index = read_passage_index(root / "build/fixture/source-study/indexes/heldout-wells.jsonl")
     control_index = read_passage_index(root / "build/fixture/source-study/indexes/tier4-controls.jsonl")
     manifest = HoldoutManifest.model_validate(
@@ -3970,13 +3997,69 @@ def _complete_committed_candidate_fixture(root: Path) -> Path:
     }
     heldout = next(item for item in heldout_index if item.passage_id in heldout_ids)
     control = next(item for item in control_index if item.witness_id == "tier-four")
+    return heldout, control
+
+
+def _heldout_fixture_result(heldout: PassageRecord) -> dict[str, object]:
+    return {
+        "id": "heldout-fixture-claim",
+        "claim_id": "fixture-claim",
+        "expectation_target_id": "heldout-fixture",
+        "witness_id": heldout.witness_id,
+        "role": "wells-alpha role",
+        "passage_ids": [heldout.passage_id],
+        "assessment": "qualifies",
+        "observed_tendency": "The bounded tendency is present with synthetic variation.",
+        "notes": "Synthetic held-out assessment.",
+    }
+
+
+def _control_fixture_comparison(control: PassageRecord) -> dict[str, object]:
+    return {
+        "id": "control-fixture-claim",
+        "claim_id": "fixture-claim",
+        "expectation_target_id": "control-fixture",
+        "witness_id": control.witness_id,
+        "role": "tier-four role",
+        "passage_ids": [control.passage_id],
+        "comparison": "The negative control provides comparative material and does not authorize positive use.",
+        "result": "not_shared",
+        "notes": "Synthetic control comparison.",
+    }
+
+
+def _record_heldout_assessed(story: Path) -> None:
+    root = story.parents[1]
+    heldout, control = _validation_fixture_records(root, story)
+    validation = _read_validation_payload(story)
+    validation.update(
+        {
+            "validation_step": "heldout_assessed",
+            "holdout_summary": "Held-out result was recorded for the original candidate claim.",
+            "control_summary": "A comparative control result was recorded only after held-out assessment.",
+            "heldout_claim_results": [_heldout_fixture_result(heldout)],
+            "control_comparisons": [_control_fixture_comparison(control)],
+        }
+    )
+    _write_validation_payload(story, validation)
+    _commit_fixture_validation(story, "record held-out assessment")
+
+
+def _record_complete(story: Path) -> None:
+    root = story.parents[1]
+    heldout, control = _validation_fixture_records(root, story)
     ledger_path = story / "source-study/evidence-ledger.yml"
     ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
     ledger["stage"] = "validated"
     ledger["claims"][0]["status"] = "qualified"
     ledger["claims"][0]["confidence"] = "moderate"
     ledger_path.write_text(yaml.safe_dump(ledger, sort_keys=False), encoding="utf-8")
-    analysis_path = story / "source-study/analysis.yml"
+    profile_path = story / "source-study/wells-profile.md"
+    profile_path.write_text(
+        profile_path.read_text(encoding="utf-8")
+        + "\n## Final reviewed synthesis\n\nThe synthetic final profile records the reviewed boundary.\n",
+        encoding="utf-8",
+    )
     (story / "source-study/period-controls.md").write_text(
         "# Period Controls\n\n"
         "## Claim `fixture-claim`\n\n"
@@ -3985,78 +4068,63 @@ def _complete_committed_candidate_fixture(root: Path) -> Path:
         encoding="utf-8",
     )
     subprocess.run(
-        ["git", "add", "stories/fixture/source-study/evidence-ledger.yml", "stories/fixture/source-study/period-controls.md"],
+        [
+            "git",
+            "add",
+            "stories/fixture/source-study/evidence-ledger.yml",
+            "stories/fixture/source-study/wells-profile.md",
+            "stories/fixture/source-study/period-controls.md",
+        ],
         cwd=root,
         check=True,
     )
-    subprocess.run(["git", "commit", "-qm", "record validated ledger"], cwd=root, check=True)
-    profile_hash = _sha256(story / "source-study/wells-profile.md")
-    ledger_hash = _sha256(ledger_path)
-    validation = {
-        "schema_version": 1,
-        "study_id": "fixture-wells-phase-2b",
-        "stage": "validated",
-        "validation_step": "complete",
-        "candidate_commit": candidate_commit,
-        "candidate_analysis_sha256": candidate_analysis_hash,
-        "candidate_manifest_sha256": candidate_manifest_hash,
-        "candidate_profile_sha256": _sha256(story / "source-study/wells-profile.md"),
-        "candidate_ledger_sha256": candidate_ledger_hash,
-        "holdout_summary": "Held-out result was recorded for the original candidate claim.",
-        "control_summary": "A negative/comparative control result was recorded for the original candidate claim.",
-        "reviewer_summary": "An independent synthetic reviewer record was recorded.",
-        "heldout_claim_results": [{
-            "id": "heldout-fixture-claim",
-            "claim_id": "fixture-claim",
-            "expectation_target_id": "heldout-fixture",
-            "witness_id": heldout.witness_id,
-            "role": "wells-alpha role",
-            "passage_ids": [heldout.passage_id],
-            "assessment": "qualifies",
-            "observed_tendency": "The bounded tendency is present with synthetic variation.",
-            "notes": "Synthetic held-out assessment.",
-        }],
-        "control_comparisons": [{
-            "id": "control-fixture-claim",
-            "claim_id": "fixture-claim",
-            "expectation_target_id": "control-fixture",
-            "witness_id": control.witness_id,
-            "role": "tier-four role",
-            "passage_ids": [control.passage_id],
-            "comparison": "The negative control provides comparative material and does not authorize positive use.",
-            "result": "not_shared",
-            "notes": "Synthetic control comparison.",
-        }],
-        "reviewer_records": [{
-            "id": "reviewer-fixture-claim",
-            "claim_id": "fixture-claim",
-            "reviewer_id": "synthetic-reviewer",
-            "outcome": "qualified",
-            "heldout_result_ids": ["heldout-fixture-claim"],
-            "control_comparison_ids": ["control-fixture-claim"],
-            "notes": "The claim is retained with a bounded qualification.",
-        }],
-        "claim_transitions": [{
-            "claim_id": "fixture-claim",
-            "from_status": "candidate",
-            "to_status": "qualified",
-            "from_confidence": "tentative",
-            "to_confidence": "moderate",
-            "reason": "Held-out, control, and reviewer records support a bounded qualification.",
-            "heldout_result_ids": ["heldout-fixture-claim"],
-            "control_comparison_ids": ["control-fixture-claim"],
-            "reviewer_record_ids": ["reviewer-fixture-claim"],
-        }],
-        "unresolved_uncertainty": "The synthetic result is limited to the declared witness and role.",
-        "final_profile_sha256": profile_hash,
-        "final_ledger_sha256": ledger_hash,
-    }
-    (story / "source-study/validation.md").write_text(
-        "---\n" + yaml.safe_dump(validation, sort_keys=False) + "---\n\n# Synthetic final validation\n",
-        encoding="utf-8",
+    subprocess.run(["git", "commit", "-qm", "record final profile and ledger"], cwd=root, check=True)
+    validation = _read_validation_payload(story)
+    validation.update(
+        {
+            "stage": "validated",
+            "validation_step": "complete",
+            "holdout_summary": "Held-out result was recorded for the original candidate claim.",
+            "control_summary": "A negative/comparative control result was recorded for the original candidate claim.",
+            "reviewer_summary": "An independent synthetic reviewer record was recorded.",
+            "heldout_claim_results": [_heldout_fixture_result(heldout)],
+            "control_comparisons": [_control_fixture_comparison(control)],
+            "reviewer_records": [
+                {
+                    "id": "reviewer-fixture-claim",
+                    "claim_id": "fixture-claim",
+                    "reviewer_id": "synthetic-reviewer",
+                    "outcome": "qualified",
+                    "heldout_result_ids": ["heldout-fixture-claim"],
+                    "control_comparison_ids": ["control-fixture-claim"],
+                    "notes": "The claim is retained with a bounded qualification.",
+                }
+            ],
+            "claim_transitions": [
+                {
+                    "claim_id": "fixture-claim",
+                    "from_status": "candidate",
+                    "to_status": "qualified",
+                    "from_confidence": "tentative",
+                    "to_confidence": "moderate",
+                    "reason": "Held-out, control, and reviewer records support a bounded qualification.",
+                    "heldout_result_ids": ["heldout-fixture-claim"],
+                    "control_comparison_ids": ["control-fixture-claim"],
+                    "reviewer_record_ids": ["reviewer-fixture-claim"],
+                }
+            ],
+            "unresolved_uncertainty": "The synthetic result is limited to the declared witness and role.",
+            "final_profile_sha256": _sha256(profile_path),
+            "final_ledger_sha256": _sha256(ledger_path),
+        }
     )
-    subprocess.run(["git", "add", "stories/fixture/source-study/validation.md"], cwd=root, check=True)
-    subprocess.run(["git", "commit", "-qm", "record final validation"], cwd=root, check=True)
+    _write_validation_payload(story, validation, heading="# Synthetic final validation")
+    _commit_fixture_validation(story, "record final validation")
+
+
+def _complete_committed_candidate_fixture(root: Path) -> Path:
+    story, _candidate_commit = _prepare_committed_candidate_fixture(root, with_claim=True)
+    _record_complete(story)
     return story
 
 
@@ -4398,3 +4466,514 @@ def test_validate_candidate_preflight_rejects_unreachable_commit_without_quarant
     finally:
         monkeypatch.undo()
     assert reads == []
+
+
+def _genuine_freeze(root: Path) -> source_validation.VerifiedFreeze:
+    source_validation._read_bound_partition = source_analysis._read_bound_partition
+    return source_validation._freeze_from_preflight(
+        source_validation._preflight_validation(root, "fixture")
+    )
+
+
+def test_zero_claim_frozen_production_capability_cannot_authorize_controls(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _prepare_committed_candidate_fixture(tmp_path)
+    freeze = _genuine_freeze(tmp_path)
+    read_trace: list[str] = []
+    real_reader = source_validation._read_bound_partition
+
+    def trace_reader(*args: object, **kwargs: object) -> list[PassageRecord]:
+        read_trace.append(str(kwargs["expected_partition"]))
+        return real_reader(*args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(source_validation, "_read_bound_partition", trace_reader)
+    heldout = source_validation.open_heldout_wells(freeze)
+
+    with pytest.raises(CreativeWriterError, match="before complete held-out assessment"):
+        source_validation.authorize_control_access(freeze, heldout)
+
+    assert read_trace == ["heldout_wells"]
+
+
+def test_verified_freeze_exposes_no_manifest_or_control_path(tmp_path: Path) -> None:
+    _prepare_committed_candidate_fixture(tmp_path)
+
+    freeze = _genuine_freeze(tmp_path)
+
+    assert not hasattr(freeze, "manifest_path")
+    assert not hasattr(freeze, "control_index_path")
+    assert not hasattr(freeze, "control_index_binding")
+    assert {item.witness_id for item in freeze.heldout_witnesses} == set(
+        freeze.heldout_index_binding.witness_ids
+    )
+
+
+def test_control_authorization_rereads_pinned_candidate_manifest_after_head_drift(
+    tmp_path: Path,
+) -> None:
+    story, _ = _prepare_committed_candidate_fixture(tmp_path)
+    _replace_validation_step(story, "heldout_assessed")
+    freeze = _genuine_freeze(tmp_path)
+    heldout = source_validation.open_heldout_wells(freeze)
+    manifest_path = story / "source-study/holdouts.yml"
+    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    manifest["tier4_control_passage_index"]["sha256"] = "0" * 64
+    manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+    subprocess.run(
+        ["git", "add", "stories/fixture/source-study/holdouts.yml"],
+        cwd=tmp_path,
+        check=True,
+    )
+    subprocess.run(
+        ["git", "commit", "-qm", "drift current control binding"],
+        cwd=tmp_path,
+        check=True,
+    )
+
+    access = source_validation.authorize_control_access(freeze, heldout)
+    controls = source_validation.open_tier4_controls(access)
+
+    assert controls.records
+    assert access.control_index_binding.sha256 != "0" * 64
+
+
+def test_production_entrypoint_runs_full_committed_validation_lifecycle(
+    tmp_path: Path,
+) -> None:
+    story, candidate_commit = _prepare_committed_candidate_fixture(
+        tmp_path, with_claim=True
+    )
+
+    frozen = run_source_analysis(tmp_path, "fixture", "validate")
+    frozen_metrics = json.loads(
+        frozen.generated_paths["validation_metrics"].read_text(encoding="utf-8")
+    )
+    assert "tier4_controls" not in frozen_metrics
+
+    _record_heldout_assessed(story)
+    assessed = run_source_analysis(tmp_path, "fixture", "validate")
+    assessed_metrics = json.loads(
+        assessed.generated_paths["validation_metrics"].read_text(encoding="utf-8")
+    )
+    assert assessed_metrics["tier4_controls"]["partition"] == "tier4_controls"
+
+    _record_complete(story)
+    complete = run_source_analysis(tmp_path, "fixture", "validate")
+    reused = run_source_analysis(tmp_path, "fixture", "validate")
+
+    assert complete.generation_id == reused.generation_id
+    assert complete.generation_id not in {frozen.generation_id, assessed.generation_id}
+    assert "Claim transitions" in complete.generated_paths["analysis_report"].read_text(
+        encoding="utf-8"
+    )
+    assert int(
+        subprocess.run(
+            ["git", "rev-list", "--count", f"{candidate_commit}..HEAD"],
+            cwd=tmp_path,
+            check=True,
+            text=True,
+            capture_output=True,
+        ).stdout
+    ) >= 4
+
+
+def test_final_profile_and_ledger_may_diverge_while_transitions_use_candidate_blobs(
+    tmp_path: Path,
+) -> None:
+    story = _complete_committed_candidate_fixture(tmp_path)
+    validation = _read_validation_payload(story)
+    candidate_commit = str(validation["candidate_commit"])
+
+    for relative in (
+        "stories/fixture/source-study/wells-profile.md",
+        "stories/fixture/source-study/evidence-ledger.yml",
+    ):
+        candidate_blob = subprocess.run(
+            ["git", "show", f"{candidate_commit}:{relative}"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        ).stdout
+        head_blob = subprocess.run(
+            ["git", "show", f"HEAD:{relative}"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        ).stdout
+        assert candidate_blob != head_blob
+
+    result = run_source_analysis(tmp_path, "fixture", "validate")
+
+    assert result.generation_id
+
+
+@pytest.mark.parametrize(
+    ("mismatch", "expected_message"),
+    [
+        ("profile", "Final profile SHA-256"),
+        ("ledger", "Final ledger SHA-256"),
+    ],
+)
+def test_final_profile_and_ledger_hashes_precede_final_ledger_parse(
+    tmp_path: Path,
+    mismatch: str,
+    expected_message: str,
+) -> None:
+    story = _complete_committed_candidate_fixture(tmp_path)
+    ledger_path = story / "source-study/evidence-ledger.yml"
+    ledger_path.write_bytes(b"\xffinvalid final ledger")
+    subprocess.run(
+        ["git", "add", "stories/fixture/source-study/evidence-ledger.yml"],
+        cwd=tmp_path,
+        check=True,
+    )
+    subprocess.run(
+        ["git", "commit", "-qm", "record malformed final ledger"],
+        cwd=tmp_path,
+        check=True,
+    )
+    validation = _read_validation_payload(story)
+    validation["final_profile_sha256"] = (
+        "0" * 64
+        if mismatch == "profile"
+        else _sha256(story / "source-study/wells-profile.md")
+    )
+    validation["final_ledger_sha256"] = (
+        "0" * 64 if mismatch == "ledger" else _sha256(ledger_path)
+    )
+    _write_validation_payload(story, validation, heading="# Synthetic final validation")
+    _commit_fixture_validation(story, f"record {mismatch} hash mismatch")
+
+    with pytest.raises(CreativeWriterError, match=expected_message):
+        run_source_analysis(tmp_path, "fixture", "validate")
+
+
+def _swap_same_count_manifest_membership(manifest_path: Path) -> None:
+    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    witness = next(
+        item
+        for item in manifest["witnesses"]
+        if item["development_windows"] and item["holdout_windows"]
+    )
+    development_ids = witness["development_windows"][0]["passage_ids"]
+    holdout_ids = witness["holdout_windows"][0]["passage_ids"]
+    before_counts = (len(development_ids), len(holdout_ids))
+    development_ids[0], holdout_ids[0] = holdout_ids[0], development_ids[0]
+    assert (len(development_ids), len(holdout_ids)) == before_counts
+    manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+
+
+@pytest.mark.parametrize("final_stage", [False, True], ids=["candidate", "final"])
+@pytest.mark.parametrize("artifact", ["analysis", "manifest"])
+def test_production_rejects_clean_head_analysis_or_manifest_drift_after_freeze(
+    tmp_path: Path,
+    final_stage: bool,
+    artifact: str,
+) -> None:
+    story = (
+        _complete_committed_candidate_fixture(tmp_path)
+        if final_stage
+        else _prepare_committed_candidate_fixture(tmp_path)[0]
+    )
+    if artifact == "analysis":
+        path = story / "source-study/analysis.yml"
+        analysis = yaml.safe_load(path.read_text(encoding="utf-8"))
+        analysis["partition"]["seed"] = "post-freeze-drift"
+        path.write_text(yaml.safe_dump(analysis, sort_keys=False), encoding="utf-8")
+    else:
+        path = story / "source-study/holdouts.yml"
+        _swap_same_count_manifest_membership(path)
+    relative = path.relative_to(tmp_path).as_posix()
+    subprocess.run(["git", "add", relative], cwd=tmp_path, check=True)
+    subprocess.run(
+        ["git", "commit", "-qm", f"drift {artifact} after freeze"],
+        cwd=tmp_path,
+        check=True,
+    )
+
+    with pytest.raises(CreativeWriterError, match="differs from candidate blob"):
+        run_source_analysis(tmp_path, "fixture", "validate")
+
+
+@pytest.mark.parametrize("path_state", ["dirty", "staged"])
+def test_production_rejects_dirty_or_staged_candidate_path(
+    tmp_path: Path,
+    path_state: str,
+) -> None:
+    story, _ = _prepare_committed_candidate_fixture(tmp_path)
+    analysis_path = story / "source-study/analysis.yml"
+    analysis_path.write_text(
+        analysis_path.read_text(encoding="utf-8") + "\n",
+        encoding="utf-8",
+    )
+    if path_state == "staged":
+        subprocess.run(
+            ["git", "add", "stories/fixture/source-study/analysis.yml"],
+            cwd=tmp_path,
+            check=True,
+        )
+
+    with pytest.raises(CreativeWriterError, match="dirty or staged"):
+        run_source_analysis(tmp_path, "fixture", "validate")
+
+
+@pytest.mark.parametrize(
+    "commit_case",
+    ["malformed_length", "uppercase", "noncommit", "not_ancestor"],
+)
+def test_candidate_commit_shape_and_ancestry_fail_through_production_entrypoint(
+    tmp_path: Path,
+    commit_case: str,
+) -> None:
+    story, candidate_commit = _prepare_committed_candidate_fixture(tmp_path)
+    validation = _read_validation_payload(story)
+    if commit_case == "malformed_length":
+        replacement = candidate_commit[:-1]
+    elif commit_case == "uppercase":
+        replacement = candidate_commit.upper()
+    elif commit_case == "noncommit":
+        replacement = subprocess.run(
+            [
+                "git",
+                "rev-parse",
+                f"{candidate_commit}:stories/fixture/source-study/analysis.yml",
+            ],
+            cwd=tmp_path,
+            check=True,
+            text=True,
+            capture_output=True,
+        ).stdout.strip()
+    else:
+        subprocess.run(
+            ["git", "checkout", "-qb", "non-ancestor-candidate", candidate_commit],
+            cwd=tmp_path,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "commit", "--allow-empty", "-qm", "descendant candidate"],
+            cwd=tmp_path,
+            check=True,
+        )
+        replacement = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=tmp_path,
+            check=True,
+            text=True,
+            capture_output=True,
+        ).stdout.strip()
+        subprocess.run(["git", "checkout", "-q", "main"], cwd=tmp_path, check=True)
+    validation["candidate_commit"] = replacement
+    _write_validation_payload(story, validation)
+    _commit_fixture_validation(story, f"record {commit_case} candidate")
+
+    with pytest.raises(CreativeWriterError, match="candidate|Candidate|commit|Git preflight"):
+        run_source_analysis(tmp_path, "fixture", "validate")
+
+
+def test_candidate_commit_equal_to_head_fails_through_production_entrypoint(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _story, candidate_commit = _prepare_committed_candidate_fixture(tmp_path)
+    real_git_stdout = source_validation._git_stdout
+
+    def equal_head(root: Path, arguments: list[str]) -> str:
+        if arguments == ["rev-parse", "--verify", "--quiet", "HEAD"]:
+            return candidate_commit + "\n"
+        return real_git_stdout(root, arguments)
+
+    monkeypatch.setattr(source_validation, "_git_stdout", equal_head)
+
+    with pytest.raises(CreativeWriterError, match="older than|equal to HEAD"):
+        run_source_analysis(tmp_path, "fixture", "validate")
+
+
+@pytest.mark.parametrize("tree_shape", ["missing", "symlink", "gitlink"])
+def test_candidate_blob_tree_shape_fails_through_production_entrypoint(
+    tmp_path: Path,
+    tree_shape: str,
+) -> None:
+    story, _ = _prepare_committed_candidate_fixture(tmp_path)
+    relative = "stories/fixture/source-study/holdouts.yml"
+    manifest_path = tmp_path / relative
+    original = manifest_path.read_bytes()
+    if tree_shape == "missing":
+        subprocess.run(["git", "rm", "-q", "--", relative], cwd=tmp_path, check=True)
+    elif tree_shape == "symlink":
+        manifest_path.unlink()
+        manifest_path.symlink_to("missing-holdouts.yml")
+        subprocess.run(["git", "add", relative], cwd=tmp_path, check=True)
+    else:
+        commit_object = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=tmp_path,
+            check=True,
+            text=True,
+            capture_output=True,
+        ).stdout.strip()
+        subprocess.run(
+            [
+                "git",
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                f"160000,{commit_object},{relative}",
+            ],
+            cwd=tmp_path,
+            check=True,
+        )
+    subprocess.run(
+        ["git", "commit", "-qm", f"record {tree_shape} candidate manifest"],
+        cwd=tmp_path,
+        check=True,
+    )
+    bad_candidate = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=tmp_path,
+        check=True,
+        text=True,
+        capture_output=True,
+    ).stdout.strip()
+
+    if manifest_path.is_symlink():
+        manifest_path.unlink()
+    if tree_shape == "gitlink":
+        subprocess.run(
+            ["git", "rm", "-qf", "--cached", "--", relative],
+            cwd=tmp_path,
+            check=True,
+        )
+    manifest_path.write_bytes(original)
+    subprocess.run(["git", "add", relative], cwd=tmp_path, check=True)
+    subprocess.run(
+        ["git", "commit", "-qm", "restore regular candidate manifest"],
+        cwd=tmp_path,
+        check=True,
+    )
+    validation = _read_validation_payload(story)
+    validation["candidate_commit"] = bad_candidate
+    _write_validation_payload(story, validation)
+    _commit_fixture_validation(story, f"point at {tree_shape} candidate manifest")
+
+    with pytest.raises(CreativeWriterError, match="tracked entry|regular Git blob"):
+        run_source_analysis(tmp_path, "fixture", "validate")
+
+
+_VALID_PERIOD_CONTROLS = (
+    "# Period Controls\n\n"
+    "## Claim `fixture-claim`\n\n"
+    "### Comparison `control-fixture-claim`\n\n"
+    "The negative control remains comparative.\n"
+)
+
+
+@pytest.mark.parametrize(
+    ("section_case", "content"),
+    [
+        ("missing", "# Period Controls\n"),
+        (
+            "extra",
+            _VALID_PERIOD_CONTROLS
+            + "\n## Claim `extra-claim`\n\n### Comparison `extra-comparison`\n\nExtra prose.\n",
+        ),
+        (
+            "duplicate",
+            _VALID_PERIOD_CONTROLS
+            + "\n### Comparison `control-fixture-claim`\n\nDuplicate prose.\n",
+        ),
+        (
+            "misassociated",
+            "# Period Controls\n\n## Claim `other-claim`\n\n"
+            "### Comparison `control-fixture-claim`\n\nComparative prose.\n",
+        ),
+        (
+            "malformed",
+            "# Period Controls\n\n## Claim fixture-claim\n\n"
+            "### Comparison `control-fixture-claim`\n\nComparative prose.\n",
+        ),
+        (
+            "empty",
+            "# Period Controls\n\n## Claim `fixture-claim`\n\n"
+            "### Comparison `control-fixture-claim`\n",
+        ),
+    ],
+)
+def test_period_control_section_matrix_fails_through_production_entrypoint(
+    tmp_path: Path,
+    section_case: str,
+    content: str,
+) -> None:
+    story = _complete_committed_candidate_fixture(tmp_path)
+    controls_path = story / "source-study/period-controls.md"
+    controls_path.write_text(content, encoding="utf-8")
+    subprocess.run(
+        ["git", "add", "stories/fixture/source-study/period-controls.md"],
+        cwd=tmp_path,
+        check=True,
+    )
+    subprocess.run(
+        ["git", "commit", "-qm", f"record {section_case} period controls"],
+        cwd=tmp_path,
+        check=True,
+    )
+
+    with pytest.raises(CreativeWriterError, match="period-control|Period-control"):
+        run_source_analysis(tmp_path, "fixture", "validate")
+
+
+def test_production_validation_cleans_stale_staging_before_generation_reuse(
+    tmp_path: Path,
+) -> None:
+    _complete_committed_candidate_fixture(tmp_path)
+    first = run_source_analysis(tmp_path, "fixture", "validate")
+    generations = tmp_path / "build/fixture/source-study/validation/generations"
+    stale = generations / ".staging-abandoned"
+    stale.mkdir()
+    (stale / "partial").write_text("partial", encoding="utf-8")
+
+    reused = run_source_analysis(tmp_path, "fixture", "validate")
+
+    assert reused.generation_id == first.generation_id
+    assert not stale.exists()
+
+
+def test_production_validation_rejects_symlinked_generations_directory(
+    tmp_path: Path,
+) -> None:
+    _prepare_committed_candidate_fixture(tmp_path)
+    validation_root = tmp_path / "build/fixture/source-study/validation"
+    validation_root.mkdir(parents=True)
+    outside = tmp_path / "outside-generations"
+    outside.mkdir()
+    (validation_root / "generations").symlink_to(outside, target_is_directory=True)
+
+    with pytest.raises(CreativeWriterError, match="regular directory|symlink"):
+        run_source_analysis(tmp_path, "fixture", "validate")
+
+
+@pytest.mark.parametrize(
+    ("link_case", "expected_message"),
+    [
+        ("target", "unknown expectation target"),
+        ("reviewer", "complete held-out result set"),
+        ("transition", "does not reference all reviewer records"),
+    ],
+)
+def test_invalid_target_reviewer_and_transition_links_fail_at_production_boundary(
+    tmp_path: Path,
+    link_case: str,
+    expected_message: str,
+) -> None:
+    story = _complete_committed_candidate_fixture(tmp_path)
+    validation = _read_validation_payload(story)
+    if link_case == "target":
+        validation["control_comparisons"][0]["expectation_target_id"] = "missing-target"  # type: ignore[index]
+    elif link_case == "reviewer":
+        validation["reviewer_records"][0]["heldout_result_ids"] = ["missing-heldout"]  # type: ignore[index]
+    else:
+        validation["claim_transitions"][0]["reviewer_record_ids"] = ["missing-reviewer"]  # type: ignore[index]
+    _write_validation_payload(story, validation, heading="# Synthetic final validation")
+    _commit_fixture_validation(story, f"record invalid {link_case} link")
+
+    with pytest.raises(CreativeWriterError, match=expected_message):
+        run_source_analysis(tmp_path, "fixture", "validate")

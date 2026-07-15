@@ -1,0 +1,159 @@
+schema_version: 1
+study_id: time-expedition-wells-phase-2b
+composition_window:
+  start: 1895
+  end: 1899
+study_status: protocol
+admission_registry:
+  path: source-study/admission.yml
+  sha256: 2ce57a2f427e4266fde6525f67508f966adf3daf4094d8dda50f567c7ab0ef3c
+source_registry:
+  path: original/sources.yml
+  sha256: a5ae71f7f2437e3309ab7ff638388c7623214fd095544ff6470cdb7ad34e9677
+authority_policy_version: phase-2a-v1
+authority_tiers:
+  - tier: 1
+    jurisdiction: "Continuity, frame, reported testimony, the Time Traveller, and primary voice evidence."
+    analytical_roles: [continuity, frame architecture, reported first-person account, speculative method]
+    evidence_rule: "Sole continuity authority and primary Wells style authority."
+  - tier: 2
+    jurisdiction: "Bounded fictional evidence for dialogue, social interaction, scientific argument, catastrophe, observation, moral pressure, and short-form architecture."
+    analytical_roles:
+      - sustained dialogue
+      - social register
+      - comic friction
+      - crowd response
+      - retrospective first-person narration
+      - scientific argument
+      - moral pressure
+      - dialogue under stress
+      - catastrophe
+      - landscape observation
+      - public behaviour
+      - evidence-to-speculation movement
+      - short-form architecture
+      - testimony
+      - biological danger
+      - scientific mystery
+      - cosmic catastrophe
+    evidence_rule: "Bounded Wells evidence only within declared analytical roles; no continuity authority."
+  - tier: 3
+    jurisdiction: "Bounded nonfiction evidence for explanation, scientific vocabulary, classification, analogy, humour, and period idiom."
+    analytical_roles: [essay voice, humour, conversation, microscopic observation, biological terminology, instructional exposition, comparison and classification]
+    evidence_rule: "Nonfiction comparison only within declared roles; no fictional continuity or direct voice prescription."
+  - tier: 4
+    jurisdiction: "Negative and comparative controls for period convention, generic adventure, sensationalism, neighbouring voices, and false Victorianism."
+    analytical_roles:
+      - scientific-romance control
+      - time-visitor premise
+      - social satire
+      - adventure control
+      - group dialogue
+      - danger pacing
+      - technical-work control
+      - professional dialogue
+      - imperial register
+      - machinery
+      - sensational-fiction control
+      - multiple narrators
+      - London danger
+      - horror escalation
+      - adventure motivation
+      - expedition assembly
+      - discovery sequence
+      - danger escalation
+      - journey architecture
+      - period framing of mysterious travel
+    evidence_rule: "Control evidence only; never positive Wells style or continuity authority."
+  - tier: 5
+    jurisdiction: "Excluded and unacquired material."
+    analytical_roles: [post-window diagnostic, anachronistic adventure architecture, later lost-world idiom]
+    evidence_rule: "No retained artifact, passage evidence, or positive authority."
+passage_rules:
+  input_format: gfm
+  heading_context: true
+  substantive_block_types: [paragraph, block_quote, verse, list_item]
+  passage_id_template: "<witness-id>:<heading-slug>:<source-ordinal>:<hash12>"
+  context_radius: 2
+partition:
+  seed: wells-phase-2b-v1
+  algorithm_version: tertile-hash-v1
+  holdout_fraction: 0.2
+  max_blocks_per_window: 5
+  whole_work_holdouts: [selected-short-fiction/the-star]
+enabled_measurements:
+  - word_count
+  - sentence_count
+  - paragraph_length_distribution
+  - direct_dialogue_proportion
+  - speech_attribution_verbs
+  - reporting_verbs
+  - pronoun_frequencies
+  - modal_and_epistemic_markers
+  - function_words
+  - function_word_bigrams
+  - paragraph_openings
+  - transitions
+  - lexical_concentration
+  - block_type_proportions
+lexicons:
+  reporting_verbs: [said, asked, replied, answered, remarked, observed, exclaimed, cried]
+  speech_attribution_verbs: [said, asked, replied, answered, remarked, exclaimed, cried]
+  modal_verbs: [can, could, may, might, must, shall, should, will, would]
+  epistemic_markers: [perhaps, probably, possibly, apparently, evidently, seemed, suppose, conjecture]
+  function_words: [the, a, an, and, but, if, in, of, "on", to, with]
+  transition_markers: [however, therefore, presently, meanwhile, afterwards, consequently]
+dimensions:
+  - id: frame-architecture
+    label: "Frame architecture and reported testimony"
+    roles: [continuity, frame architecture, reported first-person account, testimony]
+    description: "Frames, reported accounts, testimony, and the authority of the speaking situation."
+  - id: narrator-distance
+    label: "Narrator distance, focalisation, and mediation"
+    roles: [reported first-person account, retrospective first-person narration, essay voice]
+    description: "Narrative distance, focalisation, mediation, and shifts among observing voices."
+  - id: observation-inference
+    label: "Observation, inference, speculation, and self-correction"
+    roles: [speculative method, evidence-to-speculation movement, microscopic observation, landscape observation]
+    description: "Movements from observed detail through inference, speculation, qualification, or correction."
+  - id: scientific-exposition
+    label: "Scientific exposition, analogy, qualification, and uncertainty"
+    roles: [speculative method, scientific argument, instructional exposition, comparison and classification, biological terminology]
+    description: "Scientific explanation, analogy, classification, qualification, and uncertainty."
+  - id: dialogue-social-friction
+    label: "Dialogue, speech attribution, class, and social friction"
+    roles: [sustained dialogue, dialogue under stress, social register, comic friction, conversation]
+    description: "Dialogue structure, speech attribution, social register, class, and friction among speakers."
+  - id: syntax-rhythm
+    label: "Syntax, rhythm, punctuation, and paragraph movement"
+    roles: [reported first-person account, sustained dialogue, essay voice, professional dialogue]
+    description: "Sentence movement, punctuation, rhythm, paragraph scale, and block-to-block motion."
+  - id: diction-description
+    label: "Diction, figurative language, and descriptive selectivity"
+    roles: [primary voice evidence, landscape observation, microscopic observation, biological terminology]
+    description: "Lexical selection, figurative language, concrete description, and descriptive omission."
+  - id: suspense-scene-pressure
+    label: "Suspense, revelation, danger, and scene pressure"
+    roles: [catastrophe, biological danger, danger escalation, horror escalation]
+    description: "Threat, revelation, danger, scene pressure, and the timing of information."
+  - id: humour-irony
+    label: "Humour, irony, tonal shifts, and controlled awkwardness"
+    roles: [comic friction, humour, conversation, social satire]
+    description: "Humour, irony, tonal movement, comic friction, and retained awkwardness."
+  - id: transitions-ending-logic
+    label: "Transitions, compression, reflection, and ending logic"
+    roles: [short-form architecture, testimony, journey architecture, discovery sequence, frame architecture]
+    description: "Transitions, compression, reflection, return, closure, and ending structure."
+confidence_levels: [tentative, moderate, strong]
+claim_statuses: [candidate, qualified, rejected, validated]
+claim_classifications: [wells_distinctive, wells_characteristic_but_shared, role_specific, period_general, unsupported]
+evidence_roles: [support, counterexample, variation, control, validation]
+generated_paths:
+  corpus_lock: build/time-expedition/source-study/corpus-lock.json
+  passage_index: build/time-expedition/source-study/passage-index.jsonl
+  development_metrics: build/time-expedition/source-study/development-metrics.json
+  development_metrics_csv: build/time-expedition/source-study/development-metrics.csv
+  development_report: build/time-expedition/source-study/development-report.md
+  validation_metrics: build/time-expedition/source-study/validation-metrics.json
+  validation_packet: build/time-expedition/source-study/validation-packet.md
+  analysis_report: build/time-expedition/source-study/analysis-report.md

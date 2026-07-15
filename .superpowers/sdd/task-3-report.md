@@ -159,3 +159,89 @@ The real tracked `holdouts.yml` remains absent by deliberate scope: Task 8 owns
 that generated repository artifact. The implementation was therefore verified
 against a full temporary copy of the real corpus plus the synthetic fixture;
 the final Task 8 run will create the tracked manifest through this same API.
+
+## Review-closure addendum
+
+The Phase 2B Task 3 review findings are fixed in implementation/config/tests
+commit `f0ff5ea` (`fix: close Phase 2B Task 3 review findings`). The report is
+being committed separately from that implementation commit.
+
+### Scope
+
+The closure commit changes only:
+
+- `src/creative_writer/source_analysis.py`
+- `src/creative_writer/source_analysis_models.py`
+- `tests/test_source_analysis.py`
+- `tests/test_source_analysis_models.py`
+- `stories/time-expedition/source-study/analysis.yml`
+
+`source_passages.py`, source/admission registries, CLI/Make files, evidence,
+style, planning, and manuscript files were not changed.
+
+### Findings fixed
+
+- Added strict story-local `expected_corpus` authority with exact counts,
+  ordered witness identities, excluded Tier 5 identities, and whole-work
+  holdouts. The real Time Expedition configuration declares 13/12/12/15/11/4,
+  all 15 witnesses in registry/selection order, `the-lost-world`, and
+  `selected-short-fiction/the-star`.
+- `prepare` now checks composition-window parity, derives exact per-tier role
+  unions from admission source and selection roles, validates the configured
+  corpus topology before parsing, and retains source-admission's per-source
+  tier/permitted/prohibited jurisdiction gate.
+- Generated paths have an exact eight-key schema and story-slug shape. Runtime
+  resolution uses `strict=False`, rejects symlink escapes, and stages only the
+  exact corpus-lock and passage-index targets during `prepare`.
+- `_commit_staged` now reports the original replacement failure together with
+  every removal, restoration, temporary-cleanup, and residual-backup error. An
+  un-restored backup is never deleted, and successful installs surface cleanup
+  failures.
+- Holdout selection tests now distinguish parent `source_id` hashing from a
+  selected witness ID, exercise exactly eight windows with two held out, and
+  use the corrected “partition windows” error wording.
+- `HoldoutManifest.created_at` requires an aware UTC timestamp with offset zero.
+  Existing-manifest reuse reconstructs and validates the complete payload with
+  the committed timestamp rather than using `model_copy`.
+
+### TDD and verification
+
+RED was recorded after adding the focused regressions and before implementing
+the fixes:
+
+```text
+uv run pytest tests/test_source_analysis.py -k 'prepare or holdout or corpus_lock' -q
+22 failed, 1 passed, 8 deselected
+```
+
+The failures were in the newly exercised expected-corpus/path/runtime and
+transaction boundaries against the pre-fix implementation.
+
+Focused GREEN:
+
+```text
+uv run pytest tests/test_source_analysis_models.py tests/test_source_analysis.py -q
+80 passed
+```
+
+Related source suites:
+
+```text
+uv run pytest tests/test_source_passages.py tests/test_source_admission.py -q
+79 passed
+```
+
+Full suite and mechanical checks:
+
+```text
+uv run pytest -q
+239 passed in 13.63s
+python3 -m compileall -q src tests
+git diff --check
+```
+
+A complete temporary copy of the real corpus completed `prepare` twice through
+Pandoc. The first run produced 15 witnesses and 12,541 passages and created
+the temporary manifest; the second returned
+`holdout_manifest_created=False` and `holdout_manifest_verified=True`. The
+real checkout still has no `stories/time-expedition/source-study/holdouts.yml`.

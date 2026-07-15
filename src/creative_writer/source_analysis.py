@@ -1583,22 +1583,60 @@ def _validation_metric_partition(
     return ValidationMetricPartition(partition=partition, witnesses=witnesses)
 
 
-def _validate_record_partitions(record: ValidationRecord, corpus: _ValidationCorpus) -> None:
+def _validate_record_partitions(
+    record: ValidationRecord,
+    corpus: _ValidationCorpus,
+    *,
+    candidate_claim_ids: set[str] | None = None,
+    include_controls: bool = True,
+) -> None:
+    """Validate authored validation references against already-open partitions."""
+
     by_id = {passage.passage_id: passage for passage in corpus.passages}
+    heldout_witness_ids = {
+        passage.witness_id for passage in corpus.passages if passage.passage_id in corpus.heldout_ids
+    }
     for result in record.heldout_claim_results:
-        if result.witness_id not in {passage.witness_id for passage in corpus.passages if passage.passage_id in corpus.heldout_ids}:
+        if candidate_claim_ids is not None and result.claim_id not in candidate_claim_ids:
+            raise CreativeWriterError(
+                f"Held-out result `{result.id}` references undeclared claim `{result.claim_id}`"
+            )
+        if result.witness_id not in heldout_witness_ids:
             raise CreativeWriterError(f"Held-out result `{result.id}` is outside the heldout_wells partition")
         if any(passage_id not in corpus.heldout_ids for passage_id in result.passage_ids):
             raise CreativeWriterError(f"Held-out result `{result.id}` references a non-held-out passage")
-        if any(passage_id not in by_id for passage_id in result.passage_ids):
+        passages = [by_id.get(passage_id) for passage_id in result.passage_ids]
+        if any(passage is None for passage in passages):
             raise CreativeWriterError(f"Held-out result `{result.id}` references an unresolved passage")
+        if any(passage.witness_id != result.witness_id for passage in passages if passage is not None):
+            raise CreativeWriterError(f"Held-out result `{result.id}` mixes witness passage IDs")
+        if corpus.witness_tiers.get(result.witness_id) != result.authority_tier:
+            raise CreativeWriterError(f"Held-out result `{result.id}` has the wrong authority tier")
+        if result.role not in corpus.witness_roles.get(result.witness_id, []):
+            raise CreativeWriterError(f"Held-out result `{result.id}` has an undeclared witness role")
+
+    if not include_controls:
+        return
+
+    control_witness_ids = {
+        passage.witness_id for passage in corpus.passages if passage.passage_id in corpus.control_ids
+    }
     for comparison in record.control_comparisons:
-        if comparison.witness_id not in {passage.witness_id for passage in corpus.passages if passage.passage_id in corpus.control_ids}:
+        if candidate_claim_ids is not None and comparison.claim_id not in candidate_claim_ids:
+            raise CreativeWriterError(
+                f"Control comparison `{comparison.id}` references undeclared claim `{comparison.claim_id}`"
+            )
+        if comparison.witness_id not in control_witness_ids:
             raise CreativeWriterError(f"Control comparison `{comparison.id}` is outside the tier4_controls partition")
         if any(passage_id not in corpus.control_ids for passage_id in comparison.passage_ids):
             raise CreativeWriterError(f"Control comparison `{comparison.id}` references a non-control passage")
-        if any(passage_id not in by_id for passage_id in comparison.passage_ids):
+        passages = [by_id.get(passage_id) for passage_id in comparison.passage_ids]
+        if any(passage is None for passage in passages):
             raise CreativeWriterError(f"Control comparison `{comparison.id}` references an unresolved passage")
+        if any(passage.witness_id != comparison.witness_id for passage in passages if passage is not None):
+            raise CreativeWriterError(f"Control comparison `{comparison.id}` mixes witness passage IDs")
+        if comparison.role not in corpus.witness_roles.get(comparison.witness_id, []):
+            raise CreativeWriterError(f"Control comparison `{comparison.id}` has an undeclared witness role")
 
 
 def _validation_packet(
@@ -1918,8 +1956,14 @@ def _validate(root: Path, slug: str) -> SourceAnalysisResult:
 
     if config.study_status == "candidate_frozen" and validation.validation_step == "heldout_assessed":
         _require_validation_treatment(validation, candidate_claims, require_controls=False, require_reviewers=False)
+        corpus = _load_validation_corpus(root, slug, config, include_controls=False)
+        _validate_record_partitions(
+            validation,
+            corpus,
+            candidate_claim_ids={claim.id for claim in candidate_claims},
+            include_controls=False,
+        )
         corpus = _load_validation_corpus(root, slug, config, include_controls=True)
-        _validate_record_partitions(validation, corpus)
         metrics = _build_validation_metrics(config, validation, generated_paths, corpus)
         _write_validation_outputs(
             generated_paths,
@@ -1932,8 +1976,19 @@ def _validate(root: Path, slug: str) -> SourceAnalysisResult:
     if config.study_status != "validated" or validation.validation_step != "complete":
         raise CreativeWriterError("Validation record must use frozen, heldout_assessed, or complete step for its configured stage")
     _require_validation_treatment(validation, candidate_claims, require_controls=True, require_reviewers=True)
+    heldout_corpus = _load_validation_corpus(root, slug, config, include_controls=False)
+    _validate_record_partitions(
+        validation,
+        heldout_corpus,
+        candidate_claim_ids={claim.id for claim in candidate_claims},
+        include_controls=False,
+    )
     corpus = _load_validation_corpus(root, slug, config, include_controls=True)
-    _validate_record_partitions(validation, corpus)
+    _validate_record_partitions(
+        validation,
+        corpus,
+        candidate_claim_ids={claim.id for claim in candidate_claims},
+    )
     story_dir = _story_path(root, slug)
     final_profile_path = story_dir / "source-study" / "wells-profile.md"
     final_ledger_path = story_dir / "source-study" / "evidence-ledger.yml"

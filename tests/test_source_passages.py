@@ -12,8 +12,10 @@ from creative_writer.source_analysis_models import PassageRecord, WitnessDescrip
 from creative_writer.source_passages import (
     context_window,
     parse_markdown_witness,
+    parse_passage_partition,
     partition_windows,
     read_passage_index,
+    serialize_passage_partition,
     write_passage_index,
 )
 
@@ -590,6 +592,75 @@ def test_canonical_partition_bytes_are_sorted_compact_and_strict(tmp_path: Path)
 
     with pytest.raises(CreativeWriterError, match="strictly increasing|non-canonical|exactly one LF"):
         parse(data.replace(b"\n", b"\n\n", 1))
+
+
+def test_partition_parser_rejects_bom_blank_and_noncanonical_json(
+    tmp_path: Path,
+) -> None:
+    markdown = tmp_path / "fixture.md"
+    markdown.write_text("# Heading\n\nFirst.\n\nSecond.\n", encoding="utf-8")
+    records = parse_markdown_witness(markdown, _witness())
+    data = serialize_passage_partition(records)
+
+    invalid = {
+        "BOM": b"\xef\xbb\xbf" + data,
+        "blank": data + b"\n",
+        "noncanonical": data.replace(b"{", b"{ ", 1),
+    }
+    for payload in invalid.values():
+        with pytest.raises(CreativeWriterError, match="BOM|blank|non-canonical|LF"):
+            parse_passage_partition(payload)
+
+
+def test_partition_parser_rejects_duplicate_record_id_and_reordered_ordinals(
+    tmp_path: Path,
+) -> None:
+    markdown = tmp_path / "fixture.md"
+    markdown.write_text("# Heading\n\nFirst.\n\nSecond.\n", encoding="utf-8")
+    records = parse_markdown_witness(markdown, _witness())
+    data = serialize_passage_partition(records)
+    lines = data.splitlines(keepends=True)
+
+    with pytest.raises(CreativeWriterError, match="duplicate passage ID"):
+        parse_passage_partition(data + lines[0])
+    with pytest.raises(CreativeWriterError, match="strictly increasing"):
+        parse_passage_partition(b"".join(reversed(lines)))
+
+    reordered_payload = records[1].model_dump(mode="json")
+    reordered_payload["source_ordinal"] = 1
+    reordered_payload["passage_id"] = (
+        f"{records[1].witness_id}:{'heading'}:1:{records[1].content_hash[:12]}"
+    )
+    reordered = json.dumps(
+        reordered_payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8") + b"\n"
+    with pytest.raises(CreativeWriterError, match="strictly increasing"):
+        parse_passage_partition(lines[0] + reordered)
+
+
+@pytest.mark.parametrize("field", ["content_hash", "passage_id", "source_id"])
+def test_partition_parser_rejects_invalid_passage_record_identity_or_hash(
+    tmp_path: Path, field: str
+) -> None:
+    markdown = tmp_path / "fixture.md"
+    markdown.write_text("Text.", encoding="utf-8")
+    passage = parse_markdown_witness(markdown, _witness())[0]
+    payload = passage.model_dump(mode="json")
+    if field == "content_hash":
+        payload[field] = "b" * 64
+    elif field == "passage_id":
+        payload[field] = "tampered"
+    else:
+        payload[field] = "different-source"
+    data = (
+        json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode(
+            "utf-8"
+        )
+        + b"\n"
+    )
+
+    with pytest.raises(CreativeWriterError, match="content_hash|passage ID|identity"):
+        parse_passage_partition(data)
 
 
 def test_write_preserves_existing_artifact_when_atomic_replace_fails(

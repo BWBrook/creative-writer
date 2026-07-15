@@ -46,6 +46,7 @@ from creative_writer.source_evidence import (
     validate_quantitative_profile,
 )
 from creative_writer.source_passages import (
+    parse_markdown_witness,
     parse_passage_partition,
     read_passage_index as _legacy_read_passage_index,
 )
@@ -465,6 +466,40 @@ def _fixture(root: Path) -> tuple[Path, object]:
     return story, result
 
 
+def _retained_corpus_ids_from_fixture(story: Path) -> set[str]:
+    """Parse the retained Markdown witnesses independently of generated indexes."""
+
+    registry = load_yaml_model(story / "original/sources.yml", SourcesRegistry)
+    ids: set[str] = set()
+    witness_ordinal = 0
+    for source in registry.sources:
+        if source.files.markdown is not None:
+            witness_ordinal += 1
+            descriptor = WitnessDescriptor(
+                witness_id=source.id,
+                witness_ordinal=witness_ordinal,
+                source_id=source.id,
+                selection_id=None,
+                source_fingerprint=source.files.markdown_sha256,
+            )
+            path = story / "original" / source.files.markdown
+            ids.update(passage.passage_id for passage in parse_markdown_witness(path, descriptor))
+            continue
+        for selection in source.selections:
+            witness_ordinal += 1
+            witness_id = f"{source.id}/{selection.id}"
+            descriptor = WitnessDescriptor(
+                witness_id=witness_id,
+                witness_ordinal=witness_ordinal,
+                source_id=source.id,
+                selection_id=selection.id,
+                source_fingerprint=selection.markdown_sha256,
+            )
+            path = story / "original" / selection.markdown
+            ids.update(passage.passage_id for passage in parse_markdown_witness(path, descriptor))
+    return ids
+
+
 def _commit_fixture_holdouts(root: Path) -> None:
     subprocess.run(["git", "init", "-q"], cwd=root, check=True)
     subprocess.run(
@@ -570,7 +605,9 @@ def test_prepare_builds_exact_lock_and_expands_selected_selections_in_order(tmp_
 
 
 def test_holdout_manifest_has_all_fingerprints_and_quarantines_controls(tmp_path: Path) -> None:
-    story, result = _fixture(tmp_path)
+    story = _write_fixture(tmp_path)
+    retained_corpus_ids = _retained_corpus_ids_from_fixture(story)
+    result = run_source_analysis(tmp_path, "fixture", "prepare")
     manifest = yaml.safe_load((story / "source-study/holdouts.yml").read_text(encoding="utf-8"))
 
     assert set(manifest["registry_hashes"]) == {"source-study/admission.yml", "original/sources.yml"}
@@ -619,12 +656,7 @@ def test_holdout_manifest_has_all_fingerprints_and_quarantines_controls(tmp_path
     assert not (partition_ids["development"] & partition_ids["heldout_wells"])
     assert not (partition_ids["development"] & partition_ids["tier4_controls"])
     assert not (partition_ids["heldout_wells"] & partition_ids["tier4_controls"])
-    assert set.union(*partition_ids.values()) == {
-        item.passage_id
-        for item in parse_passage_partition(
-            partition_paths["development"].read_bytes()
-        )
-    } | partition_ids["heldout_wells"] | partition_ids["tier4_controls"]
+    assert set.union(*partition_ids.values()) == retained_corpus_ids
     assert sum(len(records) for records in partition_records.values()) == result.passage_count
     assert all(item.witness_id == "tier-four" for item in partition_records["tier4_controls"])
     for key, binding in (
@@ -832,10 +864,13 @@ def test_holdout_partition_error_names_partition_windows() -> None:
 
 def test_prepare_rerun_is_byte_stable_and_verifies_existing_manifest(tmp_path: Path) -> None:
     story, first = _fixture(tmp_path)
+    manifest_path = story / "source-study/holdouts.yml"
+    manifest_before = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
     paths = [
         tmp_path / "build/fixture/source-study/corpus-lock.json",
         tmp_path / "build/fixture/source-study/indexes/development.jsonl",
-        story / "source-study/holdouts.yml",
+        tmp_path / "build/fixture/source-study/indexes/heldout-wells.jsonl",
+        tmp_path / "build/fixture/source-study/indexes/tier4-controls.jsonl",
     ]
     before = {path: path.read_bytes() for path in paths}
 
@@ -844,6 +879,15 @@ def test_prepare_rerun_is_byte_stable_and_verifies_existing_manifest(tmp_path: P
     assert second.holdout_manifest_created is False
     assert second.holdout_manifest_verified is True
     assert {path: path.read_bytes() for path in paths} == before
+    manifest_after = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    binding_keys = (
+        "development_passage_index",
+        "heldout_wells_passage_index",
+        "tier4_control_passage_index",
+    )
+    assert {key: manifest_after[key] for key in binding_keys} == {
+        key: manifest_before[key] for key in binding_keys
+    }
     assert first.witness_count == second.witness_count
 
 
@@ -1234,10 +1278,19 @@ def test_develop_reads_only_development_partition_and_registry_metadata(
         "check_source_admission",
         lambda *args, **kwargs: pytest.fail("develop must not run source admission"),
     )
+    read_trace: list[str] = []
+    read_bound_partition = source_analysis._read_bound_partition
+
+    def trace_bound_partition(*args: object, **kwargs: object) -> list[PassageRecord]:
+        read_trace.append(str(kwargs["expected_partition"]))
+        return read_bound_partition(*args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(source_analysis, "_read_bound_partition", trace_bound_partition)
     _commit_fixture_holdouts(tmp_path)
 
     result = run_source_analysis(tmp_path, "fixture", "develop")
     assert result.passage_count > 0
+    assert read_trace == ["development"]
 
 
 @pytest.mark.parametrize("stage", ["develop", "validate"])
@@ -3931,11 +3984,21 @@ def _complete_committed_candidate_fixture(root: Path) -> Path:
     return story
 
 
-def test_validate_frozen_pass_measures_only_heldout_wells_and_is_atomic(tmp_path: Path) -> None:
+def test_validate_frozen_pass_measures_only_heldout_wells_and_is_atomic(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     story, _ = _prepare_committed_candidate_fixture(tmp_path)
     (tmp_path / "build/fixture/source-study/indexes/tier4-controls.jsonl").unlink()
     for markdown in (story / "original").rglob("*.md"):
         markdown.unlink()
+    read_trace: list[str] = []
+    read_bound_partition = source_analysis._read_bound_partition
+
+    def trace_bound_partition(*args: object, **kwargs: object) -> list[PassageRecord]:
+        read_trace.append(str(kwargs["expected_partition"]))
+        return read_bound_partition(*args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(source_analysis, "_read_bound_partition", trace_bound_partition)
     result = run_source_analysis(tmp_path, "fixture", "validate")
 
     metrics = json.loads(result.generated_paths["validation_metrics"].read_text(encoding="utf-8"))
@@ -3953,6 +4016,7 @@ def test_validate_frozen_pass_measures_only_heldout_wells_and_is_atomic(tmp_path
     assert "Tier 4" not in rendered
     assert result.passage_count > 0
     assert (story / "source-study/evidence-ledger.yml").read_text(encoding="utf-8").find("stage: development") >= 0
+    assert read_trace == ["heldout_wells"]
 
 
 def test_validate_heldout_assessed_adds_separate_control_partition(tmp_path: Path) -> None:
@@ -3967,6 +4031,120 @@ def test_validate_heldout_assessed_adds_separate_control_partition(tmp_path: Pat
     packet = result.generated_paths["validation_packet"].read_text(encoding="utf-8")
     assert "negative/comparative control" in packet
     assert "tier-four" in packet
+
+
+@pytest.mark.parametrize("validation_step", ["heldout_assessed", "complete"])
+def test_validate_rejects_present_wrong_partition_result_before_opening_controls(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, validation_step: str
+) -> None:
+    if validation_step == "complete":
+        story = _complete_committed_candidate_fixture(tmp_path)
+    else:
+        story, _ = _prepare_committed_candidate_fixture(tmp_path, with_claim=True)
+        validation_path = story / "source-study/validation.md"
+        validation = yaml.safe_load(
+            validation_path.read_text(encoding="utf-8").split("---", 2)[1]
+        )
+        heldout_records = parse_passage_partition(
+            (tmp_path / "build/fixture/source-study/indexes/heldout-wells.jsonl").read_bytes()
+        )
+        heldout = next(item for item in heldout_records if item.witness_id == "wells-alpha")
+        validation["validation_step"] = "heldout_assessed"
+        validation["heldout_claim_results"] = [{
+            "id": "heldout-fixture-claim",
+            "claim_id": "fixture-claim",
+            "witness_id": heldout.witness_id,
+            "authority_tier": 1,
+            "role": "wells-alpha role",
+            "passage_ids": [heldout.passage_id],
+            "assessment": "qualifies",
+            "observed_tendency": "The bounded tendency is present with synthetic variation.",
+            "notes": "Synthetic held-out assessment.",
+        }]
+        validation_path.write_text(
+            "---\n" + yaml.safe_dump(validation, sort_keys=False) + "---\n\n# Synthetic validation\n",
+            encoding="utf-8",
+        )
+    validation_path = story / "source-study/validation.md"
+    validation = yaml.safe_load(validation_path.read_text(encoding="utf-8").split("---", 2)[1])
+    control_records = parse_passage_partition(
+        (tmp_path / "build/fixture/source-study/indexes/tier4-controls.jsonl").read_bytes()
+    )
+    validation["heldout_claim_results"][0]["passage_ids"] = [
+        control_records[0].passage_id
+    ]
+    validation_path.write_text(
+        "---\n" + yaml.safe_dump(validation, sort_keys=False) + "---\n\n# Synthetic final validation\n",
+        encoding="utf-8",
+    )
+    read_trace: list[str] = []
+    read_bound_partition = source_analysis._read_bound_partition
+
+    def trace_bound_partition(*args: object, **kwargs: object) -> list[PassageRecord]:
+        read_trace.append(str(kwargs["expected_partition"]))
+        return read_bound_partition(*args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(source_analysis, "_read_bound_partition", trace_bound_partition)
+
+    with pytest.raises(CreativeWriterError, match="non-held-out passage"):
+        run_source_analysis(tmp_path, "fixture", "validate")
+
+    assert read_trace == ["heldout_wells"]
+
+
+@pytest.mark.parametrize("partition", ["development", "heldout_wells", "tier4_controls"])
+@pytest.mark.parametrize("mutation", ["mutate", "truncate", "reorder", "duplicate", "append"])
+def test_bound_partition_tampering_fails_hash_before_parse_or_metrics(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    partition: str,
+    mutation: str,
+) -> None:
+    story, _ = _fixture(tmp_path)
+    manifest = HoldoutManifest.model_validate(
+        yaml.safe_load((story / "source-study/holdouts.yml").read_text(encoding="utf-8"))
+    )
+    binding_by_partition = {
+        "development": manifest.development_passage_index,
+        "heldout_wells": manifest.heldout_wells_passage_index,
+        "tier4_controls": manifest.tier4_control_passage_index,
+    }
+    path_by_partition = {
+        name: tmp_path / binding.path for name, binding in binding_by_partition.items()
+    }
+    path = path_by_partition[partition]
+    original = path.read_bytes()
+    lines = original.splitlines(keepends=True)
+    if mutation == "mutate":
+        tampered = original[:-2] + (b"X" if original[-2:-1] != b"X" else b"Y") + original[-1:]
+    elif mutation == "truncate":
+        tampered = original[:-2]
+    elif mutation == "reorder":
+        tampered = b"".join(reversed(lines))
+    elif mutation == "duplicate":
+        tampered = original + lines[0]
+    else:
+        tampered = original + b"{}\n"
+    path.write_bytes(tampered)
+
+    parse_calls = 0
+
+    def forbidden_parse(data: bytes) -> list[PassageRecord]:
+        nonlocal parse_calls
+        parse_calls += 1
+        raise AssertionError("tampered bound index was parsed")
+
+    monkeypatch.setattr(source_analysis, "parse_passage_partition", forbidden_parse)
+    binding = binding_by_partition[partition]
+    with pytest.raises(CreativeWriterError, match="SHA-256"):
+        source_analysis._read_bound_partition(
+            path,
+            binding,
+            expected_path=binding.path,
+            expected_partition=partition,
+        )
+
+    assert parse_calls == 0
 
 
 def test_validate_blocks_controls_until_every_non_rejected_claim_has_holdout_result(
@@ -4016,12 +4194,11 @@ def test_validate_rejects_protocol_status_before_quarantine_read(tmp_path: Path)
     reads: list[str] = []
 
     def forbidden(*args: object, **kwargs: object) -> object:
-        reads.append("quarantine")
-        raise AssertionError("quarantine was read before preflight")
+        reads.append("bound-partition")
+        raise AssertionError("a bound partition was read before preflight")
 
     monkeypatch = pytest.MonkeyPatch()
-    monkeypatch.setattr(source_analysis, "check_source_admission", forbidden)
-    monkeypatch.setattr(source_analysis, "read_passage_index", forbidden, raising=False)
+    monkeypatch.setattr(source_analysis, "_read_bound_partition", forbidden)
     try:
         with pytest.raises(CreativeWriterError, match="candidate_frozen|validated"):
             run_source_analysis(tmp_path, "fixture", "validate")
@@ -4038,12 +4215,11 @@ def test_validate_candidate_preflight_rejects_unreachable_commit_without_quarant
     reads: list[str] = []
 
     def forbidden(*args: object, **kwargs: object) -> object:
-        reads.append("quarantine")
-        raise AssertionError("quarantine was read before candidate Git preflight")
+        reads.append("bound-partition")
+        raise AssertionError("a bound partition was read before candidate Git preflight")
 
     monkeypatch = pytest.MonkeyPatch()
-    monkeypatch.setattr(source_analysis, "check_source_admission", forbidden)
-    monkeypatch.setattr(source_analysis, "read_passage_index", forbidden, raising=False)
+    monkeypatch.setattr(source_analysis, "_read_bound_partition", forbidden)
     try:
         with pytest.raises(CreativeWriterError, match="commit|reachable|candidate"):
             run_source_analysis(tmp_path, "fixture", "validate")

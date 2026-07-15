@@ -6,6 +6,9 @@ author observations, claims, or profile findings.
 
 from __future__ import annotations
 
+import csv
+import hashlib
+import json
 import re
 import unicodedata
 from dataclasses import dataclass, field
@@ -25,8 +28,9 @@ from creative_writer.source_analysis_models import (
 
 PROTOCOL_OBSERVATION_SENTINEL = "No reviewed observations are recorded at protocol status."
 PROTOCOL_PROFILE_SENTINEL = "No reviewed descriptive synthesis is recorded at protocol status."
-# Exact normalized token sequences shorter than this are too likely to be
+# Exact normalized passage sequences shorter than this are too likely to be
 # ordinary Victorian phrasing to identify copied source prose mechanically.
+# Partial or edited copies remain a human-review risk.
 FORBIDDEN_TEXT_MIN_TOKENS = 8
 _TOKEN_RE = re.compile(r"[^\W_]+(?:['’][^\W_]+)*", re.UNICODE)
 _PLACEHOLDER_RE = re.compile(r"\b(?:tbd|todo|placeholder|no reviewed|reserved for)\b", re.I)
@@ -224,10 +228,10 @@ def _parse_candidate_claims(content: str) -> list[str] | None:
         return []
     claims: list[str] = []
     for line in lines:
-        match = re.fullmatch(r"- ([^\s`]+)", line)
+        match = re.fullmatch(r"- (?:`([^`]+)`|([^\s`]+))", line)
         if not match:
             return None
-        claims.append(match.group(1))
+        claims.append(match.group(1) or match.group(2))
     return claims if claims else None
 
 
@@ -239,6 +243,7 @@ def _observation_entry_issues(
     config: AnalysisConfig,
     accessible_ids: set[str],
     claim_ids: set[str] | None,
+    authorities: dict[str, _WitnessAuthority],
 ) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     expected = [
@@ -251,6 +256,19 @@ def _observation_entry_issues(
         "Candidate claims",
     ]
     blocks = _entry_blocks(content, re.compile(r"^#### (.+)$"))
+    first_field_line = next(
+        (index for index, line in enumerate(content.splitlines()) if re.fullmatch(r"#### .+", line)),
+        None,
+    )
+    if first_field_line is not None and any(
+        line.strip() for line in content.splitlines()[:first_field_line]
+    ):
+        issues.append(_error(path, "Observation entries may not have stray prose before the first expected field", locator=f"Observation {number}"))
+    if any(
+        re.match(r"^#{4,} ", line) and not re.fullmatch(r"#### .+", line)
+        for line in content.splitlines()
+    ):
+        issues.append(_error(path, "Observation entry contains an unrecognised heading", locator=f"Observation {number}"))
     actual = [name for _, name, _ in blocks]
     if actual != expected:
         issues.append(_error(path, f"Observation {number} fields must be exactly ordered as {expected}"))
@@ -272,6 +290,8 @@ def _observation_entry_issues(
             issues.append(_error(path, f"{field_name} must contain non-placeholder human-authored prose", locator=f"Observation {number}"))
 
     jurisdiction_lines = _nonblank_lines(values["Jurisdiction"])
+    dimension_id: str | None = None
+    declared_role: str | None = None
     if len(jurisdiction_lines) != 2:
         issues.append(_error(path, "Jurisdiction must contain exactly Dimension and Role bullets", locator=f"Observation {number}"))
     else:
@@ -280,12 +300,16 @@ def _observation_entry_issues(
         if not dimension_match or not role_match:
             issues.append(_error(path, "Jurisdiction bullets must be exactly Dimension then Role", locator=f"Observation {number}"))
         else:
-            dimension_id, role = dimension_match.group(1), role_match.group(1)
+            dimension_id, declared_role = dimension_match.group(1), role_match.group(1)
             dimension = next((item for item in config.dimensions if item.id == dimension_id), None)
             if dimension is None:
                 issues.append(_error(path, "Unknown configured dimension", locator=dimension_id))
-            elif role not in dimension.roles:
-                issues.append(_error(path, "Jurisdiction role is not configured for the dimension", locator=role))
+            elif declared_role not in dimension.roles:
+                issues.append(_error(path, "Jurisdiction role is not configured for the dimension", locator=declared_role))
+            elif focal_id in passages_by_id:
+                focal_authority = authorities.get(passages_by_id[focal_id].witness_id)
+                if focal_authority is None or declared_role not in focal_authority.roles:
+                    issues.append(_error(path, "Focal witness does not exercise the declared jurisdiction role", locator=focal_id))
 
     comparisons = _parse_comparison(values["Comparison"])
     if comparisons is None:
@@ -296,6 +320,14 @@ def _observation_entry_issues(
                 issues.append(_error(path, "Unknown or stale comparison locator", locator=locator))
             elif locator not in accessible_ids:
                 issues.append(_error(path, "Development comparison cannot cite a held-out or inaccessible passage", locator=locator))
+            elif dimension_id is not None:
+                dimension = next((item for item in config.dimensions if item.id == dimension_id), None)
+                comparison_authority = authorities.get(passages_by_id[locator].witness_id)
+                if dimension is not None and (
+                    comparison_authority is None
+                    or not set(dimension.roles).intersection(comparison_authority.roles)
+                ):
+                    issues.append(_error(path, "Comparison witness has no configured role intersecting the observation dimension", locator=locator))
     claims = _parse_candidate_claims(values["Candidate claims"])
     if claims is None:
         issues.append(_error(path, "Candidate claims must contain claim-ID bullets or exact None.", locator=f"Observation {number}"))
@@ -315,11 +347,14 @@ def collect_observation_issues(
     development_passage_ids: set[str] | None = None,
     manifest: object | None = None,
     claim_ids: set[str] | None = None,
+    admission: SourceStudyAdmission | None = None,
+    registry: SourcesRegistry | None = None,
 ) -> ValidationResult:
     """Collect all observation grammar, locator, and development leakage issues."""
 
     result = ValidationResult()
     by_id, _ = _passage_maps(passages)
+    authorities = _authority_index(passages, admission, registry)
     accessible, _ = _accessible_ids(
         passages,
         stage=stage,
@@ -340,6 +375,8 @@ def collect_observation_issues(
         first_entry_line = entries[0][0]
         if any(line.strip() for line in section.splitlines()[:first_entry_line]):
             result.errors.append(_error(path, "Observation entries may not have unstructured prose before the first entry"))
+        if admission is None or registry is None:
+            result.errors.append(_error(path, "Populated observation dossiers require admission and source registry authority"))
         if any(
             line.startswith("### ") and not re.fullmatch(r"### Observation \d+", line)
             for line in section.splitlines()
@@ -358,6 +395,7 @@ def collect_observation_issues(
                     config,
                     accessible,
                     claim_ids,
+                    authorities,
                 )
             )
     return result.sorted()
@@ -426,38 +464,43 @@ def _reference_issues(
     authorities: dict[str, _WitnessAuthority],
     accessible_ids: set[str],
     stage: str,
+    file: Path | str | None,
 ) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     locator = reference.passage_id
     authority = authorities.get(reference.witness_id)
     passage = by_id.get(locator)
     if passage is None:
-        issues.append(_error(None, f"Unknown or stale passage ID in {label}", claim=claim.id, locator=locator))
+        issues.append(_error(file, f"Unknown or stale passage ID in {label}", claim=claim.id, locator=locator))
         return issues
     if passage.witness_id != reference.witness_id:
-        issues.append(_error(None, "Reference witness_id does not match verified passage", claim=claim.id, locator=locator))
+        issues.append(_error(file, "Reference witness_id does not match verified passage", claim=claim.id, locator=locator))
     if passage.source_id != reference.source_id or passage.selection_id != reference.selection_id:
-        issues.append(_error(None, "Reference source/selection identity does not match verified passage", claim=claim.id, locator=locator))
+        issues.append(_error(file, "Reference source/selection identity does not match verified passage", claim=claim.id, locator=locator))
     if authority is None:
-        issues.append(_error(None, "Reference witness is absent from retained authority registries", claim=claim.id, locator=locator))
+        issues.append(_error(file, "Reference witness is absent from retained authority registries", claim=claim.id, locator=locator))
     else:
-        if authority.tier is not None and reference.authority_tier != authority.tier:
-            issues.append(_error(None, "Reference authority tier does not match retained registry", claim=claim.id, locator=locator))
-        if authority.fingerprint is not None and passage.source_fingerprint != authority.fingerprint:
-            issues.append(_error(None, "Verified passage fingerprint does not match retained registry", claim=claim.id, locator=locator))
+        if authority.tier is None:
+            issues.append(_error(file, "Reference witness has no retained authority tier", claim=claim.id, locator=locator))
+        elif reference.authority_tier != authority.tier:
+            issues.append(_error(file, "Reference authority tier does not match retained registry", claim=claim.id, locator=locator))
+        if authority.fingerprint is None:
+            issues.append(_error(file, "Reference witness has no retained fingerprint", claim=claim.id, locator=locator))
+        elif passage.source_fingerprint != authority.fingerprint:
+            issues.append(_error(file, "Verified passage fingerprint does not match retained registry", claim=claim.id, locator=locator))
     if stage == "development" and locator not in accessible_ids:
-        issues.append(_error(None, "Development evidence cannot cite a held-out or inaccessible passage", claim=claim.id, locator=locator))
+        issues.append(_error(file, "Development evidence cannot cite a held-out or inaccessible passage", claim=claim.id, locator=locator))
     tier = authority.tier if authority and authority.tier is not None else reference.authority_tier
     if tier == 4 and reference.evidence_role != "control":
-        issues.append(_error(None, "Tier 4 evidence may use only the control role", claim=claim.id, locator=locator))
+        issues.append(_error(file, "Tier 4 evidence may use only the control role", claim=claim.id, locator=locator))
     if reference.evidence_role == "control" and tier != 4:
-        issues.append(_error(None, "Control evidence must come from Tier 4", claim=claim.id, locator=locator))
+        issues.append(_error(file, "Control evidence must come from Tier 4", claim=claim.id, locator=locator))
     if stage == "development" and reference.evidence_role == "validation":
-        issues.append(_error(None, "Validation evidence is unavailable during development", claim=claim.id, locator=locator))
+        issues.append(_error(file, "Validation evidence is unavailable during development", claim=claim.id, locator=locator))
     if stage == "development" and tier not in {1, 2, 3}:
-        issues.append(_error(None, "Development evidence must use accessible Wells Tier 1-3 witnesses", claim=claim.id, locator=locator))
+        issues.append(_error(file, "Development evidence must use accessible Wells Tier 1-3 witnesses", claim=claim.id, locator=locator))
     if stage == "development" and reference.evidence_role in {"control", "validation"}:
-        issues.append(_error(None, "Control and validation evidence roles are unavailable during development", claim=claim.id, locator=locator))
+        issues.append(_error(file, "Control and validation evidence roles are unavailable during development", claim=claim.id, locator=locator))
     return issues
 
 
@@ -500,6 +543,8 @@ def collect_evidence_issues(
         manifest=manifest,
     )
     dimension_roles = {item.id: set(item.roles) for item in config.dimensions}
+    if ledger.study_id != config.study_id:
+        result.errors.append(_error(file, "Evidence ledger study identity does not match analysis configuration", locator=ledger.study_id))
     tier1_continuity = {
         witness_id
         for witness_id, authority in authorities.items()
@@ -519,7 +564,7 @@ def collect_evidence_issues(
         support_witnesses: set[str] = set()
         support_authorities: list[_WitnessAuthority] = []
         for reference in claim.supporting_passages:
-            result.errors.extend(_reference_issues(claim, reference, label="support", by_id=by_id, authorities=authorities, accessible_ids=accessible, stage=active_stage))
+            result.errors.extend(_reference_issues(claim, reference, label="support", by_id=by_id, authorities=authorities, accessible_ids=accessible, stage=active_stage, file=file))
             support_witnesses.add(reference.witness_id)
             if reference.witness_id in authorities:
                 support_authorities.append(authorities[reference.witness_id])
@@ -528,9 +573,14 @@ def collect_evidence_issues(
             if reference.witness_id not in eligible:
                 result.errors.append(_error(file, "Support witness is outside claim eligible_witness_ids", claim=claim.id, locator=reference.witness_id))
         for reference in claim.counterexample_passages:
-            result.errors.extend(_reference_issues(claim, reference, label="counterexample", by_id=by_id, authorities=authorities, accessible_ids=accessible, stage=active_stage))
+            result.errors.extend(_reference_issues(claim, reference, label="counterexample", by_id=by_id, authorities=authorities, accessible_ids=accessible, stage=active_stage, file=file))
             if reference.evidence_role not in {"counterexample", "variation"}:
                 result.errors.append(_error(file, "Counterexample passages must use counterexample or variation evidence_role", claim=claim.id, locator=reference.passage_id))
+            if reference.witness_id not in eligible:
+                result.errors.append(_error(file, "Counterexample witness is outside claim eligible_witness_ids", claim=claim.id, locator=reference.witness_id))
+            dimension = dimension_roles.get(claim.dimension, set())
+            if reference.witness_id in authorities and not dimension.intersection(authorities[reference.witness_id].roles):
+                result.errors.append(_error(file, "Counterexample or variation witness has no configured role intersecting the claim dimension", claim=claim.id, locator=reference.witness_id))
         if claim.status != "rejected":
             if not claim.supporting_passages:
                 result.errors.append(_error(file, "Non-rejected claims require support", claim=claim.id))
@@ -558,10 +608,14 @@ def collect_evidence_issues(
             if claim.classification != "role_specific":
                 result.errors.append(_error(file, "continuity claims must use role_specific classification", claim=claim.id))
         if claim.status != "rejected":
-            exercised_roles = set().union(*(authority.roles for authority in support_authorities)) if support_authorities else set()
+            exercised_roles = set().union(*(authority.roles & set(jurisdiction.roles) for authority in support_authorities)) if support_authorities else set()
             for role in jurisdiction.roles:
                 if role not in exercised_roles:
                     result.errors.append(_error(file, "Every jurisdiction role must be exercised by supporting evidence", claim=claim.id, locator=role))
+            for witness_id in support_witnesses:
+                authority = authorities.get(witness_id)
+                if authority is None or not set(jurisdiction.roles).intersection(authority.roles):
+                    result.errors.append(_error(file, "Each supporting witness must exercise at least one declared jurisdiction role", claim=claim.id, locator=witness_id))
             if support_witnesses and not support_witnesses <= eligible:
                 result.errors.append(_error(file, "All support must be inside eligible_witness_ids", claim=claim.id))
         omnibus_parents = {
@@ -570,7 +624,10 @@ def collect_evidence_issues(
             if "/" in item
         }
         if claim.status != "rejected" and len(support_witnesses) >= 2 and len(omnibus_parents) == 1 and all("/" in item for item in support_witnesses):
-            if not claim.notes.splitlines() or not any(line.startswith("Omnibus dependence:") for line in claim.notes.splitlines()):
+            if not any(
+                line.startswith("Omnibus dependence:") and line.partition(":")[2].strip()
+                for line in claim.notes.splitlines()
+            ):
                 result.errors.append(_error(file, "Selections-only support must disclose Omnibus dependence: in notes", claim=claim.id))
 
         search = claim.counterexample_search
@@ -593,6 +650,8 @@ def collect_evidence_issues(
             for witness_id in search.witness_ids:
                 if witness_id not in authorities:
                     result.errors.append(_error(file, "Counterexample search witness is not retained", claim=claim.id, locator=witness_id))
+                elif not dimension_roles.get(claim.dimension, set()).intersection(authorities[witness_id].roles):
+                    result.errors.append(_error(file, "Counterexample search witness has no configured role intersecting the claim dimension", claim=claim.id, locator=witness_id))
             if searched_witnesses != set(search.witness_ids):
                 result.errors.append(_error(file, "Every counterexample-search witness must contribute a searched passage", claim=claim.id))
             if search.outcome == "material_counterexample_found" and not claim.counterexample_passages:
@@ -649,6 +708,17 @@ def _profile_finding_issues(
         result.errors.append(_error(path, "Profile dimensions must use each exact configured ordinal and label in order"))
         return result.sorted()
     linked: set[str] = set()
+    expected_fields = [
+        "Claim IDs",
+        "Finding",
+        "Classification and confidence",
+        "Jurisdiction",
+        "Evidence",
+        "Variation and counterexamples",
+        "Quantitative context",
+        "Control distinction",
+        "Unresolved uncertainty",
+    ]
     for _, (ordinal_text, _label), section_content in sections:
         ordinal = int(ordinal_text)
         findings = _entry_blocks(section_content, re.compile(r"^#### Finding (\d+)$"))
@@ -663,27 +733,43 @@ def _profile_finding_issues(
             result.errors.append(_error(path, "Profile finding ordinals must be contiguous from 1", locator=f"dimension {ordinal}"))
         for _, finding_number, finding_content in findings:
             fields = _entry_blocks(finding_content, re.compile(r"^##### (.+)$"))
-            if [name for _, name, _ in fields] != ["Claim IDs", "Finding"]:
-                result.errors.append(_error(path, "Each finding must declare Claim IDs before Finding", locator=f"dimension {ordinal} finding {finding_number}"))
+            actual_fields = [name for _, name, _ in fields]
+            if actual_fields != expected_fields:
+                result.errors.append(_error(path, f"Profile finding fields must be exactly ordered as {expected_fields}", locator=f"dimension {ordinal} finding {finding_number}"))
                 continue
-            claim_lines = _nonblank_lines(dict((name, value) for _, name, value in fields)["Claim IDs"])
+            values = dict((name, value) for _, name, value in fields)
+            claim_lines = _nonblank_lines(values["Claim IDs"])
             if not claim_lines:
                 result.errors.append(_error(path, "Finding Claim IDs must contain one or more nonempty bullets", locator=f"dimension {ordinal} finding {finding_number}"))
             for line in claim_lines:
-                match = re.fullmatch(r"- ([^\s`]+)", line)
+                match = re.fullmatch(r"- (?:`([^`]+)`|([^\s`]+))", line)
                 if not match:
                     result.errors.append(_error(path, "Claim IDs must be nonempty claim-ID bullets", locator=f"dimension {ordinal} finding {finding_number}"))
                     continue
-                claim_id = match.group(1)
+                claim_id = match.group(1) or match.group(2)
                 linked.add(claim_id)
                 claim = claims.get(claim_id)
                 if claim is None:
                     result.errors.append(_error(path, "Profile links an unknown claim ID", claim=claim_id, locator=f"dimension {ordinal}"))
                 elif claim.dimension != config.dimensions[ordinal - 1].id:
                     result.errors.append(_error(path, "Profile claim link is mismatched to the configured dimension", claim=claim_id, locator=f"dimension {ordinal}"))
-            finding_text = dict((name, value) for _, name, value in fields)["Finding"]
-            if not _content_is_human(finding_text):
-                result.errors.append(_error(path, "Finding must contain non-placeholder prose", locator=f"dimension {ordinal} finding {finding_number}"))
+            for field_name, field_value in values.items():
+                if field_name == "Control distinction" and field_value.strip() == "Deferred until validation." and stage != "validated":
+                    continue
+                if not _content_is_human(field_value):
+                    result.errors.append(_error(path, f"{field_name} must contain non-placeholder prose", locator=f"dimension {ordinal} finding {finding_number}"))
+            if stage == "validated" and values["Control distinction"].strip() == "Deferred until validation.":
+                result.errors.append(_error(path, "Validated profile findings require a completed control distinction", locator=f"dimension {ordinal} finding {finding_number}"))
+            classification_match = re.search(r"Classification:\s*`([^`]+)`", values["Classification and confidence"])
+            if classification_match and classification_match.group(1) not in config.claim_classifications:
+                result.errors.append(_error(path, "Profile finding classification is not configured", locator=f"dimension {ordinal} finding {finding_number}"))
+            confidence_match = re.search(r"Confidence:\s*`([^`]+)`", values["Classification and confidence"])
+            if confidence_match and confidence_match.group(1) not in config.confidence_levels:
+                result.errors.append(_error(path, "Profile finding confidence is not configured", locator=f"dimension {ordinal} finding {finding_number}"))
+            if stage == "development":
+                words = {word.casefold() for word in re.findall(r"[A-Za-z]+", finding_content)}
+                if words.intersection({"always", "never", "invariably"}):
+                    result.errors.append(_error(path, "Absolute wording always/never/invariably is unavailable in development profile findings", locator=f"dimension {ordinal} finding {finding_number}"))
     orphans = sorted(claim_id for claim_id, claim in claims.items() if claim.status != "rejected" and claim_id not in linked)
     if orphans:
         issue_factory = _error if stage in {"candidate_frozen", "validated"} else _warning
@@ -711,12 +797,6 @@ def validate_profile_claim_links(*args, **kwargs) -> ValidationResult:
     return raise_for_issues(result, "Profile claim-link validation")
 
 
-def _metric_ids(document: dict) -> set[str]:
-    ids = {"development-metrics", "development-metrics.csv", "development-metrics.json"}
-    ids.update(str(item) for item in document.get("enabled_measurements", []))
-    return ids
-
-
 def collect_quantitative_profile_issues(
     profile: QuantitativeProfile,
     *,
@@ -726,15 +806,29 @@ def collect_quantitative_profile_issues(
     passages: Sequence[PassageRecord],
     development_witness_ids: set[str],
     forbidden_witness_ids: set[str] | None = None,
+    metrics_csv_path: Path | None = None,
 ) -> ValidationResult:
     result = ValidationResult()
     forbidden_witness_ids = forbidden_witness_ids or set()
     stage_order = {"protocol": 0, "development": 1, "candidate_frozen": 2, "validated": 3}
     if stage_order[profile.stage] > stage_order[config.study_status]:
         result.errors.append(_error(metrics_path, "Quantitative profile stage cannot lead configured analysis stage"))
+    if profile.stage == "protocol" and not profile.generated_metrics and not profile.witnesses:
+        return result.sorted()
+    configured_json = config.generated_paths["development_metrics"]
+    configured_csv = config.generated_paths["development_metrics_csv"]
+    metrics_csv_path = metrics_csv_path or root / configured_csv
+    if metrics_path.resolve(strict=False) != (root / configured_json).resolve(strict=False):
+        result.errors.append(_error(metrics_path, "Quantitative profile JSON path is not the configured development output", locator=str(metrics_path)))
+    if profile.stage == "development":
+        expected_references = {
+            "development-metrics": configured_json,
+            "development-metrics-csv": configured_csv,
+        }
+        actual_references = {reference.id: reference.path for reference in profile.generated_metrics}
+        if len(profile.generated_metrics) != 2 or actual_references != expected_references:
+            result.errors.append(_error(metrics_path, "Development quantitative profile must contain exactly the JSON and CSV metric references with configured IDs and paths"))
     try:
-        import json
-
         document = json.loads(metrics_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, ValueError) as exc:
         result.errors.append(_error(metrics_path, f"Unable to read generated metric JSON: {exc}"))
@@ -743,7 +837,11 @@ def collect_quantitative_profile_issues(
         result.errors.append(_error(metrics_path, "Quantitative profile must reference current development metric output"))
     if document.get("study_id") != config.study_id or profile.study_id != config.study_id:
         result.errors.append(_error(metrics_path, "Quantitative metric study identity is stale"))
-    metric_witnesses = {item.get("witness_id") for item in document.get("witnesses", [])}
+    metric_records = document.get("witnesses", [])
+    metric_witness_ids = [item.get("witness_id") for item in metric_records]
+    if len(metric_witness_ids) != len(set(metric_witness_ids)):
+        result.errors.append(_error(metrics_path, "Generated development metric witness IDs must be unique"))
+    metric_witnesses = set(metric_witness_ids)
     profile_witnesses = {item.witness_id for item in profile.witnesses}
     if profile.stage == "development" and profile_witnesses != development_witness_ids:
         result.errors.append(_error(metrics_path, "Development quantitative profile witness set must exactly equal current development metric witnesses"))
@@ -760,15 +858,38 @@ def collect_quantitative_profile_issues(
         if metric.get("source_id") != witness.source_id or metric.get("selection_id") != witness.selection_id:
             result.errors.append(_error(metrics_path, "Quantitative profile witness identity does not match generated metrics", locator=witness.witness_id))
         passage = passage_by_witness.get(witness.witness_id)
-        if passage and (passage.source_id != witness.source_id or passage.selection_id != witness.selection_id):
+        if passage is None:
+            result.errors.append(_error(metrics_path, "Quantitative profile witness is absent from the verified passage registry", locator=witness.witness_id))
+        elif passage.source_id != witness.source_id or passage.selection_id != witness.selection_id:
             result.errors.append(_error(metrics_path, "Quantitative profile witness identity does not match verified passage registry", locator=witness.witness_id))
+        if profile.stage == "development":
+            if not witness.values:
+                result.errors.append(_error(metrics_path, "Development quantitative profile witness values must be nonempty", locator=witness.witness_id))
+            for metric_path, stored_value in witness.values.items():
+                parts = metric_path.split(".")
+                current: object = metric
+                if not metric_path.strip() or any(not part for part in parts):
+                    result.errors.append(_error(metrics_path, "Quantitative profile metric paths must be nonempty dotted paths", locator=metric_path))
+                    continue
+                try:
+                    for part in parts:
+                        if not isinstance(current, dict) or part not in current:
+                            raise KeyError(part)
+                        current = current[part]
+                except KeyError:
+                    result.errors.append(_error(metrics_path, "Quantitative profile metric path does not resolve in current witness output", locator=f"{witness.witness_id}:{metric_path}"))
+                    continue
+                if current is None or isinstance(current, (dict, list)):
+                    result.errors.append(_error(metrics_path, "Quantitative profile values must resolve to nonempty scalar output values", locator=f"{witness.witness_id}:{metric_path}"))
+                elif type(stored_value) is not type(current) or stored_value != current:
+                    result.errors.append(_error(metrics_path, "Quantitative profile stored value does not exactly equal current witness output", locator=f"{witness.witness_id}:{metric_path}"))
     for reference in profile.generated_metrics:
-        if reference.id not in _metric_ids(document):
-            result.errors.append(_error(metrics_path, "Quantitative profile metric ID is not present in current development output", locator=reference.id))
         allowed_metric_paths = {
-            config.generated_paths["development_metrics"],
-            config.generated_paths["development_metrics_csv"],
+            configured_json,
+            configured_csv,
         }
+        if reference.id not in {"development-metrics", "development-metrics-csv"}:
+            result.errors.append(_error(metrics_path, "Quantitative profile metric ID is not one of the configured development references", locator=reference.id))
         if reference.path not in allowed_metric_paths:
             result.errors.append(_error(metrics_path, "Quantitative profile metric path is outside the configured development outputs", locator=reference.path))
         target = root / reference.path
@@ -780,18 +901,28 @@ def collect_quantitative_profile_issues(
             actual = hashlib.sha256(target.read_bytes()).hexdigest()
             if actual != reference.sha256:
                 result.errors.append(_error(metrics_path, "Quantitative profile metric fingerprint is stale", locator=reference.path))
-            if target.suffix == ".csv":
-                try:
-                    import csv
-
-                    with target.open(newline="", encoding="utf-8") as handle:
-                        rows = csv.DictReader(handle)
-                        for row in rows:
-                            if row.get("study_id") != config.study_id or row.get("stage") != "development":
-                                result.errors.append(_error(metrics_path, "Current development CSV contains stale study or stage provenance", locator=reference.path))
-                                break
-                except (OSError, UnicodeError, csv.Error) as exc:
-                    result.errors.append(_error(metrics_path, f"Unable to inspect current development CSV: {exc}", locator=reference.path))
+    if profile.stage == "development":
+        try:
+            with metrics_csv_path.open(newline="", encoding="utf-8") as handle:
+                reader = csv.DictReader(handle)
+                rows = list(reader)
+                required = {"study_id", "stage", "config_sha256", "index_sha256", "manifest_sha256", "config_path", "index_path", "manifest_path", "witness_id", "source_id", "selection_id"}
+                if not reader.fieldnames or not required <= set(reader.fieldnames):
+                    result.errors.append(_error(metrics_csv_path, "Current development CSV has invalid provenance columns"))
+                if not rows:
+                    result.errors.append(_error(metrics_csv_path, "Current development CSV must contain data rows"))
+                provenance = document.get("provenance", {})
+                for row in rows:
+                    if (
+                        row.get("study_id") != config.study_id
+                        or row.get("stage") != "development"
+                        or any(row.get(key) != document.get(key, provenance.get(key, "")) for key in ("config_sha256", "index_sha256", "manifest_sha256"))
+                        or any(row.get(key) != provenance.get(key, "") for key in ("config_path", "index_path", "manifest_path"))
+                    ):
+                        result.errors.append(_error(metrics_csv_path, "Current development CSV contains stale or invalid provenance"))
+                        break
+        except (OSError, UnicodeError, csv.Error) as exc:
+            result.errors.append(_error(metrics_csv_path, f"Unable to inspect current development CSV: {exc}"))
     return result.sorted()
 
 
@@ -806,24 +937,31 @@ def collect_leakage_issues(
     forbidden_witness_ids: set[str],
     forbidden_passages: Sequence[PassageRecord],
 ) -> ValidationResult:
-    """Detect forbidden IDs and exact normalized copied text using an eight-token floor."""
+    """Detect forbidden IDs and exact full normalized passage copies.
+
+    Sequences shorter than eight tokens, partial copies, and edited or
+    paraphrased text remain human-review risks.
+    """
 
     result = ValidationResult()
     forbidden_sequences: list[tuple[str, tuple[str, ...]]] = []
     for passage in forbidden_passages:
         tokens = tuple(token.casefold() for token in _TOKEN_RE.findall(unicodedata.normalize("NFC", passage.normalized_text)))
         if len(tokens) >= FORBIDDEN_TEXT_MIN_TOKENS:
-            for start in range(len(tokens) - FORBIDDEN_TEXT_MIN_TOKENS + 1):
-                forbidden_sequences.append((passage.passage_id, tokens[start : start + FORBIDDEN_TEXT_MIN_TOKENS]))
+            forbidden_sequences.append((passage.passage_id, tokens))
     for path in sorted(paths, key=lambda item: item.as_posix()):
         text = _read(path)
         for witness_id in sorted(forbidden_witness_ids):
-            if witness_id in text:
+            boundary = rf"(?<![A-Za-z0-9_/-]){re.escape(witness_id)}(?![A-Za-z0-9_/-])"
+            if re.search(boundary, text):
                 result.errors.append(_error(path, "Forbidden holdout or Tier 4 witness ID appears in tracked development content", locator=witness_id))
         tokens = tuple(token.casefold() for token in _TOKEN_RE.findall(unicodedata.normalize("NFC", text)))
         for locator, sequence in forbidden_sequences:
-            if any(tokens[index : index + FORBIDDEN_TEXT_MIN_TOKENS] == sequence for index in range(len(tokens) - FORBIDDEN_TEXT_MIN_TOKENS + 1)):
-                result.errors.append(_error(path, f"Exact normalized forbidden passage text copied using the minimum {FORBIDDEN_TEXT_MIN_TOKENS}-token rule", locator=locator))
+            if any(
+                tokens[index : index + len(sequence)] == sequence
+                for index in range(len(tokens) - len(sequence) + 1)
+            ):
+                result.errors.append(_error(path, "Exact full normalized forbidden passage text copied; partial or edited text remains a human-review risk", locator=locator))
     return result.sorted()
 
 

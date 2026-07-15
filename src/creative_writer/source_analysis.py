@@ -34,8 +34,10 @@ from creative_writer.source_analysis_models import (
     HoldoutWindow,
     PassageRecord,
     QuantitativeProfile,
+    ValidationRecord,
     WitnessDescriptor,
     WitnessHoldouts,
+    parse_validation_document,
 )
 from creative_writer.source_passages import (
     parse_markdown_witness,
@@ -44,6 +46,7 @@ from creative_writer.source_passages import (
 )
 from creative_writer.source_metrics import measure_development
 from creative_writer.source_evidence import (
+    ValidationIssue,
     ValidationResult,
     collect_evidence_issues,
     collect_leakage_issues,
@@ -55,8 +58,6 @@ from creative_writer.source_evidence import (
     validate_observation_dossiers,
     validate_profile_claim_links,
 )
-
-
 TOOL_VERSION = f"creative-writer {__version__}"
 ALGORITHM_VERSION = "tertile-hash-v1"
 GENERATED_FILENAMES = {
@@ -117,7 +118,13 @@ def _canonical_json(payload: dict[str, Any]) -> bytes:
 
 
 def _story_path(root: Path, slug: str) -> Path:
-    return root / "stories" / slug
+    return root.resolve(strict=False) / "stories" / slug
+
+
+def _relative_to_root(path: Path, root: Path) -> str:
+    """Return a relative POSIX path across macOS /var and /private/var aliases."""
+
+    return path.resolve(strict=False).relative_to(root.resolve(strict=False)).as_posix()
 
 
 def _registry_path(story_dir: Path, relative: str) -> Path:
@@ -823,7 +830,7 @@ def _prepare(root: Path, slug: str) -> SourceAnalysisResult:
 def _require_committed_holdout(root: Path, holdout_path: Path) -> None:
     """Require the partition lock to exist in Git before development opens."""
 
-    relative = holdout_path.relative_to(root).as_posix()
+    relative = _relative_to_root(holdout_path, root)
     try:
         listed = subprocess.run(
             ["git", "ls-files", "--error-unmatch", relative],
@@ -870,6 +877,8 @@ def _tracked_evidence_paths(story_dir: Path) -> list[Path]:
         source_study / "quantitative-profile.yml",
         source_study / "evidence-ledger.yml",
         source_study / "wells-profile.md",
+        source_study / "period-controls.md",
+        source_study / "validation.md",
     ]
     observation_dir = source_study / "observations"
     if observation_dir.exists():
@@ -877,27 +886,148 @@ def _tracked_evidence_paths(story_dir: Path) -> list[Path]:
     return [path for path in paths if path.exists()]
 
 
-def _append_development_diagnostics(path: Path, validation: ValidationResult) -> None:
-    """Append counts only; no authored interpretation, IDs, or locators."""
+def _expected_observation_paths(story_dir: Path, registry: SourcesRegistry) -> list[Path]:
+    """Derive one dossier path per retained Tier 1-3 source, without role constants."""
 
+    return [
+        story_dir / "source-study" / "observations" / f"{source.id}.md"
+        for source in registry.sources
+        if source.role.tier in {1, 2, 3}
+    ]
+
+
+def _write_development_diagnostics(
+    path: Path,
+    validation: ValidationResult | None = None,
+    *,
+    errors: int | None = None,
+    warnings: int | None = None,
+) -> None:
+    """Atomically replace a report with counts only, preserving it on failure."""
+
+    if validation is not None:
+        errors = len(validation.errors)
+        warnings = len(validation.warnings)
+    if errors is None or warnings is None:
+        raise CreativeWriterError("Development diagnostics require error and warning counts")
+    temporary_path: Path | None = None
     try:
-        current = path.read_text(encoding="utf-8")
-        path.write_text(
-            current.rstrip() + "\n\n## Evidence validation diagnostics\n\n"
-            f"- Blocking errors: **{len(validation.errors)}**\n"
-            f"- Warnings: **{len(validation.warnings)}**\n",
-            encoding="utf-8",
-        )
+        original = path.read_bytes()
+        current = original.decode("utf-8")
+        authored = current.split("\n## Evidence validation diagnostics", 1)[0].rstrip()
+        payload = (
+            authored
+            + "\n\n## Evidence validation diagnostics\n\n"
+            + f"- Blocking errors: **{errors}**\n"
+            + f"- Warnings: **{warnings}**\n"
+        ).encode("utf-8")
+        with tempfile.NamedTemporaryFile(
+            mode="wb", dir=path.parent, prefix=f".{path.name}.", suffix=".tmp", delete=False
+        ) as handle:
+            temporary_path = Path(handle.name)
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary_path, path)
+        temporary_path = None
+        try:
+            directory_fd = os.open(path.parent, os.O_RDONLY)
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
+        except OSError:
+            rollback_path: Path | None = None
+            try:
+                with tempfile.NamedTemporaryFile(
+                    mode="wb", dir=path.parent, prefix=f".{path.name}.rollback.", suffix=".tmp", delete=False
+                ) as handle:
+                    rollback_path = Path(handle.name)
+                    handle.write(original)
+                    handle.flush()
+                    os.fsync(handle.fileno())
+                os.replace(rollback_path, path)
+                rollback_path = None
+            finally:
+                if rollback_path is not None:
+                    rollback_path.unlink(missing_ok=True)
+            raise
     except (OSError, UnicodeError) as exc:
-        raise CreativeWriterError(
-            f"Unable to append deterministic evidence diagnostics to {path}: {exc}"
-        ) from exc
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+        raise CreativeWriterError(f"Unable to atomically write development diagnostics to {path}: {exc}") from exc
+
+
+def _append_development_diagnostics(path: Path, validation: ValidationResult) -> None:
+    """Compatibility wrapper for callers of the original private helper."""
+
+    _write_development_diagnostics(path, validation)
+
+
+def _validate_development_dossier_set(
+    story_dir: Path,
+    registry: SourcesRegistry,
+) -> tuple[list[Path], ValidationResult]:
+    expected = _expected_observation_paths(story_dir, registry)
+    observation_dir = story_dir / "source-study" / "observations"
+    actual = sorted(observation_dir.glob("*.md")) if observation_dir.exists() else []
+    expected_set = set(expected)
+    actual_set = set(actual)
+    result = ValidationResult()
+    for path in sorted(expected_set - actual_set):
+        result.errors.append(ValidationIssue("error", str(path), message="Required retained Tier 1-3 observation dossier is missing"))
+    for path in sorted(actual_set - expected_set):
+        result.errors.append(ValidationIssue("error", str(path), message="Observation dossier is not derived from a retained Tier 1-3 source ID"))
+    return expected, result.sorted()
+
+
+def _validate_artifact_lifecycle(
+    config: AnalysisConfig,
+    *,
+    ledger: EvidenceLedger | None,
+    quantitative_profile: QuantitativeProfile | None,
+    validation_record: ValidationRecord | None,
+    ledger_path: Path,
+    quantitative_path: Path,
+    validation_path: Path,
+) -> ValidationResult:
+    result = ValidationResult()
+    order = {"protocol": 0, "development": 1, "candidate_frozen": 2, "validated": 3}
+    configured = config.study_status
+    if ledger is not None:
+        if ledger.study_id != config.study_id:
+            result.errors.append(ValidationIssue("error", str(ledger_path), locator=ledger.study_id, message="Evidence ledger study identity does not match analysis configuration"))
+        if order[ledger.stage] > order[configured]:
+            result.errors.append(ValidationIssue("error", str(ledger_path), message="Evidence ledger stage leads configured analysis stage"))
+        if configured == "development" and ledger.stage == "protocol" and ledger.claims:
+            result.errors.append(ValidationIssue("error", str(ledger_path), message="Populated protocol evidence ledger cannot lag development stage"))
+        if configured == "candidate_frozen" and ledger.stage != "candidate_frozen":
+            result.errors.append(ValidationIssue("error", str(ledger_path), message="Candidate-frozen analysis requires a candidate_frozen evidence ledger"))
+        if configured == "validated" and ledger.stage != "validated":
+            result.errors.append(ValidationIssue("error", str(ledger_path), message="Validated analysis requires a validated evidence ledger"))
+    if quantitative_profile is not None:
+        if order[quantitative_profile.stage] > order[configured]:
+            result.errors.append(ValidationIssue("error", str(quantitative_path), message="Quantitative profile stage leads configured analysis stage"))
+        if configured == "development" and quantitative_profile.stage == "protocol" and (
+            quantitative_profile.generated_metrics or quantitative_profile.witnesses
+        ):
+            result.errors.append(ValidationIssue("error", str(quantitative_path), message="Populated protocol quantitative profile cannot lag development stage"))
+    if validation_record is not None:
+        if order[validation_record.stage] > order[configured]:
+            result.errors.append(ValidationIssue("error", str(validation_path), message="Validation artifact stage leads configured analysis stage"))
+        if configured == "candidate_frozen" and validation_record.stage != "candidate_frozen":
+            result.errors.append(ValidationIssue("error", str(validation_path), message="Candidate-frozen analysis requires a candidate_frozen validation record"))
+        if configured == "validated" and validation_record.stage != "validated":
+            result.errors.append(ValidationIssue("error", str(validation_path), message="Validated analysis requires a validated validation record"))
+    return result.sorted()
 
 
 def _develop(root: Path, slug: str) -> SourceAnalysisResult:
     story_dir = _story_path(root, slug)
     analysis_path = story_dir / "source-study" / "analysis.yml"
     config = load_yaml_model(analysis_path, AnalysisConfig)
+    if config.study_status not in {"protocol", "development"}:
+        raise CreativeWriterError("The develop command is available only for config status protocol or development")
     generated_paths = _resolve_generated_paths(root, slug, config)
     holdout_path = story_dir / "source-study" / "holdouts.yml"
     _require_committed_holdout(root, holdout_path)
@@ -985,8 +1115,8 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
         or source_tiers.get(current_by_id[passage_id].source_id)
         for passage_id in development_ids
     }
-    if 4 in development_tiers:
-        raise CreativeWriterError("Tier 4 passages cannot enter development metrics")
+    if any(tier not in {1, 2, 3} for tier in development_tiers):
+        raise CreativeWriterError("Development partition can contain only retained Tier 1-3 passages")
     metrics = measure_development(
         passages,
         config,
@@ -995,16 +1125,34 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
         config_sha256=_sha256(analysis_path),
         index_sha256=_sha256(index_path),
         manifest_sha256=_sha256(holdout_path),
-        config_path=analysis_path.relative_to(root).as_posix(),
-        index_path=index_path.relative_to(root).as_posix(),
-        manifest_path=holdout_path.relative_to(root).as_posix(),
+        config_path=_relative_to_root(analysis_path, root),
+        index_path=_relative_to_root(index_path, root),
+        manifest_path=_relative_to_root(holdout_path, root),
     )
 
     evidence_result = ValidationResult()
     ledger_path = story_dir / "source-study" / "evidence-ledger.yml"
     profile_path = story_dir / "source-study" / "wells-profile.md"
     quantitative_path = story_dir / "source-study" / "quantitative-profile.yml"
+    validation_path = story_dir / "source-study" / "validation.md"
     ledger = _load_optional_yaml_model(ledger_path, EvidenceLedger)
+    quantitative_profile = _load_optional_yaml_model(quantitative_path, QuantitativeProfile)
+    validation_record: ValidationRecord | None = None
+    if validation_path.exists():
+        validation_record, _ = parse_validation_document(
+            validation_path.read_text(encoding="utf-8"), validation_path
+        )
+    evidence_result.extend(
+        _validate_artifact_lifecycle(
+            config,
+            ledger=ledger,
+            quantitative_profile=quantitative_profile,
+            validation_record=validation_record,
+            ledger_path=ledger_path,
+            quantitative_path=quantitative_path,
+            validation_path=validation_path,
+        )
+    )
     if ledger is not None:
         evidence_result.extend(
             collect_evidence_issues(
@@ -1041,11 +1189,12 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
                 development_passage_ids=development_ids,
                 manifest=manifest,
                 claim_ids={claim.id for claim in ledger.claims} if ledger is not None else None,
+                admission=admission,
+                registry=registry,
             )
         )
 
-    if quantitative_path.exists():
-        quantitative_profile = load_yaml_model(quantitative_path, QuantitativeProfile)
+    if quantitative_profile is not None:
         if quantitative_profile.stage == "development" or quantitative_profile.generated_metrics or quantitative_profile.witnesses:
             forbidden_witness_ids = {
                 witness_id
@@ -1066,8 +1215,12 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
                     passages=passages,
                     development_witness_ids={current_by_id[passage_id].witness_id for passage_id in development_ids},
                     forbidden_witness_ids=forbidden_witness_ids,
+                    metrics_csv_path=generated_paths["development_metrics_csv"],
                 )
             )
+
+    _, dossier_result = _validate_development_dossier_set(story_dir, registry)
+    evidence_result.extend(dossier_result)
 
     forbidden_witness_ids = {
         witness_id
@@ -1099,13 +1252,17 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
     )
     evidence_result.extend(
         collect_leakage_issues(
-            [generated_paths["development_report"]],
+            [
+                generated_paths["development_metrics"],
+                generated_paths["development_metrics_csv"],
+                generated_paths["development_report"],
+            ],
             forbidden_witness_ids=forbidden_witness_ids,
             forbidden_passages=forbidden_passages,
         )
     )
+    _write_development_diagnostics(generated_paths["development_report"], evidence_result)
     raise_for_issues(evidence_result, "Development source-analysis validation")
-    _append_development_diagnostics(generated_paths["development_report"], evidence_result)
     return SourceAnalysisResult(
         stage="develop",
         story_slug=slug,

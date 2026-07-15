@@ -8,12 +8,17 @@ from pathlib import Path
 
 import pytest
 import yaml
+import creative_writer.source_analysis as source_analysis
 
 from creative_writer.exceptions import CreativeWriterError
 from creative_writer.files import load_yaml_model
 from creative_writer.models import SourceStudyAdmission, SourcesRegistry
 from creative_writer.source_analysis import (
     _commit_staged,
+    _expected_observation_paths,
+    _resolve_generated_paths,
+    _tracked_evidence_paths,
+    _validate_development_dossier_set,
     run_source_analysis,
     select_holdouts,
     validate_evidence_ledger,
@@ -30,7 +35,12 @@ from creative_writer.source_analysis_models import (
     WitnessQuantitativeProfile,
     WitnessDescriptor,
 )
-from creative_writer.source_evidence import ValidationIssue, validate_leakage, validate_quantitative_profile
+from creative_writer.source_evidence import (
+    ValidationIssue,
+    collect_leakage_issues,
+    validate_leakage,
+    validate_quantitative_profile,
+)
 from creative_writer.source_passages import read_passage_index
 
 
@@ -353,6 +363,14 @@ def _write_fixture(root: Path) -> Path:
     (story / "source-study" / "analysis.yml").write_text(
         yaml.safe_dump(config, sort_keys=False), encoding="utf-8"
     )
+    observations = story / "source-study/observations"
+    observations.mkdir(parents=True)
+    for source_id in ("wells-alpha", "selected-short-fiction"):
+        (observations / f"{source_id}.md").write_text(
+            "# Observation Dossier\n\n## Observations\n\n"
+            "No reviewed observations are recorded at protocol status.\n",
+            encoding="utf-8",
+        )
     return story
 
 
@@ -1132,14 +1150,19 @@ def test_observation_validator_enforces_exact_grammar_and_resolves_locators(tmp_
     index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
     first = next(item for item in index if item.witness_id == "wells-alpha")
     path = story / "source-study/observations/wells-alpha.md"
-    path.parent.mkdir(parents=True)
-    path.write_text(_observation_markdown(first.passage_id), encoding="utf-8")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(_observation_markdown(first.passage_id).replace("fixture role", "wells-alpha role"), encoding="utf-8")
+    admission, registry = _fixture_authority(story)
+    config = _config_for_selection()
+    config.dimensions[0].roles[:] = ["wells-alpha role"]
 
     result = validate_observation_dossiers(
         [path],
         index,
-        _config_for_selection(),
+        config,
         stage="development",
+        admission=admission,
+        registry=registry,
         development_passage_ids={first.passage_id},
     )
 
@@ -1154,7 +1177,7 @@ def test_observation_validator_blocks_unknown_and_holdout_locators_with_diagnost
     index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
     alpha = [item for item in index if item.witness_id == "wells-alpha"]
     path = story / "source-study/observations/wells-alpha.md"
-    path.parent.mkdir(parents=True)
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         _observation_markdown("wells-alpha:missing:1:" + "a" * 12),
         encoding="utf-8",
@@ -1223,14 +1246,7 @@ def test_profile_validator_accepts_contiguous_findings_and_links_existing_claims
         }
     )
     profile = story / "source-study/wells-profile.md"
-    sections = []
-    for index, dimension in enumerate(config.dimensions, 1):
-        if index == 1:
-            body = "#### Finding 1\n\n##### Claim IDs\n- frame-claim\n\n##### Finding\nA bounded fixture finding."
-        else:
-            body = "Protocol placeholder."
-        sections.append(f"### {index}. {dimension.label}\n\n{body}")
-    profile.write_text("# Profile\n\n" + "\n\n".join(sections) + "\n", encoding="utf-8")
+    profile.write_text(_profile_with_fields(config, "frame-claim"), encoding="utf-8")
     assert validate_profile_claim_links(profile, ledger, config, stage="development").ok
 
 
@@ -1318,6 +1334,12 @@ def test_quantitative_profile_checks_current_metric_provenance_and_witness_set(t
                 path="build/fixture/source-study/development-metrics.json",
                 sha256=_sha256(metrics_path),
             )
+            ,
+            MetricReference(
+                id="development-metrics-csv",
+                path="build/fixture/source-study/development-metrics.csv",
+                sha256=_sha256(tmp_path / "build/fixture/source-study/development-metrics.csv"),
+            )
         ],
         witnesses=witnesses,
     )
@@ -1331,6 +1353,7 @@ def test_quantitative_profile_checks_current_metric_provenance_and_witness_set(t
         profile,
         root=tmp_path,
         metrics_path=metrics_path,
+        metrics_csv_path=tmp_path / "build/fixture/source-study/development-metrics.csv",
         config=config,
         passages=index,
         development_witness_ids={item.witness_id for item in witnesses},
@@ -1371,7 +1394,7 @@ def test_leakage_checker_uses_documented_minimum_token_rule(tmp_path: Path) -> N
     )]
     path = tmp_path / "ledger.yml"
     path.write_text(text + "\n", encoding="utf-8")
-    with pytest.raises(CreativeWriterError, match="minimum 8-token rule"):
+    with pytest.raises(CreativeWriterError, match="full normalized"):
         validate_leakage(
             [path],
             forbidden_witness_ids={"forbidden"},
@@ -1535,3 +1558,461 @@ def test_rejected_claim_is_retained_without_support(tmp_path: Path) -> None:
     )
     ledger = EvidenceLedger.model_validate({"schema_version": 1, "study_id": config.study_id, "stage": "development", "mode": "descriptive", "claims": [claim]})
     assert validate_evidence_ledger(ledger, index, config=config, admission=admission, registry=registry).ok
+
+
+def test_populated_observation_validation_requires_admission_and_registry(tmp_path: Path) -> None:
+    story, _ = _fixture(tmp_path)
+    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    focal = next(item for item in index if item.witness_id == "wells-alpha")
+    path = story / "source-study/observations/wells-alpha.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(_observation_markdown(focal.passage_id), encoding="utf-8")
+
+    with pytest.raises(CreativeWriterError, match="admission.*registry"):
+        validate_observation_dossiers(
+            [path], index, _config_for_selection(), stage="development",
+            development_passage_ids={focal.passage_id},
+        )
+
+
+def test_observation_focal_and_comparison_witnesses_must_have_dimension_role(tmp_path: Path) -> None:
+    story, _ = _fixture(tmp_path)
+    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    focal = next(item for item in index if item.witness_id == "wells-alpha")
+    comparison = next(item for item in index if item.witness_id.endswith("/the-plattner-story"))
+    path = story / "source-study/observations/wells-alpha.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(_observation_markdown(focal.passage_id, comparison=comparison.passage_id), encoding="utf-8")
+    admission, registry = _fixture_authority(story)
+    config = _config_for_selection()
+    config.dimensions[0].roles[:] = ["fixture role"]
+
+    with pytest.raises(CreativeWriterError, match="(?i)focal witness.*role"):
+        validate_observation_dossiers(
+            [path], index, config, stage="development",
+            admission=admission, registry=registry,
+            development_passage_ids={focal.passage_id, comparison.passage_id},
+        )
+
+
+def test_ledger_requires_each_support_witness_to_exercise_declared_role(tmp_path: Path) -> None:
+    story, _ = _fixture(tmp_path)
+    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    config = _config_for_selection()
+    config.dimensions[0].roles[:] = ["selected-short-fiction role"]
+    admission, registry = _fixture_authority(story)
+    first = next(item for item in index if item.witness_id == "wells-alpha")
+    second = next(item for item in index if item.witness_id.endswith("/the-plattner-story"))
+    claim = _fixture_claim(
+        claim_id="per-witness-role",
+        jurisdiction={"scope": "cross_work", "roles": ["selected-short-fiction role"], "eligible_witness_ids": [first.witness_id, second.witness_id]},
+        classification="wells_distinctive",
+        support=[_fixture_reference(first), _fixture_reference(second, 2)],
+        search={
+            "witness_ids": [first.witness_id, second.witness_id], "dimensions": ["frame-architecture"],
+            "method": "manual_close_reading", "coverage": "targeted",
+            "searched_passage_ids": [first.passage_id, second.passage_id], "outcome": "no_material_counterexample",
+            "notes": "The targeted search covered both witnesses.",
+        },
+    )
+    ledger = EvidenceLedger.model_validate({"schema_version": 1, "study_id": config.study_id, "stage": "development", "mode": "descriptive", "claims": [claim]})
+
+    with pytest.raises(CreativeWriterError, match="(?i)each supporting witness.*declared.*role"):
+        validate_evidence_ledger(ledger, index, config=config, admission=admission, registry=registry, file=story / "source-study/evidence-ledger.yml")
+
+
+def test_ledger_counterexample_witness_must_match_claim_dimension_role(tmp_path: Path) -> None:
+    story, _ = _fixture(tmp_path)
+    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    config = _config_for_selection()
+    config.dimensions[0].roles[:] = ["wells-alpha role"]
+    admission, registry = _fixture_authority(story)
+    support = next(item for item in index if item.witness_id == "wells-alpha")
+    contrary = next(item for item in index if item.witness_id.endswith("/the-plattner-story"))
+    counterexample = _fixture_reference(contrary, 2)
+    counterexample["evidence_role"] = "counterexample"
+    claim = _fixture_claim(
+        claim_id="counterexample-role",
+        jurisdiction={"scope": "role_specific", "roles": ["wells-alpha role"], "eligible_witness_ids": ["wells-alpha"]},
+        classification="role_specific", support=[_fixture_reference(support)], search=None,
+    )
+    claim["counterexample_passages"] = [counterexample]
+    ledger = EvidenceLedger.model_validate({"schema_version": 1, "study_id": config.study_id, "stage": "development", "mode": "descriptive", "claims": [claim]})
+
+    with pytest.raises(CreativeWriterError, match="counterexample.*configured role"):
+        validate_evidence_ledger(ledger, index, config=config, admission=admission, registry=registry)
+
+
+def test_ledger_diagnostics_retain_file_path_for_identity_failures(tmp_path: Path) -> None:
+    story, _ = _fixture(tmp_path)
+    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    config = _config_for_selection()
+    config.dimensions[0].roles[:] = ["wells-alpha role"]
+    admission, registry = _fixture_authority(story)
+    passage = next(item for item in index if item.witness_id == "wells-alpha")
+    reference = _fixture_reference(passage)
+    reference["passage_id"] = "wells-alpha:stale:1:" + "0" * 12
+    claim = _fixture_claim(
+        claim_id="stale-reference",
+        jurisdiction={"scope": "role_specific", "roles": ["wells-alpha role"], "eligible_witness_ids": ["wells-alpha"]},
+        classification="role_specific", support=[reference], search=None,
+        status="rejected",
+    )
+    ledger = EvidenceLedger.model_validate({"schema_version": 1, "study_id": config.study_id, "stage": "development", "mode": "descriptive", "claims": [claim]})
+    with pytest.raises(CreativeWriterError) as caught:
+        validate_evidence_ledger(ledger, index, config=config, admission=admission, registry=registry, file=story / "source-study/evidence-ledger.yml")
+    assert "evidence-ledger.yml" in str(caught.value)
+
+
+def test_ledger_study_identity_must_match_configuration(tmp_path: Path) -> None:
+    story, _ = _fixture(tmp_path)
+    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    config = _config_for_selection()
+    ledger = EvidenceLedger.model_validate({"schema_version": 1, "study_id": "other-study", "stage": "development", "mode": "descriptive", "claims": []})
+    with pytest.raises(CreativeWriterError, match="study identity"):
+        validate_evidence_ledger(ledger, index, config=config, file=story / "source-study/evidence-ledger.yml")
+
+
+def test_omnibus_dependence_requires_content_after_prefix(tmp_path: Path) -> None:
+    story, _ = _fixture(tmp_path)
+    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    config = _config_for_selection()
+    config.dimensions[0].roles[:] = ["selected-short-fiction role"]
+    admission, registry = _fixture_authority(story)
+    first = next(item for item in index if item.witness_id.endswith("/the-plattner-story"))
+    second = next(item for item in index if item.witness_id.endswith("/the-sea-raiders"))
+    claim = _fixture_claim(
+        claim_id="empty-omnibus-note",
+        jurisdiction={"scope": "cross_work", "roles": ["selected-short-fiction role"], "eligible_witness_ids": [first.witness_id, second.witness_id]},
+        classification="wells_distinctive",
+        support=[_fixture_reference(first, 2), _fixture_reference(second, 2)],
+        search={
+            "witness_ids": [first.witness_id, second.witness_id], "dimensions": ["frame-architecture"],
+            "method": "manual_close_reading", "coverage": "targeted", "searched_passage_ids": [first.passage_id, second.passage_id],
+            "outcome": "no_material_counterexample", "notes": "The targeted search covered both witnesses.",
+        },
+    )
+    claim["notes"] = "Omnibus dependence:"
+    ledger = EvidenceLedger.model_validate({"schema_version": 1, "study_id": config.study_id, "stage": "development", "mode": "descriptive", "claims": [claim]})
+    with pytest.raises(CreativeWriterError, match="Omnibus dependence"):
+        validate_evidence_ledger(ledger, index, config=config, admission=admission, registry=registry)
+
+
+def test_observation_grammar_rejects_stray_prefix_and_unknown_heading(tmp_path: Path) -> None:
+    story, _ = _fixture(tmp_path)
+    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    focal = next(item for item in index if item.witness_id == "wells-alpha")
+    path = story / "source-study/observations/wells-alpha.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    content = _observation_markdown(focal.passage_id).replace(
+        "### Observation 1", "Stray prefix.\n\n### Observation 1\n\n#### Unknown\nstray"
+    )
+    path.write_text(content, encoding="utf-8")
+    with pytest.raises(CreativeWriterError, match="stray|ordered"):
+        validate_observation_dossiers([path], index, _config_for_selection(), stage="development", development_passage_ids={focal.passage_id})
+
+
+def test_observation_grammar_accepts_backticked_claim_ids_and_multiple_entries(tmp_path: Path) -> None:
+    story, _ = _fixture(tmp_path)
+    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    first = next(item for item in index if item.witness_id == "wells-alpha")
+    second = next(item for item in index if item.witness_id == "wells-alpha" and item.passage_id != first.passage_id)
+    path = story / "source-study/observations/wells-alpha.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    text = _observation_markdown(first.passage_id).replace("fixture role", "wells-alpha role").replace("None.", "- `claim-one`\n- `claim-two`")
+    second_body = _observation_markdown(second.passage_id).replace("fixture role", "wells-alpha role").split("### Observation 1\n\n", 1)[1].replace("None.", "- `claim-three`")
+    text = text.replace("\n\n", "\n\n", 1) + "\n### Observation 2\n\n" + second_body
+    path.write_text(text, encoding="utf-8")
+    admission, registry = _fixture_authority(story)
+    config = _config_for_selection()
+    config.dimensions[0].roles[:] = ["wells-alpha role"]
+    result = validate_observation_dossiers([path], index, config, stage="development", admission=admission, registry=registry, development_passage_ids={first.passage_id, second.passage_id}, claim_ids={"claim-one", "claim-two", "claim-three"})
+    assert result.ok
+
+
+def _profile_with_fields(config: AnalysisConfig, claim_id: str, *, absolute: bool = False, deferred_control: bool = True) -> str:
+    finding = "The finding is bounded and descriptive."
+    if absolute:
+        finding = "The finding always holds."
+    field_values = {
+        "Claim IDs": f"- `{claim_id}`",
+        "Finding": finding,
+        "Classification and confidence": "Classification: `role_specific`\nConfidence: `tentative`",
+        "Jurisdiction": "The finding is limited to the configured dimension and witness role.",
+        "Evidence": "Representative evidence is retained in the ledger.",
+        "Variation and counterexamples": "Variation and counterexamples are recorded in the ledger.",
+        "Quantitative context": "The current metric context is descriptive and per witness.",
+        "Control distinction": "Deferred until validation." if deferred_control else "The control comparison remains distinct.",
+        "Unresolved uncertainty": "The finding remains uncertain outside the declared scope.",
+    }
+    fields = "\n\n".join(f"##### {name}\n{value}" for name, value in field_values.items())
+    sections = [f"### {i}. {dimension.label}\n\n" + (f"#### Finding 1\n\n{fields}" if i == 1 else "Protocol placeholder.") for i, dimension in enumerate(config.dimensions, 1)]
+    return "# Profile\n\n" + "\n\n".join(sections) + "\n"
+
+
+def test_profile_finding_requires_exact_ordered_fields_and_backticked_links(tmp_path: Path) -> None:
+    story, _ = _fixture(tmp_path)
+    config = _config_for_selection()
+    claim = _fixture_claim(
+        claim_id="profile-claim",
+        jurisdiction={"scope": "role_specific", "roles": ["wells-alpha role"], "eligible_witness_ids": ["wells-alpha"]},
+        classification="role_specific", support=[], search=None, status="rejected",
+    )
+    ledger = EvidenceLedger.model_validate({"schema_version": 1, "study_id": config.study_id, "stage": "development", "mode": "descriptive", "claims": [claim]})
+    profile = story / "source-study/wells-profile.md"
+    profile.write_text(_profile_with_fields(config, "profile-claim"), encoding="utf-8")
+    assert validate_profile_claim_links(profile, ledger, config, stage="development").ok
+
+
+def test_profile_development_finding_blocks_absolute_wording(tmp_path: Path) -> None:
+    story, _ = _fixture(tmp_path)
+    config = _config_for_selection()
+    claim = _fixture_claim(
+        claim_id="profile-absolute",
+        jurisdiction={"scope": "role_specific", "roles": ["wells-alpha role"], "eligible_witness_ids": ["wells-alpha"]},
+        classification="role_specific", support=[], search=None, status="rejected",
+    )
+    ledger = EvidenceLedger.model_validate({"schema_version": 1, "study_id": config.study_id, "stage": "development", "mode": "descriptive", "claims": [claim]})
+    profile = story / "source-study/wells-profile.md"
+    profile.write_text(_profile_with_fields(config, "profile-absolute", absolute=True), encoding="utf-8")
+    with pytest.raises(CreativeWriterError, match="always/never/invariably"):
+        validate_profile_claim_links(profile, ledger, config, stage="development")
+
+
+def test_leakage_requires_full_passage_sequence_and_boundary_safe_ids(tmp_path: Path) -> None:
+    text = "one two three four five six seven eight nine"
+    digest = hashlib.sha256(text.encode()).hexdigest()
+    passage = PassageRecord(
+        witness_id="holdout", witness_ordinal=1, source_id="holdout", selection_id=None,
+        source_fingerprint=HASH, heading_path=["Heading"], heading_label="Heading", block_type="paragraph",
+        source_ordinal=1, heading_ordinal=1, normalized_text=text, original_text=text, word_count=9,
+        direct_dialogue="none", content_hash=digest, passage_id=f"holdout:heading:1:{digest[:12]}",
+    )
+    partial = tmp_path / "partial.md"
+    partial.write_text("zero " + " ".join(text.split()[:8]), encoding="utf-8")
+    boundary = tmp_path / "boundary.md"
+    boundary.write_text("holdout-extra", encoding="utf-8")
+    assert not collect_leakage_issues([partial, boundary], forbidden_witness_ids={"holdout"}, forbidden_passages=[passage]).errors
+    full = tmp_path / "full.md"
+    full.write_text(text, encoding="utf-8")
+    with pytest.raises(CreativeWriterError, match="full normalized"):
+        validate_leakage([full], forbidden_witness_ids={"holdout"}, forbidden_passages=[passage])
+
+
+def test_diagnostics_write_is_atomic_and_preserves_previous_report_on_replace_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    report = tmp_path / "development-report.md"
+    report.write_text("old report\n", encoding="utf-8")
+    previous = report.read_bytes()
+    monkeypatch.setattr("creative_writer.source_analysis.os.replace", lambda *_args: (_ for _ in ()).throw(OSError("forced replace failure")))
+    with pytest.raises(CreativeWriterError, match="diagnostics"):
+        source_analysis._write_development_diagnostics(report, errors=2, warnings=1)
+    assert report.read_bytes() == previous
+
+
+def test_develop_rejects_config_stage_outside_protocol_or_development(tmp_path: Path) -> None:
+    story = _write_fixture(tmp_path)
+    config_path = story / "source-study/analysis.yml"
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    config["study_status"] = "candidate_frozen"
+    config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+    with pytest.raises(CreativeWriterError, match="develop.*protocol or development"):
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+
+def _development_metric_fixture(tmp_path: Path) -> tuple[Path, AnalysisConfig, dict, Path, Path, list[PassageRecord]]:
+    story, _ = _fixture(tmp_path)
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.email", "fixture@example.test"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.name", "Fixture"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "add", "stories/fixture/source-study/holdouts.yml"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "lock fixture holdouts"], cwd=tmp_path, check=True)
+    run_source_analysis(tmp_path, "fixture", "develop")
+    config = _config_for_selection()
+    config.study_status = "development"
+    metrics_path = tmp_path / "build/fixture/source-study/development-metrics.json"
+    csv_path = tmp_path / "build/fixture/source-study/development-metrics.csv"
+    metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    return story, config, metrics, metrics_path, csv_path, index
+
+
+def _complete_quantitative_profile(config: AnalysisConfig, metrics: dict, metrics_path: Path, csv_path: Path) -> QuantitativeProfile:
+    return QuantitativeProfile(
+        schema_version=1,
+        study_id=config.study_id,
+        stage="development",
+        generated_metrics=[
+            MetricReference(id="development-metrics", path=config.generated_paths["development_metrics"], sha256=_sha256(metrics_path)),
+            MetricReference(id="development-metrics-csv", path=config.generated_paths["development_metrics_csv"], sha256=_sha256(csv_path)),
+        ],
+        witnesses=[
+            WitnessQuantitativeProfile(
+                witness_id=item["witness_id"],
+                source_id=item["source_id"],
+                selection_id=item["selection_id"] or None,
+                values={"total_words": item["total_words"]},
+                variation="Fixture variation.",
+                limitations="Fixture limitation.",
+                interpretive_relevance="Fixture relevance.",
+            )
+            for item in metrics["witnesses"]
+        ],
+    )
+
+
+def test_quantitative_profile_requires_exact_json_and_csv_references(tmp_path: Path) -> None:
+    _story, config, metrics, metrics_path, csv_path, index = _development_metric_fixture(tmp_path)
+    profile = _complete_quantitative_profile(config, metrics, metrics_path, csv_path)
+    profile.generated_metrics.pop()
+    with pytest.raises(CreativeWriterError, match="exactly.*JSON and CSV"):
+        validate_quantitative_profile(profile, root=tmp_path, metrics_path=metrics_path, metrics_csv_path=csv_path, config=config, passages=index, development_witness_ids={item.witness_id for item in profile.witnesses})
+
+
+def test_quantitative_profile_rejects_invented_empty_and_mismatched_values(tmp_path: Path) -> None:
+    _story, config, metrics, metrics_path, csv_path, index = _development_metric_fixture(tmp_path)
+    profile = _complete_quantitative_profile(config, metrics, metrics_path, csv_path)
+    profile.witnesses[0].values = {"invented.metric": 1}
+    with pytest.raises(CreativeWriterError, match="does not resolve"):
+        validate_quantitative_profile(profile, root=tmp_path, metrics_path=metrics_path, metrics_csv_path=csv_path, config=config, passages=index, development_witness_ids={item.witness_id for item in profile.witnesses})
+    profile.witnesses[0].values = {"total_words": None}
+    with pytest.raises(CreativeWriterError, match="exactly equal|nonempty"):
+        validate_quantitative_profile(profile, root=tmp_path, metrics_path=metrics_path, metrics_csv_path=csv_path, config=config, passages=index, development_witness_ids={item.witness_id for item in profile.witnesses})
+
+
+def test_quantitative_profile_rejects_empty_or_stale_csv_provenance(tmp_path: Path) -> None:
+    _story, config, metrics, metrics_path, csv_path, index = _development_metric_fixture(tmp_path)
+    profile = _complete_quantitative_profile(config, metrics, metrics_path, csv_path)
+    csv_path.write_text("study_id,stage\n", encoding="utf-8")
+    profile.generated_metrics[1].sha256 = _sha256(csv_path)
+    with pytest.raises(CreativeWriterError, match="data rows|provenance"):
+        validate_quantitative_profile(profile, root=tmp_path, metrics_path=metrics_path, metrics_csv_path=csv_path, config=config, passages=index, development_witness_ids={item.witness_id for item in profile.witnesses})
+
+
+def test_leakage_scans_all_tracked_evidence_files_and_three_development_outputs(tmp_path: Path) -> None:
+    story, _ = _fixture(tmp_path)
+    source_study = story / "source-study"
+    tracked = [
+        source_study / "quantitative-profile.yml",
+        source_study / "evidence-ledger.yml",
+        source_study / "wells-profile.md",
+        source_study / "period-controls.md",
+        source_study / "validation.md",
+        source_study / "observations" / "wells-alpha.md",
+        source_study / "observations" / "selected-short-fiction.md",
+    ]
+    for path in tracked:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("holdout", encoding="utf-8")
+    assert set(tracked) <= set(_tracked_evidence_paths(story))
+    outputs = [
+        tmp_path / "build/fixture/source-study/development-metrics.json",
+        tmp_path / "build/fixture/source-study/development-metrics.csv",
+        tmp_path / "build/fixture/source-study/development-report.md",
+    ]
+    for path in outputs:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("holdout", encoding="utf-8")
+    result = collect_leakage_issues(tracked + outputs, forbidden_witness_ids={"holdout"}, forbidden_passages=[])
+    assert len(result.errors) == len(tracked) + len(outputs)
+
+
+def test_develop_requires_exact_retained_tier_one_to_three_dossiers(tmp_path: Path) -> None:
+    story, _ = _fixture(tmp_path)
+    admission, registry = _fixture_authority(story)
+    expected = _expected_observation_paths(story, registry)
+    (expected[0]).unlink()
+    extra = story / "source-study/observations/not-retained.md"
+    extra.write_text("# Extra\n", encoding="utf-8")
+    paths, result = _validate_development_dossier_set(story, registry)
+    assert set(paths) == set(expected)
+    assert any("missing" in issue.message for issue in result.errors)
+    assert any("not derived" in issue.message for issue in result.errors)
+    assert admission.sources
+
+
+def _validated_identity_failure(tmp_path: Path, update: dict[str, object], message: str) -> None:
+    story, _ = _fixture(tmp_path)
+    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    config = _config_for_selection()
+    config.dimensions[0].roles[:] = ["wells-alpha role"]
+    admission, registry = _fixture_authority(story)
+    passage = next(item for item in index if item.witness_id == "wells-alpha")
+    claim = _fixture_claim(
+        claim_id="identity-failure",
+        jurisdiction={"scope": "role_specific", "roles": ["wells-alpha role"], "eligible_witness_ids": ["wells-alpha"]},
+        classification="role_specific", support=[_fixture_reference(passage)], search=None, status="rejected",
+    )
+    ledger = EvidenceLedger.model_validate({"schema_version": 1, "study_id": config.study_id, "stage": "development", "mode": "descriptive", "claims": [claim]})
+    ledger.claims[0].supporting_passages[0] = ledger.claims[0].supporting_passages[0].model_copy(update=update)
+    with pytest.raises(CreativeWriterError, match=message):
+        validate_evidence_ledger(ledger, index, config=config, admission=admission, registry=registry, file=story / "source-study/evidence-ledger.yml")
+
+
+def test_ledger_rejects_source_identity_mismatch(tmp_path: Path) -> None:
+    _validated_identity_failure(tmp_path, {"source_id": "other-source"}, "source/selection identity")
+
+
+def test_ledger_rejects_selection_identity_mismatch(tmp_path: Path) -> None:
+    _validated_identity_failure(tmp_path, {"selection_id": "selection-that-is-not-real"}, "source/selection identity")
+
+
+def test_ledger_rejects_tier_mismatch(tmp_path: Path) -> None:
+    _validated_identity_failure(tmp_path, {"authority_tier": 2}, "authority tier")
+
+
+def test_ledger_rejects_fingerprint_mismatch(tmp_path: Path) -> None:
+    story, _ = _fixture(tmp_path)
+    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    config = _config_for_selection()
+    config.dimensions[0].roles[:] = ["wells-alpha role"]
+    admission, registry = _fixture_authority(story)
+    passage = next(item for item in index if item.witness_id == "wells-alpha")
+    passage.source_fingerprint = "b" * 64
+    claim = _fixture_claim(
+        claim_id="fingerprint-failure",
+        jurisdiction={"scope": "role_specific", "roles": ["wells-alpha role"], "eligible_witness_ids": ["wells-alpha"]},
+        classification="role_specific", support=[_fixture_reference(passage)], search=None, status="rejected",
+    )
+    ledger = EvidenceLedger.model_validate({"schema_version": 1, "study_id": config.study_id, "stage": "development", "mode": "descriptive", "claims": [claim]})
+    with pytest.raises(CreativeWriterError, match="fingerprint"):
+        validate_evidence_ledger(ledger, index, config=config, admission=admission, registry=registry)
+
+
+def test_development_rejects_tier_four_control_and_tier_two_continuity(tmp_path: Path) -> None:
+    story, _ = _fixture(tmp_path)
+    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    config = _config_for_selection()
+    config.dimensions[0].roles[:] = ["selected-short-fiction role"]
+    admission, registry = _fixture_authority(story)
+    control = next(item for item in index if item.witness_id == "control")
+    control_reference = _fixture_reference(control, 4)
+    control_reference["evidence_role"] = "control"
+    claim = _fixture_claim(
+        claim_id="control-failure",
+        jurisdiction={"scope": "role_specific", "roles": ["selected-short-fiction role"], "eligible_witness_ids": ["selected-short-fiction/the-plattner-story"]},
+        classification="role_specific", support=[], search=None, status="rejected",
+    )
+    claim["counterexample_passages"] = [control_reference]
+    ledger = EvidenceLedger.model_validate({"schema_version": 1, "study_id": config.study_id, "stage": "development", "mode": "descriptive", "claims": [claim]})
+    with pytest.raises(CreativeWriterError, match="Control and validation.*unavailable"):
+        validate_evidence_ledger(ledger, index, config=config, stage="development", admission=admission, registry=registry)
+
+    selected = next(item for item in index if item.witness_id.endswith("/the-plattner-story"))
+    continuity = _fixture_claim(
+        claim_id="tier-two-continuity",
+        jurisdiction={"scope": "continuity", "roles": ["selected-short-fiction role"], "eligible_witness_ids": [selected.witness_id]},
+        classification="role_specific", support=[_fixture_reference(selected, 2)], search=None,
+    )
+    continuity["counterexample_search"] = {
+        "witness_ids": [selected.witness_id], "dimensions": ["frame-architecture"], "method": "manual_close_reading", "coverage": "targeted", "searched_passage_ids": [selected.passage_id], "outcome": "no_material_counterexample", "notes": "A bounded search was performed.",
+    }
+    continuity_ledger = EvidenceLedger.model_validate({"schema_version": 1, "study_id": config.study_id, "stage": "development", "mode": "descriptive", "claims": [continuity]})
+    with pytest.raises(CreativeWriterError, match="continuity eligibility"):
+        validate_evidence_ledger(continuity_ledger, index, config=config, admission=admission, registry=registry)
+
+
+def test_generated_path_resolution_accepts_var_private_var_alias_without_escape(tmp_path: Path) -> None:
+    config = _config_for_selection()
+    alias_root = Path(str(tmp_path).replace("/private", "", 1))
+    resolved = _resolve_generated_paths(alias_root, "fixture", config)
+    assert resolved["development_report"].resolve(strict=False).is_relative_to(tmp_path.resolve(strict=False))

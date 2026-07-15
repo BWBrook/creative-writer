@@ -241,10 +241,12 @@
 - Modify: `stories/time-expedition/source-study/README.md`
 - Modify: `stories/time-expedition/source-study/method.md`
 - Generated only: `build/time-expedition/source-study/corpus-lock.json`
-- Generated only: `build/time-expedition/source-study/passage-index.jsonl`
+- Generated only: `build/time-expedition/source-study/indexes/development.jsonl`
+- Generated only: `build/time-expedition/source-study/indexes/heldout-wells.jsonl`
+- Generated only: `build/time-expedition/source-study/indexes/tier4-controls.jsonl`
 
 - [ ] Run `make source-admission STORY=time-expedition` and confirm the Phase 2A boundary passes unchanged.
-- [ ] Run `make source-analysis STORY=time-expedition STAGE=prepare` once to create the real corpus lock, passage index, and tracked holdout manifest.
+- [ ] Run `make source-analysis STORY=time-expedition STAGE=prepare` once to create the real corpus lock, three physically separate passage indexes, and tracked holdout manifest.
 - [ ] Audit exact witness counts, whole-work holdout identity, within-work holdout counts, tertile coverage, source fingerprints, and absence of Tier 4 development windows.
 - [ ] Run the same prepare command again and prove byte-stable tracked `holdouts.yml` plus semantic verification of generated outputs.
 - [ ] Review the protocol and partition with a fresh agent before any detailed Wells reading begins; fix blocking defects and rerun.
@@ -310,13 +312,14 @@
 - Generated only: `build/time-expedition/source-study/validation-packet.md`
 - Generated only: `build/time-expedition/source-study/analysis-report.md`
 
-- [ ] Run candidate-frozen `make source-analysis STORY=time-expedition STAGE=validate` to open and measure held-out Wells passages and quarantined Tier 4 controls.
+- [ ] Run candidate-frozen `make source-analysis STORY=time-expedition STAGE=validate` with `validation_step: frozen` to open and measure held-out Wells passages only; Tier 4 controls remain unopened.
+- [ ] Record and commit complete held-out assessments, advance to `validation_step: heldout_assessed`, then rerun validation to authorise and measure Tier 4 controls.
 - [ ] Assess each predeclared expectation against source-wise directions and context, explicitly allowing authentic variation; do not use significance tests or an authorship verdict.
 - [ ] Populate `period-controls.md` by Wells claim, with the authorising control role, similarities/differences, cited control passages, corrected classification, and prohibited inference.
 - [ ] Give a fresh independent reviewer the frozen candidate profile/ledger, authority policy, generated measurements, and anonymised validation packets where practical. Record review method, findings, uncertainty, and any inability to discriminate.
 - [ ] Transition every candidate claim to `validated`, `qualified`, or `rejected`; retain rejected claims and record the reason. Adjust confidence/classification/jurisdiction only where validation evidence supports it.
 - [ ] Reconcile the final descriptive profile with claim outcomes, preserving variation and adding control distinctions without writing Phase 2C instructions.
-- [ ] Record claim transitions, held-out results, controls, reviewer findings, unresolved uncertainty, and current final profile hash in `validation.md`; set `study_status: validated`.
+- [ ] Record claim transitions, held-out results, controls, reviewer findings, unresolved uncertainty, and current final profile/ledger hashes in `validation.md`; set its `stage: validated` and `validation_step: complete` while leaving the candidate-frozen `analysis.yml` byte-identical to its recorded candidate blob.
 - [ ] Run final `validate` to compile `analysis-report.md` and block any incomplete transition, stale hash, authority error, or missing control/reviewer treatment.
 - [ ] Review the final report for traceability, source separation, descriptive-only language, and explicit stop point.
 - [ ] Commit the validated evidence layer.
@@ -348,7 +351,7 @@ Phase 2B is implemented only when all of the following are simultaneously true:
 
 - the approved corpus and every fingerprint still pass Phase 2A admission;
 - the tracked holdout manifest predates detailed analysis and verifies byte-for-byte on rerun;
-- the passage index resolves every tracked evidence locator;
+- the three physical passage indexes resolve every tracked evidence locator and remain pairwise disjoint;
 - development outputs contain neither held-out Wells nor Tier 4 positive evidence;
 - deterministic metrics remain per witness and retain documented limits;
 - all ten dimensions are represented in source-level observations and descriptive synthesis;

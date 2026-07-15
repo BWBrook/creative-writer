@@ -6,6 +6,7 @@ import hashlib
 import json
 import math
 import os
+import subprocess
 import tempfile
 import uuid
 from dataclasses import dataclass
@@ -37,8 +38,10 @@ from creative_writer.source_analysis_models import (
 from creative_writer.source_passages import (
     parse_markdown_witness,
     partition_windows,
+    read_passage_index,
     serialize_passage_index,
 )
+from creative_writer.source_metrics import measure_development
 
 
 TOOL_VERSION = f"creative-writer {__version__}"
@@ -796,11 +799,159 @@ def _prepare(root: Path, slug: str) -> SourceAnalysisResult:
     )
 
 
+def _require_committed_holdout(root: Path, holdout_path: Path) -> None:
+    """Require the partition lock to exist in Git before development opens."""
+
+    relative = holdout_path.relative_to(root).as_posix()
+    try:
+        listed = subprocess.run(
+            ["git", "ls-files", "--error-unmatch", relative],
+            cwd=root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+        status = subprocess.run(
+            ["git", "status", "--porcelain", "--", relative],
+            cwd=root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+    except OSError as exc:
+        raise CreativeWriterError(
+            f"Unable to verify that holdout manifest is tracked/committed: {exc}"
+        ) from exc
+    if listed.returncode != 0 or listed.stdout.strip() != relative:
+        raise CreativeWriterError(
+            f"Development requires holdout manifest `{relative}` to be tracked/committed"
+        )
+    if status.returncode != 0:
+        detail = status.stderr.strip() or "git status failed"
+        raise CreativeWriterError(f"Unable to verify committed holdout manifest: {detail}")
+    if status.stdout.strip():
+        raise CreativeWriterError(
+            f"Development requires holdout manifest `{relative}` to be committed; working-tree changes remain"
+        )
+
+
+def _develop(root: Path, slug: str) -> SourceAnalysisResult:
+    story_dir = _story_path(root, slug)
+    analysis_path = story_dir / "source-study" / "analysis.yml"
+    config = load_yaml_model(analysis_path, AnalysisConfig)
+    generated_paths = _resolve_generated_paths(root, slug, config)
+    holdout_path = story_dir / "source-study" / "holdouts.yml"
+    _require_committed_holdout(root, holdout_path)
+    lock_path = generated_paths["corpus_lock"]
+    index_path = generated_paths["passage_index"]
+    if not lock_path.exists() or not index_path.exists() or not holdout_path.exists():
+        raise CreativeWriterError(
+            "Development requires the prepared corpus lock, passage index, and holdout manifest"
+        )
+
+    admission_result = check_source_admission(root, slug)
+    if not admission_result.ok:
+        details = "\n".join(f"- {error}" for error in admission_result.errors)
+        raise CreativeWriterError(f"Source admission failed for `{slug}`:\n{details}")
+    admission_path = _registry_path(story_dir, config.admission_registry.path)
+    source_path = _registry_path(story_dir, config.source_registry.path)
+    _verify_registry_hash(admission_path, config.admission_registry.sha256, "Admission registry")
+    _verify_registry_hash(source_path, config.source_registry.sha256, "Source registry")
+    admission = load_yaml_model(admission_path, SourceStudyAdmission)
+    registry = load_yaml_model(source_path, SourcesRegistry)
+    _validate_analysis_authority(config, admission)
+    witnesses, source_tiers = _expanded_witnesses(story_dir=story_dir, registry=registry)
+    _validate_expected_corpus(config, admission, registry, witnesses)
+    registry_hashes = {
+        config.admission_registry.path: config.admission_registry.sha256,
+        config.source_registry.path: config.source_registry.sha256,
+    }
+    expected_lock = build_corpus_lock(
+        slug=slug,
+        config=config,
+        admission=admission,
+        registry=registry,
+        witnesses=witnesses,
+        registry_hashes=registry_hashes,
+    )
+    _validate_existing_json(lock_path, expected_lock, "corpus lock")
+    try:
+        passages = read_passage_index(index_path)
+    except CreativeWriterError as exc:
+        raise CreativeWriterError(f"Development passage index verification failed: {exc}") from exc
+    passage_ids = {passage.passage_id for passage in passages}
+    manifest = _load_existing_manifest(holdout_path)
+    if manifest is None:
+        raise CreativeWriterError(f"Missing committed holdout manifest: {holdout_path}")
+    _validate_manifest_passages(manifest, passage_ids)
+    expected_manifest = _build_holdout_manifest(
+        config=config,
+        registry_hashes=registry_hashes,
+        registry=registry,
+        witnesses=witnesses,
+        passages=passages,
+        source_tiers=source_tiers,
+        created_at=manifest.created_at,
+    )
+    if manifest.model_dump(mode="json") != expected_manifest.model_dump(mode="json"):
+        raise CreativeWriterError("Committed holdout manifest differs from the current corpus partition")
+    development_ids = {
+        passage_id
+        for witness in manifest.witnesses
+        for window in witness.development_windows
+        for passage_id in window.passage_ids
+    }
+    holdout_ids = {
+        passage_id
+        for witness in manifest.witnesses
+        for window in witness.holdout_windows
+        for passage_id in window.passage_ids
+    }
+    if development_ids & holdout_ids:
+        raise CreativeWriterError("Development and holdout passage IDs overlap")
+    if not development_ids:
+        raise CreativeWriterError("Holdout manifest contains no development passages")
+    current_by_id = {passage.passage_id: passage for passage in passages}
+    development_tiers = {
+        source_tiers.get(current_by_id[passage_id].witness_id)
+        or source_tiers.get(current_by_id[passage_id].source_id)
+        for passage_id in development_ids
+    }
+    if 4 in development_tiers:
+        raise CreativeWriterError("Tier 4 passages cannot enter development metrics")
+    metrics = measure_development(
+        passages,
+        config,
+        development_ids,
+        output_paths=generated_paths,
+        config_sha256=_sha256(analysis_path),
+        index_sha256=_sha256(index_path),
+        manifest_sha256=_sha256(holdout_path),
+    )
+    return SourceAnalysisResult(
+        stage="develop",
+        story_slug=slug,
+        witness_count=len(metrics),
+        passage_count=len(development_ids),
+        generated_paths=generated_paths,
+        holdout_path=holdout_path,
+        holdout_manifest_created=False,
+    )
+
+
 def run_source_analysis(root: Path, slug: str, stage: str) -> SourceAnalysisResult:
     """Run one staged source-analysis operation."""
 
-    if stage != "prepare":
+    if stage == "prepare":
+        return _prepare(root, slug)
+    if stage == "develop":
+        return _develop(root, slug)
+    if stage != "validate":
         raise CreativeWriterError(
-            f"Source analysis stage `{stage}` is not implemented; only `prepare` is available"
+            f"Source analysis stage `{stage}` is not implemented; prepare and develop are available"
         )
-    return _prepare(root, slug)
+    raise CreativeWriterError(
+        "Source analysis stage `validate` is not implemented; prepare and develop are available"
+    )

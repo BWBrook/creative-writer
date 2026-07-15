@@ -568,6 +568,33 @@ class HoldoutManifest(StrictModel):
 MetricValue = StrictInt | StrictFloat | StrictBool | StrictStr | None
 
 
+class MetricDistribution(StrictModel):
+    """Standard-library distribution summary emitted by source metrics."""
+
+    count: StrictInt = Field(ge=0)
+    minimum: StrictInt | StrictFloat | None
+    p10: StrictInt | StrictFloat | None
+    p25: StrictInt | StrictFloat | None
+    median: StrictInt | StrictFloat | None
+    p75: StrictInt | StrictFloat | None
+    p90: StrictInt | StrictFloat | None
+    maximum: StrictInt | StrictFloat | None
+    mean: StrictInt | StrictFloat | None
+
+
+class MetricCandidateFlag(StrictModel):
+    """A within-witness sampling aid, never an interpretive finding."""
+
+    kind: NonEmptyText
+    metric: NonEmptyText
+    value: StrictInt | StrictFloat
+    reason: NonEmptyText
+    passage_id: NonEmptyText
+    section_id: NonEmptyText
+    sampling_aid: StrictBool = True
+    interpretive_finding: StrictBool = False
+
+
 class MetricReference(StrictModel):
     id: Slug
     path: RelativePath

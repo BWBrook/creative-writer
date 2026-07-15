@@ -1,66 +1,110 @@
 # Original Reference Corpus
 
-This subtree retains the canonical and comparative Wells sources for the
-*Time Expedition* anthology. It is reference material, not anthology
-manuscript or planning prose.
+This subtree retains the closed reference corpus for the *Time Expedition*
+forensic source study. It is reference material, not anthology manuscript,
+planning prose, or completed analysis.
 
 ## Authority map
 
-- *The Time Machine* is the sole story-world canon and primary style anchor.
-  It governs the Time Traveller, fictional continuity, frame architecture,
-  reported first-person voice, scientific exposition, and speculative method.
-- *The Invisible Man* is a secondary style anchor for sustained dialogue,
-  social interaction, class register, comic friction, concealment, speech
-  attribution, and crowd response. It contributes no fictional continuity to
-  *Time Expedition*.
-- *The Island of Doctor Moreau* is a bounded secondary witness for retrospective
-  first-person narration, scientific argument, moral pressure, and dialogue
-  under stress. It contributes no fictional continuity, Moreau characters, or
-  inventions.
-- *The War of the Worlds* is a bounded secondary witness for catastrophe,
-  landscape observation, public behaviour, and movement from evidence to
-  speculation. It contributes no fictional continuity or Martian inventions.
+| Tier | Retained source | Authority |
+|---:|---|---|
+| 1 | H. G. Wells, *The Time Machine* | Sole story-world canon and primary style authority |
+| 2 | H. G. Wells, *The Invisible Man* | Dialogue, social register, and comic friction |
+| 2 | H. G. Wells, *The Island of Doctor Moreau* | Retrospective scientific adventure and moral pressure |
+| 2 | H. G. Wells, *The War of the Worlds* | Catastrophe, landscape observation, and public behaviour |
+| 2 | H. G. Wells, four selected short stories | Bounded short-form and role-specific evidence |
+| 3 | H. G. Wells, *Certain Personal Matters* | Period nonfiction, explanation, humour, and idiom |
+| 3 | H. G. Wells, *Text Book of Biology, Part 1* | Scientific vocabulary, classification, and exposition |
+| 4 | Grant Allen, *The British Barbarians* | Scientific-romance and time-visitor control |
+| 4 | Arthur Conan Doyle, *A Desert Drama* | Adventure and ensemble-dialogue control |
+| 4 | Rudyard Kipling, *The Day's Work* | Technical-work and professional-register control |
+| 4 | Richard Marsh, *The Beetle* | Sensational-fiction and horror-escalation control |
+| 4 | H. Rider Haggard, *King Solomon's Mines* | Adventure architecture and motivation control |
 
-Where the books differ, *The Time Machine* governs the new expeditions.
+Where the Wells sources differ, *The Time Machine* governs continuity and the
+new expeditions. The five other authors are negative or comparative controls
+only: they cannot prescribe Wellsian style, authorise phrase borrowing, supply
+continuity, or justify a feature merely because it is historically plausible.
+For *King Solomon's Mines*, permitted comparison is limited to adventure
+motivation, expedition assembly, discovery sequence, danger escalation,
+journey architecture, and the period framing of mysterious travel. Its
+characters, places, incidents, lost-world content, imperial assumptions, and
+racial ideology are prohibited.
 
-## Files
+Arthur Conan Doyle's *The Lost World* is an unacquired Tier 5 metadata record,
+not part of this retained corpus. Its only possible future role is a
+post-window negative diagnostic for anachronistic adventure architecture or a
+later lost-world idiom. No EPUB, Markdown, conversion, or positive authority
+exists for it.
 
-- `h-g-wells_the-time-machine.epub`: unchanged compatible Standard Ebooks EPUB.
-- `h-g-wells_the-invisible-man.epub`: unchanged compatible Standard Ebooks EPUB.
-- `h-g-wells_the-island-of-doctor-moreau.epub`: unchanged compatible Standard Ebooks EPUB.
-- `h-g-wells_the-war-of-the-worlds.epub`: unchanged compatible Standard Ebooks EPUB.
-- `filters/remove-excluded-packaging-links.lua`: tracked Pandoc filter that
-  removes links into excluded ebook apparatus files.
-- `sources.yml`: authority roles, provenance, retrieval details, checksums,
-  and derivation metadata for all four retained works.
-- `text/the-time-machine.md`: chapters I-XII and epilogue in source order.
-- `text/the-invisible-man.md`: chapters I-XXVIII and epilogue in source order.
-- `text/the-island-of-doctor-moreau.md`: chapters I-XXII in source order.
-- `text/the-war-of-the-worlds.md`: Book I chapters I-XVII and Book II chapters I-X in source order.
+## File inventory
 
-The EPUBs are the archival authorities for this checkout. The Markdown exists
-for search, structural comparison, quotation checks, and the later Wells style
-study. Regenerate derived text from the pinned EPUBs rather than editing it as
-anthology prose.
+The retained corpus contains exactly twelve EPUBs:
 
-## Canon boundary
+- `h-g-wells_the-time-machine.epub`
+- `h-g-wells_the-invisible-man.epub`
+- `h-g-wells_the-island-of-doctor-moreau.epub`
+- `h-g-wells_the-war-of-the-worlds.epub`
+- `h-g-wells_short-fiction.epub`
+- `h-g-wells_certain-personal-matters.epub`
+- `h-g-wells_text-book-of-biology-part-1.epub`
+- `grant-allen_the-british-barbarians.epub`
+- `arthur-conan-doyle_a-desert-drama.epub`
+- `rudyard-kipling_the-days-work.epub`
+- `richard-marsh_the-beetle.epub`
+- `h-rider-haggard_king-solomons-mines.epub`
 
-Do not import dialogue, characters, events, technology, machine designs,
-visual motifs, or other inventions from later film, television, game,
-audiobook, or illustrated adaptations. Do not treat *The Invisible Man*, *The
-Island of Doctor Moreau*, or *The War of the Worlds* as evidence for the
-fictional continuity or governing narrator architecture of *Time Expedition*.
-Proposed short fiction, nonfiction, and control sources remain outside
-`original/` until the human corpus review.
+The derived interface contains exactly fifteen Markdown witnesses. Its eleven
+full-work files are:
 
-## Reproduce the Markdown
+- `text/the-time-machine.md`
+- `text/the-invisible-man.md`
+- `text/the-island-of-doctor-moreau.md`
+- `text/the-war-of-the-worlds.md`
+- `text/certain-personal-matters.md`
+- `text/text-book-of-biology-part-1.md`
+- `text/the-british-barbarians.md`
+- `text/a-desert-drama.md`
+- `text/the-days-work.md`
+- `text/the-beetle.md`
+- `text/king-solomons-mines.md`
 
-From the repository root in `zsh`:
+The other four witnesses are the selected stories listed below.
+`sources.yml` records every retained EPUB and Markdown SHA-256, release
+metadata, derivation input, provenance, rights, and authority role. The EPUBs
+remain the archival authorities.
+
+`filters/remove-excluded-packaging-links.lua` removes links into excluded
+Standard Ebooks apparatus. `filters/remove-project-gutenberg-boilerplate.lua`
+also removes Project Gutenberg boilerplate containers, images, front-cover
+headings, leading singular transcriber notes, and terminal transcriber/back
+cover matter. Project Gutenberg derivations apply the packaging-link filter
+first and the Gutenberg filter second.
+
+The retained short-fiction EPUB contains works that are not admitted. It has
+no aggregate Markdown file. Only these four fingerprinted selections enter
+the derived interface, in this order:
+
+1. `text/selected-short-fiction/the-plattner-story.md`
+2. `text/selected-short-fiction/the-sea-raiders.md`
+3. `text/selected-short-fiction/the-crystal-egg.md`
+4. `text/selected-short-fiction/the-star.md`
+
+The exact source fingerprints and archive metadata are recorded in
+`.superpowers/sdd/corpus-scout-report.md`; the verified filter, derivation,
+Markdown fingerprints, and boundary evidence are recorded in
+`.superpowers/sdd/task-3a-report.md`.
+
+## Regenerate the Markdown
+
+Run from the repository root in `zsh`. These commands use explicit literary
+inputs; do not substitute EPUB-wide conversion.
 
 ```zsh
 tmpdir=$(mktemp -d /tmp/time-expedition-extract.XXXXXX)
 trap 'rm -rf "$tmpdir"' EXIT
 filter=stories/time-expedition/original/filters/remove-excluded-packaging-links.lua
+gutenberg_filter=stories/time-expedition/original/filters/remove-project-gutenberg-boilerplate.lua
 
 unzip -q stories/time-expedition/original/h-g-wells_the-time-machine.epub \
   -d "$tmpdir/time-machine"
@@ -96,11 +140,75 @@ pandoc "${war_book_one[@]}" "${war_book_two[@]}" \
   --from=html --to=gfm-raw_html --wrap=none \
   --lua-filter="$filter" \
   --output=stories/time-expedition/original/text/the-war-of-the-worlds.md
+
+unzip -q stories/time-expedition/original/h-g-wells_short-fiction.epub \
+  -d "$tmpdir/short-fiction"
+for selection in the-plattner-story the-sea-raiders the-crystal-egg the-star; do
+  pandoc "$tmpdir/short-fiction/epub/text/$selection.xhtml" \
+    --from=html --to=gfm-raw_html --wrap=none \
+    --lua-filter="$filter" \
+    --output="stories/time-expedition/original/text/selected-short-fiction/$selection.md"
+done
+
+unzip -q stories/time-expedition/original/h-g-wells_certain-personal-matters.epub \
+  -d "$tmpdir/certain-personal-matters"
+certain_inputs=("$tmpdir"/certain-personal-matters/OEBPS/4588169185347793760_17508-h-{0..6}.htm.html)
+pandoc "${certain_inputs[@]}" \
+  --from=html --to=gfm-raw_html --wrap=none \
+  --lua-filter="$filter" --lua-filter="$gutenberg_filter" \
+  --output=stories/time-expedition/original/text/certain-personal-matters.md
+
+unzip -q stories/time-expedition/original/h-g-wells_text-book-of-biology-part-1.epub \
+  -d "$tmpdir/biology"
+biology_inputs=("$tmpdir"/biology/OEBPS/6496333017750439206_21781-h-{0..6}.htm.html)
+pandoc "${biology_inputs[@]}" \
+  --from=html --to=gfm-raw_html --wrap=none \
+  --lua-filter="$filter" --lua-filter="$gutenberg_filter" \
+  --output=stories/time-expedition/original/text/text-book-of-biology-part-1.md
+
+unzip -q stories/time-expedition/original/grant-allen_the-british-barbarians.epub \
+  -d "$tmpdir/british-barbarians"
+allen_inputs=("$tmpdir"/british-barbarians/OEBPS/137036109479442431_4340-h-{0..4}.htm.html)
+pandoc "${allen_inputs[@]}" \
+  --from=html --to=gfm-raw_html --wrap=none \
+  --lua-filter="$filter" --lua-filter="$gutenberg_filter" \
+  --output=stories/time-expedition/original/text/the-british-barbarians.md
+
+unzip -q stories/time-expedition/original/arthur-conan-doyle_a-desert-drama.epub \
+  -d "$tmpdir/desert-drama"
+desert_inputs=("$tmpdir"/desert-drama/OEBPS/6605053776549637356_21768-h-{0..5}.htm.html)
+pandoc "${desert_inputs[@]}" \
+  --from=html --to=gfm-raw_html --wrap=none \
+  --lua-filter="$filter" --lua-filter="$gutenberg_filter" \
+  --output=stories/time-expedition/original/text/a-desert-drama.md
+
+unzip -q stories/time-expedition/original/rudyard-kipling_the-days-work.epub \
+  -d "$tmpdir/days-work"
+kipling_inputs=("$tmpdir"/days-work/OEBPS/3331954580391865763_2569-h-{1..13}.htm.html)
+pandoc "${kipling_inputs[@]}" \
+  --from=html --to=gfm-raw_html --wrap=none \
+  --lua-filter="$filter" --lua-filter="$gutenberg_filter" \
+  --output=stories/time-expedition/original/text/the-days-work.md
+
+unzip -q stories/time-expedition/original/richard-marsh_the-beetle.epub \
+  -d "$tmpdir/beetle"
+beetle_inputs=("$tmpdir"/beetle/OEBPS/5766576426201918088_5164-h-{0..10}.htm.html)
+pandoc "${beetle_inputs[@]}" \
+  --from=html --to=gfm-raw_html --wrap=none \
+  --lua-filter="$filter" --lua-filter="$gutenberg_filter" \
+  --output=stories/time-expedition/original/text/the-beetle.md
+
+unzip -q stories/time-expedition/original/h-rider-haggard_king-solomons-mines.epub \
+  -d "$tmpdir/king-solomons-mines"
+haggard_inputs=("$tmpdir"/king-solomons-mines/epub/text/chapter-{1..20}.xhtml)
+pandoc "${haggard_inputs[@]}" \
+  --from=html --to=gfm-raw_html --wrap=none \
+  --lua-filter="$filter" \
+  --output=stories/time-expedition/original/text/king-solomons-mines.md
 ```
 
-All four extractions deliberately exclude covers, imprints, colophons,
-uncopyright pages, and other ebook packaging. The tracked Pandoc filter also
-removes any links into excluded apparatus files so the derived literary text
-has no dangling packaging links. See `sources.yml` for pinned fingerprints and
-upstream provenance. The rights records there are not legal advice. *The Time
-Machine* governs all conflicts among the retained witnesses.
+The explicit ranges exclude title, contents, cover, imprint, endnote,
+colophon, uncopyright, licence, and other packaging members. Regenerated files
+must remain non-empty UTF-8 and match the SHA-256 values in `sources.yml`.
+Detailed source analysis remains prohibited until the generated admission
+report has been reviewed by a human.

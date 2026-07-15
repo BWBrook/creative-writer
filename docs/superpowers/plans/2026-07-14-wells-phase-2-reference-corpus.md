@@ -797,16 +797,20 @@ Do not download *The Lost World*.
 Create:
 
 ```lua
-local dropping_terminal_notes = false
-
 local terminal_headings = {
   ["TRANSCRIBER'S NOTES"] = true,
   ["BACK COVER"] = true,
   ["BACK COVER:"] = true,
 }
 
+local leading_note_markers = {
+  ["TRANSCRIBER'S NOTE"] = true,
+  ["TRANSCRIBER'S NOTE:"] = true,
+}
+
 local function normalized_text(block)
-  return pandoc.utils.stringify(block):upper():gsub("’", "'"):gsub("%s+", " ")
+  local text = pandoc.utils.stringify(block):gsub("’", "'"):upper():gsub("%s+", " ")
+  return text:match("^%s*(.-)%s*$")
 end
 
 local function has_class(div, wanted)
@@ -836,14 +840,39 @@ end
 
 function Pandoc(doc)
   local kept = pandoc.List()
-  for _, block in ipairs(doc.blocks) do
-    if block.t == "Header" and terminal_headings[normalized_text(block)] then
-      dropping_terminal_notes = true
-    end
-    if not dropping_terminal_notes then
-      kept:insert(block)
+  local start_index = 1
+  local leading_note_seen = false
+  local dropping_terminal_notes = false
+
+  for index, block in ipairs(doc.blocks) do
+    if leading_note_markers[normalized_text(block)] then
+      leading_note_seen = true
+    elseif leading_note_seen and block.t == "HorizontalRule" then
+      start_index = index + 1
+      break
     end
   end
+
+  for index, block in ipairs(doc.blocks) do
+    if index >= start_index then
+      if block.t == "Header" and terminal_headings[normalized_text(block)] then
+        dropping_terminal_notes = true
+      end
+      if not dropping_terminal_notes then
+        kept:insert(block)
+      end
+    end
+  end
+
+  while #kept > 0 and
+      (kept[1].t == "HorizontalRule" or normalized_text(kept[1]) == "") do
+    kept:remove(1)
+  end
+  while #kept > 0 and
+      (kept[#kept].t == "HorizontalRule" or normalized_text(kept[#kept]) == "") do
+    kept:remove(#kept)
+  end
+
   return pandoc.Pandoc(kept, doc.meta)
 end
 ```
@@ -853,6 +882,12 @@ header, `Front Cover:` heading and image, literary paragraph,
 `TRANSCRIBER'S NOTES`, editorial paragraph, `Back Cover:` heading, and
 `pg-boilerplate` footer. Pandoc output must contain only the literary
 paragraph.
+
+Add a second synthetic fixture in which Project Gutenberg credits and a
+singular `Transcriber's Note:` precede a horizontal rule and literary text.
+The output must begin with the literary text and contain none of the leading
+editorial preamble. Run both fixtures under the inherited locale; no
+`LC_ALL=C` workaround may be required.
 
 - [ ] **Step 4: Extract only the fixed literary inputs**
 

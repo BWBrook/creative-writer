@@ -10,7 +10,10 @@ The five-tier hierarchy in the approved design governs every claim. *The Time Ma
 
 ## Admission rule
 
-Only records marked `admitted` may be analysed. `approved` is the generic status for a source approved for corpus retention but not yet retained and admitted; no approved sources currently await retention. `proposed` records remain absent from `original/` until human review.
+Only records marked `admitted` may be analysed. Admission is complete and the
+corpus is closed at twelve retained, admitted records plus one excluded,
+unacquired Tier 5 record. No records remain `approved` or `proposed`, and the
+excluded record has no source artifact or positive authority.
 
 ## Later analytical method
 
@@ -18,4 +21,7 @@ The next phase will preserve works separately, retain locators, calculate per-wo
 
 ## Current prohibition
 
-This phase performs no quantitative profile, close-reading findings, Permian research, narrative planning, or manuscript drafting.
+The completed admission boundary does not authorise detailed analysis. Until
+the generated admission report receives human review, this phase performs no
+quantitative profile, close-reading findings, evidence-ledger claims, style
+guidance, Permian research, narrative planning, or manuscript drafting.

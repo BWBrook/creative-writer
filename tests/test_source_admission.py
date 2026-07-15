@@ -739,27 +739,22 @@ def test_time_expedition_admission_passes() -> None:
 
     assert result.ok
     report = result.report_path.read_text(encoding="utf-8")
-    assert "- Admitted: 4" in report
+    assert "- Admitted: 12" in report
     assert "- Approved, awaiting retention: 0" in report
-    assert "- Proposed: 7" in report
-    assert "| `the-time-machine` | admitted | 1 | primary |" in report
-    assert "| `the-island-of-doctor-moreau` | admitted | 2 | bounded |" in report
-    assert "| `the-war-of-the-worlds` | admitted | 2 | bounded |" in report
-    assert "| `the-british-barbarians` | proposed | 4 | control |" in report
-    for title in (
-        "The Plattner Story",
-        "The Sea Raiders",
-        "The Crystal Egg",
-        "The Star",
-    ):
-        assert f"- **{title}**" in report
-    for author in (
-        "Grant Allen",
-        "Arthur Conan Doyle",
-        "Rudyard Kipling",
-        "Richard Marsh",
-    ):
-        assert f"- Author: {author}" in report
+    assert "- Proposed: 0" in report
+    assert "- Excluded: 1" in report
+    assert "| `king-solomons-mines` | admitted | 4 | control |" in report
+    assert "| `the-lost-world` | excluded | 5 | none |" in report
     assert report.count(
         "- Tier 4 restriction: **Negative evidence only; never positive style or continuity authority.**"
-    ) == 4
+    ) == 5
+    assert report.count(
+        "- Tier 5 restriction: **Excluded influence only; no retained artifact or positive authority.**"
+    ) == 1
+    for selection_id in (
+        "the-plattner-story",
+        "the-sea-raiders",
+        "the-crystal-egg",
+        "the-star",
+    ):
+        assert f"text/selected-short-fiction/{selection_id}.md" in report

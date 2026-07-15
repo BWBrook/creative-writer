@@ -84,7 +84,7 @@ sources:
     selections: []
 
   - id: selected-short-fiction
-    status: proposed
+    status: admitted
     authority: {tier: 2, story_world_canon: false, style_authority: bounded}
     work: {title: "Selected Short Fiction", author: "H. G. Wells", first_published: null}
     analytical_roles: ["short-form architecture", "testimony", "biological danger", "scientific mystery", "cosmic catastrophe"]
@@ -98,7 +98,7 @@ sources:
       artifact_format: standard-ebooks-compatible-epub
       planned_path: "original/h-g-wells_short-fiction.epub"
       public_domain_context: "The four selected 1896-1897 Wells stories are treated as public-domain source material; Standard Ebooks edition contributions are released under CC0, with jurisdiction checks left to users."
-      textual_limitations: "The proposed EPUB is a larger multi-work collection; only the four named selections are admissible, and all other stories and packaging must be excluded during derivation."
+      textual_limitations: "The retained EPUB is a larger multi-work collection; only the four named selections are admissible, and all other stories and packaging are excluded during derivation."
       editorial_normalisation: "Standard Ebooks collection typography and house style may normalise story presentation and headings relative to original periodical appearances."
       variant_concerns: "Original magazine appearances and later collection texts may differ; each selected story needs witness-level checking before variant-sensitive evidence is admitted."
     selections:
@@ -120,7 +120,7 @@ sources:
         analytical_roles: ["catastrophe", "deep-scale description", "global montage"]
 
   - id: certain-personal-matters
-    status: proposed
+    status: admitted
     authority: {tier: 3, story_world_canon: false, style_authority: bounded}
     work: {title: "Certain Personal Matters", author: "H. G. Wells", first_published: 1897}
     analytical_roles: ["essay voice", "humour", "conversation", "microscopic observation"]
@@ -133,14 +133,14 @@ sources:
       download_url: "https://www.gutenberg.org/ebooks/17508.epub.noimages"
       artifact_format: project-gutenberg-epub
       planned_path: "original/h-g-wells_certain-personal-matters.epub"
-      public_domain_context: "Wells's period essays are treated as public-domain source material in the proposed Project Gutenberg edition, subject to jurisdiction-specific checks."
-      textual_limitations: "The proposed EPUB is a Project Gutenberg transcription rather than a scan-backed diplomatic edition; source-witness and paragraph-boundary checks remain necessary after approval."
+      public_domain_context: "Wells's period essays are treated as public-domain source material in the retained Project Gutenberg edition, subject to jurisdiction-specific checks."
+      textual_limitations: "The retained EPUB is a Project Gutenberg transcription rather than a scan-backed diplomatic edition; source-witness and paragraph-boundary checks remain necessary before exact textual claims."
       editorial_normalisation: "Project Gutenberg encoding and EPUB conversion may regularise typography, spacing, headings, and punctuation presentation."
-      variant_concerns: "Collection contents, essay titles, and wording may vary among early editions and reprints; the retained edition must be identified before claims use exact phrasing."
+      variant_concerns: "Collection contents, essay titles, and wording may vary among early editions and reprints; claims using exact phrasing must remain tied to the retained edition."
     selections: []
 
   - id: text-book-of-biology-part-1
-    status: proposed
+    status: admitted
     authority: {tier: 3, story_world_canon: false, style_authority: bounded}
     work: {title: "Text Book of Biology, Part 1: Vertebrata", author: "H. G. Wells", first_published: 1893}
     analytical_roles: ["biological terminology", "instructional exposition", "comparison and classification"]
@@ -153,14 +153,14 @@ sources:
       download_url: "https://www.gutenberg.org/ebooks/21781.epub.noimages"
       artifact_format: project-gutenberg-epub
       planned_path: "original/h-g-wells_text-book-of-biology-part-1.epub"
-      public_domain_context: "Wells's 1893 biology textbook is treated as public-domain source material in the proposed Project Gutenberg edition, subject to jurisdiction-specific checks."
+      public_domain_context: "Wells's 1893 biology textbook is treated as public-domain source material in the retained Project Gutenberg edition, subject to jurisdiction-specific checks."
       textual_limitations: "EPUB conversion may flatten diagrams, labelled figures, lists, and other instructional structures, so prose analysis must exclude conversion artefacts and inspect figures separately."
       editorial_normalisation: "Project Gutenberg encoding may regularise scientific typography, italics, symbols, headings, and spacing relative to the printed textbook."
-      variant_concerns: "Later impressions may revise nomenclature, examples, or figure references; the proposed transcription must be tied to a specific printed witness before historical vocabulary claims."
+      variant_concerns: "Later impressions may revise nomenclature, examples, or figure references; the retained transcription must be tied to a specific printed witness before historical vocabulary claims."
     selections: []
 
   - id: the-british-barbarians
-    status: proposed
+    status: admitted
     authority: {tier: 4, story_world_canon: false, style_authority: control}
     work: {title: "The British Barbarians", author: "Grant Allen", first_published: 1895}
     analytical_roles: ["scientific-romance control", "time-visitor premise", "social satire"]
@@ -173,14 +173,14 @@ sources:
       download_url: "https://www.gutenberg.org/ebooks/4340.epub.images"
       artifact_format: project-gutenberg-epub
       planned_path: "original/grant-allen_the-british-barbarians.epub"
-      public_domain_context: "Allen's 1895 novel is treated as public-domain source material in the proposed Project Gutenberg edition, subject to jurisdiction-specific checks."
-      textual_limitations: "The proposed Project Gutenberg transcription is not a diplomatic first-edition facsimile and may not preserve original typography or page-level evidence."
+      public_domain_context: "Allen's 1895 novel is treated as public-domain source material in the retained Project Gutenberg edition, subject to jurisdiction-specific checks."
+      textual_limitations: "The retained Project Gutenberg transcription is not a diplomatic first-edition facsimile and may not preserve original typography or page-level evidence."
       editorial_normalisation: "Project Gutenberg encoding and EPUB conversion may regularise quotation marks, dashes, italics, spacing, and chapter presentation."
       variant_concerns: "Early editions and later reprints may differ; any apparent contrast with Wells that depends on exact punctuation or wording requires witness comparison."
     selections: []
 
   - id: a-desert-drama
-    status: proposed
+    status: admitted
     authority: {tier: 4, story_world_canon: false, style_authority: control}
     work: {title: "A Desert Drama", author: "Arthur Conan Doyle", first_published: 1898}
     analytical_roles: ["adventure control", "group dialogue", "danger pacing", "social register"]
@@ -193,14 +193,14 @@ sources:
       download_url: "https://www.gutenberg.org/ebooks/21768.epub.noimages"
       artifact_format: project-gutenberg-epub
       planned_path: "original/arthur-conan-doyle_a-desert-drama.epub"
-      public_domain_context: "Doyle's 1898 work is treated as public-domain source material in the proposed Project Gutenberg edition, subject to jurisdiction-specific checks."
-      textual_limitations: "The proposed Project Gutenberg transcription is not a diplomatic first-edition facsimile and may not preserve page layout, chapter display, or dialogue typography."
+      public_domain_context: "Doyle's 1898 work is treated as public-domain source material in the retained Project Gutenberg edition, subject to jurisdiction-specific checks."
+      textual_limitations: "The retained Project Gutenberg transcription is not a diplomatic first-edition facsimile and may not preserve page layout, chapter display, or dialogue typography."
       editorial_normalisation: "Project Gutenberg encoding and EPUB conversion may regularise punctuation, italics, spacing, and chapter headings."
       variant_concerns: "The work circulated under A Desert Drama and The Tragedy of the Korosko; title-state and edition differences must be resolved before exact textual contrasts."
     selections: []
 
   - id: the-days-work
-    status: proposed
+    status: admitted
     authority: {tier: 4, story_world_canon: false, style_authority: control}
     work: {title: "The Day's Work", author: "Rudyard Kipling", first_published: 1898}
     analytical_roles: ["technical-work control", "professional dialogue", "imperial register", "machinery"]
@@ -213,14 +213,14 @@ sources:
       download_url: "https://www.gutenberg.org/ebooks/2569.epub.images"
       artifact_format: project-gutenberg-epub
       planned_path: "original/rudyard-kipling_the-days-work.epub"
-      public_domain_context: "Kipling's 1898 collection is treated as public-domain source material in the proposed Project Gutenberg edition, subject to jurisdiction-specific checks."
-      textual_limitations: "The proposed EPUB is a multi-story collection whose dialect, technical vocabulary, italics, and story boundaries may be vulnerable to transcription or conversion artefacts."
+      public_domain_context: "Kipling's 1898 collection is treated as public-domain source material in the retained Project Gutenberg edition, subject to jurisdiction-specific checks."
+      textual_limitations: "The retained EPUB is a multi-story collection whose dialect, technical vocabulary, italics, and story boundaries may be vulnerable to transcription or conversion artefacts."
       editorial_normalisation: "Project Gutenberg encoding may regularise dialect typography, punctuation, spacing, headings, and emphasis relative to magazine and first-book witnesses."
       variant_concerns: "Individual stories appeared in periodicals before collection; magazine and book texts may differ, so work-level and story-level witnesses must not be conflated."
     selections: []
 
   - id: the-beetle
-    status: proposed
+    status: admitted
     authority: {tier: 4, story_world_canon: false, style_authority: control}
     work: {title: "The Beetle: A Mystery", author: "Richard Marsh", first_published: 1897}
     analytical_roles: ["sensational-fiction control", "multiple narrators", "London danger", "horror escalation"]
@@ -233,8 +233,48 @@ sources:
       download_url: "https://www.gutenberg.org/ebooks/5164.epub.noimages"
       artifact_format: project-gutenberg-epub
       planned_path: "original/richard-marsh_the-beetle.epub"
-      public_domain_context: "Marsh's 1897 novel is treated as public-domain source material in the proposed Project Gutenberg edition, subject to jurisdiction-specific checks."
-      textual_limitations: "The proposed Project Gutenberg transcription is not a diplomatic first-edition facsimile and may not preserve narrator labels, chapter display, italics, or page-level evidence exactly."
+      public_domain_context: "Marsh's 1897 novel is treated as public-domain source material in the retained Project Gutenberg edition, subject to jurisdiction-specific checks."
+      textual_limitations: "The retained Project Gutenberg transcription is not a diplomatic first-edition facsimile and may not preserve narrator labels, chapter display, italics, or page-level evidence exactly."
       editorial_normalisation: "Project Gutenberg encoding and EPUB conversion may regularise punctuation, emphasis, spacing, and the presentation of the novel's multiple narrative parts."
       variant_concerns: "Early editions and later reprints may differ in title presentation, wording, and punctuation; narrator-specific claims require checks against the identified witness."
+    selections: []
+
+  - id: king-solomons-mines
+    status: admitted
+    authority: {tier: 4, story_world_canon: false, style_authority: control}
+    work: {title: "King Solomon's Mines", author: "H. Rider Haggard", first_published: 1885}
+    analytical_roles: ["adventure motivation", "expedition assembly", "discovery sequence", "danger escalation", "journey architecture", "period framing of mysterious travel"]
+    permitted_uses: ["adventure motivation", "expedition assembly", "discovery sequence", "danger escalation", "journey architecture", "period framing of mysterious travel"]
+    prohibited_uses: ["style prescription", "phrase borrowing", "characters", "places", "incidents", "lost-world content", "imperial assumptions", "racial ideology", "override of a Wells source"]
+    rationale: "A pre-window control for adventure architecture and motivation, admitted only as negative or comparative evidence."
+    edition:
+      publisher: "Standard Ebooks"
+      homepage: "https://standardebooks.org/ebooks/h-rider-haggard/king-solomons-mines"
+      download_url: "https://standardebooks.org/ebooks/h-rider-haggard/king-solomons-mines/downloads/h-rider-haggard_king-solomons-mines.epub?source=download"
+      artifact_format: standard-ebooks-compatible-epub
+      planned_path: "original/h-rider-haggard_king-solomons-mines.epub"
+      public_domain_context: "Haggard's 1885 text is treated as public-domain source material; Standard Ebooks edition contributions are released under CC0, with jurisdiction checks left to users."
+      textual_limitations: "This retained EPUB is a modern Standard Ebooks transcription derived from Project Gutenberg and HathiTrust scans, not a diplomatic facsimile of the 1885 edition."
+      editorial_normalisation: "Standard Ebooks typography and house-style decisions may regularise punctuation, spelling, and presentation; the derived Markdown removes packaging matter."
+      variant_concerns: "Early editions and later reprints may differ; exact-wording or architecture claims require comparison with the identified printed witness."
+    selections: []
+
+  - id: the-lost-world
+    status: excluded
+    authority: {tier: 5, story_world_canon: false, style_authority: none}
+    work: {title: "The Lost World", author: "Arthur Conan Doyle", first_published: 1912}
+    analytical_roles: ["post-window diagnostic", "anachronistic adventure architecture", "later lost-world idiom"]
+    permitted_uses: ["post-window negative diagnostic only"]
+    prohibited_uses: ["acquisition in Phase 2A", "positive style evidence", "Time Expedition continuity", "phrase borrowing", "story architecture prescription"]
+    rationale: "Its post-1899 date excludes it from the corpus; the metadata-only record names a future negative diagnostic without admitting the work."
+    edition:
+      publisher: "Project Gutenberg"
+      homepage: "https://www.gutenberg.org/ebooks/139"
+      download_url: "https://www.gutenberg.org/ebooks/139"
+      artifact_format: project-gutenberg-epub
+      planned_path: "original/arthur-conan-doyle_the-lost-world.epub"
+      public_domain_context: "Metadata reference only; no source artifact is acquired or retained in Phase 2A."
+      textual_limitations: "No edition artifact has been acquired, converted, or inspected."
+      editorial_normalisation: "Not assessed because the work remains unacquired and excluded."
+      variant_concerns: "Not assessed; the metadata record must not support textual claims."
     selections: []

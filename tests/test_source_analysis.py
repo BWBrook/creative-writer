@@ -45,7 +45,18 @@ from creative_writer.source_evidence import (
     validate_leakage,
     validate_quantitative_profile,
 )
-from creative_writer.source_passages import read_passage_index
+from creative_writer.source_passages import (
+    parse_passage_partition,
+    read_passage_index as _legacy_read_passage_index,
+)
+
+
+def read_passage_index(path: Path) -> list[PassageRecord]:
+    """Read a physical fixture partition while retaining legacy index checks."""
+
+    if "/indexes/" in path.as_posix():
+        return parse_passage_partition(path.read_bytes())
+    return _legacy_read_passage_index(path)
 
 
 HASH = "a" * 64
@@ -114,7 +125,7 @@ def _dimensions() -> list[dict[str, object]]:
 
 def _analysis_config(admission_hash: str, source_hash: str, *, seed: str = "fixture-seed") -> dict[str, object]:
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "study_id": "fixture-wells-phase-2b",
         "composition_window": {"start": 1897, "end": 1899},
         "study_status": "protocol",
@@ -183,13 +194,15 @@ def _analysis_config(admission_hash: str, source_hash: str, *, seed: str = "fixt
         "evidence_roles": ["support", "counterexample", "variation", "control", "validation"],
         "generated_paths": {
             "corpus_lock": "build/fixture/source-study/corpus-lock.json",
-            "passage_index": "build/fixture/source-study/passage-index.jsonl",
+            "development_passage_index": "build/fixture/source-study/indexes/development.jsonl",
+            "heldout_wells_passage_index": "build/fixture/source-study/indexes/heldout-wells.jsonl",
+            "tier4_control_passage_index": "build/fixture/source-study/indexes/tier4-controls.jsonl",
             "development_metrics": "build/fixture/source-study/development-metrics.json",
             "development_metrics_csv": "build/fixture/source-study/development-metrics.csv",
             "development_report": "build/fixture/source-study/development-report.md",
-            "validation_metrics": "build/fixture/source-study/validation-metrics.json",
-            "validation_packet": "build/fixture/source-study/validation-packet.md",
-            "analysis_report": "build/fixture/source-study/analysis-report.md",
+            "validation_metrics": "build/fixture/source-study/validation/current/validation-metrics.json",
+            "validation_packet": "build/fixture/source-study/validation/current/validation-packet.md",
+            "analysis_report": "build/fixture/source-study/validation/current/analysis-report.md",
         },
     }
 
@@ -579,13 +592,49 @@ def test_holdout_manifest_has_all_fingerprints_and_quarantines_controls(tmp_path
         "selected-short-fiction/the-sea-raiders",
         "selected-short-fiction/the-crystal-egg",
         "selected-short-fiction/the-star",
+        "tier-four",
     }
     star = next(item for item in manifest["witnesses"] if item["witness_id"].endswith("/the-star"))
     assert star["development_windows"] == []
     assert len(star["holdout_windows"]) == 3
     assert all(item["id"].startswith("w0") for item in star["holdout_windows"])
     assert all(item["id"].startswith("w0") for item in manifest["witnesses"][0]["development_windows"])
-    assert all("tier-four" not in item["witness_id"] for item in manifest["witnesses"])
+    control = next(item for item in manifest["witnesses"] if item["witness_id"] == "tier-four")
+    assert control["development_windows"] == []
+    assert len(control["holdout_windows"]) == 1
+    assert manifest["tier4_control_passage_index"]["partition"] == "tier4_controls"
+    partition_paths = {
+        key: tmp_path / value["path"]
+        for key, value in (
+            ("development", manifest["development_passage_index"]),
+            ("heldout_wells", manifest["heldout_wells_passage_index"]),
+            ("tier4_controls", manifest["tier4_control_passage_index"]),
+        )
+    }
+    partition_records = {
+        key: parse_passage_partition(path.read_bytes())
+        for key, path in partition_paths.items()
+    }
+    partition_ids = {key: {item.passage_id for item in records} for key, records in partition_records.items()}
+    assert not (partition_ids["development"] & partition_ids["heldout_wells"])
+    assert not (partition_ids["development"] & partition_ids["tier4_controls"])
+    assert not (partition_ids["heldout_wells"] & partition_ids["tier4_controls"])
+    assert set.union(*partition_ids.values()) == {
+        item.passage_id
+        for item in parse_passage_partition(
+            partition_paths["development"].read_bytes()
+        )
+    } | partition_ids["heldout_wells"] | partition_ids["tier4_controls"]
+    assert sum(len(records) for records in partition_records.values()) == result.passage_count
+    assert all(item.witness_id == "tier-four" for item in partition_records["tier4_controls"])
+    for key, binding in (
+        ("development", manifest["development_passage_index"]),
+        ("heldout_wells", manifest["heldout_wells_passage_index"]),
+        ("tier4_controls", manifest["tier4_control_passage_index"]),
+    ):
+        data = partition_paths[key].read_bytes()
+        assert hashlib.sha256(data).hexdigest() == binding["sha256"]
+        assert len(partition_records[key]) == binding["passage_count"]
     assert result.holdout_path == story / "source-study/holdouts.yml"
 
 
@@ -785,7 +834,7 @@ def test_prepare_rerun_is_byte_stable_and_verifies_existing_manifest(tmp_path: P
     story, first = _fixture(tmp_path)
     paths = [
         tmp_path / "build/fixture/source-study/corpus-lock.json",
-        tmp_path / "build/fixture/source-study/passage-index.jsonl",
+        tmp_path / "build/fixture/source-study/indexes/development.jsonl",
         story / "source-study/holdouts.yml",
     ]
     before = {path: path.read_bytes() for path in paths}
@@ -812,7 +861,7 @@ def test_prepare_blocks_before_analysis_outputs_when_admission_fails(tmp_path: P
     with pytest.raises(CreativeWriterError, match="Source admission failed"):
         run_source_analysis(tmp_path, "fixture", "prepare")
     assert not (tmp_path / "build/fixture/source-study/corpus-lock.json").exists()
-    assert not (tmp_path / "build/fixture/source-study/passage-index.jsonl").exists()
+    assert not (tmp_path / "build/fixture/source-study/indexes/development.jsonl").exists()
     assert not (story / "source-study/holdouts.yml").exists()
 
 
@@ -848,7 +897,7 @@ def test_prepare_rejects_empty_index_and_preserves_existing_artifacts(
     story, _ = _fixture(tmp_path)
     paths = [
         tmp_path / "build/fixture/source-study/corpus-lock.json",
-        tmp_path / "build/fixture/source-study/passage-index.jsonl",
+        tmp_path / "build/fixture/source-study/indexes/development.jsonl",
         story / "source-study/holdouts.yml",
     ]
     before = {path: path.read_bytes() for path in paths}
@@ -865,7 +914,7 @@ def test_prepare_rejects_duplicate_passages_before_replacing_existing_artifacts(
     story, _ = _fixture(tmp_path)
     paths = [
         tmp_path / "build/fixture/source-study/corpus-lock.json",
-        tmp_path / "build/fixture/source-study/passage-index.jsonl",
+        tmp_path / "build/fixture/source-study/indexes/development.jsonl",
         story / "source-study/holdouts.yml",
     ]
     before = {path: path.read_bytes() for path in paths}
@@ -888,7 +937,7 @@ def test_prepare_blocks_markdown_fingerprint_drift_and_preserves_existing_artifa
     story, _ = _fixture(tmp_path)
     paths = [
         tmp_path / "build/fixture/source-study/corpus-lock.json",
-        tmp_path / "build/fixture/source-study/passage-index.jsonl",
+        tmp_path / "build/fixture/source-study/indexes/development.jsonl",
         story / "source-study/holdouts.yml",
     ]
     before = {path: path.read_bytes() for path in paths}
@@ -906,7 +955,7 @@ def test_prepare_rollback_preserves_existing_artifacts_when_replace_fails(
     story, _ = _fixture(tmp_path)
     paths = [
         tmp_path / "build/fixture/source-study/corpus-lock.json",
-        tmp_path / "build/fixture/source-study/passage-index.jsonl",
+        tmp_path / "build/fixture/source-study/indexes/development.jsonl",
         story / "source-study/holdouts.yml",
     ]
     before = {path: path.read_bytes() for path in paths}
@@ -959,7 +1008,7 @@ def test_rerun_late_failure_restores_all_existing_artifacts(
     story, _ = _fixture(tmp_path)
     paths = [
         tmp_path / "build/fixture/source-study/corpus-lock.json",
-        tmp_path / "build/fixture/source-study/passage-index.jsonl",
+        tmp_path / "build/fixture/source-study/indexes/development.jsonl",
         story / "source-study/holdouts.yml",
     ]
     before = {path: path.read_bytes() for path in paths}
@@ -1170,6 +1219,46 @@ def test_develop_requires_committed_holdouts_and_writes_development_only_outputs
     assert "Evidence validation diagnostics" in report
     assert "Blocking errors: **0**" in report
     assert "Warnings: **0**" in report
+
+
+def test_develop_reads_only_development_partition_and_registry_metadata(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    story, _ = _fixture(tmp_path)
+    (tmp_path / "build/fixture/source-study/indexes/heldout-wells.jsonl").unlink()
+    (tmp_path / "build/fixture/source-study/indexes/tier4-controls.jsonl").unlink()
+    for markdown in (story / "original").rglob("*.md"):
+        markdown.unlink()
+    monkeypatch.setattr(
+        source_analysis,
+        "check_source_admission",
+        lambda *args, **kwargs: pytest.fail("develop must not run source admission"),
+    )
+    _commit_fixture_holdouts(tmp_path)
+
+    result = run_source_analysis(tmp_path, "fixture", "develop")
+    assert result.passage_count > 0
+
+
+@pytest.mark.parametrize("stage", ["develop", "validate"])
+def test_v1_or_mixed_analysis_config_fails_closed_before_stage_reads(
+    tmp_path: Path, stage: str
+) -> None:
+    story = _write_fixture(tmp_path)
+    config_path = story / "source-study/analysis.yml"
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    if stage == "validate":
+        config["study_status"] = "candidate_frozen"
+    config["schema_version"] = 1
+    config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+    with pytest.raises(CreativeWriterError, match="schema_version|schema-v2"):
+        run_source_analysis(tmp_path, "fixture", stage)
+
+    config["schema_version"] = 2
+    config["passage_index"] = "build/fixture/source-study/passage-index.jsonl"
+    config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+    with pytest.raises(CreativeWriterError, match="generated paths|known corpus-analysis keys|Extra inputs"):
+        run_source_analysis(tmp_path, "fixture", stage)
 
 
 @pytest.mark.parametrize(
@@ -1384,7 +1473,7 @@ def test_develop_recursively_scans_nested_observation_markdown_for_topology_and_
     tmp_path: Path,
 ) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/heldout-wells.jsonl")
     holdout = next(
         item for item in index if item.witness_id == "selected-short-fiction/the-star"
     )
@@ -1460,7 +1549,7 @@ def test_observation_heading_trailing_space_is_noncanonical_not_missing(
     )
 
     with pytest.raises(CreativeWriterError, match="(?i)canonical.*heading"):
-        validate_observation_dossiers([path], read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl"), _config_for_selection())
+        validate_observation_dossiers([path], read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl"), _config_for_selection())
 
 
 def test_profile_heading_trailing_space_duplicate_is_rejected_deterministically(
@@ -1842,7 +1931,7 @@ def test_develop_rejects_each_forbidden_locator_form(
     tmp_path: Path, locator_template: str
 ) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/heldout-wells.jsonl")
     holdout = next(item for item in index if item.witness_id.endswith("/the-star"))
     controls = story / "source-study/period-controls.md"
     controls.write_text(
@@ -1892,7 +1981,7 @@ def test_develop_blocks_registry_identity_absent_from_retained_registry_at_pipel
         return original_collect(*args, **kwargs)
 
     monkeypatch.setattr(source_analysis, "collect_evidence_issues", capture_call)
-    with pytest.raises(CreativeWriterError, match="Source admission failed"):
+    with pytest.raises(CreativeWriterError, match="registry hashes"):
         run_source_analysis(tmp_path, "fixture", "develop")
     assert called is False
 
@@ -1923,7 +2012,7 @@ def test_develop_empty_protocol_profile_still_rejects_non_object_generated_metri
 
 def test_eligible_witness_must_exercise_a_declared_claim_role(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     config = _config_for_selection()
     config.dimensions[0].roles[:] = ["wells-alpha role"]
     admission, registry = _fixture_authority(story)
@@ -1959,7 +2048,7 @@ def test_eligible_witness_must_be_an_explicitly_retained_registry_identity(
     tmp_path: Path,
 ) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     config = _config_for_selection()
     config.dimensions[0].roles[:] = ["selected-short-fiction role"]
     admission, registry = _fixture_authority(story)
@@ -2034,7 +2123,7 @@ def test_develop_rejects_forbidden_locator_with_prefix_boundary_mutation(
     tmp_path: Path,
 ) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/heldout-wells.jsonl")
     holdout = next(item for item in index if item.witness_id.endswith("/the-star"))
     controls = story / "source-study/period-controls.md"
     controls.write_text(
@@ -2186,7 +2275,7 @@ def test_develop_writes_diagnostics_when_profile_or_observation_grammar_fails(
 
 def test_develop_reparses_and_rejects_index_direct_dialogue_drift(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index_path = tmp_path / "build/fixture/source-study/passage-index.jsonl"
+    index_path = tmp_path / "build/fixture/source-study/indexes/development.jsonl"
     lines = index_path.read_text(encoding="utf-8").splitlines()
     first = json.loads(lines[0])
     first["direct_dialogue"] = "unknown" if first["direct_dialogue"] != "unknown" else "none"
@@ -2205,7 +2294,7 @@ def test_develop_reparses_and_rejects_index_direct_dialogue_drift(tmp_path: Path
     )
     subprocess.run(["git", "commit", "-qm", "lock fixture holdouts"], cwd=tmp_path, check=True)
 
-    with pytest.raises(CreativeWriterError, match="reparsed.*passage index|canonical.*differs"):
+    with pytest.raises(CreativeWriterError, match="passage index SHA-256"):
         run_source_analysis(tmp_path, "fixture", "develop")
 
 
@@ -2243,7 +2332,7 @@ None.
 
 def test_observation_validator_enforces_exact_grammar_and_resolves_locators(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/heldout-wells.jsonl")
     first = next(item for item in index if item.witness_id == "wells-alpha")
     path = story / "source-study/observations/wells-alpha.md"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -2270,7 +2359,7 @@ def test_observation_validator_blocks_unknown_and_holdout_locators_with_diagnost
     tmp_path: Path,
 ) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/heldout-wells.jsonl")
     alpha = [item for item in index if item.witness_id == "wells-alpha"]
     path = story / "source-study/observations/wells-alpha.md"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -2361,7 +2450,7 @@ def test_profile_validator_accepts_contiguous_findings_and_links_existing_claims
 
 def test_evidence_validator_aggregates_authority_and_locator_diagnostics(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     alpha = next(item for item in index if item.witness_id == "wells-alpha")
     ledger = {
         "schema_version": 1,
@@ -2458,7 +2547,7 @@ def test_quantitative_profile_checks_current_metric_provenance_and_witness_set(t
         ],
         witnesses=witnesses,
     )
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     development_ids = {
         passage.passage_id
         for passage in index
@@ -2572,7 +2661,7 @@ def _fixture_reference(passage: PassageRecord, tier: int = 1) -> dict[str, objec
 
 def test_evidence_validator_accepts_role_specific_claim_and_documented_search(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     manifest = yaml.safe_load((story / "source-study/holdouts.yml").read_text(encoding="utf-8"))
     manifest_model = HoldoutManifest.model_validate(manifest)
     config = _config_for_selection()
@@ -2616,7 +2705,7 @@ def test_evidence_validator_accepts_role_specific_claim_and_documented_search(tm
 
 def test_evidence_validator_accepts_time_machine_continuity_claim(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     config = _config_for_selection()
     config.dimensions[0].roles[:] = ["continuity"]
     admission, registry = _fixture_authority(story)
@@ -2640,7 +2729,7 @@ def test_evidence_validator_accepts_time_machine_continuity_claim(tmp_path: Path
 
 def test_evidence_validator_accepts_two_witness_cross_work_omnibus_disclosure(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     config = _config_for_selection()
     config.dimensions[0].roles[:] = ["selected-short-fiction role"]
     admission, registry = _fixture_authority(story)
@@ -2665,7 +2754,7 @@ def test_evidence_validator_accepts_two_witness_cross_work_omnibus_disclosure(tm
 
 def test_rejected_claim_is_retained_without_support(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     config = _config_for_selection()
     config.dimensions[0].roles[:] = ["wells-alpha role"]
     admission, registry = _fixture_authority(story)
@@ -2683,7 +2772,7 @@ def test_rejected_claim_is_retained_without_support(tmp_path: Path) -> None:
 
 def test_populated_observation_validation_requires_admission_and_registry(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     focal = next(item for item in index if item.witness_id == "wells-alpha")
     path = story / "source-study/observations/wells-alpha.md"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -2698,7 +2787,7 @@ def test_populated_observation_validation_requires_admission_and_registry(tmp_pa
 
 def test_observation_focal_and_comparison_witnesses_must_have_dimension_role(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     focal = next(item for item in index if item.witness_id == "wells-alpha")
     comparison = next(item for item in index if item.witness_id.endswith("/the-plattner-story"))
     path = story / "source-study/observations/wells-alpha.md"
@@ -2718,7 +2807,7 @@ def test_observation_focal_and_comparison_witnesses_must_have_dimension_role(tmp
 
 def test_ledger_requires_each_support_witness_to_exercise_declared_role(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     config = _config_for_selection()
     config.dimensions[0].roles[:] = ["selected-short-fiction role"]
     admission, registry = _fixture_authority(story)
@@ -2744,7 +2833,7 @@ def test_ledger_requires_each_support_witness_to_exercise_declared_role(tmp_path
 
 def test_ledger_counterexample_witness_must_match_claim_dimension_role(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     config = _config_for_selection()
     config.dimensions[0].roles[:] = ["wells-alpha role"]
     admission, registry = _fixture_authority(story)
@@ -2766,7 +2855,7 @@ def test_ledger_counterexample_witness_must_match_claim_dimension_role(tmp_path:
 
 def test_counterexample_reference_must_use_claim_jurisdiction_role(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     config = _config_for_selection()
     config.dimensions[0].roles[:] = ["wells-alpha role", "selected-short-fiction role"]
     admission, registry = _fixture_authority(story)
@@ -2802,7 +2891,7 @@ def test_counterexample_reference_must_use_claim_jurisdiction_role(tmp_path: Pat
 
 def test_counterexample_search_must_use_claim_jurisdiction_role(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     config = _config_for_selection()
     config.dimensions[0].roles[:] = ["wells-alpha role", "selected-short-fiction role"]
     admission, registry = _fixture_authority(story)
@@ -2843,7 +2932,7 @@ def test_counterexample_search_must_use_claim_jurisdiction_role(tmp_path: Path) 
 
 def test_ledger_diagnostics_retain_file_path_for_identity_failures(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     config = _config_for_selection()
     config.dimensions[0].roles[:] = ["wells-alpha role"]
     admission, registry = _fixture_authority(story)
@@ -2864,7 +2953,7 @@ def test_ledger_diagnostics_retain_file_path_for_identity_failures(tmp_path: Pat
 
 def test_ledger_study_identity_must_match_configuration(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     config = _config_for_selection()
     ledger = EvidenceLedger.model_validate({"schema_version": 1, "study_id": "other-study", "stage": "development", "mode": "descriptive", "claims": []})
     with pytest.raises(CreativeWriterError, match="study identity"):
@@ -2873,7 +2962,7 @@ def test_ledger_study_identity_must_match_configuration(tmp_path: Path) -> None:
 
 def test_omnibus_dependence_requires_content_after_prefix(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     config = _config_for_selection()
     config.dimensions[0].roles[:] = ["selected-short-fiction role"]
     admission, registry = _fixture_authority(story)
@@ -2898,7 +2987,7 @@ def test_omnibus_dependence_requires_content_after_prefix(tmp_path: Path) -> Non
 
 def test_observation_grammar_rejects_stray_prefix_and_unknown_heading(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     focal = next(item for item in index if item.witness_id == "wells-alpha")
     path = story / "source-study/observations/wells-alpha.md"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -2912,7 +3001,7 @@ def test_observation_grammar_rejects_stray_prefix_and_unknown_heading(tmp_path: 
 
 def test_observation_validator_rejects_duplicate_observations_sections(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     focal = next(item for item in index if item.witness_id == "wells-alpha")
     path = story / "source-study/observations/wells-alpha.md"
     path.write_text(
@@ -2938,7 +3027,7 @@ def test_observation_validator_rejects_duplicate_observations_sections(tmp_path:
 
 def test_observation_validator_rejects_unbackticked_claim_ids(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     focal = next(item for item in index if item.witness_id == "wells-alpha")
     path = story / "source-study/observations/wells-alpha.md"
     path.write_text(
@@ -2966,7 +3055,7 @@ def test_observation_validator_rejects_unbackticked_claim_ids(tmp_path: Path) ->
 
 def test_observation_comparison_must_use_declared_role_not_dimension_role(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     focal = next(item for item in index if item.witness_id.endswith("/the-plattner-story"))
     comparison = next(item for item in index if item.witness_id == "wells-alpha")
     admission, registry = _fixture_authority(story)
@@ -2992,7 +3081,7 @@ def test_observation_comparison_must_use_declared_role_not_dimension_role(tmp_pa
 
 def test_observation_grammar_accepts_backticked_claim_ids_and_multiple_entries(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     first = next(item for item in index if item.witness_id == "wells-alpha")
     second = next(item for item in index if item.witness_id == "wells-alpha" and item.passage_id != first.passage_id)
     path = story / "source-study/observations/wells-alpha.md"
@@ -3256,7 +3345,7 @@ def _development_metric_fixture(tmp_path: Path) -> tuple[Path, AnalysisConfig, d
     metrics_path = tmp_path / "build/fixture/source-study/development-metrics.json"
     csv_path = tmp_path / "build/fixture/source-study/development-metrics.csv"
     metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     return story, config, metrics, metrics_path, csv_path, index
 
 
@@ -3459,7 +3548,7 @@ def test_develop_pipeline_rejects_holdout_passage_id_in_tracked_artifact(
     tmp_path: Path,
 ) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/heldout-wells.jsonl")
     holdout = next(
         item for item in index if item.witness_id == "selected-short-fiction/the-star"
     )
@@ -3484,7 +3573,7 @@ def test_develop_pipeline_rejects_holdout_passage_id_in_generated_artifact(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/heldout-wells.jsonl")
     holdout = next(
         item for item in index if item.witness_id == "selected-short-fiction/the-star"
     )
@@ -3531,7 +3620,7 @@ def test_develop_requires_exact_retained_tier_one_to_three_dossiers(tmp_path: Pa
 
 def _validated_identity_failure(tmp_path: Path, update: dict[str, object], message: str) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     config = _config_for_selection()
     config.dimensions[0].roles[:] = ["wells-alpha role"]
     admission, registry = _fixture_authority(story)
@@ -3561,7 +3650,7 @@ def test_ledger_rejects_tier_mismatch(tmp_path: Path) -> None:
 
 def test_ledger_rejects_fingerprint_mismatch(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
     config = _config_for_selection()
     config.dimensions[0].roles[:] = ["wells-alpha role"]
     admission, registry = _fixture_authority(story)
@@ -3579,11 +3668,12 @@ def test_ledger_rejects_fingerprint_mismatch(tmp_path: Path) -> None:
 
 def test_development_rejects_tier_four_control_and_tier_two_continuity(tmp_path: Path) -> None:
     story, _ = _fixture(tmp_path)
-    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    index = read_passage_index(tmp_path / "build/fixture/source-study/indexes/development.jsonl")
+    controls = read_passage_index(tmp_path / "build/fixture/source-study/indexes/tier4-controls.jsonl")
     config = _config_for_selection()
     config.dimensions[0].roles[:] = ["selected-short-fiction role"]
     admission, registry = _fixture_authority(story)
-    control = next(item for item in index if item.witness_id == "tier-four")
+    control = next(item for item in controls if item.witness_id == "tier-four")
     control_reference = _fixture_reference(control, 4)
     control_reference["evidence_role"] = "control"
     claim = _fixture_claim(
@@ -3594,7 +3684,7 @@ def test_development_rejects_tier_four_control_and_tier_two_continuity(tmp_path:
     claim["counterexample_passages"] = [control_reference]
     ledger = EvidenceLedger.model_validate({"schema_version": 1, "study_id": config.study_id, "stage": "development", "mode": "descriptive", "claims": [claim]})
     with pytest.raises(CreativeWriterError, match="Control and validation.*unavailable"):
-        validate_evidence_ledger(ledger, index, config=config, stage="development", admission=admission, registry=registry)
+        validate_evidence_ledger(ledger, [*index, *controls], config=config, stage="development", admission=admission, registry=registry)
 
     selected = next(item for item in index if item.witness_id.endswith("/the-plattner-story"))
     continuity = _fixture_claim(
@@ -3666,7 +3756,7 @@ def _prepare_committed_candidate_fixture(
     ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
     ledger["stage"] = "development"
     if with_claim:
-        index = read_passage_index(root / "build/fixture/source-study/passage-index.jsonl")
+        index = read_passage_index(root / "build/fixture/source-study/indexes/development.jsonl")
         development_passage = next(item for item in index if item.witness_id == "wells-alpha")
         ledger["claims"] = [
             _fixture_claim(
@@ -3743,7 +3833,8 @@ def _replace_validation_step(story: Path, step: str) -> None:
 def _complete_committed_candidate_fixture(root: Path) -> Path:
     story, candidate_commit = _prepare_committed_candidate_fixture(root, with_claim=True)
     candidate_ledger_hash = _sha256(story / "source-study/evidence-ledger.yml")
-    index = read_passage_index(root / "build/fixture/source-study/passage-index.jsonl")
+    heldout_index = read_passage_index(root / "build/fixture/source-study/indexes/heldout-wells.jsonl")
+    control_index = read_passage_index(root / "build/fixture/source-study/indexes/tier4-controls.jsonl")
     manifest = HoldoutManifest.model_validate(
         yaml.safe_load((story / "source-study/holdouts.yml").read_text(encoding="utf-8"))
     )
@@ -3754,8 +3845,8 @@ def _complete_committed_candidate_fixture(root: Path) -> Path:
         for window in witness.holdout_windows
         for passage_id in window.passage_ids
     }
-    heldout = next(item for item in index if item.passage_id in heldout_ids)
-    control = next(item for item in index if item.witness_id == "tier-four")
+    heldout = next(item for item in heldout_index if item.passage_id in heldout_ids)
+    control = next(item for item in control_index if item.witness_id == "tier-four")
     ledger_path = story / "source-study/evidence-ledger.yml"
     ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
     ledger["stage"] = "validated"
@@ -3842,6 +3933,9 @@ def _complete_committed_candidate_fixture(root: Path) -> Path:
 
 def test_validate_frozen_pass_measures_only_heldout_wells_and_is_atomic(tmp_path: Path) -> None:
     story, _ = _prepare_committed_candidate_fixture(tmp_path)
+    (tmp_path / "build/fixture/source-study/indexes/tier4-controls.jsonl").unlink()
+    for markdown in (story / "original").rglob("*.md"):
+        markdown.unlink()
     result = run_source_analysis(tmp_path, "fixture", "validate")
 
     metrics = json.loads(result.generated_paths["validation_metrics"].read_text(encoding="utf-8"))

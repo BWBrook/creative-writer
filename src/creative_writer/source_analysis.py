@@ -21,6 +21,12 @@ from pydantic import ValidationError
 from creative_writer import __version__
 from creative_writer.exceptions import CreativeWriterError
 from creative_writer.files import ensure_directory, load_yaml_model
+from creative_writer.source_analysis_common import (
+    canonical_json_bytes,
+    safe_relative_path,
+    sha256_bytes,
+    sha256_file,
+)
 from creative_writer.models import (
     RetainedSourceRecord,
     SourceStudyAdmission,
@@ -35,6 +41,7 @@ from creative_writer.source_analysis_models import (
     HoldoutManifest,
     HoldoutWindow,
     PassageRecord,
+    PassageIndexBinding,
     QuantitativeProfile,
     ControlComparison,
     HeldoutClaimResult,
@@ -52,8 +59,10 @@ from creative_writer.source_analysis_models import (
 from creative_writer.source_passages import (
     context_window,
     parse_markdown_witness,
+    parse_passage_partition,
     partition_windows,
     read_passage_index,
+    serialize_passage_partition,
     serialize_passage_index,
 )
 from creative_writer.source_metrics import measure_development, measure_validation_partition
@@ -74,13 +83,15 @@ TOOL_VERSION = f"creative-writer {__version__}"
 ALGORITHM_VERSION = "tertile-hash-v1"
 GENERATED_FILENAMES = {
     "corpus_lock": "corpus-lock.json",
-    "passage_index": "passage-index.jsonl",
+    "development_passage_index": "indexes/development.jsonl",
+    "heldout_wells_passage_index": "indexes/heldout-wells.jsonl",
+    "tier4_control_passage_index": "indexes/tier4-controls.jsonl",
     "development_metrics": "development-metrics.json",
     "development_metrics_csv": "development-metrics.csv",
     "development_report": "development-report.md",
-    "validation_metrics": "validation-metrics.json",
-    "validation_packet": "validation-packet.md",
-    "analysis_report": "analysis-report.md",
+    "validation_metrics": "validation/current/validation-metrics.json",
+    "validation_packet": "validation/current/validation-packet.md",
+    "analysis_report": "validation/current/analysis-report.md",
 }
 CANONICAL_EVIDENCE_FILENAMES = (
     "evidence-ledger.yml",
@@ -151,15 +162,16 @@ class _ValidationCorpus:
     registry: SourcesRegistry
 
 
+@dataclass(frozen=True, slots=True)
+class _ForbiddenPassageLocator:
+    """ID-only leakage locator; develop never loads forbidden passage text."""
+
+    passage_id: str
+    normalized_text: str = ""
+
+
 def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    try:
-        with path.open("rb") as handle:
-            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-                digest.update(chunk)
-    except OSError as exc:
-        raise CreativeWriterError(f"Unable to hash {path}: {exc}") from exc
-    return digest.hexdigest()
+    return sha256_file(path)
 
 
 def _window_hash(seed: str, source_id: str, first_passage_id: str) -> str:
@@ -168,9 +180,7 @@ def _window_hash(seed: str, source_id: str, first_passage_id: str) -> str:
 
 
 def _canonical_json(payload: dict[str, Any]) -> bytes:
-    return (
-        json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
-    ).encode("utf-8")
+    return canonical_json_bytes(payload)
 
 
 def _story_path(root: Path, slug: str) -> Path:
@@ -189,12 +199,10 @@ def _normalize_markdown_body(body: str) -> str:
 
 
 def _registry_path(story_dir: Path, relative: str) -> Path:
-    candidate = story_dir / relative
     try:
-        candidate.relative_to(story_dir)
-    except ValueError as exc:
+        return safe_relative_path(story_dir, relative)
+    except CreativeWriterError as exc:
         raise CreativeWriterError(f"Registry path escapes story directory: {relative}") from exc
-    return candidate
 
 
 def _verify_registry_hash(path: Path, expected: str, label: str) -> None:
@@ -560,6 +568,79 @@ def select_holdouts(
     return result
 
 
+def _partition_passages(
+    passages: list[PassageRecord],
+    config: AnalysisConfig,
+    source_tiers: dict[str, int],
+) -> tuple[dict[str, list[PassageRecord]], list[WitnessHoldouts]]:
+    """Partition the one parsed corpus into three disjoint physical sets."""
+
+    holdout_witnesses = select_holdouts(passages, config, source_tiers)
+    by_id = {passage.passage_id: passage for passage in passages}
+    development_ids = {
+        passage_id
+        for witness in holdout_witnesses
+        for window in witness.development_windows
+        for passage_id in window.passage_ids
+    }
+    heldout_ids = {
+        passage_id
+        for witness in holdout_witnesses
+        for window in witness.holdout_windows
+        for passage_id in window.passage_ids
+    }
+    control_witnesses: list[WitnessHoldouts] = []
+    control_ids: set[str] = set()
+    for witness_id, witness_passages in sorted(
+        ((witness_id, [p for p in passages if p.witness_id == witness_id]) for witness_id in {
+            passage.witness_id for passage in passages
+            if source_tiers.get(passage.source_id) == 4
+        }),
+        key=lambda item: by_id[item[1][0].passage_id].witness_ordinal,
+    ):
+        control_ids.update(passage.passage_id for passage in witness_passages)
+        control_witnesses.append(
+            WitnessHoldouts(
+                witness_id=witness_id,
+                development_windows=[],
+                holdout_windows=[
+                    HoldoutWindow(
+                        id=f"w{witness_passages[0].witness_ordinal:02d}-window-0001",
+                        passage_ids=[p.passage_id for p in witness_passages],
+                    )
+                ],
+            )
+        )
+
+    all_ids = set(by_id)
+    if development_ids & heldout_ids or development_ids & control_ids or heldout_ids & control_ids:
+        raise CreativeWriterError("Physical passage partitions are not pairwise disjoint")
+    if development_ids | heldout_ids | control_ids != all_ids:
+        missing = sorted(all_ids - (development_ids | heldout_ids | control_ids))
+        extra = sorted((development_ids | heldout_ids | control_ids) - all_ids)
+        raise CreativeWriterError(
+            f"Physical passage partitions do not equal the retained corpus; missing={missing}, extra={extra}"
+        )
+    for partition_name, ids in (("development", development_ids), ("heldout_wells", heldout_ids)):
+        if any(source_tiers.get(by_id[passage_id].source_id) not in {1, 2, 3} for passage_id in ids):
+            raise CreativeWriterError(f"{partition_name} partition can contain only retained Tier 1-3 passages")
+    if any(source_tiers.get(by_id[passage_id].source_id) != 4 for passage_id in control_ids):
+        raise CreativeWriterError("Tier 4 control partition must contain every and only Tier 4 passage")
+
+    witnesses = sorted(
+        [*holdout_witnesses, *control_witnesses],
+        key=lambda item: by_id[item.holdout_windows[0].passage_ids[0]].witness_ordinal,
+    )
+    return (
+        {
+            "development": [by_id[passage_id] for passage_id in sorted(development_ids, key=lambda item: (by_id[item].witness_ordinal, by_id[item].source_ordinal))],
+            "heldout_wells": [by_id[passage_id] for passage_id in sorted(heldout_ids, key=lambda item: (by_id[item].witness_ordinal, by_id[item].source_ordinal))],
+            "tier4_controls": [by_id[passage_id] for passage_id in sorted(control_ids, key=lambda item: (by_id[item].witness_ordinal, by_id[item].source_ordinal))],
+        },
+        witnesses,
+    )
+
+
 def _build_holdout_manifest(
     *,
     config: AnalysisConfig,
@@ -568,6 +649,8 @@ def _build_holdout_manifest(
     witnesses: list[_ExpandedWitness],
     passages: list[PassageRecord],
     source_tiers: dict[str, int],
+    partitions: dict[str, list[PassageRecord]],
+    corpus_lock_bytes: bytes,
     created_at: datetime,
 ) -> HoldoutManifest:
     source_fingerprints: dict[str, str] = {}
@@ -579,20 +662,52 @@ def _build_holdout_manifest(
         ] = witness.descriptor.source_fingerprint
     return HoldoutManifest.model_validate(
         {
-            "schema_version": 1,
+            "schema_version": 2,
             "partition_seed": config.partition.seed,
             "algorithm_version": config.partition.algorithm_version,
             "tool_version": TOOL_VERSION,
             "created_at": created_at,
             "registry_hashes": registry_hashes,
+            "corpus_lock": {
+                "path": config.generated_paths["corpus_lock"],
+                "sha256": sha256_bytes(corpus_lock_bytes),
+            },
+            "development_passage_index": _index_binding(
+                config.generated_paths["development_passage_index"],
+                "development",
+                partitions["development"],
+            ),
+            "heldout_wells_passage_index": _index_binding(
+                config.generated_paths["heldout_wells_passage_index"],
+                "heldout_wells",
+                partitions["heldout_wells"],
+            ),
+            "tier4_control_passage_index": _index_binding(
+                config.generated_paths["tier4_control_passage_index"],
+                "tier4_controls",
+                partitions["tier4_controls"],
+            ),
             "source_fingerprints": source_fingerprints,
             "whole_work_holdouts": list(config.partition.whole_work_holdouts),
-            "witnesses": [
-                item.model_dump(mode="json")
-                for item in select_holdouts(passages, config, source_tiers)
-            ],
+            "witnesses": [item.model_dump(mode="json") for item in _partition_passages(passages, config, source_tiers)[1]],
         }
     )
+
+
+def _index_binding(
+    path: str, partition: str, records: list[PassageRecord]
+) -> dict[str, object]:
+    witness_ids: list[str] = []
+    for record in records:
+        if record.witness_id not in witness_ids:
+            witness_ids.append(record.witness_id)
+    return {
+        "path": path,
+        "sha256": sha256_bytes(serialize_passage_partition(records)),
+        "partition": partition,
+        "passage_count": len(records),
+        "witness_ids": witness_ids,
+    }
 
 
 def _validate_existing_json(path: Path, expected: CorpusLock, label: str) -> None:
@@ -808,8 +923,12 @@ def _prepare(root: Path, slug: str) -> SourceAnalysisResult:
     )
 
     passages = _parse_retained_witnesses(witnesses)
-    seen_passage_ids = {passage.passage_id for passage in passages}
-    index_payload = serialize_passage_index(passages)
+    partitions, _ = _partition_passages(passages, config, source_tiers)
+    partition_payloads = {
+        name: serialize_passage_partition(records)
+        for name, records in partitions.items()
+    }
+    lock_payload = _canonical_json(lock.model_dump(mode="json"))
     expected_manifest = _build_holdout_manifest(
         config=config,
         registry_hashes=registry_hashes,
@@ -817,23 +936,32 @@ def _prepare(root: Path, slug: str) -> SourceAnalysisResult:
         witnesses=witnesses,
         passages=passages,
         source_tiers=source_tiers,
+        partitions=partitions,
+        corpus_lock_bytes=lock_payload,
         created_at=datetime.now(timezone.utc),
     )
 
     lock_path = generated_paths["corpus_lock"]
-    index_path = generated_paths["passage_index"]
+    index_paths = {
+        "development": generated_paths["development_passage_index"],
+        "heldout_wells": generated_paths["heldout_wells_passage_index"],
+        "tier4_controls": generated_paths["tier4_control_passage_index"],
+    }
     holdout_path = story_dir / "source-study" / "holdouts.yml"
     _validate_existing_json(lock_path, lock, "corpus lock")
-    if index_path.exists():
-        try:
-            existing_index = index_path.read_bytes()
-        except OSError as exc:
-            raise CreativeWriterError(f"Unable to read existing passage index {index_path}: {exc}") from exc
-        if existing_index != index_payload:
-            raise CreativeWriterError("Existing passage index differs from the current corpus")
+    for partition, index_path in index_paths.items():
+        if index_path.exists():
+            try:
+                existing_index = index_path.read_bytes()
+            except OSError as exc:
+                raise CreativeWriterError(f"Unable to read existing passage index {index_path}: {exc}") from exc
+            if existing_index != partition_payloads[partition]:
+                raise CreativeWriterError(
+                    f"Existing {partition} passage index differs from the current corpus"
+                )
     existing_manifest = _load_existing_manifest(holdout_path)
     if existing_manifest is not None:
-        _validate_manifest_passages(existing_manifest, seen_passage_ids)
+        _validate_manifest_passages(existing_manifest, {passage.passage_id for passage in passages})
         expected_manifest = _build_holdout_manifest(
             config=config,
             registry_hashes=registry_hashes,
@@ -841,6 +969,8 @@ def _prepare(root: Path, slug: str) -> SourceAnalysisResult:
             witnesses=witnesses,
             passages=passages,
             source_tiers=source_tiers,
+            partitions=partitions,
+            corpus_lock_bytes=lock_payload,
             created_at=existing_manifest.created_at,
         )
         if existing_manifest.model_dump(mode="json") != expected_manifest.model_dump(mode="json"):
@@ -849,7 +979,6 @@ def _prepare(root: Path, slug: str) -> SourceAnalysisResult:
     else:
         manifest_created = True
 
-    lock_payload = _canonical_json(lock.model_dump(mode="json"))
     manifest_payload = yaml.safe_dump(
         expected_manifest.model_dump(),
         sort_keys=False,
@@ -858,7 +987,10 @@ def _prepare(root: Path, slug: str) -> SourceAnalysisResult:
     staged: list[tuple[Path, Path]] = []
     try:
         staged.append((lock_path, _stage_file(lock_path, lock_payload)))
-        staged.append((index_path, _stage_file(index_path, index_payload)))
+        staged.extend(
+            (index_paths[partition], _stage_file(index_paths[partition], payload))
+            for partition, payload in partition_payloads.items()
+        )
         if manifest_created:
             staged.append((holdout_path, _stage_file(holdout_path, manifest_payload)))
         _commit_staged(staged)
@@ -930,6 +1062,165 @@ def _load_optional_yaml_model(path: Path, model: type[Any]) -> Any | None:
     if not path.exists():
         return None
     return load_yaml_model(path, model)
+
+
+def _read_bound_partition(
+    path: Path,
+    binding: PassageIndexBinding,
+    *,
+    expected_path: str,
+    expected_partition: str,
+) -> list[PassageRecord]:
+    """Read exactly one physical index and verify its manifest binding."""
+
+    if binding.path != expected_path or binding.partition != expected_partition:
+        raise CreativeWriterError(
+            f"Manifest binding for {expected_partition} does not match configured path or partition"
+        )
+    try:
+        data = path.read_bytes()
+    except OSError as exc:
+        raise CreativeWriterError(f"Unable to read {expected_partition} passage index {path}: {exc}") from exc
+    if sha256_bytes(data) != binding.sha256:
+        raise CreativeWriterError(f"{expected_partition} passage index SHA-256 does not match manifest binding")
+    records = parse_passage_partition(data)
+    if len(records) != binding.passage_count:
+        raise CreativeWriterError(f"{expected_partition} passage count does not match manifest binding")
+    actual_witness_ids: list[str] = []
+    for record in records:
+        if record.witness_id not in actual_witness_ids:
+            actual_witness_ids.append(record.witness_id)
+    if actual_witness_ids != binding.witness_ids:
+        raise CreativeWriterError(f"{expected_partition} witness IDs do not match manifest binding")
+    return records
+
+
+def _manifest_partition_ids(
+    manifest: HoldoutManifest, partition: str
+) -> set[str]:
+    ids: set[str] = set()
+    for witness in manifest.witnesses:
+        windows = (
+            witness.development_windows
+            if partition == "development"
+            else witness.holdout_windows
+        )
+        for window in windows:
+            ids.update(window.passage_ids)
+    return ids
+
+
+def _validate_lock_registry_metadata(
+    config: AnalysisConfig,
+    lock: CorpusLock,
+    admission: SourceStudyAdmission,
+    registry: SourcesRegistry,
+    *,
+    slug: str,
+) -> dict[str, int]:
+    """Validate registry/lock metadata without touching retained Markdown."""
+
+    if lock.analysis.study_id != config.study_id or lock.analysis.story_slug != slug:
+        raise CreativeWriterError("Committed corpus lock identity does not match analysis.yml")
+    expected_registry_hashes = {
+        config.admission_registry.path: config.admission_registry.sha256,
+        config.source_registry.path: config.source_registry.sha256,
+    }
+    if lock.registry_hashes != expected_registry_hashes:
+        raise CreativeWriterError("Committed corpus lock registry hashes do not match analysis.yml")
+    _validate_analysis_authority(config, admission)
+    source_tiers = {source.id: source.role.tier for source in registry.sources}
+    registry_ids = [source.id for source in registry.sources]
+    lock_ids = [source.id for source in lock.sources]
+    if lock_ids != registry_ids:
+        raise CreativeWriterError("Committed corpus lock source IDs do not match the source registry")
+    for source in lock.sources:
+        if source_tiers.get(source.id) != source.tier:
+            raise CreativeWriterError(f"Committed corpus lock tier differs for `{source.id}`")
+    expected_witness_ids = config.expected_corpus.witness_ids
+    actual_witness_ids = [witness.witness_id for witness in lock.witnesses]
+    if actual_witness_ids != expected_witness_ids:
+        raise CreativeWriterError("Committed corpus lock witness IDs do not match analysis.yml")
+    for witness in lock.witnesses:
+        if witness.source_id not in source_tiers:
+            raise CreativeWriterError(f"Committed corpus lock has unknown source `{witness.source_id}`")
+    return source_tiers
+
+
+def _load_development_partition(
+    root: Path, slug: str, config: AnalysisConfig
+) -> tuple[CorpusLock, HoldoutManifest, list[PassageRecord], dict[str, int], SourceStudyAdmission, SourcesRegistry]:
+    story_dir = _story_path(root, slug)
+    generated_paths = _resolve_generated_paths(root, slug, config)
+    holdout_path = story_dir / "source-study" / "holdouts.yml"
+    _require_committed_holdout(root, holdout_path)
+    lock_path = generated_paths["corpus_lock"]
+    development_path = generated_paths["development_passage_index"]
+    if not lock_path.exists() or not development_path.exists() or not holdout_path.exists():
+        raise CreativeWriterError(
+            "Development requires the prepared corpus lock, development passage index, and holdout manifest"
+        )
+    try:
+        lock_bytes = lock_path.read_bytes()
+        lock = CorpusLock.model_validate(json.loads(lock_bytes.decode("utf-8")))
+        manifest = _load_existing_manifest(holdout_path)
+    except (OSError, UnicodeError, json.JSONDecodeError, ValidationError, CreativeWriterError) as exc:
+        raise CreativeWriterError(f"Committed corpus lock/manifest could not be loaded: {exc}") from exc
+    if manifest is None:
+        raise CreativeWriterError(f"Missing committed holdout manifest: {holdout_path}")
+    if manifest.schema_version != 2:
+        raise CreativeWriterError("Development requires a schema-v2 holdout manifest")
+    if manifest.corpus_lock.path != _relative_to_root(lock_path, root):
+        raise CreativeWriterError("Corpus-lock manifest binding path does not match configured path")
+    if manifest.corpus_lock.sha256 != sha256_bytes(lock_bytes):
+        raise CreativeWriterError("Corpus-lock manifest binding hash does not match corpus-lock bytes")
+    expected_registry_hashes = {
+        config.admission_registry.path: config.admission_registry.sha256,
+        config.source_registry.path: config.source_registry.sha256,
+    }
+    if manifest.registry_hashes != expected_registry_hashes:
+        raise CreativeWriterError("Committed holdout manifest registry hashes do not match analysis.yml")
+    if (
+        manifest.partition_seed != config.partition.seed
+        or manifest.algorithm_version != config.partition.algorithm_version
+        or manifest.whole_work_holdouts != list(config.partition.whole_work_holdouts)
+    ):
+        raise CreativeWriterError("Committed holdout manifest differs from the configured partition")
+    expected_index_paths = {
+        "development": _relative_to_root(generated_paths["development_passage_index"], root),
+        "heldout_wells": _relative_to_root(generated_paths["heldout_wells_passage_index"], root),
+        "tier4_controls": _relative_to_root(generated_paths["tier4_control_passage_index"], root),
+    }
+    if any(
+        binding.path != expected_index_paths[partition]
+        for partition, binding in {
+            "development": manifest.development_passage_index,
+            "heldout_wells": manifest.heldout_wells_passage_index,
+            "tier4_controls": manifest.tier4_control_passage_index,
+        }.items()
+    ):
+        raise CreativeWriterError("Committed holdout manifest index paths do not match analysis.yml")
+    admission_path = _registry_path(story_dir, config.admission_registry.path)
+    source_path = _registry_path(story_dir, config.source_registry.path)
+    _verify_registry_hash(admission_path, config.admission_registry.sha256, "Admission registry")
+    _verify_registry_hash(source_path, config.source_registry.sha256, "Source registry")
+    admission = load_yaml_model(admission_path, SourceStudyAdmission)
+    registry = load_yaml_model(source_path, SourcesRegistry)
+    source_tiers = _validate_lock_registry_metadata(config, lock, admission, registry, slug=slug)
+    records = _read_bound_partition(
+        development_path,
+        manifest.development_passage_index,
+        expected_path=_relative_to_root(development_path, root),
+        expected_partition="development",
+    )
+    expected_ids = _manifest_partition_ids(manifest, "development")
+    actual_ids = {record.passage_id for record in records}
+    if actual_ids != expected_ids:
+        raise CreativeWriterError("Development index membership differs from manifest development windows")
+    for record in records:
+        if source_tiers.get(record.source_id) not in {1, 2, 3}:
+            raise CreativeWriterError("Development index contains a non-Wells retained passage")
+    return lock, manifest, records, source_tiers, admission, registry
 
 
 _FULL_COMMIT_RE = re.compile(r"^[0-9a-f]{40}(?:[0-9a-f]{24})?$")
@@ -1107,22 +1398,24 @@ def _preflight_validation(root: Path, slug: str) -> _ValidationPreflight:
 def _load_validation_corpus(
     root: Path, slug: str, config: AnalysisConfig, *, include_controls: bool
 ) -> _ValidationCorpus:
-    """Load the committed corpus lock and only the requested index partition."""
+    """Load held-out Wells, then controls only when the caller is authorized."""
 
     story_dir = _story_path(root, slug)
     generated_paths = _resolve_generated_paths(root, slug, config)
     lock_path = generated_paths["corpus_lock"]
-    index_path = generated_paths["passage_index"]
     manifest_path = story_dir / "source-study" / "holdouts.yml"
     try:
-        lock = CorpusLock.model_validate(json.loads(lock_path.read_text(encoding="utf-8")))
+        lock_bytes = lock_path.read_bytes()
+        lock = CorpusLock.model_validate(json.loads(lock_bytes.decode("utf-8")))
         manifest = _load_existing_manifest(manifest_path)
     except (OSError, UnicodeError, json.JSONDecodeError, ValidationError, CreativeWriterError) as exc:
         raise CreativeWriterError(f"Validation corpus lock/manifest could not be loaded: {exc}") from exc
     if manifest is None:
         raise CreativeWriterError(f"Missing committed holdout manifest: {manifest_path}")
-    if lock.analysis.study_id != config.study_id or lock.analysis.story_slug != slug:
-        raise CreativeWriterError("Committed corpus lock identity does not match analysis.yml")
+    if manifest.schema_version != 2:
+        raise CreativeWriterError("Validation requires a schema-v2 holdout manifest")
+    if manifest.corpus_lock.path != _relative_to_root(lock_path, root) or manifest.corpus_lock.sha256 != sha256_bytes(lock_bytes):
+        raise CreativeWriterError("Corpus-lock manifest binding does not match corpus-lock bytes")
     expected_registry_hashes = {
         config.admission_registry.path: config.admission_registry.sha256,
         config.source_registry.path: config.source_registry.sha256,
@@ -1136,81 +1429,77 @@ def _load_validation_corpus(
     ):
         raise CreativeWriterError("Committed holdout manifest differs from the configured partition")
 
+    expected_index_paths = {
+        "development": _relative_to_root(generated_paths["development_passage_index"], root),
+        "heldout_wells": _relative_to_root(generated_paths["heldout_wells_passage_index"], root),
+        "tier4_controls": _relative_to_root(generated_paths["tier4_control_passage_index"], root),
+    }
+    if any(
+        binding.path != expected_index_paths[partition]
+        for partition, binding in {
+            "development": manifest.development_passage_index,
+            "heldout_wells": manifest.heldout_wells_passage_index,
+            "tier4_controls": manifest.tier4_control_passage_index,
+        }.items()
+    ):
+        raise CreativeWriterError("Committed holdout manifest index paths do not match analysis.yml")
+
     admission_path = _registry_path(story_dir, config.admission_registry.path)
     source_path = _registry_path(story_dir, config.source_registry.path)
     _verify_registry_hash(admission_path, config.admission_registry.sha256, "Admission registry")
     _verify_registry_hash(source_path, config.source_registry.sha256, "Source registry")
     admission = load_yaml_model(admission_path, SourceStudyAdmission)
     registry = load_yaml_model(source_path, SourcesRegistry)
-    _validate_analysis_authority(config, admission)
-
-    source_tiers = {source.id: source.role.tier for source in registry.sources}
+    source_tiers = _validate_lock_registry_metadata(config, lock, admission, registry, slug=slug)
     source_roles = {
         source.id: list(source.role.analytical_roles) for source in registry.sources
     }
-    for source in lock.sources:
-        if source_tiers.get(source.id) != source.tier:
-            raise CreativeWriterError(f"Committed corpus lock tier differs for `{source.id}`")
     lock_tiers = {
         witness.witness_id: source_tiers.get(witness.source_id, 0)
         for witness in lock.witnesses
     }
+    heldout_witness_ids = set(manifest.heldout_wells_passage_index.witness_ids)
     heldout_ids = {
         passage_id
         for witness in manifest.witnesses
-        if lock_tiers.get(witness.witness_id) in {1, 2, 3}
+        if witness.witness_id in heldout_witness_ids
         for window in witness.holdout_windows
         for passage_id in window.passage_ids
     }
-    control_witnesses = {
-        witness.witness_id
-        for witness in lock.witnesses
-        if source_tiers.get(witness.source_id) == 4
-    }
+    heldout_path = generated_paths["heldout_wells_passage_index"]
+    heldout_records = _read_bound_partition(
+        heldout_path,
+        manifest.heldout_wells_passage_index,
+        expected_path=_relative_to_root(heldout_path, root),
+        expected_partition="heldout_wells",
+    )
+    if {record.passage_id for record in heldout_records} != heldout_ids:
+        raise CreativeWriterError("Held-out Wells index membership differs from manifest")
+    if any(source_tiers.get(record.source_id) not in {1, 2, 3} for record in heldout_records):
+        raise CreativeWriterError("Held-out Wells index contains a non-Wells passage")
     control_ids: set[str] = set()
-    wanted_ids = set(heldout_ids)
-
-    try:
-        lines = index_path.read_text(encoding="utf-8").splitlines()
-    except (OSError, UnicodeError) as exc:
-        raise CreativeWriterError(f"Unable to read passage index for validation: {exc}") from exc
-    passages: list[PassageRecord] = []
-    seen: set[str] = set()
-    for line_number, line in enumerate(lines, start=1):
-        if not line.strip():
-            raise CreativeWriterError(f"Malformed passage index line {line_number}: blank line")
-        try:
-            payload = json.loads(line)
-        except json.JSONDecodeError as exc:
-            raise CreativeWriterError(f"Malformed passage index line {line_number}: {exc}") from exc
-        witness_id = payload.get("witness_id") if isinstance(payload, dict) else None
-        passage_id = payload.get("passage_id") if isinstance(payload, dict) else None
-        is_control = witness_id in control_witnesses
-        if is_control:
-            control_ids.add(passage_id)
-        if passage_id not in wanted_ids and not (include_controls and is_control):
-            continue
-        try:
-            passage = PassageRecord.model_validate(payload)
-        except (ValidationError, TypeError) as exc:
-            raise CreativeWriterError(
-                f"Malformed selected validation passage at line {line_number}: {exc}"
-            ) from exc
-        if passage.passage_id in seen:
-            raise CreativeWriterError(f"Duplicate validation passage ID `{passage.passage_id}`")
-        if passage.passage_id not in heldout_ids and passage.passage_id not in control_ids:
-            raise CreativeWriterError(f"Unrequested validation passage `{passage.passage_id}`")
-        seen.add(passage.passage_id)
-        passages.append(passage)
-    if not heldout_ids.issubset(seen):
-        missing = sorted(heldout_ids - seen)
-        raise CreativeWriterError("Held-out passage IDs are unresolved: " + ", ".join(missing))
-    if include_controls and not control_ids.issubset(seen):
-        missing = sorted(control_ids - seen)
-        raise CreativeWriterError("Control passage IDs are unresolved: " + ", ".join(missing))
+    control_records: list[PassageRecord] = []
     if include_controls:
-        wanted_ids.update(control_ids)
-    selected = [passage for passage in passages if passage.passage_id in wanted_ids]
+        control_witness_ids = set(manifest.tier4_control_passage_index.witness_ids)
+        control_ids = {
+            passage_id
+            for witness in manifest.witnesses
+            if witness.witness_id in control_witness_ids
+            for window in witness.holdout_windows
+            for passage_id in window.passage_ids
+        }
+        control_path = generated_paths["tier4_control_passage_index"]
+        control_records = _read_bound_partition(
+            control_path,
+            manifest.tier4_control_passage_index,
+            expected_path=_relative_to_root(control_path, root),
+            expected_partition="tier4_controls",
+        )
+        if {record.passage_id for record in control_records} != control_ids:
+            raise CreativeWriterError("Tier 4 control index membership differs from manifest")
+        if any(source_tiers.get(record.source_id) != 4 for record in control_records):
+            raise CreativeWriterError("Tier 4 control index contains a non-control passage")
+    selected = [*heldout_records, *control_records]
     if not selected:
         raise CreativeWriterError("Validation corpus contains no permitted passages")
     return _ValidationCorpus(
@@ -1570,8 +1859,8 @@ def _build_validation_metrics(
 ) -> ValidationMetricsDocument:
     # The generated path is rooted at build/<slug>/source-study.  Derive the
     # repository root without consulting any additional source artefact.
-    build_root = generated_paths["validation_metrics"].parents[3]
-    slug = generated_paths["validation_metrics"].parents[1].name
+    build_root = generated_paths["validation_metrics"].parents[5]
+    slug = generated_paths["validation_metrics"].parents[3].name
     config_path = build_root / "stories" / slug / "source-study" / "analysis.yml"
     manifest_path = config_path.parent / "holdouts.yml"
     return ValidationMetricsDocument(
@@ -1585,13 +1874,13 @@ def _build_validation_metrics(
             stage=config.study_status,
             validation_step=validation.validation_step,
             config_sha256=_sha256(config_path),
-            index_sha256=_sha256(generated_paths["passage_index"]),
+            index_sha256=_sha256(generated_paths["heldout_wells_passage_index"]),
             manifest_sha256=_sha256(manifest_path),
             candidate_commit=validation.candidate_commit,
             candidate_profile_sha256=validation.candidate_profile_sha256,
             candidate_ledger_sha256=validation.candidate_ledger_sha256,
             config_path=_relative_to_root(config_path, build_root),
-            index_path=_relative_to_root(generated_paths["passage_index"], build_root),
+            index_path=_relative_to_root(generated_paths["heldout_wells_passage_index"], build_root),
             manifest_path=_relative_to_root(manifest_path, build_root),
         ),
         enabled_measurements=list(config.enabled_measurements),
@@ -1914,93 +2203,14 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
         raise CreativeWriterError("The develop command is available only for config status protocol or development")
     generated_paths = _resolve_generated_paths(root, slug, config)
     holdout_path = story_dir / "source-study" / "holdouts.yml"
-    _require_committed_holdout(root, holdout_path)
-    lock_path = generated_paths["corpus_lock"]
-    index_path = generated_paths["passage_index"]
-    if not lock_path.exists() or not index_path.exists() or not holdout_path.exists():
-        raise CreativeWriterError(
-            "Development requires the prepared corpus lock, passage index, and holdout manifest"
-        )
-
-    admission_result = check_source_admission(root, slug)
-    if not admission_result.ok:
-        details = "\n".join(f"- {error}" for error in admission_result.errors)
-        raise CreativeWriterError(f"Source admission failed for `{slug}`:\n{details}")
-    admission_path = _registry_path(story_dir, config.admission_registry.path)
-    source_path = _registry_path(story_dir, config.source_registry.path)
-    _verify_registry_hash(admission_path, config.admission_registry.sha256, "Admission registry")
-    _verify_registry_hash(source_path, config.source_registry.sha256, "Source registry")
-    admission = load_yaml_model(admission_path, SourceStudyAdmission)
-    registry = load_yaml_model(source_path, SourcesRegistry)
-    _validate_analysis_authority(config, admission)
-    witnesses, source_tiers = _expanded_witnesses(story_dir=story_dir, registry=registry)
-    _validate_expected_corpus(config, admission, registry, witnesses)
-    registry_hashes = {
-        config.admission_registry.path: config.admission_registry.sha256,
-        config.source_registry.path: config.source_registry.sha256,
-    }
-    expected_lock = build_corpus_lock(
-        slug=slug,
-        config=config,
-        admission=admission,
-        registry=registry,
-        witnesses=witnesses,
-        registry_hashes=registry_hashes,
+    lock, manifest, passages, source_tiers, admission, registry = _load_development_partition(
+        root, slug, config
     )
-    _validate_existing_json(lock_path, expected_lock, "corpus lock")
-    try:
-        regenerated_passages = _parse_retained_witnesses(witnesses)
-        regenerated_index = serialize_passage_index(regenerated_passages)
-        existing_index = index_path.read_bytes()
-    except (CreativeWriterError, OSError) as exc:
-        raise CreativeWriterError(
-            f"Development passage index verification failed: {exc}"
-        ) from exc
-    if existing_index != regenerated_index:
-        raise CreativeWriterError(
-            "Reparsed canonical passage index differs from the build passage index"
-        )
-    passages = regenerated_passages
-    passage_ids = {passage.passage_id for passage in passages}
-    manifest = _load_existing_manifest(holdout_path)
-    if manifest is None:
-        raise CreativeWriterError(f"Missing committed holdout manifest: {holdout_path}")
-    _validate_manifest_passages(manifest, passage_ids)
-    expected_manifest = _build_holdout_manifest(
-        config=config,
-        registry_hashes=registry_hashes,
-        registry=registry,
-        witnesses=witnesses,
-        passages=passages,
-        source_tiers=source_tiers,
-        created_at=manifest.created_at,
-    )
-    if manifest.model_dump(mode="json") != expected_manifest.model_dump(mode="json"):
-        raise CreativeWriterError("Committed holdout manifest differs from the current corpus partition")
-    development_ids = {
-        passage_id
-        for witness in manifest.witnesses
-        for window in witness.development_windows
-        for passage_id in window.passage_ids
-    }
-    holdout_ids = {
-        passage_id
-        for witness in manifest.witnesses
-        for window in witness.holdout_windows
-        for passage_id in window.passage_ids
-    }
-    if development_ids & holdout_ids:
-        raise CreativeWriterError("Development and holdout passage IDs overlap")
+    development_ids = {passage.passage_id for passage in passages}
+    current_by_id = {passage.passage_id: passage for passage in passages}
     if not development_ids:
         raise CreativeWriterError("Holdout manifest contains no development passages")
-    current_by_id = {passage.passage_id: passage for passage in passages}
-    development_tiers = {
-        source_tiers.get(current_by_id[passage_id].witness_id)
-        or source_tiers.get(current_by_id[passage_id].source_id)
-        for passage_id in development_ids
-    }
-    if any(tier not in {1, 2, 3} for tier in development_tiers):
-        raise CreativeWriterError("Development partition can contain only retained Tier 1-3 passages")
+    index_path = generated_paths["development_passage_index"]
     expected_metric_provenance = {
         "study_id": config.study_id,
         "stage": "development",
@@ -2181,9 +2391,8 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
         for passage_id in window.passage_ids
     }
     forbidden_passages = [
-        passage
-        for passage in passages
-        if passage.witness_id in forbidden_witness_ids or passage.passage_id in manifest_holdout_ids
+        _ForbiddenPassageLocator(passage_id)
+        for passage_id in sorted(manifest_holdout_ids)
     ]
     evidence_result.extend(
         _post_metric_call(

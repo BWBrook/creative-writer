@@ -247,7 +247,7 @@ class ExpectedCorpus(StrictModel):
 
 
 class AnalysisConfig(StrictModel):
-    schema_version: Literal[1]
+    schema_version: Literal[2]
     study_id: Slug
     composition_window: StrictCompositionWindow
     study_status: Stage
@@ -306,13 +306,15 @@ class AnalysisConfig(StrictModel):
     def validate_generated_paths(cls, value: dict[str, str]) -> dict[str, str]:
         expected_files = {
             "corpus_lock": "corpus-lock.json",
-            "passage_index": "passage-index.jsonl",
+            "development_passage_index": "indexes/development.jsonl",
+            "heldout_wells_passage_index": "indexes/heldout-wells.jsonl",
+            "tier4_control_passage_index": "indexes/tier4-controls.jsonl",
             "development_metrics": "development-metrics.json",
             "development_metrics_csv": "development-metrics.csv",
             "development_report": "development-report.md",
-            "validation_metrics": "validation-metrics.json",
-            "validation_packet": "validation-packet.md",
-            "analysis_report": "analysis-report.md",
+            "validation_metrics": "validation/current/validation-metrics.json",
+            "validation_packet": "validation/current/validation-packet.md",
+            "analysis_report": "validation/current/analysis-report.md",
         }
         if set(value) != set(expected_files):
             raise ValueError(
@@ -509,13 +511,39 @@ class WitnessHoldouts(StrictModel):
         return self
 
 
+class ArtifactBinding(StrictModel):
+    """Repository-relative identity of a generated artifact."""
+
+    path: RelativePath
+    sha256: SHA256
+
+    _path = field_validator("path")(_validate_relative_path)
+
+
+class PassageIndexBinding(ArtifactBinding):
+    """Exact identity and membership summary of one physical partition."""
+
+    partition: Literal["development", "heldout_wells", "tier4_controls"]
+    passage_count: StrictInt = Field(ge=1)
+    witness_ids: list[NonEmptyText] = Field(min_length=1)
+
+    @field_validator("witness_ids")
+    @classmethod
+    def unique_witness_ids(cls, value: list[str]) -> list[str]:
+        return _validate_unique(value, "passage-index witness IDs")
+
+
 class HoldoutManifest(StrictModel):
-    schema_version: Literal[1]
+    schema_version: Literal[2]
     partition_seed: NonEmptyText
     algorithm_version: NonEmptyText
     tool_version: NonEmptyText
     created_at: datetime
     registry_hashes: dict[RelativePath, SHA256] = Field(min_length=1)
+    corpus_lock: ArtifactBinding
+    development_passage_index: PassageIndexBinding
+    heldout_wells_passage_index: PassageIndexBinding
+    tier4_control_passage_index: PassageIndexBinding
     source_fingerprints: dict[NonEmptyText, SHA256] = Field(min_length=1)
     whole_work_holdouts: list[NonEmptyText] = Field(min_length=1)
     witnesses: list[WitnessHoldouts] = Field(min_length=1)
@@ -547,6 +575,22 @@ class HoldoutManifest(StrictModel):
 
     @model_validator(mode="after")
     def validate_whole_work_topology(self) -> "HoldoutManifest":
+        bindings = {
+            "development": self.development_passage_index,
+            "heldout_wells": self.heldout_wells_passage_index,
+            "tier4_controls": self.tier4_control_passage_index,
+        }
+        for expected_partition, binding in bindings.items():
+            if binding.partition != expected_partition:
+                raise ValueError(
+                    f"{expected_partition} binding must declare partition {expected_partition}"
+                )
+        binding_paths = [
+            self.corpus_lock.path,
+            *(binding.path for binding in bindings.values()),
+        ]
+        if len(binding_paths) != len(set(binding_paths)):
+            raise ValueError("artifact and passage-index binding paths must be unique")
         declared_whole_work = set(self.whole_work_holdouts)
         witness_ids = {witness.witness_id for witness in self.witnesses}
         missing_witnesses = declared_whole_work - witness_ids
@@ -560,10 +604,6 @@ class HoldoutManifest(StrictModel):
                     raise ValueError(
                         "whole-work witnesses must not have development windows"
                     )
-            elif not witness.development_windows:
-                raise ValueError(
-                    "non-whole-work witnesses require development windows"
-                )
         return self
 
 

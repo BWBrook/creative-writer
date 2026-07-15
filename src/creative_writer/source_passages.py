@@ -472,6 +472,104 @@ def serialize_passage_index(passages: Iterable[PassageRecord]) -> bytes:
     ).encode("utf-8")
 
 
+def _validate_partition_records(records: list[PassageRecord]) -> None:
+    """Validate identities and strict global reading order for one partition."""
+
+    if not records:
+        raise CreativeWriterError("passage partition must contain at least one passage")
+    seen_ids: set[str] = set()
+    previous_key: tuple[int, int] | None = None
+    witness_ordinals: dict[str, int] = {}
+    ordinal_witnesses: dict[int, str] = {}
+    for record in records:
+        if record.passage_id in seen_ids:
+            raise CreativeWriterError(f"duplicate passage ID: {record.passage_id}")
+        seen_ids.add(record.passage_id)
+        if witness_ordinals.setdefault(record.witness_id, record.witness_ordinal) != record.witness_ordinal:
+            raise CreativeWriterError(
+                f"witness {record.witness_id} maps to multiple witness ordinals"
+            )
+        if ordinal_witnesses.setdefault(record.witness_ordinal, record.witness_id) != record.witness_id:
+            raise CreativeWriterError(
+                f"witness ordinal {record.witness_ordinal} maps to multiple witnesses"
+            )
+        key = (record.witness_ordinal, record.source_ordinal)
+        if previous_key is not None and key <= previous_key:
+            raise CreativeWriterError(
+                "passage partition records must have strictly increasing global ordinals"
+            )
+        previous_key = key
+
+
+def serialize_passage_partition(records: Iterable[PassageRecord]) -> bytes:
+    """Serialize one physical partition as canonical compact UTF-8 JSONL."""
+
+    try:
+        validated = [
+            PassageRecord.model_validate(
+                record.model_dump(mode="json")
+                if isinstance(record, PassageRecord)
+                else record
+            )
+            for record in records
+        ]
+    except (ValidationError, TypeError) as exc:
+        raise CreativeWriterError(f"Invalid passage record: {exc}") from exc
+    validated.sort(key=lambda item: (item.witness_ordinal, item.source_ordinal))
+    _validate_partition_records(validated)
+    return b"".join(
+        (
+            json.dumps(
+                record.model_dump(mode="json"),
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+            + b"\n"
+        )
+        for record in validated
+    )
+
+
+def parse_passage_partition(data: bytes) -> list[PassageRecord]:
+    """Parse and strictly validate canonical bytes for one physical partition."""
+
+    if not isinstance(data, bytes):
+        raise CreativeWriterError("passage partition must be supplied as bytes")
+    if not data or data.startswith(b"\xef\xbb\xbf") or b"\r" in data:
+        raise CreativeWriterError("passage partition must be non-empty UTF-8 JSONL without BOM or CR")
+    if not data.endswith(b"\n") or b"\n\n" in data:
+        raise CreativeWriterError("passage partition must contain exactly one LF per record")
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise CreativeWriterError(f"passage partition is not valid UTF-8: {exc}") from exc
+    records: list[PassageRecord] = []
+    for line_number, line in enumerate(text.split("\n")[:-1], start=1):
+        if not line or line.startswith("\ufeff"):
+            raise CreativeWriterError(f"Malformed passage partition line {line_number}: blank or BOM")
+        try:
+            payload = json.loads(line)
+            record = PassageRecord.model_validate(payload)
+        except (json.JSONDecodeError, ValidationError, TypeError) as exc:
+            raise CreativeWriterError(
+                f"Malformed passage partition line {line_number}: {exc}"
+            ) from exc
+        canonical_line = json.dumps(
+            record.model_dump(mode="json"),
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        if line != canonical_line:
+            raise CreativeWriterError(
+                f"Malformed passage partition line {line_number}: non-canonical JSON"
+            )
+        records.append(record)
+    _validate_partition_records(records)
+    return records
+
+
 def write_passage_index(path: Path, passages: Iterable[PassageRecord]) -> None:
     """Write validated passage records as deterministic UTF-8 JSON Lines."""
 

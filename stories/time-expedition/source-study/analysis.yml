@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 2
 study_id: time-expedition-wells-phase-2b
 composition_window:
   start: 1897
@@ -200,10 +200,12 @@ claim_classifications: [wells_distinctive, wells_characteristic_but_shared, role
 evidence_roles: [support, counterexample, variation, control, validation]
 generated_paths:
   corpus_lock: build/time-expedition/source-study/corpus-lock.json
-  passage_index: build/time-expedition/source-study/passage-index.jsonl
+  development_passage_index: build/time-expedition/source-study/indexes/development.jsonl
+  heldout_wells_passage_index: build/time-expedition/source-study/indexes/heldout-wells.jsonl
+  tier4_control_passage_index: build/time-expedition/source-study/indexes/tier4-controls.jsonl
   development_metrics: build/time-expedition/source-study/development-metrics.json
   development_metrics_csv: build/time-expedition/source-study/development-metrics.csv
   development_report: build/time-expedition/source-study/development-report.md
-  validation_metrics: build/time-expedition/source-study/validation-metrics.json
-  validation_packet: build/time-expedition/source-study/validation-packet.md
-  analysis_report: build/time-expedition/source-study/analysis-report.md
+  validation_metrics: build/time-expedition/source-study/validation/current/validation-metrics.json
+  validation_packet: build/time-expedition/source-study/validation/current/validation-packet.md
+  analysis_report: build/time-expedition/source-study/validation/current/analysis-report.md

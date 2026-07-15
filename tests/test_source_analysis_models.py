@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from creative_writer.files import load_yaml_model
 from creative_writer.source_analysis_models import (
     AnalysisConfig,
+    ArtifactBinding,
     AnalyticalDimension,
     ClaimJurisdiction,
     CounterexampleSearch,
@@ -20,6 +21,7 @@ from creative_writer.source_analysis_models import (
     GeneratedDevelopmentMetrics,
     HoldoutManifest,
     PassageRecord,
+    PassageIndexBinding,
     WitnessDescriptor,
     WitnessMetricRecord,
     QuantitativeProfile,
@@ -192,7 +194,7 @@ def _dimensions() -> list[dict[str, object]]:
 
 def _analysis_config() -> dict[str, object]:
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "study_id": "time-expedition-wells-phase-2b",
         "composition_window": {"start": 1897, "end": 1899},
         "study_status": "protocol",
@@ -264,15 +266,33 @@ def _analysis_config() -> dict[str, object]:
         "evidence_roles": ["support", "counterexample", "variation", "control", "validation"],
         "generated_paths": {
             "corpus_lock": "build/time-expedition/source-study/corpus-lock.json",
-            "passage_index": "build/time-expedition/source-study/passage-index.jsonl",
+            "development_passage_index": "build/time-expedition/source-study/indexes/development.jsonl",
+            "heldout_wells_passage_index": "build/time-expedition/source-study/indexes/heldout-wells.jsonl",
+            "tier4_control_passage_index": "build/time-expedition/source-study/indexes/tier4-controls.jsonl",
             "development_metrics": "build/time-expedition/source-study/development-metrics.json",
             "development_metrics_csv": "build/time-expedition/source-study/development-metrics.csv",
             "development_report": "build/time-expedition/source-study/development-report.md",
-            "validation_metrics": "build/time-expedition/source-study/validation-metrics.json",
-            "validation_packet": "build/time-expedition/source-study/validation-packet.md",
-            "analysis_report": "build/time-expedition/source-study/analysis-report.md",
+            "validation_metrics": "build/time-expedition/source-study/validation/current/validation-metrics.json",
+            "validation_packet": "build/time-expedition/source-study/validation/current/validation-packet.md",
+            "analysis_report": "build/time-expedition/source-study/validation/current/analysis-report.md",
         },
     }
+
+
+def test_analysis_config_requires_schema_v2_physical_partition_paths() -> None:
+    payload = _analysis_config()
+    generated_paths = payload["generated_paths"]
+    assert isinstance(generated_paths, dict)
+    parsed = AnalysisConfig.model_validate(payload)
+    assert parsed.schema_version == 2
+    assert "passage_index" not in generated_paths
+
+
+def test_analysis_config_rejects_schema_v1() -> None:
+    payload = _analysis_config()
+    payload["schema_version"] = 1
+    with pytest.raises(ValidationError):
+        AnalysisConfig.model_validate(payload)
 
 
 def test_generated_metric_witness_schema_is_strict_for_emitted_scalar_fields() -> None:
@@ -429,12 +449,37 @@ def _validation() -> dict[str, object]:
 
 def _holdout_manifest() -> dict[str, object]:
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "partition_seed": "wells-phase-2b-v1",
         "algorithm_version": "tertile-hash-v1",
         "tool_version": "creative-writer 1",
         "created_at": datetime(2026, 7, 15, 10, tzinfo=timezone.utc),
         "registry_hashes": {"original/sources.yml": HASH},
+        "corpus_lock": {
+            "path": "build/time-expedition/source-study/corpus-lock.json",
+            "sha256": HASH,
+        },
+        "development_passage_index": {
+            "path": "build/time-expedition/source-study/indexes/development.jsonl",
+            "sha256": HASH,
+            "partition": "development",
+            "passage_count": 1,
+            "witness_ids": ["the-time-machine"],
+        },
+        "heldout_wells_passage_index": {
+            "path": "build/time-expedition/source-study/indexes/heldout-wells.jsonl",
+            "sha256": HASH,
+            "partition": "heldout_wells",
+            "passage_count": 2,
+            "witness_ids": ["selected-short-fiction/the-star", "the-time-machine"],
+        },
+        "tier4_control_passage_index": {
+            "path": "build/time-expedition/source-study/indexes/tier4-controls.jsonl",
+            "sha256": HASH,
+            "partition": "tier4_controls",
+            "passage_count": 1,
+            "witness_ids": ["tier4-control"],
+        },
         "source_fingerprints": {
             "selected-short-fiction/the-star": HASH,
             "the-time-machine": HASH,
@@ -500,7 +545,20 @@ def test_complete_yaml_fixtures_parse(tmp_path: Path) -> None:
         path = tmp_path / filename
         path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
         parsed = load_yaml_model(path, model_type)
-        assert parsed.schema_version == 1
+        assert parsed.schema_version == (2 if model_type in {AnalysisConfig, HoldoutManifest} else 1)
+
+
+def test_v2_manifest_bindings_are_positive_partitioned_and_ordered() -> None:
+    manifest = HoldoutManifest.model_validate(_holdout_manifest())
+    assert isinstance(manifest.corpus_lock, ArtifactBinding)
+    assert isinstance(manifest.development_passage_index, PassageIndexBinding)
+    assert manifest.development_passage_index.witness_ids == ["the-time-machine"]
+    payload = _holdout_manifest()
+    bindings = payload["development_passage_index"]
+    assert isinstance(bindings, dict)
+    bindings["passage_count"] = 0
+    with pytest.raises(ValidationError):
+        HoldoutManifest.model_validate(payload)
 
 
 def test_validation_document_requires_strict_front_matter_and_preserves_body() -> None:
@@ -654,7 +712,7 @@ def test_analysis_rejects_generated_path_outside_build() -> None:
     payload = _analysis_config()
     generated_paths = payload["generated_paths"]
     assert isinstance(generated_paths, dict)
-    generated_paths["passage_index"] = "outputs/passage-index.jsonl"
+    generated_paths["development_passage_index"] = "outputs/development.jsonl"
 
     with pytest.raises(ValidationError, match="generated paths must begin with build/"):
         AnalysisConfig.model_validate(payload)
@@ -990,7 +1048,7 @@ def test_holdout_manifest_rejects_development_windows_for_whole_work() -> None:
         HoldoutManifest.model_validate(payload)
 
 
-def test_holdout_manifest_rejects_non_whole_work_without_development_windows() -> None:
+def test_holdout_manifest_allows_a_control_witness_without_development_windows() -> None:
     payload = _holdout_manifest()
     witnesses = payload["witnesses"]
     assert isinstance(witnesses, list)
@@ -998,8 +1056,8 @@ def test_holdout_manifest_rejects_non_whole_work_without_development_windows() -
     assert isinstance(partitioned, dict)
     partitioned["development_windows"] = []
 
-    with pytest.raises(ValidationError, match="non-whole-work witnesses require development windows"):
-        HoldoutManifest.model_validate(payload)
+    parsed = HoldoutManifest.model_validate(payload)
+    assert parsed.witnesses[1].development_windows == []
 
 
 def test_holdout_manifest_rejects_non_whole_work_without_holdout_windows() -> None:

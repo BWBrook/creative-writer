@@ -561,6 +561,37 @@ def test_partition_windows_rejects_non_strict_or_out_of_range_max_blocks(
         partition_windows([], max_blocks=max_blocks)  # type: ignore[arg-type]
 
 
+def test_canonical_partition_api_is_available_and_round_trips_records() -> None:
+    import creative_writer.source_passages as source_passages
+
+    serialize = getattr(source_passages, "serialize_passage_partition", None)
+    parse = getattr(source_passages, "parse_passage_partition", None)
+    assert callable(serialize)
+    assert callable(parse)
+
+
+def test_canonical_partition_bytes_are_sorted_compact_and_strict(tmp_path: Path) -> None:
+    import creative_writer.source_passages as source_passages
+
+    first_path = tmp_path / "first.md"
+    first_path.write_text("First.", encoding="utf-8")
+    second_path = tmp_path / "second.md"
+    second_path.write_text("Second.", encoding="utf-8")
+    first = parse_markdown_witness(first_path, _witness("first", 1))[0]
+    second = parse_markdown_witness(second_path, _witness("second", 2))[0]
+    serialize = source_passages.serialize_passage_partition
+    parse = source_passages.parse_passage_partition
+
+    data = serialize([second, first])
+    assert data == serialize([first, second])
+    assert data.endswith(b"\n")
+    assert b" \"" not in data
+    assert parse(data) == [first, second]
+
+    with pytest.raises(CreativeWriterError, match="strictly increasing|non-canonical|exactly one LF"):
+        parse(data.replace(b"\n", b"\n\n", 1))
+
+
 def test_write_preserves_existing_artifact_when_atomic_replace_fails(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

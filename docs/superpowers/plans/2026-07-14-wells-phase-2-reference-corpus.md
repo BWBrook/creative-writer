@@ -947,7 +947,7 @@ The exact inputs are:
 - *Certain Personal Matters*: `OEBPS/4588169185347793760_17508-h-0.htm.html` through `-6.htm.html`.
 - *Text Book of Biology, Part 1*: `OEBPS/6496333017750439206_21781-h-0.htm.html` through `-6.htm.html`; `-7` is packaging only and excluded.
 - *The British Barbarians*: `OEBPS/137036109479442431_4340-h-0.htm.html` through `-4.htm.html`.
-- *A Desert Drama*: `OEBPS/6605053776549637356_21768-h-0.htm.html` through `-5.htm.html`; `-6` is packaging only and excluded.
+- *A Desert Drama*: `OEBPS/6605053776549637356_21768-h-0.htm.html` through `-6.htm.html` in numeric order; `-6` is the final linear literary member, and the Gutenberg filter removes the terminal licence and packaging matter within it.
 - *The Day's Work*: `OEBPS/3331954580391865763_2569-h-1.htm.html` through `-13.htm.html`; title/contents fragment `-0` and packaging fragment `-14` are excluded.
 - *The Beetle*: `OEBPS/5766576426201918088_5164-h-0.htm.html` through `-10.htm.html`; the boilerplate filter removes its terminal transcriber notes.
 - *King Solomon's Mines*: `epub/text/chapter-1.xhtml` through `chapter-20.xhtml` in numeric order.

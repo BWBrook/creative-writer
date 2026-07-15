@@ -1940,3 +1940,121 @@ So they knelt together among the black rocks, and prayed as some of them had nev
 The clergyman led them along the side to avoid the bodies which were littered thickly down the bottom of the khor. It was hard walking over the shingly, slaggy stones, but they made their way to the summit at last. Beneath them lay the vast expanse of the rolling desert, and in the foreground such a scene as none of them are ever likely to forget. In that perfectly dry and clear light, with the unvarying brown tint of the hard desert as a background, every detail stood out as clearly as if these were toy figures arranged upon a table within hand's touch of them.
 
 The Dervishes—or what was left of them—were riding slowly some little distance out in a confused crowd, their patchwork jibbehs and red turbans swaying with the motion of their camels. They did not present the appearance of men who were defeated, for their movements were very deliberate, but they looked about them and changed their formation as if they were uncertain what their tactics ought to be. It was no wonder that they were puzzled, for upon their spent camels their situation was as hopeless as could be conceived. The Sarras men had all emerged from the khor, and had dismounted, the beasts being held in groups of four, while the riflemen knelt in a long line with a woolly, curling fringe of smoke, sending volley after volley at the Arabs, who shot back in a desultory fashion from the backs of their camels. But it was not upon the sullen group of Dervishes, nor yet upon the long line of kneeling riflemen, that the eyes of the spectators were fixed. Far out upon the desert, three squadrons of the Haifa Camel Corps were coming up in a dense close column, which wheeled beautifully into a widespread semicircle as it approached. The Arabs were caught between two fires.
+
+Arabs Were Caught Between Two Fires P261 \
+
+“By Jove!” cried the Colonel. “See that!”
+
+The camels of the Dervishes had all knelt down simultaneously, and the men had sprung from their backs. In front of them was a tall, stately figure, who could only be the Emir Wad Ibrahim. They saw him kneel for an instant in prayer. Then he rose, and taking something from his saddle he placed it very deliberately upon the sand and stood upon it.
+
+“Good man!” cried the Colonel. “He is standing upon his sheepskin.”
+
+“What do you mean by that?” asked Stuart.
+
+“Every Arab has a sheepskin upon his saddle. When he recognises that his position is perfectly hopeless, and yet is determined to fight to the death, he takes his sheepskin off and stands upon it until he dies. See, they are all upon their sheepskins. They will neither give nor take quarter now.”
+
+The drama beneath them was rapidly approaching its climax. The Haifa Corps was well up, and a ring of smoke and flame surrounded the clump of kneeling Dervishes, who answered it as best they could. Many of them were already down, but the rest loaded and fired with the unflinching courage which has always made them worthy antagonists. A dozen kharki-dressed figures upon the sand showed that it was no bloodless victory for the Egyptians. But now there was a stirring bugle-call from the Sarras men, and another answered it from the Haifa Corps. Their camels were down also, and the men had formed up into a single long curved line. One last volley and they were charging inwards with the wild inspiriting yell which the blacks had brought with them from their central African wilds. For a minute there was a mad vortex of rushing figures, rifle-butts rising and falling, spearheads gleaming and darting among the rolling dust cloud. Then the bugle rang out once more, the Egyptians fell back and formed up with the quick precision of highly disciplined troops, and there in the centre, each upon his sheepskin, lay the gallant barbarian and his raiders. The nineteenth century had been revenged upon the seventh.
+
+The three women had stared horror-stricken and yet fascinated at the stirring scene before them. Now Sadie and her aunt were sobbing together. The Colonel had turned to them with some cheering words when his eyes fell upon the face of Mrs. Belmont. It was as white and set as if it were carved from ivory, and her large grey eyes were fixed as if she were in a trance.
+
+“Good Heavens, Mrs. Belmont, what *is* the matter?” he cried.
+
+For answer she pointed out over the desert. Far away, miles on the other side of the scene of the fight, a small body of men were riding towards them.
+
+“By Jove, yes; there's some one there. Who can it be?”
+
+They were all straining their eyes, but the distance was so great that they could only be sure that they were camel-men and about a dozen in number.
+
+“It's those devils who were left behind in the palm grove,” said Cochrane. “There's no one else it can be. One consolation, they can't get away again. They've walked right into the lion's mouth.”
+
+But Mrs. Belmont was still gazing with the same fixed intensity and the same ivory face. Now, with a wild shriek of joy, she threw her two hands into the air. “It's they!” she screamed. “They are saved! It's they, Colonel, it's they! O Miss Adams, Miss Adams, it is they!” She capered about on the top of the hill with wild eyes like an excited child.
+
+Her companions would not believe her, for they could see nothing, but there are moments when our mortal senses are more acute than those who have never put their whole heart and soul into them can ever realise. Mrs. Belmont had already run down the rocky path, on the way to her camel, before they could distinguish that which had long before carried its glad message to her. In the van of the approaching party, three white dots shimmered in the sun, and they could only come from the three European hats. The riders were travelling swiftly, and by the time their comrades had started to meet them they could plainly see that it was indeed Belmont, Fardet, and Stephens, with the dragoman Mansoor, and the wounded Soudanese rifleman. As they came together they saw that their escort consisted of Tippy Tilly and the other old Egyptian soldiers. Belmont rushed onwards to meet his wife, but Fardet stopped to grasp the Colonel's hand.
+
+“*Vive la France! Vivent les Anglais!*” he was yelling. “*Tout va bien, n'est ce pas*, Colonel? Ah, *canaille! Vivent les croix et les Chrétiens!*” He was incoherent in his delight.
+
+The Colonel, too, was as enthusiastic as his Anglo-Saxon standard would permit. He could not gesticulate, but he laughed in the nervous, crackling way which was his top-note of emotion.
+
+“My dear boy, I am deuced glad to see you all again. I gave you up for lost. Never was as pleased at anything in my life! How did you get away?”
+
+“It was all your doing.”
+
+“Mine?”
+
+“Yes, my friend, and I have been quarrelling with you,—ungrateful wretch that I am!”
+
+“But how did I save you?”
+
+“It was you who arranged with this excellent Tippy Tilly and the others that they should have so much if they brought us alive into Egypt again. They slipped away in the darkness and hid themselves in the grove. Then, when we were left, they crept up with their rifles and shot the men who were about to murder us. That cursed Moolah, I am sorry they shot him, for I believe that I could have persuaded him to be a Christian. And now, with your permission, I will hurry on and embrace Miss Adams, for Belmont has his wife, and Stephens has Miss Sadie, so I think it is very evident that the sympathy of Miss Adams is reserved for me.”
+
+A fortnight had passed away, and the special boat which had been placed at the disposal of the rescued tourists was already far north of Assiout. Next morning they would find themselves at Baliani, where one takes the express for Cairo. It was, therefore, their last evening together. Mrs. Shlesinger and her child who had escaped unhurt had already been sent down from the frontier. Miss Adams had been very ill after her privations, and this was the first time that she had been allowed to come upon deck after dinner. She sat now in a lounge-chair, thinner, sterner, and kindlier than ever, while Sadie stood beside her and tucked the rugs around her shoulders. Mr. Stephens was carrying over the coffee and placing it on the wicker-table beside them. On the other side of the deck Belmont and his wife were seated together in silent sympathy and contentment. Monsieur Fardet was leaning against the rail and arguing about the remissness of the British Government in not taking a more complete control of the Egyptian frontier, while the Colonel stood very erect in front of him, with the red end of a cigar-stump protruding from under his moustache.
+
+But what was the matter with the Colonel? Who would have recognised him who had only seen the broken old man in the Libyan desert? There might be some little grizzling about the moustache, but the hair was back once more at the fine glossy black which had been so much admired upon the voyage up. With a stony face and an unsympathetic manner he had received, upon his return to Haifa, all the commiserations about the dreadful way in which his privations had blanched him, and then diving into his cabin, he had reappeared within an hour exactly as he had been before that fatal moment when he had been cut off from the manifold resources of civilisation. And he looked in such a sternly questioning manner at every one who stared at him, that no one had the moral courage to make any remark about this modern miracle. It was observed from that time forward that, if the Colonel had only to ride a hundred yards into the desert, he always began his preparations by putting a small black bottle with a pink label into the side-pocket of his coat. But those who knew him best at times when a man may be best known, said that the old soldier had a young man's heart and a young man's spirit,—so that if he wished to keep a young man's colour also it was not very unreasonable after all. It was very soothing and restful up there on the saloon deck, with no sound but the gentle lipping of the water as it rippled against the sides of the steamer. The red after-glow was in the western sky, and it mottled the broad, smooth river with crimson. Dimly they could discern the tall figures of herons standing upon the sandbanks, and farther off the line of river-side date-palms glided past them in a majestic procession. Once more the silver stars were twinkling out, the same clear, placid, inexorable stars to which their weary eyes had been so often upturned during the long nights of their desert martyrdom.
+
+“Where do you put up in Cairo, Miss Adams?” asked Mrs. Belmont, at last.
+
+“Shepheard's, I think.”
+
+“And you, Mr. Stephens?”
+
+“Oh, Shepheard's, decidedly.”
+
+“We are staying at the Continental. I hope we shall not lose sight of you.”
+
+“I don't want ever to lose sight of you, Mrs. Belmont,” cried Sadie. “Oh, you must come to the States, and we'll give you just a lovely time.”
+
+Mrs. Belmont laughed, in her pleasant, mellow fashion.
+
+“We have our duty to do in Ireland, and we have been too long away from it already. My husband has his business, and I have my home, and they are both going to rack and ruin. Besides,” she added, slyly, “it is just possible that if we did come to the States we might not find you there.”
+
+“We must all meet again,” said Belmont, “if only to talk our adventures over once more. It will be easier in a year or two. We are still too near them.”
+
+“And yet how far away and dream-like it all seems!” remarked his wife. “Providence is very good in softening disagreeable remembrances in our minds. All this feels to me as if it had happened in some previous existence.”
+
+Fardet held up his wrist with a cotton bandage still round it.
+
+“The body does not forget as quickly as the mind. This does not look very dreamlike or far away, Mrs. Belmont.”
+
+“How hard it is that some should be spared, and some not! If only Mr. Brown and Mr. Headingly were with us, then I should not have one care in the world,” cried Sadie. “Why should they have been taken, and we left?”
+
+Mr. Stuart had limped on to the deck with an open book in his hand, a thick stick supporting his injured leg.
+
+“Why is the ripe fruit picked, and the unripe left?” said he in answer to the young girl's exclamation. “We know nothing of the spiritual state of these poor dear young fellows, but the great Master Gardener plucks His fruit according to His own knowledge. I brought you up a passage to read to you.”
+
+There was a lantern upon the table, and he sat down beside it. The yellow light shone upon his heavy cheek and the red edges of his book. The strong, steady voice rose above the wash of the water.
+
+“'Let them give thanks whom the Lord hath redeemed and delivered from the hand of the enemy, and gathered them out of the lands, from the east, and from the west, from the north, and from the south. They went astray in the wilderness out of the way, and found no city to dwell in. Hungry and thirsty, their soul fainted in them. So they cried unto the Lord in their trouble, and He delivered them from their distress. He led them forth by the right way, that they might go to the city where they dwelt. Oh that men would therefore praise the Lord for His goodness, and declare the wonders that He doeth for the children of men.'
+
+He Delivered Them from Their Distress P273 \
+
+“It sounds as if it were composed for us, and yet it was written two thousand years ago,” said the clergyman, as he closed the book. “In every age man has been forced to acknowledge the guiding hand which leads him. For my part I don't believe that inspiration stopped two thousand years ago. When Tennyson wrote with such fervour and conviction,—
+
+he was repeating the message which had been given to him, just as Micah or Ezekiel when the world was younger repeated some cruder and more elementary lesson.”
+
+“That is all very well, Mr. Stuart,” said the Frenchman; “you ask me to praise God for taking me out of danger and pain, but what I want to know is why, since He has arranged all things, He ever put me into that pain and danger. I have in my opinion more occasion to blame than to praise. You would not thank me for pulling you out of that river if it was also I who pushed you in. The most which you can claim for your Providence is that it has healed the wound which its own hand inflicted.”
+
+“I don't deny the difficulty,” said the clergyman, slowly; “no one who is not self-deceived *can* deny the difficulty. Look how boldly Tennyson faced it in that same poem, the grandest and deepest and most obviously inspired in our language. Remember the effect which it had upon him.
+
+It is the central mystery of mysteries—the problem of sin and suffering, the one huge difficulty which the reasoner has to solve in order to vindicate the dealings of God with man. But take our own case as an example. I, for one, am very clear what I have got out of our experience. I say it with all humility, but I have a clearer view of my duties than ever I had before. It has taught me to be less remiss in saying what I think to be true, less indolent in doing what I feel to be rightful.”
+
+“And I,” cried Sadie. “It has taught me more than all my life put together. I have learned so much and unlearned so much. I am a different girl.”
+
+“I never understood my own nature before,” said Stephens. “I can hardly say that I had a nature to understand. I lived for what was unimportant, and I neglected what was vital.”
+
+“Oh, a good shake-up does nobody any harm,” the Colonel remarked. “Too much of the feather-bed-and-four-meals-a-day life is not good for man or woman.”
+
+“It is my firm belief,” said Mrs. Belmont, gravely, “that there was not one of us who did not rise to a greater height during those days in the desert than ever before or since. When our sins come to be weighed, much may be forgiven us for the sake of those unselfish days.”
+
+They all sat in thoughtful silence for a little while the scarlet streaks turned to carmine, and the grey shadows deepened, and the wild-fowl flew past in dark straggling V's over the dull metallic surface of the great smooth-flowing Nile. A cold wind had sprung up from the eastward, and some of the party rose to leave the deck. Stephens leaned forward to Sadie.
+
+“Do you remember what you promised when you were in the desert?” he whispered.
+
+“What was that?”
+
+“You said that if you escaped you would try in future to make some one else happy.”
+
+“Then I must do so.”
+
+“You have,” said he, and their hands met under the shadow of the table.
+
+THE END.

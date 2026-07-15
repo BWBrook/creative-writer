@@ -248,10 +248,10 @@ sources:
       epub: "arthur-conan-doyle_a-desert-drama.epub"
       epub_sha256: "81a9a608446676e48b33c575660843af6b1ee266631a3aabdf648667a6ebfaa1"
       markdown: "text/a-desert-drama.md"
-      markdown_sha256: "c8187fe0ef2e4c3c91c5d26e2335ccb07c021da882ee6b7ad0779a7f8ed165b0"
+      markdown_sha256: "0e44ed2d8c0ef3e05952bfc3aeda27f781b7c9f27b0e6b3b9f7a536d8920064c"
     derivation:
       tool: "Pandoc 3.10"
-      input: "OEBPS/6605053776549637356_21768-h-0.htm.html through OEBPS/6605053776549637356_21768-h-5.htm.html in numeric order; -6 excluded as packaging"
+      input: "OEBPS/6605053776549637356_21768-h-0.htm.html through OEBPS/6605053776549637356_21768-h-6.htm.html in numeric order"
       writer: "gfm-raw_html"
       wrap: "none"
       filter: "filters/remove-excluded-packaging-links.lua, then filters/remove-project-gutenberg-boilerplate.lua"

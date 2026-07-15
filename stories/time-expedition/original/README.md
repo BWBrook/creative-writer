@@ -82,7 +82,10 @@ cover matter. A singular transcriber-note marker triggers leading-preamble
 removal only when it occurs before the first horizontal rule; once that rule
 has been reached, a later marker cannot move the document start or discard
 preceding literary text. Project Gutenberg derivations apply the
-packaging-link filter first and the Gutenberg filter second.
+packaging-link filter first and the Gutenberg filter second. In *A Desert
+Drama*, `OEBPS/6605053776549637356_21768-h-6.htm.html` is the final linear
+literary member and must be included; the second filter removes the terminal
+Project Gutenberg licence and packaging matter from that member.
 
 The retained short-fiction EPUB contains works that are not admitted. It has
 no aggregate Markdown file. Only these four fingerprinted selections enter
@@ -179,7 +182,7 @@ pandoc "${allen_inputs[@]}" \
 
 unzip -q stories/time-expedition/original/arthur-conan-doyle_a-desert-drama.epub \
   -d "$tmpdir/desert-drama"
-desert_inputs=("$tmpdir"/desert-drama/OEBPS/6605053776549637356_21768-h-{0..5}.htm.html)
+desert_inputs=("$tmpdir"/desert-drama/OEBPS/6605053776549637356_21768-h-{0..6}.htm.html)
 pandoc "${desert_inputs[@]}" \
   --from=html --to=gfm-raw_html --wrap=none \
   --lua-filter="$filter" --lua-filter="$gutenberg_filter" \

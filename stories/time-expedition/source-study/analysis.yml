@@ -36,6 +36,17 @@ authority_tiers:
       - biological danger
       - scientific mystery
       - cosmic catastrophe
+      - frame testimony
+      - epistemic uncertainty
+      - other-world description
+      - biological observation
+      - compressed danger
+      - action
+      - observational mystery
+      - scientific object
+      - speculative inference
+      - deep-scale description
+      - global montage
     evidence_rule: "Bounded Wells evidence only within declared analytical roles; no continuity authority."
   - tier: 3
     jurisdiction: "Bounded nonfiction evidence for explanation, scientific vocabulary, classification, analogy, humour, and period idiom."
@@ -50,6 +61,7 @@ authority_tiers:
       - adventure control
       - group dialogue
       - danger pacing
+      - social register
       - technical-work control
       - professional dialogue
       - imperial register
@@ -82,20 +94,30 @@ partition:
   max_blocks_per_window: 5
   whole_work_holdouts: [selected-short-fiction/the-star]
 enabled_measurements:
-  - word_count
-  - sentence_count
+  - total_words
+  - total_passages
+  - total_sentences
+  - total_sections
+  - sentence_length_distribution
   - paragraph_length_distribution
-  - direct_dialogue_proportion
+  - passage_length_distribution
+  - dialogue_proportion
+  - dialogue_run_lengths
+  - punctuation_frequencies
   - speech_attribution_verbs
   - reporting_verbs
-  - pronoun_frequencies
-  - modal_and_epistemic_markers
-  - function_words
-  - function_word_bigrams
+  - first_person_pronoun_frequencies
+  - third_person_pronoun_frequencies
+  - demonstrative_frequencies
+  - modal_frequencies
+  - epistemic_frequencies
+  - function_word_frequencies
+  - function_word_sequence_frequencies
   - paragraph_openings
-  - transitions
-  - lexical_concentration
-  - block_type_proportions
+  - paragraph_transitions
+  - moving_window_lexical_concentration
+  - block_proportions
+  - section_level_variation
 lexicons:
   reporting_verbs: [said, asked, replied, answered, remarked, observed, exclaimed, cried]
   speech_attribution_verbs: [said, asked, replied, answered, remarked, exclaimed, cried]
@@ -103,6 +125,9 @@ lexicons:
   epistemic_markers: [perhaps, probably, possibly, apparently, evidently, seemed, suppose, conjecture]
   function_words: [the, a, an, and, but, if, in, of, "on", to, with]
   transition_markers: [however, therefore, presently, meanwhile, afterwards, consequently]
+  first_person_pronouns: [i, me, my, mine, myself, we, us, our, ours, ourselves]
+  third_person_pronouns: [he, him, his, himself, she, her, hers, herself, it, its, itself, they, them, their, theirs, themselves]
+  demonstratives: [this, that, these, those]
 dimensions:
   - id: frame-architecture
     label: "Frame architecture and reported testimony"

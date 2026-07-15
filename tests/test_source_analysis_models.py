@@ -10,7 +10,9 @@ from pydantic import ValidationError
 from creative_writer.files import load_yaml_model
 from creative_writer.source_analysis_models import (
     AnalysisConfig,
+    AnalyticalDimension,
     EvidenceLedger,
+    EvidenceClaim,
     HoldoutManifest,
     PassageRecord,
     QuantitativeProfile,
@@ -56,6 +58,15 @@ def _analysis_config() -> dict[str, object]:
         "admission_registry": {"path": "source-study/admission.yml", "sha256": HASH},
         "source_registry": {"path": "original/sources.yml", "sha256": HASH},
         "authority_policy_version": "phase-2a-v1",
+        "authority_tiers": [
+            {
+                "tier": tier,
+                "jurisdiction": f"Tier {tier} jurisdiction.",
+                "analytical_roles": [f"tier {tier} role"],
+                "evidence_rule": f"Tier {tier} evidence rule.",
+            }
+            for tier in range(1, 6)
+        ],
         "passage_rules": {
             "input_format": "gfm",
             "heading_context": True,
@@ -257,6 +268,126 @@ def test_analysis_fixture_uses_canonical_composition_window() -> None:
 
     assert config.composition_window.start == 1897
     assert config.composition_window.end == 1899
+
+
+def test_analysis_requires_authority_tiers() -> None:
+    payload = _analysis_config()
+    payload.pop("authority_tiers")
+
+    with pytest.raises(ValidationError, match="authority_tiers"):
+        AnalysisConfig.model_validate(payload)
+
+
+def test_analysis_rejects_duplicate_authority_tiers() -> None:
+    payload = _analysis_config()
+    tiers = payload["authority_tiers"]
+    assert isinstance(tiers, list)
+    tiers[1]["tier"] = tiers[0]["tier"]
+
+    with pytest.raises(ValidationError, match="authority tier values must be unique"):
+        AnalysisConfig.model_validate(payload)
+
+
+def test_analysis_fixture_matches_admission_roles_by_authority_tier() -> None:
+    admission = yaml.safe_load(
+        Path("stories/time-expedition/source-study/admission.yml").read_text(
+            encoding="utf-8"
+        )
+    )
+    config = load_yaml_model(
+        Path("stories/time-expedition/source-study/analysis.yml"), AnalysisConfig
+    )
+
+    expected: dict[int, list[str]] = {tier: [] for tier in range(1, 6)}
+    for source in admission["sources"]:
+        tier = source["authority"]["tier"]
+        roles = [*source.get("analytical_roles", [])]
+        roles.extend(
+            role
+            for selection in source.get("selections", [])
+            for role in selection.get("analytical_roles", [])
+        )
+        for role in roles:
+            if role not in expected[tier]:
+                expected[tier].append(role)
+
+    actual = {policy.tier: set(policy.analytical_roles) for policy in config.authority_tiers}
+
+    assert actual == {tier: set(roles) for tier, roles in expected.items()}
+
+
+def test_analysis_fixture_declares_all_approved_core_measurements() -> None:
+    config = load_yaml_model(
+        Path("stories/time-expedition/source-study/analysis.yml"), AnalysisConfig
+    )
+    approved = {
+        "total_words",
+        "total_passages",
+        "total_sentences",
+        "total_sections",
+        "sentence_length_distribution",
+        "passage_length_distribution",
+        "paragraph_length_distribution",
+        "dialogue_proportion",
+        "dialogue_run_lengths",
+        "punctuation_frequencies",
+        "speech_attribution_verbs",
+        "reporting_verbs",
+        "first_person_pronoun_frequencies",
+        "third_person_pronoun_frequencies",
+        "demonstrative_frequencies",
+        "modal_frequencies",
+        "epistemic_frequencies",
+        "function_word_frequencies",
+        "function_word_sequence_frequencies",
+        "paragraph_openings",
+        "paragraph_transitions",
+        "moving_window_lexical_concentration",
+        "block_proportions",
+        "section_level_variation",
+    }
+
+    assert set(config.enabled_measurements) == approved
+
+
+def test_analysis_fixture_declares_pronoun_lexicons() -> None:
+    config = load_yaml_model(
+        Path("stories/time-expedition/source-study/analysis.yml"), AnalysisConfig
+    )
+
+    assert set(config.lexicons) >= {
+        "first_person_pronouns",
+        "third_person_pronouns",
+        "demonstratives",
+    }
+    for name in ("first_person_pronouns", "third_person_pronouns", "demonstratives"):
+        assert config.lexicons[name]
+
+
+def test_analysis_rejects_generated_path_outside_build() -> None:
+    payload = _analysis_config()
+    generated_paths = payload["generated_paths"]
+    assert isinstance(generated_paths, dict)
+    generated_paths["passage_index"] = "outputs/passage-index.jsonl"
+
+    with pytest.raises(ValidationError, match="generated paths must begin with build/"):
+        AnalysisConfig.model_validate(payload)
+
+
+def test_analytical_dimension_rejects_invented_dimension_id() -> None:
+    dimension = _dimensions()[0]
+    dimension["id"] = "invented-dimension"
+
+    with pytest.raises(ValidationError, match="id"):
+        AnalyticalDimension.model_validate(dimension)
+
+
+def test_evidence_claim_rejects_invented_dimension_id() -> None:
+    payload = _ledger()["claims"][0]
+    payload["dimension"] = "invented-dimension"
+
+    with pytest.raises(ValidationError, match="dimension"):
+        EvidenceClaim.model_validate(payload)
 
 
 def test_partition_rejects_string_holdout_fraction() -> None:

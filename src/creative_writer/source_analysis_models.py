@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 import re
-from typing import Annotated, Literal
+from typing import Annotated, Literal, get_args
 
 import yaml
 from pydantic import (
@@ -28,8 +28,7 @@ GitHash = Annotated[StrictStr, Field(pattern=r"^[0-9a-f]{40}(?:[0-9a-f]{24})?$")
 NonEmptyText = Annotated[StrictStr, Field(min_length=1, pattern=r"(?s).*\S.*")]
 RelativePath = Annotated[StrictStr, Field(min_length=1, pattern=r"^[^/].*")]
 Stage = Literal["protocol", "development", "candidate_frozen", "validated"]
-
-DIMENSION_IDS = {
+DimensionId = Literal[
     "frame-architecture",
     "narrator-distance",
     "observation-inference",
@@ -40,7 +39,9 @@ DIMENSION_IDS = {
     "suspense-scene-pressure",
     "humour-irony",
     "transitions-ending-logic",
-}
+]
+
+DIMENSION_IDS = set(get_args(DimensionId))
 
 
 class StrictModel(BaseModel):
@@ -65,6 +66,13 @@ def _validate_relative_path(value: str) -> str:
     if not value or value.startswith("/") or any(part in {"", ".", ".."} for part in parts):
         raise ValueError("path must be a non-empty canonical relative POSIX path")
     return value
+
+
+def _validate_generated_path(value: str) -> str:
+    path = _validate_relative_path(value)
+    if not path.startswith("build/"):
+        raise ValueError("generated paths must begin with build/")
+    return path
 
 
 def _validate_text_list(values: list[str]) -> list[str]:
@@ -155,7 +163,7 @@ class AuthorityTierPolicy(StrictModel):
 
 
 class AnalyticalDimension(StrictModel):
-    id: Slug
+    id: DimensionId
     label: NonEmptyText
     roles: list[NonEmptyText] = Field(min_length=1)
     description: NonEmptyText
@@ -174,7 +182,7 @@ class AnalysisConfig(StrictModel):
     admission_registry: RegistryReference
     source_registry: RegistryReference
     authority_policy_version: NonEmptyText
-    authority_tiers: list[AuthorityTierPolicy] = Field(default_factory=list)
+    authority_tiers: list[AuthorityTierPolicy] = Field(min_length=5)
     passage_rules: PassageRules
     partition: PartitionRules
     enabled_measurements: list[NonEmptyText] = Field(min_length=1)
@@ -223,7 +231,20 @@ class AnalysisConfig(StrictModel):
     @field_validator("generated_paths")
     @classmethod
     def validate_generated_paths(cls, value: dict[str, str]) -> dict[str, str]:
-        return {key: _validate_relative_path(path) for key, path in value.items()}
+        return {key: _validate_generated_path(path) for key, path in value.items()}
+
+    @field_validator("authority_tiers")
+    @classmethod
+    def validate_authority_tiers(
+        cls, value: list[AuthorityTierPolicy]
+    ) -> list[AuthorityTierPolicy]:
+        tier_values = [policy.tier for policy in value]
+        _validate_unique(tier_values, "authority tier values")
+        if set(tier_values) != {1, 2, 3, 4, 5}:
+            raise ValueError(
+                "authority tiers must declare exactly one policy for each tier 1, 2, 3, 4, and 5"
+            )
+        return value
 
     @model_validator(mode="after")
     def validate_dimensions(self) -> "AnalysisConfig":
@@ -409,7 +430,7 @@ class EvidenceReference(StrictModel):
 
 class EvidenceClaim(StrictModel):
     id: Slug
-    dimension: Slug
+    dimension: DimensionId
     statement: NonEmptyText
     mode: Literal["descriptive"] = "descriptive"
     jurisdiction: NonEmptyText

@@ -28,7 +28,12 @@ addition to profile and ledger. At `candidate_frozen` and later:
 
 - read all four candidate files from verified Git blob IDs;
 - hash each blob before parsing it;
-- require each clean `HEAD` blob ID to equal its candidate blob ID;
+- require clean `HEAD` analysis and manifest blob IDs to equal their candidate
+  blob IDs at every step;
+- require clean `HEAD` profile and ledger blob IDs to equal their candidate
+  blobs through `candidate_frozen`; at `validated/complete`, read the candidate
+  versions only from the pinned commit and permit separately hash-checked final
+  versions at the writer-facing paths;
 - use the candidate manifest as the authority for corpus-lock and partition
   bytes;
 - reject a post-freeze analysis/manifest or partition-membership swap even when

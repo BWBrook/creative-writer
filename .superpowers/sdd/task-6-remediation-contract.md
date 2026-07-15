@@ -92,17 +92,22 @@ not untrusted worktree bodies.
 
 The candidate record pins four candidate-commit blobs and their exact SHA-256
 values: `analysis.yml`, `holdouts.yml`, the candidate profile, and the evidence
-ledger. Verification hashes each blob before parsing its body, then requires
-the clean `HEAD` blob ID for every one of those paths to equal the candidate
-blob ID whenever the validation step is `candidate_frozen` or later.
+ledger. Verification hashes each candidate blob before parsing its body.
+`analysis.yml` and `holdouts.yml` remain byte-identical to their candidate blobs
+at every validation step. The profile and ledger remain byte-identical through
+the `candidate_frozen` stage; at `validated/complete` their writer-facing paths
+may contain the reviewed final versions required by the approved workflow, but
+the candidate versions are always read from the immutable candidate commit and
+the final versions are hash-checked before parsing or comparison.
 
 The candidate-time holdout manifest is therefore the immutable authority for
 partition paths, partition hashes, witness membership, and the corpus-lock
 hash. Validation must prove the current generated corpus lock and all opened
 partition bytes match that candidate manifest. A later commit may advance the
-validation record and assessment artifacts, but it may not replace the
-candidate analysis configuration, manifest, profile, ledger, corpus lock, or
-partition indexes under the same frozen candidate.
+validation record and replace the writer-facing profile and ledger only with
+their strictly validated final forms; it may not replace the candidate
+analysis configuration, manifest, corpus lock, or partition indexes under the
+same frozen candidate, nor alter the candidate profile/ledger Git objects.
 
 ## Exact targets and treatment
 

@@ -181,11 +181,13 @@ Passage IDs use the existing schema rule exactly:
 <witness-id>:<heading-slug>:<source-ordinal>:<hash12>
 ```
 
-The full witness ID is preserved, including `/`. JSONL output is UTF-8,
-non-ASCII preserving, compact, sorted by `(source_id, witness_id,
-source_ordinal)`, and key-order deterministic. The source record has no
-separate registry-position field, so source ID is the available registry
-ordering key.
+The full witness ID is preserved, including `/`. A literal no-heading label
+`Untitled` uses the `untitled` slug; any other non-empty heading whose ASCII
+slug is empty uses `heading-` plus the first 12 hexadecimal digits of the NFC
+heading's UTF-8 SHA-256 digest. JSONL output is UTF-8, non-ASCII preserving,
+compact, key-order deterministic, and written in explicit
+`(witness_ordinal, source_ordinal)` order. The reader requires that same
+reading order.
 
 Context windows include the focal record and up to two neighbours on each
 side, stopping at any exact heading-path or witness boundary. Partition
@@ -258,11 +260,11 @@ Additional checks passed:
 
 ## Concerns and assumptions
 
-1. The current `PassageRecord` schema has no explicit registry-position field.
-   The deterministic writer therefore sorts by source ID, witness ID, and
-   source ordinal. Future orchestration that has a formal registry-order
-   requirement should either supply records in that order or add an explicitly
-   approved ordering field rather than inferring it from filesystem paths.
+1. `PassageRecord` carries an explicit one-based `witness_ordinal`. The writer
+   sorts by `(witness_ordinal, source_ordinal)` and then validates the complete
+   per-witness source and heading ordinal sequences; the reader validates the
+   supplied order before applying the same sequence checks. No lexical path
+   ordering is used.
 2. Pandoc inline notes are reduced into the containing passage's extracted
    text; note markup itself is not retained. This follows the text-extraction
    boundary and keeps note content auditable without adding a new passage type.
@@ -276,8 +278,9 @@ Additional checks passed:
 
 ## Final review state
 
-The implementation commit is complete and independently verified. The only
-remaining action for this task is the separate commit containing this report.
+At the time of the original implementation report, the implementation commit
+was complete and the separate report commit was the remaining action. The
+review-fix addenda below supersede that historical status.
 
 ## Phase 2B Task 2 review-fix addendum
 
@@ -298,9 +301,11 @@ the index writer and reader.
 2. `WitnessDescriptor` and `PassageRecord` now require strict one-based
    `witness_ordinal` values. Parsing propagates the descriptor value. Writer
    sorting uses `(witness_ordinal, source_ordinal)` only. Writer and reader
-   validation enforce one ordinal per witness, one witness per ordinal, and a
-   complete ordinal set contiguous from 1. Reader input must already be in
-   the same reading order. Fixtures and tests now provide explicit ordinals.
+   validation enforce one ordinal per witness, one witness per ordinal, a
+   complete ordinal set contiguous from 1, and per-witness source ordinals
+   exactly `1..n`. Heading ordinals reset on an exact heading-path change and
+   increment by one while the path is unchanged. Reader input must already be
+   in the same reading order. Fixtures and tests now provide explicit ordinals.
 
 3. Writers reject empty collections and duplicate passage IDs before creating
    a directory or temporary file. Readers reject zero-byte files and
@@ -322,9 +327,10 @@ the index writer and reader.
 
 7. Directory creation errors are converted to `CreativeWriterError`. Index
    output is written to a same-directory temporary file and installed with
-   `os.replace`; all temporary paths are cleaned up on write or replacement
-   failure. Focused failure tests confirm destination preservation without
-   platform-specific assumptions.
+   `os.replace`; ordinary write or replacement failures clean up the
+   temporary path. If cleanup also fails, the raised `CreativeWriterError`
+   names the residual path and includes both failures. Focused failure tests
+   confirm destination preservation without platform-specific assumptions.
 
 ### TDD evidence
 
@@ -412,3 +418,72 @@ No generated corpus artifact was retained.
 Implementation/tests commit:
 
 `a7382559c349b8115c99c31fa740111267cbc0a5`
+
+## Phase 2B Task 2 review-fix wave: remaining findings
+
+This wave closes the remaining review findings without changing the retained
+source corpus, registries, orchestration, CLI, or generated artifacts.
+
+### RED
+
+The focused regression tests were added before the implementation changes and
+run with:
+
+```text
+uv run pytest tests/test_source_passages.py tests/test_source_analysis_models.py -q
+```
+
+Observed result: `8 failed, 72 passed`. The failures demonstrated that
+`model_copy`-tampered `PassageRecord` instances reached filesystem setup,
+writer and reader accepted duplicate/gapped source ordinals and a gapped
+heading ordinal, punctuation-only and non-ASCII headings fell back to
+`untitled`, and temporary-cleanup failures were suppressed.
+
+### GREEN
+
+The same focused command passed after implementation:
+
+```text
+80 passed in 1.31s
+```
+
+The fixes are now represented by focused tests for:
+
+- model-dump revalidation of existing model instances before filesystem work;
+- per-witness source ordinals exactly `1..n` and heading ordinal reset/increment
+  rules on both writer and reader, with destination preservation on write;
+- deterministic SHA-256 heading slugs and consistent `PassageRecord` ID checks;
+- combined replace and temporary-unlink failures naming the residual temporary
+  path.
+
+### Fix-wave verification
+
+The related source regression set passed:
+
+```text
+uv run pytest tests/test_source_passages.py tests/test_source_analysis_models.py \
+  tests/test_source_models.py tests/test_source_admission.py -q
+153 passed in 2.27s
+```
+
+The complete repository suite passed:
+
+```text
+uv run pytest -q
+201 passed in 9.72s
+```
+
+The retained corpus round-trip passed in a temporary directory:
+
+```text
+parsed_witnesses=15
+indexed_passages=12541
+temporary_index_round_trip=ok
+```
+
+Compilation and whitespace checks also passed:
+
+```text
+uv run python -m compileall -q src tests
+git diff --check
+```

@@ -4,6 +4,10 @@
 
 This amendment supersedes conflicting one-pass wording below.
 
+The physical-quarantine and atomic-publication details in
+`task-6-remediation-contract.md` supersede mixed-index and sequential-output
+behavior in both this brief and the initial Task 6 implementation.
+
 - Validation uses two passes while `analysis.yml` remains
   `candidate_frozen`:
   - `validation_step: frozen` opens held-out Wells only;

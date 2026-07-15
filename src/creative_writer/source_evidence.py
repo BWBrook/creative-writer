@@ -40,6 +40,26 @@ _METRIC_IDENTITY_RE = re.compile(
 _METRIC_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
+def _json_values_equal_exact(actual: object, expected: object) -> bool:
+    """Compare JSON values without Python's bool/int equality coercion."""
+
+    if type(actual) is not type(expected):
+        return False
+    if isinstance(actual, dict):
+        if actual.keys() != expected.keys():
+            return False
+        return all(
+            _json_values_equal_exact(actual[key], expected[key])
+            for key in actual
+        )
+    if isinstance(actual, list):
+        return len(actual) == len(expected) and all(
+            _json_values_equal_exact(item, expected_item)
+            for item, expected_item in zip(actual, expected)
+        )
+    return actual == expected
+
+
 def _normalized_heading(line: str) -> str:
     """Normalize only Markdown ATX trailing spaces for semantic matching."""
 
@@ -952,6 +972,9 @@ def collect_quantitative_profile_issues(
     development_witness_ids: set[str],
     forbidden_witness_ids: set[str] | None = None,
     metrics_csv_path: Path | None = None,
+    expected_provenance: dict[str, str] | None = None,
+    expected_witness_identities: set[tuple[str, str, str | None]] | None = None,
+    expected_metric_records: Sequence[dict[str, object]] | None = None,
 ) -> ValidationResult:
     result = ValidationResult()
     forbidden_witness_ids = forbidden_witness_ids or set()
@@ -988,6 +1011,8 @@ def collect_quantitative_profile_issues(
         for item in document.get("enabled_measurements", [])
     ):
         result.errors.append(_error(metrics_path, "Generated development metric JSON enabled_measurements must be a list of nonempty strings", locator="enabled_measurements"))
+    elif document["enabled_measurements"] != list(config.enabled_measurements):
+        result.errors.append(_error(metrics_path, "Generated development metric JSON enabled_measurements do not match the current analysis configuration", locator="enabled_measurements"))
     if not isinstance(document.get("candidate_heuristics"), dict):
         result.errors.append(_error(metrics_path, "Generated development metric JSON candidate_heuristics must be an object", locator="candidate_heuristics"))
     provenance = document.get("provenance")
@@ -1010,6 +1035,12 @@ def collect_quantitative_profile_issues(
             value = provenance.get(field)
             if not isinstance(value, str) or not value.strip():
                 result.errors.append(_error(metrics_path, "Generated development metric JSON provenance fields must be nonempty strings", locator=field))
+        if expected_provenance is not None:
+            for field, expected in expected_provenance.items():
+                if field in document and document.get(field) != expected:
+                    result.errors.append(_error(metrics_path, "Generated development metric JSON contains stale top-level provenance", locator=field))
+                if provenance.get(field) != expected:
+                    result.errors.append(_error(metrics_path, "Generated development metric JSON contains stale provenance", locator=field))
     metric_records = document.get("witnesses")
     if not isinstance(metric_records, list):
         result.errors.append(_error(metrics_path, "Generated development metric JSON must contain a list of object witness records"))
@@ -1045,6 +1076,10 @@ def collect_quantitative_profile_issues(
         metric_identities.append((witness_id, source_id, selection_id))
     if len(metric_identities) != len(metric_records):
         return result.sorted()
+    if expected_metric_records is not None and not _json_values_equal_exact(
+        metric_records, list(expected_metric_records)
+    ):
+        result.errors.append(_error(metrics_path, "Generated development metric witness records do not exactly match the independently measured current development output", locator="witnesses"))
     if result.errors:
         return result.sorted()
     if document.get("stage") != "development":
@@ -1053,22 +1088,26 @@ def collect_quantitative_profile_issues(
         result.errors.append(_error(metrics_path, "Quantitative metric study identity is stale"))
     if profile.study_id != config.study_id:
         result.errors.append(_error(metrics_path, "Quantitative profile study identity is stale"))
-    if profile.stage == "protocol" and not profile.generated_metrics and not profile.witnesses:
-        return result.sorted()
     metric_witness_ids = [item.get("witness_id") for item in metric_records]
     if len(metric_witness_ids) != len(set(metric_witness_ids)):
         result.errors.append(_error(metrics_path, "Generated development metric witness IDs must be unique"))
     metric_witnesses = set(metric_witness_ids)
     if len(metric_identities) != len(set(metric_identities)):
         result.errors.append(_error(metrics_path, "Generated development metric witness identities must be unique"))
+    if metric_witnesses != development_witness_ids:
+        result.errors.append(_error(metrics_path, "Generated development metric witness set is not the current development witness set"))
+    if expected_witness_identities is not None and set(metric_identities) != expected_witness_identities:
+        result.errors.append(_error(metrics_path, "Generated development metric witness identity set does not match the independently expected development witness set"))
+    if result.errors:
+        return result.sorted()
+    if profile.stage == "protocol" and not profile.generated_metrics and not profile.witnesses:
+        return result.sorted()
     profile_witnesses = {item.witness_id for item in profile.witnesses}
     profile_identities = [_profile_identity_tuple(item) for item in profile.witnesses]
     if len(profile_identities) != len(set(profile_identities)):
         result.errors.append(_error(metrics_path, "Quantitative profile witness identities must be unique"))
     if profile_witnesses != development_witness_ids:
         result.errors.append(_error(metrics_path, "Quantitative profile witness set must exactly equal current development metric witnesses"))
-    if metric_witnesses != development_witness_ids:
-        result.errors.append(_error(metrics_path, "Generated development metric witness set is not the current development witness set"))
     configured_json = config.generated_paths["development_metrics"]
     configured_csv = config.generated_paths["development_metrics_csv"]
     metrics_csv_path = metrics_csv_path or root / configured_csv

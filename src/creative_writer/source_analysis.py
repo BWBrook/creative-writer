@@ -1187,17 +1187,27 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
     }
     if any(tier not in {1, 2, 3} for tier in development_tiers):
         raise CreativeWriterError("Development partition can contain only retained Tier 1-3 passages")
+    expected_metric_provenance = {
+        "study_id": config.study_id,
+        "stage": "development",
+        "config_sha256": _sha256(analysis_path),
+        "index_sha256": _sha256(index_path),
+        "manifest_sha256": _sha256(holdout_path),
+        "config_path": _relative_to_root(analysis_path, root),
+        "index_path": _relative_to_root(index_path, root),
+        "manifest_path": _relative_to_root(holdout_path, root),
+    }
     metrics = measure_development(
         passages,
         config,
         development_ids,
         output_paths=generated_paths,
-        config_sha256=_sha256(analysis_path),
-        index_sha256=_sha256(index_path),
-        manifest_sha256=_sha256(holdout_path),
-        config_path=_relative_to_root(analysis_path, root),
-        index_path=_relative_to_root(index_path, root),
-        manifest_path=_relative_to_root(holdout_path, root),
+        config_sha256=expected_metric_provenance["config_sha256"],
+        index_sha256=expected_metric_provenance["index_sha256"],
+        manifest_sha256=expected_metric_provenance["manifest_sha256"],
+        config_path=expected_metric_provenance["config_path"],
+        index_path=expected_metric_provenance["index_path"],
+        manifest_path=expected_metric_provenance["manifest_path"],
     )
 
     evidence_result = ValidationResult()
@@ -1311,6 +1321,12 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
                 development_witness_ids={current_by_id[passage_id].witness_id for passage_id in development_ids},
                 forbidden_witness_ids=forbidden_witness_ids,
                 metrics_csv_path=generated_paths["development_metrics_csv"],
+                expected_provenance=expected_metric_provenance,
+                expected_witness_identities={
+                    (metric.witness_id, metric.source_id, metric.selection_id)
+                    for metric in metrics
+                },
+                expected_metric_records=[metric.to_dict() for metric in metrics],
             )
             return raise_for_issues(result, "Quantitative profile validation")
 

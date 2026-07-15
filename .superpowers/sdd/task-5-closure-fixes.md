@@ -2,7 +2,8 @@
 
 ## Completed action
 
-Closed the remaining bounded Phase 2B Task 5 bypasses in commit `25c166d`:
+Closed the remaining bounded Phase 2B Task 5 bypasses; implemented in the
+subsequent closure commit:
 
 - generated development metrics are validated fail-closed on every `develop`
   run, including an empty protocol quantitative-profile template;
@@ -21,6 +22,7 @@ Closed the remaining bounded Phase 2B Task 5 bypasses in commit `25c166d`:
 - `src/creative_writer/source_evidence.py`
 - `tests/test_source_analysis.py`
 - `.superpowers/sdd/task-5-closure-fixes.md`
+- `.superpowers/sdd/task-5-generated-metrics-closure.md`
 
 No source text, manuscripts, real holdouts, Phase 2C/style artifacts, Permian
 planning, or interpretive artifacts were changed.

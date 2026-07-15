@@ -1560,6 +1560,123 @@ def test_develop_malformed_generated_metrics_with_empty_protocol_profile_writes_
     assert "Warnings: **0**" in report_text
 
 
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "empty_witnesses",
+        "duplicate_witness",
+        "stale_config_hash",
+        "enabled_measurements_empty",
+        "total_words_list",
+        "malformed_nested_identity",
+    ],
+)
+def test_develop_generated_metrics_mutations_with_empty_protocol_profile_write_diagnostics(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mutation: str
+) -> None:
+    story, _ = _fixture(tmp_path)
+    _commit_fixture_holdouts(tmp_path)
+    metrics_path = tmp_path / "build/fixture/source-study/development-metrics.json"
+    original_measure_development = source_analysis.measure_development
+
+    def mutate_metrics(*args: object, **kwargs: object) -> object:
+        result = original_measure_development(*args, **kwargs)
+        document = json.loads(metrics_path.read_text(encoding="utf-8"))
+        if mutation == "empty_witnesses":
+            document["witnesses"] = []
+        elif mutation == "duplicate_witness":
+            document["witnesses"].append(dict(document["witnesses"][0]))
+        elif mutation == "stale_config_hash":
+            document["config_sha256"] = "b" * 64
+            document["provenance"]["config_sha256"] = "b" * 64
+        elif mutation == "enabled_measurements_empty":
+            document["enabled_measurements"] = []
+        elif mutation == "total_words_list":
+            document["witnesses"][0]["total_words"] = []
+        else:
+            document["witnesses"][0]["source_id"] = {"nested": "wells-alpha"}
+        metrics_path.write_text(json.dumps(document) + "\n", encoding="utf-8")
+        return result
+
+    monkeypatch.setattr(source_analysis, "measure_development", mutate_metrics)
+    with pytest.raises(CreativeWriterError, match="(?i)generated development metric JSON|identity|provenance|witness records"):
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+    report = tmp_path / "build/fixture/source-study/development-report.md"
+    report_text = report.read_text(encoding="utf-8")
+    assert "Evidence validation diagnostics" in report_text
+    assert "Blocking errors: **" in report_text
+    assert "Warnings: **0**" in report_text
+
+
+@pytest.mark.parametrize(
+    "locator_template",
+    [
+        "ref:{passage_id}",
+        "archive/{witness_id}.md",
+        "ref:{witness_id}",
+        "archive/{passage_id}.md",
+    ],
+)
+def test_develop_rejects_each_forbidden_locator_form(
+    tmp_path: Path, locator_template: str
+) -> None:
+    story, _ = _fixture(tmp_path)
+    index = read_passage_index(tmp_path / "build/fixture/source-study/passage-index.jsonl")
+    holdout = next(item for item in index if item.witness_id.endswith("/the-star"))
+    controls = story / "source-study/period-controls.md"
+    controls.write_text(
+        controls.read_text(encoding="utf-8")
+        + "\nForbidden locator: "
+        + locator_template.format(
+            passage_id=holdout.passage_id, witness_id=holdout.witness_id
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    _commit_fixture_holdouts(tmp_path)
+
+    with pytest.raises(CreativeWriterError, match="(?i)witness ID|passage ID|forbidden"):
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+    report = tmp_path / "build/fixture/source-study/development-report.md"
+    report_text = report.read_text(encoding="utf-8")
+    assert "Evidence validation diagnostics" in report_text
+    assert "Blocking errors: **" in report_text
+
+
+def test_develop_blocks_registry_identity_absent_from_retained_registry_at_pipeline_gate(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    story, _ = _fixture(tmp_path)
+    source_path = story / "original/sources.yml"
+    source_document = yaml.safe_load(source_path.read_text(encoding="utf-8"))
+    source_document["sources"] = [
+        source
+        for source in source_document["sources"]
+        if source["id"] != "selected-short-fiction"
+    ]
+    source_path.write_text(yaml.safe_dump(source_document, sort_keys=False), encoding="utf-8")
+    config_path = story / "source-study/analysis.yml"
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    config["source_registry"]["sha256"] = _sha256(source_path)
+    config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+    _commit_fixture_holdouts(tmp_path)
+
+    called = False
+    original_collect = source_analysis.collect_evidence_issues
+
+    def capture_call(*args: object, **kwargs: object):
+        nonlocal called
+        called = True
+        return original_collect(*args, **kwargs)
+
+    monkeypatch.setattr(source_analysis, "collect_evidence_issues", capture_call)
+    with pytest.raises(CreativeWriterError, match="Source admission failed"):
+        run_source_analysis(tmp_path, "fixture", "develop")
+    assert called is False
+
+
 def test_develop_empty_protocol_profile_still_rejects_non_object_generated_metrics(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

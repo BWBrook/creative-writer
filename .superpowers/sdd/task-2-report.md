@@ -155,9 +155,11 @@ headers do not consume source ordinals.
 
 ### Heading paths and ordinals
 
-The stack truncates to `level - 1` before appending a heading label. It does
-not insert synthetic levels when the source jumps from H1 to H4 or otherwise
-malforms the hierarchy. Before any heading the path is `['Untitled']`.
+The stack stores `(level, label)` entries, removes entries whose numeric level
+is greater than or equal to the incoming level, and then appends the new
+heading. It does not insert
+synthetic levels when the source jumps from H1 to H4 or otherwise malforms the
+hierarchy. Before any heading the path is `['Untitled']`.
 
 The source ordinal increments only after a non-empty substantive passage is
 created. The heading ordinal resets only when the exact heading path tuple

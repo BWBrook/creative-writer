@@ -218,7 +218,14 @@ def _resolve_generated_paths(
                 f"Configured generated path for {key} is `{relative}`; "
                 f"expected `{expected_relative}`"
             )
-        target = (root / relative).resolve(strict=False)
+        exact_target = resolved_root / expected_relative
+        try:
+            exact_target.relative_to(resolved_root)
+        except ValueError as exc:
+            raise CreativeWriterError(
+                f"Generated path for {key} escapes repository root: {relative}"
+            ) from exc
+        target = exact_target.resolve(strict=False)
         try:
             target.relative_to(resolved_root)
         except ValueError as exc:
@@ -226,7 +233,12 @@ def _resolve_generated_paths(
                 f"Generated path for {key} escapes repository root through a "
                 f"symlink: {relative} -> {target}"
             ) from exc
-        resolved[key] = target
+        if target != exact_target:
+            raise CreativeWriterError(
+                f"Generated path for {key} redirects through a symlink: "
+                f"{relative} -> {target}; expected lexical target {exact_target}"
+            )
+        resolved[key] = exact_target
     return resolved
 
 
@@ -520,6 +532,18 @@ def _load_existing_manifest(path: Path) -> HoldoutManifest | None:
         raise CreativeWriterError(f"Existing holdout manifest is invalid: {path}: {exc}") from exc
 
 
+def _cleanup_paths(paths: list[tuple[Path, str]]) -> list[str]:
+    failures: list[str] = []
+    for path, label in paths:
+        try:
+            path.unlink(missing_ok=True)
+        except OSError as exc:
+            failures.append(
+                f"{label} `{path}` failed: {exc}; residual path: `{path}`"
+            )
+    return failures
+
+
 def _validate_manifest_passages(manifest: HoldoutManifest, passage_ids: set[str]) -> None:
     for witness in manifest.witnesses:
         for window in [*witness.development_windows, *witness.holdout_windows]:
@@ -532,9 +556,9 @@ def _validate_manifest_passages(manifest: HoldoutManifest, passage_ids: set[str]
 
 
 def _stage_file(path: Path, payload: bytes) -> Path:
-    ensure_directory(path.parent)
     temporary_path: Path | None = None
     try:
+        ensure_directory(path.parent)
         with tempfile.NamedTemporaryFile(
             mode="wb", dir=path.parent, prefix=f".{path.name}.", suffix=".tmp", delete=False
         ) as handle:
@@ -543,9 +567,17 @@ def _stage_file(path: Path, payload: bytes) -> Path:
             handle.flush()
             os.fsync(handle.fileno())
     except OSError as exc:
-        if temporary_path is not None:
-            temporary_path.unlink(missing_ok=True)
-        raise CreativeWriterError(f"Unable to stage generated artifact {path}: {exc}") from exc
+        cleanup_errors = (
+            _cleanup_paths([(temporary_path, "temporary cleanup")])
+            if temporary_path is not None
+            else []
+        )
+        detail = f"Unable to stage generated artifact {path}: {exc}"
+        if cleanup_errors:
+            detail += "\nCleanup errors:\n" + "\n".join(
+                f"- {error}" for error in cleanup_errors
+            )
+        raise CreativeWriterError(detail) from exc
     assert temporary_path is not None
     return temporary_path
 
@@ -558,12 +590,6 @@ def _commit_staged(staged: list[tuple[Path, Path]]) -> None:
     original_failure: OSError | None = None
     recovery_errors: list[str] = []
 
-    def remove_path(path: Path, label: str) -> None:
-        try:
-            path.unlink(missing_ok=True)
-        except OSError as exc:
-            recovery_errors.append(f"{label} `{path}` failed: {exc}")
-
     try:
         for target, temporary in staged:
             if target.exists():
@@ -574,8 +600,11 @@ def _commit_staged(staged: list[tuple[Path, Path]]) -> None:
             installed.append(target)
     except OSError as exc:
         original_failure = exc
-        for target in reversed(installed):
-            remove_path(target, "removal during rollback")
+        recovery_errors.extend(
+            _cleanup_paths(
+                [(target, "removal during rollback") for target in reversed(installed)]
+            )
+        )
         for target, backup in backups.items():
             if backup.exists():
                 try:
@@ -583,21 +612,25 @@ def _commit_staged(staged: list[tuple[Path, Path]]) -> None:
                 except OSError as restore_error:
                     recovery_errors.append(
                         f"restoration of backup `{backup}` to `{target}` failed: "
-                        f"{restore_error}; backup remains at `{backup}`"
+                        f"{restore_error}; residual path: `{backup}`"
                     )
                 else:
                     restored.add(target)
     finally:
-        for _, temporary in staged:
-            remove_path(temporary, "temporary cleanup")
+        recovery_errors.extend(
+            _cleanup_paths(
+                [(temporary, "temporary cleanup") for _, temporary in staged]
+            )
+        )
         for target, backup in backups.items():
             if original_failure is not None and target not in restored:
                 if backup.exists():
                     recovery_errors.append(
-                        f"residual un-restored backup `{backup}` remains"
+                        f"residual un-restored backup `{backup}` remains; "
+                        f"residual path: `{backup}`"
                     )
                 continue
-            remove_path(backup, "backup cleanup")
+            recovery_errors.extend(_cleanup_paths([(backup, "backup cleanup")]))
 
     if original_failure is not None:
         detail = (
@@ -737,9 +770,19 @@ def _prepare(root: Path, slug: str) -> SourceAnalysisResult:
         if manifest_created:
             staged.append((holdout_path, _stage_file(holdout_path, manifest_payload)))
         _commit_staged(staged)
-    except CreativeWriterError:
-        for _, temporary in staged:
-            temporary.unlink(missing_ok=True)
+    except (CreativeWriterError, OSError) as exc:
+        cleanup_errors = _cleanup_paths(
+            [(temporary, "outer temporary cleanup") for _, temporary in staged]
+        )
+        if cleanup_errors:
+            detail = str(exc) + "\nOuter cleanup errors:\n" + "\n".join(
+                f"- {error}" for error in cleanup_errors
+            )
+            raise CreativeWriterError(detail) from exc
+        if isinstance(exc, OSError):
+            raise CreativeWriterError(
+                f"Unable to prepare source analysis for `{slug}`: {exc}"
+            ) from exc
         raise
 
     return SourceAnalysisResult(

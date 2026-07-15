@@ -634,6 +634,27 @@ def test_prepare_rejects_generated_path_symlink_escape(tmp_path: Path) -> None:
         run_source_analysis(tmp_path, "fixture", "prepare")
 
 
+def test_prepare_rejects_cross_story_generated_path_symlink_before_output(
+    tmp_path: Path,
+) -> None:
+    _write_fixture(tmp_path)
+    other_source_study = tmp_path / "build/other/source-study"
+    other_source_study.mkdir(parents=True)
+    other_target = other_source_study / "corpus-lock.json"
+    other_target.write_bytes(b"untouched")
+    generated_dir = tmp_path / "build/fixture"
+    generated_dir.mkdir(parents=True)
+    (generated_dir / "source-study").symlink_to(
+        other_source_study, target_is_directory=True
+    )
+
+    with pytest.raises(CreativeWriterError, match="symlink|lexical target"):
+        run_source_analysis(tmp_path, "fixture", "prepare")
+
+    assert other_target.read_bytes() == b"untouched"
+    assert not (tmp_path / "stories/fixture/source-study/holdouts.yml").exists()
+
+
 def test_holdout_partition_error_names_partition_windows() -> None:
     config = _config_for_selection()
     passages = [_passage("wells-alpha", 1, 1)]
@@ -895,6 +916,46 @@ def test_cleanup_failure_reports_residual_temp_path(
 
     assert str(temporary) in str(caught.value)
     assert target.read_bytes() == b"new"
+
+
+def test_prepare_preserves_install_and_cleanup_failures_without_raw_oserror(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _write_fixture(tmp_path)
+    import creative_writer.source_analysis as source_analysis
+
+    real_replace = source_analysis.os.replace
+    real_unlink = Path.unlink
+    replace_calls = 0
+    cleanup_target: Path | None = None
+
+    def fail_during_install(
+        source: str | bytes | Path, target: str | bytes | Path
+    ) -> None:
+        nonlocal cleanup_target, replace_calls
+        replace_calls += 1
+        if replace_calls == 2:
+            cleanup_target = Path(source)
+            raise OSError("forced install failure")
+        real_replace(source, target)
+
+    def fail_temp_cleanup(path: Path, missing_ok: bool = False) -> None:
+        if cleanup_target is not None and path == cleanup_target:
+            raise OSError("forced temp-cleanup failure")
+        real_unlink(path, missing_ok=missing_ok)
+
+    monkeypatch.setattr(source_analysis.os, "replace", fail_during_install)
+    monkeypatch.setattr(Path, "unlink", fail_temp_cleanup)
+
+    with pytest.raises(CreativeWriterError) as caught:
+        run_source_analysis(tmp_path, "fixture", "prepare")
+
+    message = str(caught.value)
+    assert "forced install failure" in message
+    assert "forced temp-cleanup failure" in message
+    assert cleanup_target is not None
+    assert str(cleanup_target) in message
+    assert not isinstance(caught.value, OSError)
 
 
 def test_prepare_rejects_unresolved_committed_passage_and_preserves_manifest(tmp_path: Path) -> None:

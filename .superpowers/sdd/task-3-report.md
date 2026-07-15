@@ -245,3 +245,71 @@ Pandoc. The first run produced 15 witnesses and 12,541 passages and created
 the temporary manifest; the second returned
 `holdout_manifest_created=False` and `holdout_manifest_verified=True`. The
 real checkout still has no `stories/time-expedition/source-study/holdouts.yml`.
+
+## Final remaining-finding closure
+
+The two remaining Phase 2B Task 3 findings are fixed in implementation/tests
+commit `eb12bc1` (`fix: close remaining Phase 2B Task 3 findings`). This report
+update is committed separately.
+
+### Findings fixed
+
+- `_resolve_generated_paths` now builds the exact absolute lexical target under
+  the resolved repository root, resolves that candidate with `strict=False`,
+  requires equality with the lexical target, and checks root containment. This
+  blocks both external symlink escapes and in-repository cross-story symlink
+  redirection before any generated output is validated or written.
+- `_cleanup_paths` is the single guarded deletion helper used by `_stage_file`,
+  `_commit_staged`, and `_prepare`'s outer cleanup. Each deletion catches every
+  `OSError` and records the error plus residual path. Primary install/staging
+  failures remain in one `CreativeWriterError` together with all cleanup
+  failures, while unrecovered backups remain available for recovery.
+
+### New regression tests and TDD
+
+The new tests were written before the implementation. The RED command was:
+
+```text
+uv run pytest tests/test_source_analysis.py -q -k 'cross_story_generated_path_symlink or preserves_install_and_cleanup_failures'
+2 failed, 31 deselected
+```
+
+The failures demonstrated that the cross-story symlink was followed into
+`build/other` and that `_prepare`'s unguarded retry unlink leaked the forced
+cleanup `OSError` after an install failure.
+
+The new GREEN command passed:
+
+```text
+uv run pytest tests/test_source_analysis.py -q -k 'cross_story_generated_path_symlink or preserves_install_and_cleanup_failures'
+2 passed, 31 deselected
+```
+
+The added integration tests verify that the cross-story target remains
+untouched, and that a combined install plus temporary-cleanup failure retains
+both messages and the residual temporary path without a raw `OSError`.
+
+### Final verification
+
+```text
+uv run pytest tests/test_source_analysis.py -k 'prepare or holdout or corpus_lock' -q
+25 passed, 8 deselected
+
+uv run pytest tests/test_source_analysis.py -q
+33 passed
+
+uv run pytest tests/test_source_analysis_models.py tests/test_source_passages.py tests/test_source_admission.py tests/test_source_analysis.py -q
+161 passed
+
+uv run pytest -q
+241 passed
+
+python3 -m compileall -q src tests
+git diff --check
+```
+
+A temporary copy of the real `time-expedition` corpus completed `prepare`
+twice through Pandoc. Both runs produced 15 witnesses and 12,541 passages;
+the first created the temporary holdout manifest and the second returned
+`holdout_manifest_created=False` and `holdout_manifest_verified=True`. The
+real checkout still contains no `holdouts.yml` file.

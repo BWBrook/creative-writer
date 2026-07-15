@@ -798,7 +798,7 @@ def test_prepare_rerun_is_byte_stable_and_verifies_existing_manifest(tmp_path: P
     assert first.witness_count == second.witness_count
 
 
-@pytest.mark.parametrize("stage", ["validate"])
+@pytest.mark.parametrize("stage", ["unsupported"])
 def test_unsupported_stages_raise_clear_error(tmp_path: Path, stage: str) -> None:
     with pytest.raises(CreativeWriterError, match=f"stage.*{stage}.*not implemented"):
         run_source_analysis(tmp_path, "fixture", stage)
@@ -1257,9 +1257,11 @@ def test_develop_rejects_populated_protocol_validation_record(tmp_path: Path) ->
     validation["claim_transitions"] = [
         {
             "claim_id": "protocol-claim",
-            "from_status": "candidate",
-            "to_status": "qualified",
-            "reason": "A populated protocol transition must not be accepted.",
+                "from_status": "candidate",
+                "to_status": "qualified",
+                "from_confidence": "tentative",
+                "to_confidence": "tentative",
+                "reason": "A populated protocol transition must not be accepted.",
         }
     ]
     validation_path.write_text(
@@ -2340,7 +2342,13 @@ def test_profile_validator_accepts_contiguous_findings_and_links_existing_claims
                 "counterexample_search": None,
                 "control_results": [],
                 "scope_and_limits": "Fixture limit.",
-                "validation_expectation": "Fixture expectation.",
+                "validation_expectation": {
+                    "expected_heldout_tendency": "Fixture expectation.",
+                    "eligible_roles": ["fixture role"],
+                    "eligible_witness_ids": ["wells-alpha"],
+                    "disconfirming_result": "The fixture tendency is absent in the held-out witness.",
+                    "control_expectation": "The fixture tendency is not reproduced by the control.",
+                },
                 "prohibited_overgeneralisation": "Fixture prohibition.",
                 "notes": "Fixture.",
             }],
@@ -2382,7 +2390,13 @@ def test_evidence_validator_aggregates_authority_and_locator_diagnostics(tmp_pat
             },
             "control_results": [],
             "scope_and_limits": "bounded scope",
-            "validation_expectation": "unseen witness",
+            "validation_expectation": {
+                "expected_heldout_tendency": "unseen witness",
+                "eligible_roles": ["fixture role"],
+                "eligible_witness_ids": ["wells-alpha"],
+                "disconfirming_result": "The tendency is absent.",
+                "control_expectation": "The control does not reproduce it.",
+            },
             "prohibited_overgeneralisation": "not universal",
             "notes": "fixture",
         }],
@@ -2532,7 +2546,13 @@ def _fixture_claim(
         "counterexample_search": search,
         "control_results": [],
         "scope_and_limits": "The claim is bounded to the declared jurisdiction.",
-        "validation_expectation": "Presence in an unseen role-matched passage.",
+        "validation_expectation": {
+            "expected_heldout_tendency": "Presence in an unseen role-matched passage.",
+            "eligible_roles": ["fixture role"],
+            "eligible_witness_ids": ["wells-alpha"],
+            "disconfirming_result": "The tendency is absent in the held-out material.",
+            "control_expectation": "The negative control does not show the same tendency.",
+        },
         "prohibited_overgeneralisation": "It does not describe all prose.",
         "notes": "Fixture evidence.",
     }
@@ -3595,3 +3615,344 @@ def test_generated_path_resolution_accepts_var_private_var_alias_without_escape(
     alias_root = Path(str(tmp_path).replace("/private", "", 1))
     resolved = _resolve_generated_paths(alias_root, "fixture", config)
     assert resolved["development_report"].resolve(strict=False).is_relative_to(tmp_path.resolve(strict=False))
+
+
+def _set_candidate_frozen_protocol_fixture(story: Path, *, commit: str = "a" * 40) -> None:
+    source_study = story / "source-study"
+    analysis_path = source_study / "analysis.yml"
+    analysis = yaml.safe_load(analysis_path.read_text(encoding="utf-8"))
+    analysis["study_status"] = "candidate_frozen"
+    analysis_path.write_text(yaml.safe_dump(analysis, sort_keys=False), encoding="utf-8")
+    validation = {
+        "schema_version": 1,
+        "study_id": "fixture-wells-phase-2b",
+        "stage": "candidate_frozen",
+        "validation_step": "frozen",
+        "candidate_commit": commit,
+        "candidate_profile_sha256": HASH,
+        "candidate_ledger_sha256": HASH,
+        "holdout_summary": "Synthetic held-out Wells material is pending assessment.",
+        "control_summary": "Tier 4 controls remain quarantined until held-out assessment is recorded.",
+        "reviewer_summary": "Independent review is pending.",
+        "heldout_claim_results": [],
+        "control_comparisons": [],
+        "reviewer_records": [],
+        "claim_transitions": [],
+        "unresolved_uncertainty": "Synthetic fixture has no authored claim outcomes.",
+        "final_profile_sha256": None,
+        "final_ledger_sha256": None,
+    }
+    (source_study / "validation.md").write_text(
+        "---\n" + yaml.safe_dump(validation, sort_keys=False) + "---\n\n# Synthetic validation\n",
+        encoding="utf-8",
+    )
+
+
+def _prepare_committed_candidate_fixture(
+    root: Path, *, with_claim: bool = False
+) -> tuple[Path, str]:
+    story, _ = _fixture(root)
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    subprocess.run(["git", "config", "user.email", "fixture@example.test"], cwd=root, check=True)
+    subprocess.run(["git", "config", "user.name", "Fixture"], cwd=root, check=True)
+    subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+    subprocess.run(["git", "commit", "-qm", "fixture baseline"], cwd=root, check=True)
+
+    analysis_path = story / "source-study/analysis.yml"
+    analysis = yaml.safe_load(analysis_path.read_text(encoding="utf-8"))
+    analysis["study_status"] = "candidate_frozen"
+    analysis_path.write_text(yaml.safe_dump(analysis, sort_keys=False), encoding="utf-8")
+    ledger_path = story / "source-study/evidence-ledger.yml"
+    ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
+    ledger["stage"] = "development"
+    if with_claim:
+        index = read_passage_index(root / "build/fixture/source-study/passage-index.jsonl")
+        development_passage = next(item for item in index if item.witness_id == "wells-alpha")
+        ledger["claims"] = [
+            _fixture_claim(
+                claim_id="fixture-claim",
+                jurisdiction={
+                    "scope": "role_specific",
+                    "roles": ["wells-alpha role"],
+                    "eligible_witness_ids": ["wells-alpha"],
+                },
+                classification="role_specific",
+                support=[_fixture_reference(development_passage)],
+                search={
+                    "witness_ids": ["wells-alpha"],
+                    "dimensions": ["frame-architecture"],
+                    "method": "manual_close_reading",
+                    "coverage": "targeted",
+                    "searched_passage_ids": [development_passage.passage_id],
+                    "outcome": "no_material_counterexample",
+                    "notes": "Synthetic candidate search.",
+                },
+            )
+        ]
+    ledger_path.write_text(yaml.safe_dump(ledger, sort_keys=False), encoding="utf-8")
+    subprocess.run(
+        ["git", "add", "stories/fixture/source-study/analysis.yml", "stories/fixture/source-study/evidence-ledger.yml", "stories/fixture/source-study/wells-profile.md"],
+        cwd=root,
+        check=True,
+    )
+    subprocess.run(["git", "commit", "-qm", "freeze candidate evidence"], cwd=root, check=True)
+    candidate_commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=root, check=True, text=True, capture_output=True
+    ).stdout.strip()
+    profile_path = story / "source-study/wells-profile.md"
+    ledger_path = story / "source-study/evidence-ledger.yml"
+    validation = {
+        "schema_version": 1,
+        "study_id": "fixture-wells-phase-2b",
+        "stage": "candidate_frozen",
+        "validation_step": "frozen",
+        "candidate_commit": candidate_commit,
+        "candidate_profile_sha256": _sha256(profile_path),
+        "candidate_ledger_sha256": _sha256(ledger_path),
+        "holdout_summary": "Synthetic held-out Wells material is pending assessment.",
+        "control_summary": "Tier 4 controls remain quarantined until held-out assessment is recorded.",
+        "reviewer_summary": "Independent review is pending.",
+        "heldout_claim_results": [],
+        "control_comparisons": [],
+        "reviewer_records": [],
+        "claim_transitions": [],
+        "unresolved_uncertainty": "Synthetic fixture has no authored claim outcomes.",
+        "final_profile_sha256": None,
+        "final_ledger_sha256": None,
+    }
+    (story / "source-study/validation.md").write_text(
+        "---\n" + yaml.safe_dump(validation, sort_keys=False) + "---\n\n# Synthetic validation\n",
+        encoding="utf-8",
+    )
+    subprocess.run(["git", "add", "stories/fixture/source-study/validation.md"], cwd=root, check=True)
+    subprocess.run(["git", "commit", "-qm", "record candidate freeze"], cwd=root, check=True)
+    return story, candidate_commit
+
+
+def _replace_validation_step(story: Path, step: str) -> None:
+    path = story / "source-study/validation.md"
+    text = path.read_text(encoding="utf-8")
+    payload = yaml.safe_load(text.split("---", 2)[1])
+    payload["validation_step"] = step
+    path.write_text(
+        "---\n" + yaml.safe_dump(payload, sort_keys=False) + "---\n\n# Synthetic validation\n",
+        encoding="utf-8",
+    )
+
+
+def _complete_committed_candidate_fixture(root: Path) -> Path:
+    story, candidate_commit = _prepare_committed_candidate_fixture(root, with_claim=True)
+    candidate_ledger_hash = _sha256(story / "source-study/evidence-ledger.yml")
+    index = read_passage_index(root / "build/fixture/source-study/passage-index.jsonl")
+    manifest = HoldoutManifest.model_validate(
+        yaml.safe_load((story / "source-study/holdouts.yml").read_text(encoding="utf-8"))
+    )
+    heldout_ids = {
+        passage_id
+        for witness in manifest.witnesses
+        if witness.witness_id == "wells-alpha"
+        for window in witness.holdout_windows
+        for passage_id in window.passage_ids
+    }
+    heldout = next(item for item in index if item.passage_id in heldout_ids)
+    control = next(item for item in index if item.witness_id == "tier-four")
+    ledger_path = story / "source-study/evidence-ledger.yml"
+    ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
+    ledger["stage"] = "validated"
+    ledger["claims"][0]["status"] = "qualified"
+    ledger["claims"][0]["confidence"] = "moderate"
+    ledger_path.write_text(yaml.safe_dump(ledger, sort_keys=False), encoding="utf-8")
+    analysis_path = story / "source-study/analysis.yml"
+    analysis = yaml.safe_load(analysis_path.read_text(encoding="utf-8"))
+    analysis["study_status"] = "validated"
+    analysis_path.write_text(yaml.safe_dump(analysis, sort_keys=False), encoding="utf-8")
+    subprocess.run(
+        ["git", "add", "stories/fixture/source-study/analysis.yml", "stories/fixture/source-study/evidence-ledger.yml"],
+        cwd=root,
+        check=True,
+    )
+    subprocess.run(["git", "commit", "-qm", "record validated ledger"], cwd=root, check=True)
+    profile_hash = _sha256(story / "source-study/wells-profile.md")
+    ledger_hash = _sha256(ledger_path)
+    validation = {
+        "schema_version": 1,
+        "study_id": "fixture-wells-phase-2b",
+        "stage": "validated",
+        "validation_step": "complete",
+        "candidate_commit": candidate_commit,
+        "candidate_profile_sha256": _sha256(story / "source-study/wells-profile.md"),
+        "candidate_ledger_sha256": candidate_ledger_hash,
+        "holdout_summary": "Held-out result was recorded for the original candidate claim.",
+        "control_summary": "A negative/comparative control result was recorded for the original candidate claim.",
+        "reviewer_summary": "An independent synthetic reviewer record was recorded.",
+        "heldout_claim_results": [{
+            "id": "heldout-fixture-claim",
+            "claim_id": "fixture-claim",
+            "witness_id": heldout.witness_id,
+            "authority_tier": 1,
+            "role": "wells-alpha role",
+            "passage_ids": [heldout.passage_id],
+            "assessment": "qualifies",
+            "observed_tendency": "The bounded tendency is present with synthetic variation.",
+            "notes": "Synthetic held-out assessment.",
+        }],
+        "control_comparisons": [{
+            "id": "control-fixture-claim",
+            "claim_id": "fixture-claim",
+            "witness_id": control.witness_id,
+            "authority_tier": 4,
+            "role": "tier-four role",
+            "passage_ids": [control.passage_id],
+            "comparison": "The negative control provides comparative material and does not authorize positive use.",
+            "result": "not_shared",
+            "notes": "Synthetic control comparison.",
+        }],
+        "reviewer_records": [{
+            "id": "reviewer-fixture-claim",
+            "claim_id": "fixture-claim",
+            "reviewer_id": "synthetic-reviewer",
+            "outcome": "qualified",
+            "heldout_result_ids": ["heldout-fixture-claim"],
+            "control_comparison_ids": ["control-fixture-claim"],
+            "notes": "The claim is retained with a bounded qualification.",
+        }],
+        "claim_transitions": [{
+            "claim_id": "fixture-claim",
+            "from_status": "candidate",
+            "to_status": "qualified",
+            "from_confidence": "tentative",
+            "to_confidence": "moderate",
+            "reason": "Held-out, control, and reviewer records support a bounded qualification.",
+            "heldout_result_ids": ["heldout-fixture-claim"],
+            "control_comparison_ids": ["control-fixture-claim"],
+            "reviewer_record_ids": ["reviewer-fixture-claim"],
+        }],
+        "unresolved_uncertainty": "The synthetic result is limited to the declared witness and role.",
+        "final_profile_sha256": profile_hash,
+        "final_ledger_sha256": ledger_hash,
+    }
+    (story / "source-study/validation.md").write_text(
+        "---\n" + yaml.safe_dump(validation, sort_keys=False) + "---\n\n# Synthetic final validation\n",
+        encoding="utf-8",
+    )
+    subprocess.run(["git", "add", "stories/fixture/source-study/validation.md"], cwd=root, check=True)
+    subprocess.run(["git", "commit", "-qm", "record final validation"], cwd=root, check=True)
+    return story
+
+
+def test_validate_frozen_pass_measures_only_heldout_wells_and_is_atomic(tmp_path: Path) -> None:
+    story, _ = _prepare_committed_candidate_fixture(tmp_path)
+    result = run_source_analysis(tmp_path, "fixture", "validate")
+
+    metrics = json.loads(result.generated_paths["validation_metrics"].read_text(encoding="utf-8"))
+    assert "heldout_wells" in metrics
+    assert "tier4_controls" not in metrics
+    rendered = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in (
+            result.generated_paths["validation_metrics"],
+            result.generated_paths["validation_packet"],
+            result.generated_paths["analysis_report"],
+        )
+    )
+    assert "tier-four" not in rendered
+    assert "Tier 4" not in rendered
+    assert result.passage_count > 0
+    assert (story / "source-study/evidence-ledger.yml").read_text(encoding="utf-8").find("stage: development") >= 0
+
+
+def test_validate_heldout_assessed_adds_separate_control_partition(tmp_path: Path) -> None:
+    story, _ = _prepare_committed_candidate_fixture(tmp_path)
+    _replace_validation_step(story, "heldout_assessed")
+
+    result = run_source_analysis(tmp_path, "fixture", "validate")
+
+    metrics = json.loads(result.generated_paths["validation_metrics"].read_text(encoding="utf-8"))
+    assert set(metrics) >= {"heldout_wells", "tier4_controls"}
+    assert metrics["tier4_controls"]["partition"] == "tier4_controls"
+    packet = result.generated_paths["validation_packet"].read_text(encoding="utf-8")
+    assert "negative/comparative control" in packet
+    assert "tier-four" in packet
+
+
+def test_validate_blocks_controls_until_every_non_rejected_claim_has_holdout_result(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    story, _ = _prepare_committed_candidate_fixture(tmp_path, with_claim=True)
+    _replace_validation_step(story, "heldout_assessed")
+    called = False
+
+    def forbidden(*args: object, **kwargs: object) -> object:
+        nonlocal called
+        called = True
+        raise AssertionError("controls were opened before held-out treatment")
+
+    monkeypatch.setattr(source_analysis, "_load_validation_corpus", forbidden)
+    with pytest.raises(CreativeWriterError, match="Missing held-out claim results"):
+        run_source_analysis(tmp_path, "fixture", "validate")
+    assert called is False
+
+
+def test_validate_compiles_qualified_final_ledger_and_retains_transition_evidence(
+    tmp_path: Path,
+) -> None:
+    story = _complete_committed_candidate_fixture(tmp_path)
+
+    result = run_source_analysis(tmp_path, "fixture", "validate")
+
+    report = result.generated_paths["analysis_report"].read_text(encoding="utf-8")
+    metrics = json.loads(result.generated_paths["validation_metrics"].read_text(encoding="utf-8"))
+    assert "Final compiled status" in report
+    assert "fixture-claim" in report
+    assert "qualified" in report
+    assert "tier4_controls" in metrics
+    assert "authenticity score" not in report.lower()
+    assert "p-value" not in report.lower()
+    final_ledger = yaml.safe_load((story / "source-study/evidence-ledger.yml").read_text(encoding="utf-8"))
+    assert final_ledger["claims"][0]["status"] == "qualified"
+
+
+def test_validate_rejects_protocol_status_before_quarantine_read(tmp_path: Path) -> None:
+    story = _write_fixture(tmp_path)
+    source_study = story / "source-study"
+    analysis_path = source_study / "analysis.yml"
+    analysis = yaml.safe_load(analysis_path.read_text(encoding="utf-8"))
+    analysis["study_status"] = "protocol"
+    analysis_path.write_text(yaml.safe_dump(analysis, sort_keys=False), encoding="utf-8")
+    reads: list[str] = []
+
+    def forbidden(*args: object, **kwargs: object) -> object:
+        reads.append("quarantine")
+        raise AssertionError("quarantine was read before preflight")
+
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(source_analysis, "check_source_admission", forbidden)
+    monkeypatch.setattr(source_analysis, "read_passage_index", forbidden, raising=False)
+    try:
+        with pytest.raises(CreativeWriterError, match="candidate_frozen|validated"):
+            run_source_analysis(tmp_path, "fixture", "validate")
+    finally:
+        monkeypatch.undo()
+    assert reads == []
+
+
+def test_validate_candidate_preflight_rejects_unreachable_commit_without_quarantine_read(
+    tmp_path: Path,
+) -> None:
+    story = _write_fixture(tmp_path)
+    _set_candidate_frozen_protocol_fixture(story)
+    reads: list[str] = []
+
+    def forbidden(*args: object, **kwargs: object) -> object:
+        reads.append("quarantine")
+        raise AssertionError("quarantine was read before candidate Git preflight")
+
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(source_analysis, "check_source_admission", forbidden)
+    monkeypatch.setattr(source_analysis, "read_passage_index", forbidden, raising=False)
+    try:
+        with pytest.raises(CreativeWriterError, match="commit|reachable|candidate"):
+            run_source_analysis(tmp_path, "fixture", "validate")
+    finally:
+        monkeypatch.undo()
+    assert reads == []

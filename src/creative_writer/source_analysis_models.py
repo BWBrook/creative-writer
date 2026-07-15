@@ -11,6 +11,7 @@ from typing import Annotated, Literal, get_args
 
 import yaml
 from pydantic import (
+    AliasChoices,
     BaseModel,
     ConfigDict,
     Field,
@@ -30,6 +31,7 @@ GitHash = Annotated[StrictStr, Field(pattern=r"^[0-9a-f]{40}(?:[0-9a-f]{24})?$")
 NonEmptyText = Annotated[StrictStr, Field(min_length=1, pattern=r"(?s).*\S.*")]
 RelativePath = Annotated[StrictStr, Field(min_length=1, pattern=r"^[^/].*")]
 Stage = Literal["protocol", "development", "candidate_frozen", "validated"]
+ValidationStep = Literal["not_started", "frozen", "heldout_assessed", "complete"]
 DimensionId = Literal[
     "frame-architecture",
     "narrator-distance",
@@ -858,6 +860,33 @@ class EvidenceReference(StrictModel):
         return self
 
 
+class ValidationExpectation(StrictModel):
+    """A claim's predeclared, non-adaptive held-out validation contract."""
+
+    expected_heldout_tendency: NonEmptyText = Field(
+        validation_alias=AliasChoices(
+            "expected_heldout_tendency", "expected_tendency", "heldout_tendency"
+        )
+    )
+    eligible_roles: list[NonEmptyText] = Field(
+        min_length=1,
+        validation_alias=AliasChoices("eligible_roles", "eligible_heldout_roles"),
+    )
+    eligible_witness_ids: list[NonEmptyText] = Field(
+        min_length=1,
+        validation_alias=AliasChoices(
+            "eligible_witness_ids", "eligible_witnesses", "eligible_heldout_witnesses"
+        ),
+    )
+    disconfirming_result: NonEmptyText
+    control_expectation: NonEmptyText
+
+    @field_validator("eligible_roles", "eligible_witness_ids")
+    @classmethod
+    def unique_members(cls, value: list[str], info) -> list[str]:
+        return _validate_unique(value, info.field_name)
+
+
 class ClaimJurisdiction(StrictModel):
     """The declared scope and source-role boundary of one evidence claim."""
 
@@ -912,7 +941,7 @@ class EvidenceClaim(StrictModel):
     counterexample_search: CounterexampleSearch | None = None
     control_results: list[NonEmptyText] = Field(default_factory=list)
     scope_and_limits: NonEmptyText
-    validation_expectation: NonEmptyText
+    validation_expectation: ValidationExpectation
     prohibited_overgeneralisation: NonEmptyText
     notes: NonEmptyText
 
@@ -932,7 +961,7 @@ class EvidenceClaim(StrictModel):
 class EvidenceLedger(StrictModel):
     schema_version: Literal[1]
     study_id: Slug
-    stage: Stage
+    stage: Literal["protocol", "development", "validated"]
     mode: Literal["descriptive"]
     claims: list[EvidenceClaim] = Field(default_factory=list)
 
@@ -957,27 +986,147 @@ class ClaimTransition(StrictModel):
     claim_id: Slug
     from_status: Literal["candidate", "qualified", "rejected", "validated"]
     to_status: Literal["candidate", "qualified", "rejected", "validated"]
+    from_confidence: Literal["tentative", "moderate", "strong"]
+    to_confidence: Literal["tentative", "moderate", "strong"]
     reason: NonEmptyText
+    heldout_result_ids: list[Slug] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("heldout_result_ids", "heldout_ids"),
+    )
+    control_comparison_ids: list[Slug] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("control_comparison_ids", "control_ids"),
+    )
+    reviewer_record_ids: list[Slug] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("reviewer_record_ids", "reviewer_ids"),
+    )
+
+    @field_validator(
+        "heldout_result_ids", "control_comparison_ids", "reviewer_record_ids"
+    )
+    @classmethod
+    def unique_references(cls, value: list[str], info) -> list[str]:
+        return _validate_unique(value, info.field_name)
+
+
+class HeldoutClaimResult(StrictModel):
+    id: Slug
+    claim_id: Slug
+    witness_id: NonEmptyText = Field(
+        validation_alias=AliasChoices("witness_id", "heldout_witness_id")
+    )
+    authority_tier: Literal[1, 2, 3]
+    role: NonEmptyText
+    passage_ids: list[NonEmptyText] = Field(min_length=1)
+    assessment: Literal["supports", "qualifies", "disconfirms", "inconclusive"]
+    observed_tendency: NonEmptyText
+    notes: NonEmptyText
+
+    @field_validator("passage_ids")
+    @classmethod
+    def unique_passages(cls, value: list[str]) -> list[str]:
+        return _validate_unique(value, "passage_ids")
+
+
+class ControlComparison(StrictModel):
+    id: Slug
+    claim_id: Slug
+    witness_id: NonEmptyText = Field(
+        validation_alias=AliasChoices("witness_id", "control_witness_id")
+    )
+    authority_tier: Literal[4]
+    role: NonEmptyText = Field(
+        validation_alias=AliasChoices("role", "control_role")
+    )
+    passage_ids: list[NonEmptyText] = Field(min_length=1)
+    comparison: NonEmptyText
+    result: Literal["shared", "not_shared", "inconclusive"] = Field(
+        validation_alias=AliasChoices("result", "comparison_result")
+    )
+    notes: NonEmptyText
+
+    @field_validator("passage_ids")
+    @classmethod
+    def unique_passages(cls, value: list[str]) -> list[str]:
+        return _validate_unique(value, "passage_ids")
+
+
+class ReviewerRecord(StrictModel):
+    id: Slug
+    claim_id: Slug
+    reviewer_id: NonEmptyText
+    outcome: Literal["approved", "qualified", "rejected", "inconclusive"]
+    heldout_result_ids: list[Slug] = Field(default_factory=list)
+    control_comparison_ids: list[Slug] = Field(default_factory=list)
+    notes: NonEmptyText
+
+    @field_validator("heldout_result_ids", "control_comparison_ids")
+    @classmethod
+    def unique_references(cls, value: list[str], info) -> list[str]:
+        return _validate_unique(value, info.field_name)
 
 
 class ValidationRecord(StrictModel):
     schema_version: Literal[1]
     study_id: Slug
     stage: Stage
+    validation_step: ValidationStep = "not_started"
     candidate_commit: GitHash | None = None
     candidate_profile_sha256: SHA256 | None = None
     candidate_ledger_sha256: SHA256 | None = None
     holdout_summary: NonEmptyText
     control_summary: NonEmptyText
     reviewer_summary: NonEmptyText
+    heldout_claim_results: list[HeldoutClaimResult] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("heldout_claim_results", "heldout_results"),
+    )
+    control_comparisons: list[ControlComparison] = Field(default_factory=list)
+    reviewer_records: list[ReviewerRecord] = Field(default_factory=list)
     claim_transitions: list[ClaimTransition] = Field(default_factory=list)
     unresolved_uncertainty: NonEmptyText
     final_profile_sha256: SHA256 | None = None
+    final_ledger_sha256: SHA256 | None = None
+
+    @field_validator("heldout_claim_results")
+    @classmethod
+    def unique_heldout_result_ids(
+        cls, value: list[HeldoutClaimResult]
+    ) -> list[HeldoutClaimResult]:
+        _validate_unique([item.id for item in value], "held-out result IDs")
+        return value
+
+    @field_validator("control_comparisons")
+    @classmethod
+    def unique_control_comparison_ids(
+        cls, value: list[ControlComparison]
+    ) -> list[ControlComparison]:
+        _validate_unique([item.id for item in value], "control comparison IDs")
+        return value
+
+    @field_validator("reviewer_records")
+    @classmethod
+    def unique_reviewer_record_ids(
+        cls, value: list[ReviewerRecord]
+    ) -> list[ReviewerRecord]:
+        _validate_unique([item.id for item in value], "reviewer record IDs")
+        return value
+
+    @field_validator("claim_transitions")
+    @classmethod
+    def unique_transition_claim_ids(
+        cls, value: list[ClaimTransition]
+    ) -> list[ClaimTransition]:
+        _validate_unique([item.claim_id for item in value], "transition claim IDs")
+        return value
 
     @model_validator(mode="after")
     def validate_stage_hashes(self) -> "ValidationRecord":
-        if self.stage != "validated" and self.final_profile_sha256 is not None:
-            raise ValueError("final profile hash must be absent before validation")
+        if self.stage != "validated" and (
+            self.final_profile_sha256 is not None or self.final_ledger_sha256 is not None
+        ):
+            raise ValueError("final profile and ledger hashes must be absent before validation")
 
         if self.stage == "protocol":
             if any(
@@ -987,6 +1136,7 @@ class ValidationRecord(StrictModel):
                     self.candidate_profile_sha256,
                     self.candidate_ledger_sha256,
                     self.final_profile_sha256,
+                    self.final_ledger_sha256,
                 )
             ):
                 raise ValueError("protocol validation records cannot contain freeze hashes")
@@ -996,8 +1146,102 @@ class ValidationRecord(StrictModel):
             and self.candidate_ledger_sha256
         ):
             raise ValueError("candidate freeze hashes are required after protocol stage")
-        if self.stage == "validated" and not self.final_profile_sha256:
-            raise ValueError("final profile hash is required at the validation stage")
+        if self.stage in {"protocol", "development"} and self.validation_step != "not_started":
+            raise ValueError("protocol and development records must use validation_step not_started")
+        if self.stage == "candidate_frozen" and self.validation_step not in {
+            "frozen", "heldout_assessed"
+        }:
+            raise ValueError("candidate_frozen records require validation_step frozen or heldout_assessed")
+        if self.stage == "validated" and self.validation_step != "complete":
+            raise ValueError("validated records require validation_step complete")
+        if self.stage == "validated" and not (
+            self.final_profile_sha256 and self.final_ledger_sha256
+        ):
+            raise ValueError("final profile and ledger hashes are required at the validation stage")
+        return self
+
+
+class ValidationMetricWitness(StrictModel):
+    witness_id: NonEmptyText
+    source_id: NonEmptyText
+    selection_id: Slug | None = None
+    authority_tier: Literal[1, 2, 3, 4]
+    roles: list[NonEmptyText] = Field(min_length=1)
+    metrics: WitnessMetricRecord
+
+    @field_validator("roles")
+    @classmethod
+    def unique_roles(cls, value: list[str]) -> list[str]:
+        return _validate_unique(value, "roles")
+
+    @model_validator(mode="after")
+    def validate_identity(self) -> "ValidationMetricWitness":
+        _validate_selection_identity(self.witness_id, self.source_id, self.selection_id)
+        if (
+            self.metrics.witness_id != self.witness_id
+            or self.metrics.source_id != self.source_id
+            or self.metrics.selection_id != self.selection_id
+        ):
+            raise ValueError("validation metric witness identity does not match nested metrics")
+        return self
+
+
+class ValidationMetricPartition(StrictModel):
+    partition: Literal["heldout_wells", "tier4_controls"]
+    witnesses: list[ValidationMetricWitness] = Field(min_length=1)
+
+    @field_validator("witnesses")
+    @classmethod
+    def unique_witnesses(cls, value: list[ValidationMetricWitness]) -> list[ValidationMetricWitness]:
+        _validate_unique([item.witness_id for item in value], "validation witness IDs")
+        return value
+
+    @model_validator(mode="after")
+    def validate_partition_tiers(self) -> "ValidationMetricPartition":
+        expected_tier = 4 if self.partition == "tier4_controls" else None
+        if expected_tier is None and any(item.authority_tier == 4 for item in self.witnesses):
+            raise ValueError("heldout_wells cannot contain Tier 4 witnesses")
+        if expected_tier == 4 and any(item.authority_tier != 4 for item in self.witnesses):
+            raise ValueError("tier4_controls must contain only Tier 4 witnesses")
+        return self
+
+
+class ValidationMetricProvenance(StrictModel):
+    study_id: Slug
+    tool_version: NonEmptyText
+    stage: Literal["candidate_frozen", "validated"]
+    validation_step: ValidationStep
+    config_sha256: SHA256
+    index_sha256: SHA256
+    manifest_sha256: SHA256
+    candidate_commit: GitHash
+    candidate_profile_sha256: SHA256
+    candidate_ledger_sha256: SHA256
+    config_path: RelativePath
+    index_path: RelativePath
+    manifest_path: RelativePath
+
+
+class ValidationMetricsDocument(StrictModel):
+    schema_version: Literal[1]
+    stage: Literal["candidate_frozen", "validated"]
+    validation_step: ValidationStep
+    study_id: Slug
+    provenance: ValidationMetricProvenance
+    enabled_measurements: list[NonEmptyText] = Field(min_length=1)
+    heldout_wells: ValidationMetricPartition
+    tier4_controls: ValidationMetricPartition | None = None
+
+    @model_validator(mode="after")
+    def validate_partitions(self) -> "ValidationMetricsDocument":
+        if self.heldout_wells.partition != "heldout_wells":
+            raise ValueError("heldout_wells must be the heldout_wells partition")
+        if self.tier4_controls is not None and self.tier4_controls.partition != "tier4_controls":
+            raise ValueError("tier4_controls must be the tier4_controls partition")
+        if self.validation_step == "frozen" and self.tier4_controls is not None:
+            raise ValueError("frozen validation metrics cannot contain tier4_controls")
+        if self.validation_step == "heldout_assessed" and self.tier4_controls is None:
+            raise ValueError("heldout_assessed validation metrics require tier4_controls")
         return self
 
 

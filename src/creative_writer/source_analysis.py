@@ -12,6 +12,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+import re
 from typing import Any
 
 import yaml
@@ -30,10 +31,18 @@ from creative_writer.source_analysis_models import (
     AnalysisConfig,
     CorpusLock,
     EvidenceLedger,
+    EvidenceClaim,
     HoldoutManifest,
     HoldoutWindow,
     PassageRecord,
     QuantitativeProfile,
+    ControlComparison,
+    HeldoutClaimResult,
+    ReviewerRecord,
+    ValidationMetricPartition,
+    ValidationMetricProvenance,
+    ValidationMetricWitness,
+    ValidationMetricsDocument,
     ValidationRecord,
     WitnessMetricRecord,
     WitnessDescriptor,
@@ -41,11 +50,13 @@ from creative_writer.source_analysis_models import (
     load_validation_document,
 )
 from creative_writer.source_passages import (
+    context_window,
     parse_markdown_witness,
     partition_windows,
+    read_passage_index,
     serialize_passage_index,
 )
-from creative_writer.source_metrics import measure_development
+from creative_writer.source_metrics import measure_development, measure_validation_partition
 from creative_writer.source_evidence import (
     ValidationIssue,
     ValidationResult,
@@ -115,6 +126,29 @@ class SourceAnalysisResult:
     @property
     def holdout_manifest_verified(self) -> bool:
         return not self.holdout_manifest_created
+
+
+@dataclass(frozen=True, slots=True)
+class _ValidationPreflight:
+    config: AnalysisConfig
+    validation: ValidationRecord
+    candidate_ledger: EvidenceLedger
+    candidate_profile_bytes: bytes
+    candidate_ledger_bytes: bytes
+    candidate_profile_path: Path
+    candidate_ledger_path: Path
+
+
+@dataclass(frozen=True, slots=True)
+class _ValidationCorpus:
+    lock: CorpusLock
+    manifest: HoldoutManifest
+    passages: list[PassageRecord]
+    heldout_ids: set[str]
+    control_ids: set[str]
+    witness_tiers: dict[str, int]
+    witness_roles: dict[str, list[str]]
+    registry: SourcesRegistry
 
 
 def _sha256(path: Path) -> str:
@@ -898,6 +932,748 @@ def _load_optional_yaml_model(path: Path, model: type[Any]) -> Any | None:
     return load_yaml_model(path, model)
 
 
+_FULL_COMMIT_RE = re.compile(r"^[0-9a-f]{40}(?:[0-9a-f]{24})?$")
+
+
+def _git_bytes(root: Path, arguments: list[str]) -> bytes:
+    """Run a non-interactive Git object query without a shell or filters."""
+
+    environment = os.environ.copy()
+    environment.update(
+        {
+            "GIT_TERMINAL_PROMPT": "0",
+            "GIT_PAGER": "cat",
+            "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_EXTERNAL_DIFF": "",
+        }
+    )
+    try:
+        result = subprocess.run(
+            ["git", *arguments],
+            cwd=root,
+            env=environment,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+            shell=False,
+        )
+    except OSError as exc:
+        raise CreativeWriterError(f"Unable to run Git preflight: {exc}") from exc
+    if result.returncode != 0:
+        detail = result.stderr.decode("utf-8", errors="replace").strip()
+        raise CreativeWriterError(
+            f"Git preflight command failed (`git {' '.join(arguments)}`): "
+            + (detail or f"exit status {result.returncode}")
+        )
+    return result.stdout
+
+
+def _git_stdout(root: Path, arguments: list[str]) -> str:
+    return _git_bytes(root, arguments).decode("utf-8", errors="strict")
+
+
+def _candidate_git_blob(root: Path, commit: str, relative: str) -> bytes:
+    tree = _git_bytes(root, ["ls-tree", "-z", "--full-tree", commit, "--", relative])
+    entries = tree.split(b"\0") if tree else []
+    matching = [entry for entry in entries if entry]
+    if len(matching) != 1:
+        raise CreativeWriterError(
+            f"Candidate commit `{commit}` does not contain exactly one tracked entry for `{relative}`"
+        )
+    header, path_bytes = matching[0].split(b"\t", 1)
+    mode, object_type, object_id = header.decode("ascii").split(" ")
+    if path_bytes.decode("utf-8") != relative:
+        raise CreativeWriterError(f"Candidate Git path mismatch for `{relative}`")
+    if mode in {"120000", "160000"} or object_type != "blob":
+        raise CreativeWriterError(
+            f"Candidate file `{relative}` is not a regular Git blob (mode {mode}, type {object_type})"
+        )
+    if not re.fullmatch(r"[0-9a-f]{40,64}", object_id):
+        raise CreativeWriterError(f"Candidate Git object ID is malformed for `{relative}`")
+    return _git_bytes(
+        root,
+        [
+            "show",
+            "--no-ext-diff",
+            "--no-textconv",
+            "--format=",
+            f"{commit}:{relative}",
+        ],
+    )
+
+
+def _verify_candidate_commit(root: Path, commit: str) -> None:
+    if not _FULL_COMMIT_RE.fullmatch(commit):
+        raise CreativeWriterError(
+            "candidate_commit must be a full lowercase 40- or 64-hex Git object"
+        )
+    try:
+        resolved = _git_stdout(root, ["rev-parse", "--verify", "--quiet", f"{commit}^{{commit}}"])
+        head = _git_stdout(root, ["rev-parse", "--verify", "--quiet", "HEAD"]).strip()
+    except CreativeWriterError as exc:
+        raise CreativeWriterError(f"Candidate commit cannot be resolved: {commit}") from exc
+    resolved = resolved.strip()
+    if resolved != commit:
+        raise CreativeWriterError(
+            f"Candidate commit must resolve as the supplied full object: {commit}"
+        )
+    if resolved == head:
+        raise CreativeWriterError("Candidate commit must be older than and not equal to HEAD")
+    ancestry = _git_bytes(root, ["merge-base", "--is-ancestor", commit, "HEAD"])
+    del ancestry
+
+
+def _verify_current_candidate_file(root: Path, path: Path, relative: str) -> None:
+    if path.is_symlink() or not path.is_file():
+        raise CreativeWriterError(f"Candidate file must be a clean regular file: {relative}")
+    tracked = _git_stdout(root, ["ls-files", "--error-unmatch", "--", relative]).strip()
+    if tracked != relative:
+        raise CreativeWriterError(f"Candidate file is not tracked: {relative}")
+    status = _git_stdout(root, ["status", "--porcelain=v1", "--untracked-files=all", "--", relative])
+    if status.strip():
+        raise CreativeWriterError(f"Candidate file is dirty in the working tree: {relative}")
+
+
+def _preflight_validation(root: Path, slug: str) -> _ValidationPreflight:
+    """Read only analysis.yml and validation.md until candidate Git checks pass."""
+
+    story_dir = _story_path(root, slug)
+    source_study = story_dir / "source-study"
+    analysis_path = source_study / "analysis.yml"
+    validation_path = source_study / "validation.md"
+    config = load_yaml_model(analysis_path, AnalysisConfig)
+    if config.study_status not in {"candidate_frozen", "validated"}:
+        raise CreativeWriterError(
+            "Validation requires analysis.yml study_status candidate_frozen or validated"
+        )
+    validation, _ = load_validation_document(validation_path)
+    if validation.stage != config.study_status:
+        raise CreativeWriterError(
+            f"Validation record stage `{validation.stage}` does not match config status `{config.study_status}`"
+        )
+    if not validation.candidate_commit:
+        raise CreativeWriterError("Validation record is missing candidate_commit")
+    _verify_candidate_commit(root, validation.candidate_commit)
+
+    candidate_profile_path = source_study / "wells-profile.md"
+    candidate_ledger_path = source_study / "evidence-ledger.yml"
+    profile_relative = _relative_to_root(candidate_profile_path, root)
+    ledger_relative = _relative_to_root(candidate_ledger_path, root)
+    _verify_current_candidate_file(root, candidate_profile_path, profile_relative)
+    _verify_current_candidate_file(root, candidate_ledger_path, ledger_relative)
+    candidate_profile_bytes = _candidate_git_blob(root, validation.candidate_commit, profile_relative)
+    candidate_ledger_bytes = _candidate_git_blob(root, validation.candidate_commit, ledger_relative)
+    try:
+        current_profile_bytes = candidate_profile_path.read_bytes()
+        current_ledger_bytes = candidate_ledger_path.read_bytes()
+    except OSError as exc:
+        raise CreativeWriterError(f"Unable to read clean candidate files: {exc}") from exc
+    if config.study_status == "candidate_frozen" and (
+        current_profile_bytes != candidate_profile_bytes
+        or current_ledger_bytes != candidate_ledger_bytes
+    ):
+        raise CreativeWriterError("Current candidate profile or ledger bytes drift from the frozen Git commit")
+    profile_hash = hashlib.sha256(candidate_profile_bytes).hexdigest()
+    ledger_hash = hashlib.sha256(candidate_ledger_bytes).hexdigest()
+    if profile_hash != validation.candidate_profile_sha256:
+        raise CreativeWriterError(
+            f"Candidate profile SHA-256 mismatch: expected {validation.candidate_profile_sha256}, got {profile_hash}"
+        )
+    if ledger_hash != validation.candidate_ledger_sha256:
+        raise CreativeWriterError(
+            f"Candidate ledger SHA-256 mismatch: expected {validation.candidate_ledger_sha256}, got {ledger_hash}"
+        )
+    try:
+        raw_ledger = yaml.safe_load(candidate_ledger_bytes.decode("utf-8"))
+        candidate_ledger = EvidenceLedger.model_validate(raw_ledger)
+    except (UnicodeError, yaml.YAMLError, ValidationError, TypeError) as exc:
+        raise CreativeWriterError(f"Frozen candidate ledger is not valid structured YAML: {exc}") from exc
+    if candidate_ledger.study_id != config.study_id:
+        raise CreativeWriterError("Frozen candidate ledger study identity does not match analysis.yml")
+    if candidate_ledger.stage != "development":
+        raise CreativeWriterError("Frozen candidate ledger must remain at development stage")
+    return _ValidationPreflight(
+        config=config,
+        validation=validation,
+        candidate_ledger=candidate_ledger,
+        candidate_profile_bytes=candidate_profile_bytes,
+        candidate_ledger_bytes=candidate_ledger_bytes,
+        candidate_profile_path=candidate_profile_path,
+        candidate_ledger_path=candidate_ledger_path,
+    )
+
+
+def _load_validation_corpus(
+    root: Path, slug: str, config: AnalysisConfig, *, include_controls: bool
+) -> _ValidationCorpus:
+    """Load the committed corpus lock and only the requested index partition."""
+
+    story_dir = _story_path(root, slug)
+    generated_paths = _resolve_generated_paths(root, slug, config)
+    lock_path = generated_paths["corpus_lock"]
+    index_path = generated_paths["passage_index"]
+    manifest_path = story_dir / "source-study" / "holdouts.yml"
+    try:
+        lock = CorpusLock.model_validate(json.loads(lock_path.read_text(encoding="utf-8")))
+        manifest = _load_existing_manifest(manifest_path)
+    except (OSError, UnicodeError, json.JSONDecodeError, ValidationError, CreativeWriterError) as exc:
+        raise CreativeWriterError(f"Validation corpus lock/manifest could not be loaded: {exc}") from exc
+    if manifest is None:
+        raise CreativeWriterError(f"Missing committed holdout manifest: {manifest_path}")
+    if lock.analysis.study_id != config.study_id or lock.analysis.story_slug != slug:
+        raise CreativeWriterError("Committed corpus lock identity does not match analysis.yml")
+    expected_registry_hashes = {
+        config.admission_registry.path: config.admission_registry.sha256,
+        config.source_registry.path: config.source_registry.sha256,
+    }
+    if lock.registry_hashes != expected_registry_hashes or manifest.registry_hashes != expected_registry_hashes:
+        raise CreativeWriterError("Committed corpus registry hashes do not match analysis.yml")
+    if (
+        manifest.partition_seed != config.partition.seed
+        or manifest.algorithm_version != config.partition.algorithm_version
+        or manifest.whole_work_holdouts != list(config.partition.whole_work_holdouts)
+    ):
+        raise CreativeWriterError("Committed holdout manifest differs from the configured partition")
+
+    admission_path = _registry_path(story_dir, config.admission_registry.path)
+    source_path = _registry_path(story_dir, config.source_registry.path)
+    _verify_registry_hash(admission_path, config.admission_registry.sha256, "Admission registry")
+    _verify_registry_hash(source_path, config.source_registry.sha256, "Source registry")
+    admission = load_yaml_model(admission_path, SourceStudyAdmission)
+    registry = load_yaml_model(source_path, SourcesRegistry)
+    _validate_analysis_authority(config, admission)
+
+    source_tiers = {source.id: source.role.tier for source in registry.sources}
+    source_roles = {
+        source.id: list(source.role.analytical_roles) for source in registry.sources
+    }
+    for source in lock.sources:
+        if source_tiers.get(source.id) != source.tier:
+            raise CreativeWriterError(f"Committed corpus lock tier differs for `{source.id}`")
+    lock_tiers = {
+        witness.witness_id: source_tiers.get(witness.source_id, 0)
+        for witness in lock.witnesses
+    }
+    heldout_ids = {
+        passage_id
+        for witness in manifest.witnesses
+        if lock_tiers.get(witness.witness_id) in {1, 2, 3}
+        for window in witness.holdout_windows
+        for passage_id in window.passage_ids
+    }
+    control_witnesses = {
+        witness.witness_id
+        for witness in lock.witnesses
+        if source_tiers.get(witness.source_id) == 4
+    }
+    control_ids: set[str] = set()
+    wanted_ids = set(heldout_ids)
+
+    try:
+        lines = index_path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError) as exc:
+        raise CreativeWriterError(f"Unable to read passage index for validation: {exc}") from exc
+    passages: list[PassageRecord] = []
+    seen: set[str] = set()
+    for line_number, line in enumerate(lines, start=1):
+        if not line.strip():
+            raise CreativeWriterError(f"Malformed passage index line {line_number}: blank line")
+        try:
+            payload = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise CreativeWriterError(f"Malformed passage index line {line_number}: {exc}") from exc
+        witness_id = payload.get("witness_id") if isinstance(payload, dict) else None
+        passage_id = payload.get("passage_id") if isinstance(payload, dict) else None
+        is_control = witness_id in control_witnesses
+        if is_control:
+            control_ids.add(passage_id)
+        if passage_id not in wanted_ids and not (include_controls and is_control):
+            continue
+        try:
+            passage = PassageRecord.model_validate(payload)
+        except (ValidationError, TypeError) as exc:
+            raise CreativeWriterError(
+                f"Malformed selected validation passage at line {line_number}: {exc}"
+            ) from exc
+        if passage.passage_id in seen:
+            raise CreativeWriterError(f"Duplicate validation passage ID `{passage.passage_id}`")
+        if passage.passage_id not in heldout_ids and passage.passage_id not in control_ids:
+            raise CreativeWriterError(f"Unrequested validation passage `{passage.passage_id}`")
+        seen.add(passage.passage_id)
+        passages.append(passage)
+    if not heldout_ids.issubset(seen):
+        missing = sorted(heldout_ids - seen)
+        raise CreativeWriterError("Held-out passage IDs are unresolved: " + ", ".join(missing))
+    if include_controls and not control_ids.issubset(seen):
+        missing = sorted(control_ids - seen)
+        raise CreativeWriterError("Control passage IDs are unresolved: " + ", ".join(missing))
+    if include_controls:
+        wanted_ids.update(control_ids)
+    selected = [passage for passage in passages if passage.passage_id in wanted_ids]
+    if not selected:
+        raise CreativeWriterError("Validation corpus contains no permitted passages")
+    return _ValidationCorpus(
+        lock=lock,
+        manifest=manifest,
+        passages=selected,
+        heldout_ids=heldout_ids,
+        control_ids=control_ids,
+        witness_tiers=lock_tiers,
+        witness_roles={
+            witness_id: source_roles.get(
+                next(
+                    item.source_id for item in lock.witnesses if item.witness_id == witness_id
+                ),
+                [],
+            )
+            for witness_id in lock_tiers
+        },
+        registry=registry,
+    )
+
+
+def _require_validation_treatment(
+    record: ValidationRecord,
+    claims: list[EvidenceClaim],
+    *,
+    require_controls: bool,
+    require_reviewers: bool,
+) -> None:
+    non_rejected = {claim.id for claim in claims if claim.status != "rejected"}
+    candidate_ids = {claim.id for claim in claims}
+    for item in [
+        *record.heldout_claim_results,
+        *record.control_comparisons,
+        *record.reviewer_records,
+    ]:
+        if item.claim_id not in candidate_ids:
+            raise CreativeWriterError(
+                f"Validation record references undeclared claim `{item.claim_id}`"
+            )
+    heldout_claims = {item.claim_id for item in record.heldout_claim_results}
+    if missing := sorted(non_rejected - heldout_claims):
+        raise CreativeWriterError(
+            "Missing held-out claim results for: " + ", ".join(missing)
+        )
+    if require_controls:
+        controls = {item.claim_id for item in record.control_comparisons}
+        if missing := sorted(non_rejected - controls):
+            raise CreativeWriterError(
+                "Missing control comparisons for: " + ", ".join(missing)
+            )
+    if require_reviewers:
+        reviewers = {item.claim_id for item in record.reviewer_records}
+        if missing := sorted(non_rejected - reviewers):
+            raise CreativeWriterError(
+                "Missing reviewer records for: " + ", ".join(missing)
+            )
+
+
+def _validation_metric_partition(
+    partition: str,
+    passages: list[PassageRecord],
+    ids: set[str],
+    config: AnalysisConfig,
+    corpus: _ValidationCorpus,
+) -> ValidationMetricPartition:
+    metrics = measure_validation_partition(passages, config, ids)
+    witnesses: list[ValidationMetricWitness] = []
+    for metric in metrics:
+        payload = WitnessMetricRecord.model_validate(metric.to_dict())
+        witnesses.append(
+            ValidationMetricWitness(
+                witness_id=metric.witness_id,
+                source_id=metric.source_id,
+                selection_id=metric.selection_id,
+                authority_tier=corpus.witness_tiers[metric.witness_id],
+                roles=corpus.witness_roles[metric.witness_id],
+                metrics=payload,
+            )
+        )
+    return ValidationMetricPartition(partition=partition, witnesses=witnesses)
+
+
+def _validate_record_partitions(record: ValidationRecord, corpus: _ValidationCorpus) -> None:
+    by_id = {passage.passage_id: passage for passage in corpus.passages}
+    for result in record.heldout_claim_results:
+        if result.witness_id not in {passage.witness_id for passage in corpus.passages if passage.passage_id in corpus.heldout_ids}:
+            raise CreativeWriterError(f"Held-out result `{result.id}` is outside the heldout_wells partition")
+        if any(passage_id not in corpus.heldout_ids for passage_id in result.passage_ids):
+            raise CreativeWriterError(f"Held-out result `{result.id}` references a non-held-out passage")
+        if any(passage_id not in by_id for passage_id in result.passage_ids):
+            raise CreativeWriterError(f"Held-out result `{result.id}` references an unresolved passage")
+    for comparison in record.control_comparisons:
+        if comparison.witness_id not in {passage.witness_id for passage in corpus.passages if passage.passage_id in corpus.control_ids}:
+            raise CreativeWriterError(f"Control comparison `{comparison.id}` is outside the tier4_controls partition")
+        if any(passage_id not in corpus.control_ids for passage_id in comparison.passage_ids):
+            raise CreativeWriterError(f"Control comparison `{comparison.id}` references a non-control passage")
+        if any(passage_id not in by_id for passage_id in comparison.passage_ids):
+            raise CreativeWriterError(f"Control comparison `{comparison.id}` references an unresolved passage")
+
+
+def _validation_packet(
+    corpus: _ValidationCorpus, *, include_controls: bool, context_radius: int
+) -> str:
+    lines = [
+        "# Phase 2B validation packet",
+        "",
+        "Contexts are restricted to passage IDs in the current validation partition.",
+        "",
+    ]
+    partitions = [("heldout_wells", corpus.heldout_ids)]
+    if include_controls:
+        partitions.append(("tier4_controls", corpus.control_ids))
+    by_id = {passage.passage_id: passage for passage in corpus.passages}
+    for partition, ids in partitions:
+        lines.extend([f"## {partition}", ""])
+        partition_passages = [passage for passage in corpus.passages if passage.passage_id in ids]
+        for focal in partition_passages:
+            context = context_window(partition_passages, focal.passage_id, context_radius)
+            tier = corpus.witness_tiers[focal.witness_id]
+            roles = ", ".join(corpus.witness_roles[focal.witness_id])
+            label = "negative/comparative control" if partition == "tier4_controls" else "held-out Wells"
+            lines.extend(
+                [
+                    f"### {label}: `{focal.passage_id}`",
+                    "",
+                    f"- Witness: `{focal.witness_id}`",
+                    f"- Authority tier: `{tier}`",
+                    f"- Role: `{roles}`",
+                    f"- Source: `{focal.source_id}`",
+                    f"- Passage ID: `{focal.passage_id}`",
+                    "- Context:",
+                ]
+            )
+            for item in context:
+                if item.passage_id not in ids:
+                    raise CreativeWriterError("Validation context crossed the current partition boundary")
+                lines.append(f"  - `{item.passage_id}`: {item.normalized_text}")
+            lines.append("")
+    del by_id
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _validation_report(
+    *,
+    config: AnalysisConfig,
+    preflight: _ValidationPreflight,
+    corpus: _ValidationCorpus,
+    metrics: ValidationMetricsDocument,
+    final: bool,
+    report_ledger: EvidenceLedger | None = None,
+) -> str:
+    lines = [
+        "# Phase 2B analysis report",
+        "",
+        "This report separates deterministic measurements from authored candidate claims and human validation records.",
+        "",
+        "## Deterministic measurements",
+        "",
+        f"- Study: `{config.study_id}`",
+        f"- Validation step: `{preflight.validation.validation_step}`",
+        "- Measurements are reported independently by witness; no pooled target is calculated.",
+    ]
+    for partition in (metrics.heldout_wells, metrics.tier4_controls):
+        if partition is None:
+            continue
+        lines.extend(["", f"### Partition: `{partition.partition}`", ""])
+        for witness in partition.witnesses:
+            lines.append(
+                f"- Witness `{witness.witness_id}` (source `{witness.source_id}`, tier `{witness.authority_tier}`): "
+                f"{witness.metrics.total_words} words across {witness.metrics.total_passages} passages."
+            )
+    lines.extend(["", "## Authored candidate claims", ""])
+    authored_ledger = report_ledger or preflight.candidate_ledger
+    for claim in authored_ledger.claims:
+        lines.append(f"- `{claim.id}`: {claim.statement} ({claim.status}, {claim.confidence}).")
+    lines.extend(["", "## Held-out results", ""])
+    if preflight.validation.heldout_claim_results:
+        for result in preflight.validation.heldout_claim_results:
+            lines.append(f"- `{result.id}` for `{result.claim_id}` at `{result.witness_id}`: {result.assessment}. {result.observed_tendency}")
+    else:
+        lines.append("- No authored held-out claim results have been recorded yet.")
+    lines.extend(["", "## Controls", ""])
+    if metrics.tier4_controls is None:
+        lines.append("Control material remains unopened until held-out claim assessments are recorded.")
+    elif preflight.validation.control_comparisons:
+        for comparison in preflight.validation.control_comparisons:
+            lines.append(f"- `{comparison.id}` for `{comparison.claim_id}` at `{comparison.witness_id}`: {comparison.result}. {comparison.comparison}")
+    else:
+        lines.append("No authored control comparisons have been recorded yet.")
+    lines.extend(["", "## Reviewer records", ""])
+    if preflight.validation.reviewer_records:
+        for reviewer in preflight.validation.reviewer_records:
+            lines.append(f"- `{reviewer.id}` for `{reviewer.claim_id}` by `{reviewer.reviewer_id}`: {reviewer.outcome}. {reviewer.notes}")
+    else:
+        lines.append("Independent reviewer records are not yet complete.")
+    lines.extend(["", "## Rejected claims", ""])
+    rejected = [claim for claim in authored_ledger.claims if claim.status == "rejected"]
+    if rejected:
+        lines.extend(f"- `{claim.id}` remains retained as rejected." for claim in rejected)
+    else:
+        lines.append("- None in the frozen candidate ledger.")
+    lines.extend(
+        [
+            "",
+            "## Limitations",
+            "",
+            "These descriptive measurements provide no inferential test, authorship attribution, or pooled aggregate judgement.",
+            "",
+            "## Phase 2C stop boundary",
+            "",
+            "This output does not authorise style guidance, style-card changes, story planning, or manuscript changes. Phase 2C requires separate design approval after human Phase 2B approval.",
+        ]
+    )
+    if final:
+        lines.extend(["", "## Final compiled status", "", "The final report includes the recorded claim transitions and retained rejected claims."])
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _write_validation_outputs(
+    generated_paths: dict[str, Path],
+    *,
+    metrics: ValidationMetricsDocument,
+    packet: str,
+    report: str,
+) -> None:
+    payloads = [
+        (
+            generated_paths["validation_metrics"],
+            (json.dumps(metrics.model_dump(mode="json", exclude_none=True), ensure_ascii=False, indent=2) + "\n").encode("utf-8"),
+        ),
+        (generated_paths["validation_packet"], packet.encode("utf-8")),
+        (generated_paths["analysis_report"], report.encode("utf-8")),
+    ]
+    staged: list[tuple[Path, Path]] = []
+    try:
+        for target, payload in payloads:
+            staged.append((target, _stage_file(target, payload)))
+        _commit_staged(staged)
+    except (CreativeWriterError, OSError):
+        _cleanup_paths([(temporary, "validation temporary cleanup") for _, temporary in staged])
+        raise
+
+
+def _tracked_regular_artifact(root: Path, path: Path) -> None:
+    relative = _relative_to_root(path, root)
+    if path.is_symlink() or not path.is_file():
+        raise CreativeWriterError(f"Required tracked artifact is not a regular file: {relative}")
+    tracked = _git_stdout(root, ["ls-files", "--error-unmatch", "--", relative]).strip()
+    if tracked != relative:
+        raise CreativeWriterError(f"Required tracked artifact is not tracked: {relative}")
+
+
+def _validate_final_claims(
+    *,
+    candidate: EvidenceLedger,
+    final: EvidenceLedger,
+    validation: ValidationRecord,
+) -> None:
+    candidate_by_id = {claim.id: claim for claim in candidate.claims}
+    final_by_id = {claim.id: claim for claim in final.claims}
+    if set(candidate_by_id) != set(final_by_id):
+        missing = sorted(set(candidate_by_id) - set(final_by_id))
+        added = sorted(set(final_by_id) - set(candidate_by_id))
+        raise CreativeWriterError(
+            "Final ledger must preserve exact candidate claim IDs; "
+            f"missing={missing}, added={added}"
+        )
+    immutable_fields = {
+        "id",
+        "dimension",
+        "statement",
+        "mode",
+        "supporting_passages",
+        "counterexample_passages",
+        "counterexample_search",
+        "control_results",
+        "validation_expectation",
+        "prohibited_overgeneralisation",
+        "notes",
+    }
+    for claim_id, original in candidate_by_id.items():
+        current = final_by_id[claim_id]
+        for field in immutable_fields:
+            if getattr(original, field) != getattr(current, field):
+                raise CreativeWriterError(
+                    f"Final claim `{claim_id}` changed undeclared development field `{field}`"
+                )
+        if current.status == "candidate":
+            raise CreativeWriterError(f"Final claim `{claim_id}` cannot remain candidate")
+
+    transitions = {transition.claim_id: transition for transition in validation.claim_transitions}
+    if set(transitions) != set(candidate_by_id):
+        raise CreativeWriterError("Final validation requires exactly one transition for every candidate claim")
+    heldout_by_id = {item.id: item for item in validation.heldout_claim_results}
+    control_by_id = {item.id: item for item in validation.control_comparisons}
+    reviewer_by_id = {item.id: item for item in validation.reviewer_records}
+    allowed_statuses = {
+        "candidate": {"validated", "qualified", "rejected"},
+        "qualified": {"validated", "qualified", "rejected"},
+        "rejected": {"rejected"},
+    }
+    for claim_id, original in candidate_by_id.items():
+        current = final_by_id[claim_id]
+        transition = transitions[claim_id]
+        if (
+            transition.from_status != original.status
+            or transition.from_confidence != original.confidence
+            or transition.to_status != current.status
+            or transition.to_confidence != current.confidence
+        ):
+            raise CreativeWriterError(
+                f"Claim transition for `{claim_id}` does not match candidate/final status and confidence"
+            )
+        if original.status not in allowed_statuses or current.status not in allowed_statuses[original.status]:
+            raise CreativeWriterError(
+                f"Illegal claim transition `{original.status}` -> `{current.status}` for `{claim_id}`"
+            )
+        if original.status != "rejected":
+            heldout_ids = [item.id for item in validation.heldout_claim_results if item.claim_id == claim_id]
+            control_ids = [item.id for item in validation.control_comparisons if item.claim_id == claim_id]
+            reviewer_ids = [item.id for item in validation.reviewer_records if item.claim_id == claim_id]
+            if not heldout_ids or not control_ids or not reviewer_ids:
+                raise CreativeWriterError(
+                    f"Non-rejected claim `{claim_id}` lacks held-out, control, or reviewer treatment"
+                )
+            if set(transition.heldout_result_ids) != set(heldout_ids):
+                raise CreativeWriterError(f"Claim `{claim_id}` transition does not reference all held-out results")
+            if set(transition.control_comparison_ids) != set(control_ids):
+                raise CreativeWriterError(f"Claim `{claim_id}` transition does not reference all control comparisons")
+            if set(transition.reviewer_record_ids) != set(reviewer_ids):
+                raise CreativeWriterError(f"Claim `{claim_id}` transition does not reference all reviewer records")
+            for result_id in transition.heldout_result_ids:
+                if heldout_by_id.get(result_id) is None or heldout_by_id[result_id].claim_id != claim_id:
+                    raise CreativeWriterError(f"Claim `{claim_id}` transition references a different held-out claim")
+            for comparison_id in transition.control_comparison_ids:
+                if control_by_id.get(comparison_id) is None or control_by_id[comparison_id].claim_id != claim_id:
+                    raise CreativeWriterError(f"Claim `{claim_id}` transition references a different control claim")
+            for reviewer_id in transition.reviewer_record_ids:
+                if reviewer_by_id.get(reviewer_id) is None or reviewer_by_id[reviewer_id].claim_id != claim_id:
+                    raise CreativeWriterError(f"Claim `{claim_id}` transition references a different reviewer claim")
+        elif current.status != "rejected":
+            raise CreativeWriterError(f"Rejected claim `{claim_id}` may not be resurrected")
+    if set(heldout_by_id) != {item.id for item in validation.heldout_claim_results}:
+        raise CreativeWriterError("Held-out result IDs are not unique")
+    if set(control_by_id) != {item.id for item in validation.control_comparisons}:
+        raise CreativeWriterError("Control comparison IDs are not unique")
+    if set(reviewer_by_id) != {item.id for item in validation.reviewer_records}:
+        raise CreativeWriterError("Reviewer record IDs are not unique")
+
+
+def _build_validation_metrics(
+    config: AnalysisConfig,
+    validation: ValidationRecord,
+    generated_paths: dict[str, Path],
+    corpus: _ValidationCorpus,
+) -> ValidationMetricsDocument:
+    # The generated path is rooted at build/<slug>/source-study.  Derive the
+    # repository root without consulting any additional source artefact.
+    build_root = generated_paths["validation_metrics"].parents[3]
+    slug = generated_paths["validation_metrics"].parents[1].name
+    config_path = build_root / "stories" / slug / "source-study" / "analysis.yml"
+    manifest_path = config_path.parent / "holdouts.yml"
+    return ValidationMetricsDocument(
+        schema_version=1,
+        stage=config.study_status,
+        validation_step=validation.validation_step,
+        study_id=config.study_id,
+        provenance=ValidationMetricProvenance(
+            study_id=config.study_id,
+            tool_version=TOOL_VERSION,
+            stage=config.study_status,
+            validation_step=validation.validation_step,
+            config_sha256=_sha256(config_path),
+            index_sha256=_sha256(generated_paths["passage_index"]),
+            manifest_sha256=_sha256(manifest_path),
+            candidate_commit=validation.candidate_commit,
+            candidate_profile_sha256=validation.candidate_profile_sha256,
+            candidate_ledger_sha256=validation.candidate_ledger_sha256,
+            config_path=_relative_to_root(config_path, build_root),
+            index_path=_relative_to_root(generated_paths["passage_index"], build_root),
+            manifest_path=_relative_to_root(manifest_path, build_root),
+        ),
+        enabled_measurements=list(config.enabled_measurements),
+        heldout_wells=_validation_metric_partition(
+            "heldout_wells", corpus.passages, corpus.heldout_ids, config, corpus
+        ),
+        tier4_controls=(
+            _validation_metric_partition(
+                "tier4_controls", corpus.passages, corpus.control_ids, config, corpus
+            )
+            if validation.validation_step in {"heldout_assessed", "complete"}
+            else None
+        ),
+    )
+
+
+def _validate(root: Path, slug: str) -> SourceAnalysisResult:
+    preflight = _preflight_validation(root, slug)
+    config = preflight.config
+    validation = preflight.validation
+    generated_paths = _resolve_generated_paths(root, slug, config)
+    candidate_claims = preflight.candidate_ledger.claims
+    if config.study_status == "candidate_frozen" and validation.validation_step == "frozen":
+        if validation.heldout_claim_results or validation.control_comparisons or validation.reviewer_records:
+            raise CreativeWriterError("frozen validation step cannot contain held-out, control, or reviewer records")
+        corpus = _load_validation_corpus(root, slug, config, include_controls=False)
+        metrics = _build_validation_metrics(config, validation, generated_paths, corpus)
+        _write_validation_outputs(
+            generated_paths,
+            metrics=metrics,
+            packet=_validation_packet(corpus, include_controls=False, context_radius=config.passage_rules.context_radius),
+            report=_validation_report(config=config, preflight=preflight, corpus=corpus, metrics=metrics, final=False),
+        )
+        return SourceAnalysisResult("validate", slug, len(metrics.heldout_wells.witnesses), len(corpus.heldout_ids), generated_paths, _story_path(root, slug) / "source-study" / "holdouts.yml", False)
+
+    if config.study_status == "candidate_frozen" and validation.validation_step == "heldout_assessed":
+        _require_validation_treatment(validation, candidate_claims, require_controls=False, require_reviewers=False)
+        corpus = _load_validation_corpus(root, slug, config, include_controls=True)
+        _validate_record_partitions(validation, corpus)
+        metrics = _build_validation_metrics(config, validation, generated_paths, corpus)
+        _write_validation_outputs(
+            generated_paths,
+            metrics=metrics,
+            packet=_validation_packet(corpus, include_controls=True, context_radius=config.passage_rules.context_radius),
+            report=_validation_report(config=config, preflight=preflight, corpus=corpus, metrics=metrics, final=False),
+        )
+        return SourceAnalysisResult("validate", slug, len(metrics.heldout_wells.witnesses) + len(metrics.tier4_controls.witnesses if metrics.tier4_controls else []), len(corpus.passages), generated_paths, _story_path(root, slug) / "source-study" / "holdouts.yml", False)
+
+    if config.study_status != "validated" or validation.validation_step != "complete":
+        raise CreativeWriterError("Validation record must use frozen, heldout_assessed, or complete step for its configured stage")
+    _require_validation_treatment(validation, candidate_claims, require_controls=True, require_reviewers=True)
+    corpus = _load_validation_corpus(root, slug, config, include_controls=True)
+    _validate_record_partitions(validation, corpus)
+    story_dir = _story_path(root, slug)
+    final_profile_path = story_dir / "source-study" / "wells-profile.md"
+    final_ledger_path = story_dir / "source-study" / "evidence-ledger.yml"
+    period_controls_path = story_dir / "source-study" / "period-controls.md"
+    _tracked_regular_artifact(root, story_dir / "source-study" / "validation.md")
+    _tracked_regular_artifact(root, period_controls_path)
+    try:
+        final_ledger = load_yaml_model(final_ledger_path, EvidenceLedger)
+        final_profile_bytes = final_profile_path.read_bytes()
+        final_ledger_bytes = final_ledger_path.read_bytes()
+    except OSError as exc:
+        raise CreativeWriterError(f"Unable to read final validation artifacts: {exc}") from exc
+    if final_ledger.stage != "validated" or final_ledger.study_id != config.study_id:
+        raise CreativeWriterError("Final evidence ledger must be validated and match the study")
+    if hashlib.sha256(final_profile_bytes).hexdigest() != validation.final_profile_sha256:
+        raise CreativeWriterError("Final profile SHA-256 does not match validation.md")
+    if hashlib.sha256(final_ledger_bytes).hexdigest() != validation.final_ledger_sha256:
+        raise CreativeWriterError("Final ledger SHA-256 does not match validation.md")
+    _validate_final_claims(candidate=preflight.candidate_ledger, final=final_ledger, validation=validation)
+    metrics = _build_validation_metrics(config, validation, generated_paths, corpus)
+    _write_validation_outputs(
+        generated_paths,
+        metrics=metrics,
+        packet=_validation_packet(corpus, include_controls=True, context_radius=config.passage_rules.context_radius),
+            report=_validation_report(config=config, preflight=preflight, corpus=corpus, metrics=metrics, final=True, report_ledger=final_ledger),
+    )
+    return SourceAnalysisResult("validate", slug, len(corpus.witness_tiers), len(corpus.passages), generated_paths, story_dir / "source-study" / "holdouts.yml", False)
+
+
 def _tracked_evidence_paths(story_dir: Path) -> list[Path]:
     source_study = story_dir / "source-study"
     paths = [
@@ -1085,8 +1861,8 @@ def _validate_artifact_lifecycle(
             result.errors.append(ValidationIssue("error", str(ledger_path), message="Evidence ledger stage leads configured analysis stage"))
         if ledger.stage == "protocol" and ledger.claims:
             result.errors.append(ValidationIssue("error", str(ledger_path), message="Populated protocol evidence ledger is not an empty template"))
-        if configured == "candidate_frozen" and ledger.stage != "candidate_frozen":
-            result.errors.append(ValidationIssue("error", str(ledger_path), message="Candidate-frozen analysis requires a candidate_frozen evidence ledger"))
+        if configured == "candidate_frozen" and ledger.stage != "development":
+            result.errors.append(ValidationIssue("error", str(ledger_path), message="Candidate-frozen analysis requires the frozen evidence ledger to remain at development stage"))
         if configured == "validated" and ledger.stage != "validated":
             result.errors.append(ValidationIssue("error", str(ledger_path), message="Validated analysis requires a validated evidence ledger"))
     if quantitative_profile is not None:
@@ -1459,6 +2235,4 @@ def run_source_analysis(root: Path, slug: str, stage: str) -> SourceAnalysisResu
         raise CreativeWriterError(
             f"Source analysis stage `{stage}` is not implemented; prepare and develop are available"
         )
-    raise CreativeWriterError(
-        "Source analysis stage `validate` is not implemented; prepare and develop are available"
-    )
+    return _validate(root, slug)

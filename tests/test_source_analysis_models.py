@@ -396,7 +396,13 @@ def _ledger() -> dict[str, object]:
                 },
                 "control_results": [],
                 "scope_and_limits": "This claim is limited to the declared source jurisdiction.",
-                "validation_expectation": "Presence across an unseen role-matched passage set.",
+                "validation_expectation": {
+                    "expected_heldout_tendency": "Presence across an unseen role-matched passage set.",
+                    "eligible_roles": ["declared role"],
+                    "eligible_witness_ids": ["the-time-machine"],
+                    "disconfirming_result": "The tendency is absent or contradicted in the eligible holdout.",
+                    "control_expectation": "The tendency is not reproduced by the negative control.",
+                },
                 "prohibited_overgeneralisation": "It does not describe all Wells narration.",
                 "notes": "Protocol fixture.",
             }
@@ -1031,6 +1037,7 @@ def test_candidate_frozen_validation_accepts_candidate_hashes_without_final_hash
     payload.update(
         {
             "stage": "candidate_frozen",
+            "validation_step": "frozen",
             "candidate_commit": COMMIT,
             "candidate_profile_sha256": HASH,
             "candidate_ledger_sha256": HASH,
@@ -1047,6 +1054,7 @@ def test_validation_rejects_final_profile_hash_before_validated() -> None:
     payload.update(
         {
             "stage": "candidate_frozen",
+            "validation_step": "frozen",
             "candidate_commit": COMMIT,
             "candidate_profile_sha256": HASH,
             "candidate_ledger_sha256": HASH,
@@ -1054,7 +1062,7 @@ def test_validation_rejects_final_profile_hash_before_validated() -> None:
         }
     )
 
-    with pytest.raises(ValidationError, match="final profile hash must be absent before validation"):
+    with pytest.raises(ValidationError, match="final profile and ledger hashes must be absent before validation"):
         ValidationRecord.model_validate(payload)
 
 
@@ -1063,13 +1071,14 @@ def test_validated_validation_requires_final_profile_hash() -> None:
     payload.update(
         {
             "stage": "validated",
+            "validation_step": "complete",
             "candidate_commit": COMMIT,
             "candidate_profile_sha256": HASH,
             "candidate_ledger_sha256": HASH,
         }
     )
 
-    with pytest.raises(ValidationError, match="final profile hash is required"):
+    with pytest.raises(ValidationError, match="final profile and ledger hashes are required"):
         ValidationRecord.model_validate(payload)
 
 
@@ -1078,10 +1087,12 @@ def test_validated_validation_accepts_complete_hash_lifecycle() -> None:
     payload.update(
         {
             "stage": "validated",
+            "validation_step": "complete",
             "candidate_commit": COMMIT,
             "candidate_profile_sha256": HASH,
             "candidate_ledger_sha256": HASH,
             "final_profile_sha256": HASH,
+            "final_ledger_sha256": HASH,
         }
     )
 
@@ -1089,3 +1100,47 @@ def test_validated_validation_accepts_complete_hash_lifecycle() -> None:
 
     assert record.stage == "validated"
     assert record.final_profile_sha256 == HASH
+
+
+def test_validation_expectation_is_structured_and_strict() -> None:
+    payload = _ledger()
+    payload["claims"][0]["validation_expectation"] = {
+        "expected_heldout_tendency": "The tendency recurs in eligible held-out Wells passages.",
+        "eligible_roles": ["fixture role"],
+        "eligible_witness_ids": ["the-time-machine"],
+        "disconfirming_result": "The tendency is absent or contradicted in the eligible holdout.",
+        "control_expectation": "The negative control does not reproduce the tendency in the same role.",
+    }
+
+    ledger = EvidenceLedger.model_validate(payload)
+
+    expectation = ledger.claims[0].validation_expectation
+    assert not isinstance(expectation, str)
+    assert expectation.expected_heldout_tendency.startswith("The tendency")
+    assert expectation.eligible_witness_ids == ["the-time-machine"]
+
+
+def test_validation_record_has_two_pass_step_and_final_ledger_hash() -> None:
+    payload = _validation()
+    payload.update(
+        {
+            "stage": "candidate_frozen",
+            "validation_step": "frozen",
+            "candidate_commit": COMMIT,
+            "candidate_profile_sha256": HASH,
+            "candidate_ledger_sha256": HASH,
+        }
+    )
+
+    record = ValidationRecord.model_validate(payload)
+
+    assert record.validation_step == "frozen"
+    assert record.final_ledger_sha256 is None
+
+
+def test_validation_models_reject_forbidden_aggregate_score_fields() -> None:
+    payload = _validation()
+    payload["authenticity_score"] = 0.5
+
+    with pytest.raises(ValidationError, match="authenticity_score"):
+        ValidationRecord.model_validate(payload)

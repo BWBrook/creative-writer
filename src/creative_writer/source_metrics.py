@@ -1152,9 +1152,49 @@ def measure_development(
     return metrics
 
 
+def measure_validation_partition(
+    passages: Sequence[PassageRecord],
+    config: AnalysisConfig,
+    passage_ids: set[str] | Sequence[str],
+) -> list[WitnessMetrics]:
+    """Measure one validation partition independently for each witness.
+
+    This deliberately shares the deterministic witness measurement implementation
+    with development while keeping the partition boundary explicit.  Callers
+    must supply either the held-out Wells IDs or the Tier 4 control IDs; the
+    function never pools witnesses or partitions.
+    """
+
+    allowed = set(passage_ids)
+    selected = [passage for passage in passages if passage.passage_id in allowed]
+    if len(selected) != len(allowed):
+        missing = sorted(allowed - {passage.passage_id for passage in selected})
+        raise CreativeWriterError(
+            "Validation partition passage IDs are unresolved: " + ", ".join(missing)
+        )
+    if not selected:
+        raise CreativeWriterError("Validation partition contains no passages")
+    by_witness: dict[str, list[PassageRecord]] = defaultdict(list)
+    for passage in selected:
+        by_witness[passage.witness_id].append(passage)
+    return [
+        measure_witness(
+            by_witness[witness_id],
+            config,
+        )
+        for witness_id in sorted(
+            by_witness,
+            key=lambda item: min(
+                passage.witness_ordinal for passage in by_witness[item]
+            ),
+        )
+    ]
+
+
 __all__ = [
     "WitnessMetrics",
     "measure_development",
+    "measure_validation_partition",
     "measure_witness",
     "sentence_spans",
     "sentence_token_lengths",

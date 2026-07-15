@@ -136,3 +136,106 @@ changed.
   changed; the `HoldoutManifest` model is present for the later prepare task.
 - The current worktree was already three commits ahead of `origin/main`; no
   existing commits or unrelated changes were altered.
+
+## Fix Review Findings
+
+### Status
+
+All six Task 1 review findings are fixed in implementation commit
+`e68ee06c9d19bc6d62f9a1f6a25ecf8367be75d5`.
+
+### Changes
+
+- Set the story analysis configuration and test fixture composition window to
+  the canonical admitted `1897-1899` window. The Phase 2A admission registry,
+  including the 1895 `The Time Machine` authority witness, was not changed.
+- Made whole-work holdouts explicit in `HoldoutManifest`: declared whole-work
+  IDs must have witness records; those records have zero development windows
+  and at least one holdout window; all other witnesses require both window
+  types. Passage coverage remains an orchestration responsibility.
+- Updated `ValidationRecord` lifecycle rules so development may omit candidate
+  hashes, candidate-frozen and validated stages require candidate commit,
+  profile, and ledger hashes, and the final profile hash is forbidden before
+  validated and required at validated.
+- Made the new schema boundary strict with `ConfigDict(strict=True)`, strict
+  string/integer/float fields, and a strict composition-window model. YAML-native
+  integers, floats, and PyYAML-loaded datetimes remain accepted; string
+  `"0.2"` is rejected.
+- Split the compound negative tests into isolated malformed-hash, empty-text,
+  selection-mismatch, duplicate-claim-ID, and forbidden-extra-field tests, and
+  added focused whole-work and validation-lifecycle positive/negative tests.
+
+### TDD and verification
+
+RED, before implementation:
+
+```text
+uv run pytest tests/test_source_analysis_models.py -q
+Result: 9 failed, 16 passed.
+Expected failures covered the 1895 fixture/config, universal development-window
+requirement, string holdout-fraction coercion, development without candidate
+hashes, whole-work topology, and pre-validation final hash.
+```
+
+GREEN focused suite:
+
+```text
+uv run pytest tests/test_source_analysis_models.py -q
+Result: 26 passed in 0.10s.
+```
+
+Full regression suite:
+
+```text
+uv run pytest -q
+Result: 147 passed in 7.88s.
+```
+
+YAML scalar-boundary smoke check:
+
+```text
+uv run python - <<'PY'
+import yaml
+from pathlib import Path
+path = Path('stories/time-expedition/source-study/analysis.yml')
+raw = yaml.safe_load(path.read_text())
+print(type(raw['composition_window']['start']).__name__, raw['composition_window'])
+print(type(raw['partition']['holdout_fraction']).__name__, raw['partition']['holdout_fraction'])
+PY
+Result: int {'start': 1897, 'end': 1899}
+        float 0.2
+```
+
+Diff and scope checks:
+
+```text
+git diff --check
+Result: passed.
+
+Changed implementation paths in e68ee06:
+src/creative_writer/source_analysis_models.py
+tests/test_source_analysis_models.py
+stories/time-expedition/source-study/analysis.yml
+Result: no raw data or unrelated artefacts changed.
+```
+
+### Self-review
+
+- The canonical window is applied only to the Phase 2B analysis config and
+  fixture; the source-admission authority records remain intact.
+- Whole-work and partitioned witness rules are enforced at the manifest level,
+  with duplicate witness/window/passage checks retained and complete passage
+  coverage deliberately deferred to orchestration.
+- Lifecycle checks distinguish protocol/development from candidate freeze and
+  final validation, including the previously missing final-hash guard.
+- Strict validation is compatible with the repository's `yaml.safe_load` path:
+  valid YAML-native numeric values and timestamp datetimes pass, while scalar
+  strings are not silently coerced.
+- The implementation diff is restricted to the three allowed files; this
+  report is the only subsequent file change.
+
+### Concerns
+
+No unresolved concerns. The separate report commit hash is returned in the
+handoff because recording a commit's own hash inside that same commit would be
+self-referential.

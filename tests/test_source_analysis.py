@@ -5,12 +5,14 @@ import hashlib
 import io
 import json
 import subprocess
+from types import SimpleNamespace
 import zipfile
 from pathlib import Path
 
 import pytest
 import yaml
 import creative_writer.source_analysis as source_analysis
+import creative_writer.source_evidence as source_evidence
 
 from creative_writer.exceptions import CreativeWriterError
 from creative_writer.files import load_yaml_model
@@ -1607,6 +1609,128 @@ def test_develop_generated_metrics_mutations_with_empty_protocol_profile_write_d
     assert "Evidence validation diagnostics" in report_text
     assert "Blocking errors: **" in report_text
     assert "Warnings: **0**" in report_text
+
+
+def test_develop_rejects_returned_and_emitted_metric_scalar_mutation_atomically(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _story, _ = _fixture(tmp_path)
+    _commit_fixture_holdouts(tmp_path)
+    metrics_path = tmp_path / "build/fixture/source-study/development-metrics.json"
+    report_path = tmp_path / "build/fixture/source-study/development-report.md"
+    original_measure_development = source_analysis.measure_development
+
+    def mutate_metrics(*args: object, **kwargs: object) -> object:
+        result = original_measure_development(*args, **kwargs)
+        assert isinstance(result, list)
+        document = json.loads(metrics_path.read_text(encoding="utf-8"))
+        document["witnesses"][0]["total_words"] = []
+        metrics_path.write_text(json.dumps(document) + "\n", encoding="utf-8")
+        result[0].total_words = []
+        return result
+
+    monkeypatch.setattr(source_analysis, "measure_development", mutate_metrics)
+    with pytest.raises(CreativeWriterError, match="(?i)schema|total_words|metric"):
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+    assert "Evidence validation diagnostics" in report_path.read_text(encoding="utf-8")
+    assert not list(report_path.parent.glob(".*.tmp"))
+
+
+def test_develop_rejects_unhashable_returned_metric_identity_atomically(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _story, _ = _fixture(tmp_path)
+    _commit_fixture_holdouts(tmp_path)
+    report_path = tmp_path / "build/fixture/source-study/development-report.md"
+    original_measure_development = source_analysis.measure_development
+
+    def mutate_metrics(*args: object, **kwargs: object) -> object:
+        result = original_measure_development(*args, **kwargs)
+        assert isinstance(result, list)
+        result[0].source_id = []
+        return result
+
+    monkeypatch.setattr(source_analysis, "measure_development", mutate_metrics)
+    with pytest.raises(CreativeWriterError, match="(?i)schema|source_id|identity"):
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+    assert "Evidence validation diagnostics" in report_path.read_text(encoding="utf-8")
+
+
+def test_develop_rejects_duplicate_metric_json_keys_with_diagnostic(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _story, _ = _fixture(tmp_path)
+    _commit_fixture_holdouts(tmp_path)
+    metrics_path = tmp_path / "build/fixture/source-study/development-metrics.json"
+    report_path = tmp_path / "build/fixture/source-study/development-report.md"
+    original_measure_development = source_analysis.measure_development
+
+    def mutate_metrics(*args: object, **kwargs: object) -> object:
+        result = original_measure_development(*args, **kwargs)
+        document = json.loads(metrics_path.read_text(encoding="utf-8"))
+        total_words = document["witnesses"][0]["total_words"]
+        text = metrics_path.read_text(encoding="utf-8")
+        text = text.replace(
+            f'"total_words": {total_words},',
+            f'"total_words": {total_words}, "total_words": {total_words + 1},',
+            1,
+        )
+        metrics_path.write_text(text, encoding="utf-8")
+        return result
+
+    monkeypatch.setattr(source_analysis, "measure_development", mutate_metrics)
+    with pytest.raises(CreativeWriterError, match="(?i)duplicate.*key"):
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+    assert "Blocking errors: **1**" in report_path.read_text(encoding="utf-8")
+
+
+def test_develop_rejects_malformed_nested_candidate_heuristic_atomically(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _story, _ = _fixture(tmp_path)
+    _commit_fixture_holdouts(tmp_path)
+    metrics_path = tmp_path / "build/fixture/source-study/development-metrics.json"
+    report_path = tmp_path / "build/fixture/source-study/development-report.md"
+    original_measure_development = source_analysis.measure_development
+
+    def mutate_metrics(*args: object, **kwargs: object) -> object:
+        result = original_measure_development(*args, **kwargs)
+        document = json.loads(metrics_path.read_text(encoding="utf-8"))
+        document["candidate_heuristics"]["observation_to_explanation_movement"] = []
+        metrics_path.write_text(json.dumps(document) + "\n", encoding="utf-8")
+        return result
+
+    monkeypatch.setattr(source_analysis, "measure_development", mutate_metrics)
+    with pytest.raises(CreativeWriterError, match="(?i)candidate_heuristics|schema"):
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+    assert "Blocking errors: **1**" in report_path.read_text(encoding="utf-8")
+
+
+def test_develop_converts_metric_json_recursion_error_to_atomic_diagnostic(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _story, _ = _fixture(tmp_path)
+    _commit_fixture_holdouts(tmp_path)
+    report_path = tmp_path / "build/fixture/source-study/development-report.md"
+
+    def safe_recursion_failure(*args: object, **kwargs: object) -> object:
+        raise RecursionError("bounded nested JSON fixture")
+
+    monkeypatch.setattr(
+        source_evidence,
+        "json",
+        SimpleNamespace(loads=safe_recursion_failure),
+    )
+    with pytest.raises(CreativeWriterError, match="(?i)recursion|metric"):
+        run_source_analysis(tmp_path, "fixture", "develop")
+
+    report_text = report_path.read_text(encoding="utf-8")
+    assert "Evidence validation diagnostics" in report_text
+    assert "Blocking errors: **1**" in report_text
 
 
 @pytest.mark.parametrize(

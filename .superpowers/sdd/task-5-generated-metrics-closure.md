@@ -9,8 +9,11 @@ new commit hash is asserted here.
 The change is limited to:
 
 - `src/creative_writer/source_analysis.py`
+- `src/creative_writer/source_analysis_models.py`
 - `src/creative_writer/source_evidence.py`
 - `tests/test_source_analysis.py`
+- `tests/test_source_analysis_models.py`
+- `.superpowers/sdd/task-5-strict-metrics-schema.md`
 - `.superpowers/sdd/task-5-closure-fixes.md`
 - `.superpowers/sdd/task-5-generated-metrics-closure.md`
 
@@ -25,6 +28,12 @@ were changed.
   measurements, schema/version, witness uniqueness/set membership, identity
   grammar, and exact metric record types/values are checked before profile
   equality work.
+- Every generated witness record and the complete development-metrics document
+  now pass independent strict Pydantic schemas; candidate heuristics and all
+  nested metric containers have explicit contracts.
+- The writer return is schema-validated before identity construction, while
+  the on-disk JSON uses a duplicate-key rejecting decoder and is schema-
+  validated independently before exact comparisons.
 - The empty protocol quantitative profile returns only after the generated
   JSON gate succeeds. CSV, metric-reference, and profile-value equality checks
   remain conditional for the genuinely empty protocol template.
@@ -43,21 +52,19 @@ were changed.
 
 ## TDD evidence
 
-The new mutation tests were run RED before the production changes:
+The retained mutation selector was freshly re-run after the strict schema
+closure:
 
 ```text
 uv run pytest tests/test_source_analysis.py -k 'generated_metrics_mutations_with_empty_protocol_profile or each_forbidden_locator_form or registry_identity_absent_from_retained_registry_at_pipeline_gate' -q
-6 failed, 5 passed, 128 deselected
+11 passed, 138 deselected
 ```
 
-After the implementation, the same focused command was GREEN:
+The new strict-schema regressions were run RED before the production changes
+(`5 failed, 144 deselected`) and then GREEN (`5 passed, 144 deselected`).
 
-```text
-11 passed, 128 deselected
-```
-
-The retained prior malformed-metrics test matrix was preserved, and the
-broader closure slice passed:
+The retained malformed-metrics test matrix was preserved, and the broader
+closure slice passed:
 
 ```text
 uv run pytest tests/test_source_analysis.py -k 'develop and (malformed_generated_metrics or empty_protocol_profile or generated_metrics_mutations or each_forbidden_locator_form or registry_identity_absent_from_retained_registry_at_pipeline_gate or trailing_space_duplicate)' -q
@@ -70,10 +77,10 @@ Final verification was run after the documentation edits:
 
 ```text
 uv run pytest tests/test_source_analysis.py tests/test_source_analysis_models.py -q
-197 passed in 41.32s
+204 passed
 
 uv run pytest -q
-371 passed in 51.65s
+378 passed in 53.86s
 
 uv run python -m compileall -q src tests
 passed (exit 0)

@@ -17,9 +17,11 @@ from creative_writer.source_analysis_models import (
     CounterexampleSearch,
     EvidenceLedger,
     EvidenceClaim,
+    GeneratedDevelopmentMetrics,
     HoldoutManifest,
     PassageRecord,
     WitnessDescriptor,
+    WitnessMetricRecord,
     QuantitativeProfile,
     ValidationRecord,
     _heading_slug,
@@ -29,6 +31,139 @@ from creative_writer.source_analysis_models import (
 
 HASH = "a" * 64
 COMMIT = "b" * 40
+
+
+def _metric_record_payload() -> dict[str, object]:
+    distribution = {
+        "count": 1,
+        "minimum": 2,
+        "p10": 2,
+        "p25": 2,
+        "median": 2,
+        "p75": 2,
+        "p90": 2,
+        "maximum": 2,
+        "mean": 2,
+    }
+    return {
+        "witness_id": "wells-alpha",
+        "source_id": "wells-alpha",
+        "selection_id": None,
+        "witness_ordinal": 1,
+        "total_words": 2,
+        "total_passages": 1,
+        "total_sentences": 1,
+        "total_sections": 1,
+        "sentence_length_distribution": distribution,
+        "paragraph_length_distribution": distribution,
+        "passage_length_distribution": distribution,
+        "dialogue_proportion": {
+            "dialogue_words": 0,
+            "denominator_words": 2,
+            "proportion": 0.0,
+            "unknown_words": 0,
+            "unknown_passages": 0,
+        },
+        "dialogue_run_lengths": [],
+        "punctuation_frequencies": {
+            "periods_raw": 1,
+            "periods": 1,
+            "question_marks": 0,
+            "exclamation_marks": 0,
+            "colons": 0,
+            "semicolons": 0,
+            "parentheses_open": 0,
+            "parentheses_close": 0,
+            "hyphen": 0,
+            "en_dash": 0,
+            "em_dash": 0,
+            "ellipsis_unicode": 0,
+            "ellipsis_ascii": 0,
+            "double_quote_open": 0,
+            "double_quote_close": 0,
+            "single_quote_open": 0,
+            "single_quote_close": 0,
+            "straight_double_quote": 0,
+            "straight_single_quote": 0,
+            "guillemet_open": 0,
+            "guillemet_close": 0,
+            "normalization_artifacts": {"bom": 0, "hair_space": 0, "nbsp": 0},
+            "parentheses_total": 0,
+            "dash_total": 0,
+            "ellipsis_total": 0,
+            "quote_counts_by_codepoint": {
+                "U+2018": 0,
+                "U+2019": 0,
+                "U+201C": 0,
+                "U+201D": 0,
+                "U+0027": 0,
+                "U+0022": 0,
+                "U+00AB": 0,
+                "U+00BB": 0,
+            },
+            "denominator_words": 2,
+            "per_1000_words": {"periods_raw": 500.0},
+        },
+        "speech_attribution_verbs": {"said": 0},
+        "reporting_verbs": {"reported": 0},
+        "first_person_pronoun_frequencies": {"i": 0},
+        "third_person_pronoun_frequencies": {"he": 0},
+        "demonstrative_frequencies": {"this": 0},
+        "modal_frequencies": {"could": 0},
+        "epistemic_frequencies": {"perhaps": 0},
+        "lexicon_frequencies": {"function_words": {"the": 1}},
+        "normalized_frequencies": {
+            "function_words": {
+                "counts": {"the": 1},
+                "denominator_words": 2,
+                "per_1000_words": {"the": 500.0},
+            }
+        },
+        "function_word_frequencies": {"the": 1},
+        "function_word_sequence_frequencies": {},
+        "paragraph_openings": {"other": 1},
+        "paragraph_transitions": {},
+        "moving_window_lexical_concentration": {
+            "sections": [{
+                "section_id": "Chapter One",
+                "heading_path": ["Chapter One"],
+                "token_count": 2,
+                "window_width": 2,
+                "window_count": 1,
+                "window_values": [1.0],
+                "mean": 1.0,
+                "minimum": 1.0,
+                "median": 1.0,
+                "maximum": 1.0,
+            }],
+            "window_width_rule": "max(1, ceil(sqrt(section_token_count)))",
+        },
+        "block_proportions": {
+            "counts": {"dialogue": 0, "narrative": 1, "quotation": 0, "verse": 0, "list": 0},
+            "denominator_passages": 1,
+            "proportions": {"dialogue": 0.0, "narrative": 1.0, "quotation": 0.0, "verse": 0.0, "list": 0.0},
+        },
+        "section_level_variation": {
+            "total_words": {"minimum": 2, "maximum": 2, "range": 0, "count": 1}
+        },
+        "section_metrics": [{
+            "section_id": "Chapter One",
+            "heading_path": ["Chapter One"],
+            "total_words": 2,
+            "total_passages": 1,
+            "total_sentences": 1,
+            "dialogue_words": 0,
+            "question_marks": 0,
+            "exclamation_marks": 0,
+            "colons": 0,
+            "semicolons": 0,
+            "parentheses_total": 0,
+            "ellipsis_total": 0,
+            "dash_total": 0,
+            "lexicon_frequencies": {"function_words": {"the": 1}},
+        }],
+        "candidate_flags": [],
+    }
 
 
 def _dimensions() -> list[dict[str, object]]:
@@ -138,6 +273,60 @@ def _analysis_config() -> dict[str, object]:
             "analysis_report": "build/time-expedition/source-study/analysis-report.md",
         },
     }
+
+
+def test_generated_metric_witness_schema_is_strict_for_emitted_scalar_fields() -> None:
+    payload = _metric_record_payload()
+    WitnessMetricRecord.model_validate(payload)
+
+    for field, value in {
+        "total_words": [],
+        "total_passages": True,
+        "witness_ordinal": "1",
+        "source_id": [],
+    }.items():
+        mutated = {**payload, field: value}
+        with pytest.raises(ValidationError):
+            WitnessMetricRecord.model_validate(mutated)
+
+
+def test_generated_metric_document_schemas_candidate_heuristics_and_extras() -> None:
+    record = _metric_record_payload()
+    document = {
+        "schema_version": 1,
+        "stage": "development",
+        "study_id": "time-expedition-wells-phase-2b",
+        "config_sha256": HASH,
+        "index_sha256": HASH,
+        "manifest_sha256": HASH,
+        "provenance": {
+            "study_id": "time-expedition-wells-phase-2b",
+            "stage": "development",
+            "config_sha256": HASH,
+            "index_sha256": HASH,
+            "manifest_sha256": HASH,
+            "config_path": "stories/fixture/source-study/analysis.yml",
+            "index_path": "build/fixture/source-study/passage-index.jsonl",
+            "manifest_path": "stories/fixture/source-study/holdouts.yml",
+        },
+        "enabled_measurements": ["word_count"],
+        "candidate_heuristics": {
+            "observation_to_explanation_movement": {
+                "status": "deferred",
+                "reason": "Deferred to human close reading because it cannot be measured from declared lexicons without interpretation.",
+            }
+        },
+        "witnesses": [record],
+    }
+    GeneratedDevelopmentMetrics.model_validate(document)
+
+    nested_mutation = {**document, "candidate_heuristics": {"observation_to_explanation_movement": []}}
+    with pytest.raises(ValidationError):
+        GeneratedDevelopmentMetrics.model_validate(nested_mutation)
+
+    extra_mutation = {**document, "unexpected": True}
+    with pytest.raises(ValidationError):
+        GeneratedDevelopmentMetrics.model_validate(extra_mutation)
 
 
 def _passage() -> dict[str, object]:

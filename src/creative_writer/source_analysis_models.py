@@ -595,6 +595,213 @@ class MetricCandidateFlag(StrictModel):
     interpretive_finding: StrictBool = False
 
 
+MetricNumber = StrictInt | StrictFloat
+MetricIntMap = dict[NonEmptyText, StrictInt]
+MetricNumberMap = dict[NonEmptyText, MetricNumber]
+
+
+class MetricDialogueProportion(StrictModel):
+    dialogue_words: StrictInt = Field(ge=0)
+    denominator_words: StrictInt = Field(ge=0)
+    proportion: MetricNumber = Field(ge=0)
+    unknown_words: StrictInt = Field(ge=0)
+    unknown_passages: StrictInt = Field(ge=0)
+
+
+class MetricNormalizationArtifacts(StrictModel):
+    bom: StrictInt = Field(ge=0)
+    hair_space: StrictInt = Field(ge=0)
+    nbsp: StrictInt = Field(ge=0)
+
+
+class MetricQuoteCounts(StrictModel):
+    u2018: StrictInt = Field(alias="U+2018", ge=0)
+    u2019: StrictInt = Field(alias="U+2019", ge=0)
+    u201c: StrictInt = Field(alias="U+201C", ge=0)
+    u201d: StrictInt = Field(alias="U+201D", ge=0)
+    u0027: StrictInt = Field(alias="U+0027", ge=0)
+    u0022: StrictInt = Field(alias="U+0022", ge=0)
+    u00ab: StrictInt = Field(alias="U+00AB", ge=0)
+    u00bb: StrictInt = Field(alias="U+00BB", ge=0)
+
+    model_config = ConfigDict(extra="forbid", strict=True, populate_by_name=True)
+
+
+class MetricPunctuationFrequencies(StrictModel):
+    periods_raw: StrictInt = Field(ge=0)
+    periods: StrictInt = Field(ge=0)
+    question_marks: StrictInt = Field(ge=0)
+    exclamation_marks: StrictInt = Field(ge=0)
+    colons: StrictInt = Field(ge=0)
+    semicolons: StrictInt = Field(ge=0)
+    parentheses_open: StrictInt = Field(ge=0)
+    parentheses_close: StrictInt = Field(ge=0)
+    hyphen: StrictInt = Field(ge=0)
+    en_dash: StrictInt = Field(ge=0)
+    em_dash: StrictInt = Field(ge=0)
+    ellipsis_unicode: StrictInt = Field(ge=0)
+    ellipsis_ascii: StrictInt = Field(ge=0)
+    double_quote_open: StrictInt = Field(ge=0)
+    double_quote_close: StrictInt = Field(ge=0)
+    single_quote_open: StrictInt = Field(ge=0)
+    single_quote_close: StrictInt = Field(ge=0)
+    straight_double_quote: StrictInt = Field(ge=0)
+    straight_single_quote: StrictInt = Field(ge=0)
+    guillemet_open: StrictInt = Field(ge=0)
+    guillemet_close: StrictInt = Field(ge=0)
+    normalization_artifacts: MetricNormalizationArtifacts
+    parentheses_total: StrictInt = Field(ge=0)
+    dash_total: StrictInt = Field(ge=0)
+    ellipsis_total: StrictInt = Field(ge=0)
+    quote_counts_by_codepoint: MetricQuoteCounts
+    denominator_words: StrictInt = Field(ge=0)
+    per_1000_words: MetricNumberMap
+
+
+class MetricNormalizedFrequency(StrictModel):
+    counts: MetricIntMap
+    denominator_words: StrictInt = Field(ge=0)
+    per_1000_words: MetricNumberMap
+
+
+class MetricSectionConcentration(StrictModel):
+    section_id: NonEmptyText
+    heading_path: list[NonEmptyText] = Field(min_length=1)
+    token_count: StrictInt = Field(ge=0)
+    window_width: StrictInt = Field(ge=0)
+    window_count: StrictInt = Field(ge=0)
+    window_values: list[MetricNumber]
+    mean: MetricNumber | None
+    minimum: MetricNumber | None
+    median: MetricNumber | None
+    maximum: MetricNumber | None
+
+
+class MetricMovingWindowLexicalConcentration(StrictModel):
+    sections: list[MetricSectionConcentration]
+    window_width_rule: NonEmptyText
+
+
+class MetricBlockCounts(StrictModel):
+    dialogue: StrictInt = Field(ge=0)
+    narrative: StrictInt = Field(ge=0)
+    quotation: StrictInt = Field(ge=0)
+    verse: StrictInt = Field(ge=0)
+    list: StrictInt = Field(ge=0)
+
+
+class MetricBlockProportions(StrictModel):
+    counts: MetricBlockCounts
+    denominator_passages: StrictInt = Field(ge=0)
+    proportions: dict[Literal["dialogue", "narrative", "quotation", "verse", "list"], MetricNumber]
+
+
+class MetricSectionVariation(StrictModel):
+    minimum: StrictInt = Field(ge=0)
+    maximum: StrictInt = Field(ge=0)
+    range: StrictInt = Field(ge=0)
+    count: StrictInt = Field(ge=1)
+
+
+class MetricSection(StrictModel):
+    section_id: NonEmptyText
+    heading_path: list[NonEmptyText] = Field(min_length=1)
+    total_words: StrictInt = Field(ge=0)
+    total_passages: StrictInt = Field(ge=0)
+    total_sentences: StrictInt = Field(ge=0)
+    dialogue_words: StrictInt = Field(ge=0)
+    question_marks: StrictInt = Field(ge=0)
+    exclamation_marks: StrictInt = Field(ge=0)
+    colons: StrictInt = Field(ge=0)
+    semicolons: StrictInt = Field(ge=0)
+    parentheses_total: StrictInt = Field(ge=0)
+    ellipsis_total: StrictInt = Field(ge=0)
+    dash_total: StrictInt = Field(ge=0)
+    lexicon_frequencies: dict[NonEmptyText, MetricIntMap]
+
+
+class WitnessMetricRecord(StrictModel):
+    """Complete, strict contract for one ``WitnessMetrics.to_dict`` payload."""
+
+    witness_id: NonEmptyText
+    source_id: Slug
+    selection_id: Slug | None
+    witness_ordinal: StrictInt = Field(ge=1)
+    total_words: StrictInt = Field(ge=0)
+    total_passages: StrictInt = Field(ge=1)
+    total_sentences: StrictInt = Field(ge=0)
+    total_sections: StrictInt = Field(ge=1)
+    sentence_length_distribution: MetricDistribution
+    paragraph_length_distribution: MetricDistribution
+    passage_length_distribution: MetricDistribution
+    dialogue_proportion: MetricDialogueProportion
+    dialogue_run_lengths: list[StrictInt]
+    punctuation_frequencies: MetricPunctuationFrequencies
+    speech_attribution_verbs: MetricIntMap
+    reporting_verbs: MetricIntMap
+    first_person_pronoun_frequencies: MetricIntMap
+    third_person_pronoun_frequencies: MetricIntMap
+    demonstrative_frequencies: MetricIntMap
+    modal_frequencies: MetricIntMap
+    epistemic_frequencies: MetricIntMap
+    lexicon_frequencies: dict[NonEmptyText, MetricIntMap]
+    normalized_frequencies: dict[NonEmptyText, MetricNormalizedFrequency]
+    function_word_frequencies: MetricIntMap
+    function_word_sequence_frequencies: MetricIntMap
+    paragraph_openings: MetricIntMap
+    paragraph_transitions: MetricIntMap
+    moving_window_lexical_concentration: MetricMovingWindowLexicalConcentration
+    block_proportions: MetricBlockProportions
+    section_level_variation: dict[NonEmptyText, MetricSectionVariation]
+    section_metrics: list[MetricSection] = Field(min_length=1)
+    candidate_flags: list[MetricCandidateFlag]
+
+    @model_validator(mode="after")
+    def validate_identity(self) -> "WitnessMetricRecord":
+        _validate_selection_identity(self.witness_id, self.source_id, self.selection_id)
+        return self
+
+
+class MetricProvenance(StrictModel):
+    study_id: Slug
+    stage: Literal["development"]
+    config_sha256: SHA256
+    index_sha256: SHA256
+    manifest_sha256: SHA256
+    config_path: RelativePath
+    index_path: RelativePath
+    manifest_path: RelativePath
+
+
+OBSERVATION_TO_EXPLANATION_DEFERRED_REASON = (
+    "Deferred to human close reading because it cannot be measured from declared lexicons without interpretation."
+)
+
+
+class ObservationToExplanationMovement(StrictModel):
+    status: Literal["deferred"]
+    reason: Literal[OBSERVATION_TO_EXPLANATION_DEFERRED_REASON]
+
+
+class MetricCandidateHeuristics(StrictModel):
+    observation_to_explanation_movement: ObservationToExplanationMovement
+
+
+class GeneratedDevelopmentMetrics(StrictModel):
+    """Complete strict schema for the generated development-metrics document."""
+
+    schema_version: Literal[1]
+    stage: Literal["development"]
+    study_id: Slug
+    config_sha256: SHA256
+    index_sha256: SHA256
+    manifest_sha256: SHA256
+    provenance: MetricProvenance
+    enabled_measurements: list[NonEmptyText] = Field(min_length=1)
+    candidate_heuristics: MetricCandidateHeuristics
+    witnesses: list[WitnessMetricRecord] = Field(min_length=1)
+
+
 class MetricReference(StrictModel):
     id: Slug
     path: RelativePath

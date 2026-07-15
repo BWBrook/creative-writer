@@ -35,6 +35,7 @@ from creative_writer.source_analysis_models import (
     PassageRecord,
     QuantitativeProfile,
     ValidationRecord,
+    WitnessMetricRecord,
     WitnessDescriptor,
     WitnessHoldouts,
     load_validation_document,
@@ -995,18 +996,55 @@ def _post_metric_call(path: Path, report: Path, operation: Any) -> Any:
 
     try:
         return operation()
-    except (CreativeWriterError, OSError, UnicodeError) as exc:
+    except (
+        CreativeWriterError,
+        OSError,
+        UnicodeError,
+        json.JSONDecodeError,
+        RecursionError,
+        TypeError,
+        ValueError,
+        ValidationError,
+    ) as exc:
         diagnostic = ValidationResult(
             errors=[
                 ValidationIssue(
                     "error",
                     str(path),
-                    message="Post-metric evidence validation failed",
+                    message=f"Post-metric evidence validation failed: {exc}",
                 )
             ]
         )
         _write_development_diagnostics(report, diagnostic)
-        raise
+        if isinstance(exc, CreativeWriterError):
+            raise
+        raise CreativeWriterError(f"Post-metric evidence validation failed: {exc}") from exc
+
+
+def _validate_returned_metric_records(metrics: object) -> list[dict[str, object]]:
+    """Independently validate the metric writer return before comparisons."""
+
+    if not isinstance(metrics, list):
+        raise TypeError("measure_development must return a list of witness metrics")
+    records: list[dict[str, object]] = []
+    for ordinal, metric in enumerate(metrics, start=1):
+        if isinstance(metric, dict):
+            payload = metric
+        else:
+            serializer = getattr(metric, "to_dict", None)
+            if not callable(serializer):
+                raise TypeError(f"returned witness metric {ordinal} has no to_dict serializer")
+            payload = serializer()
+        if not isinstance(payload, dict):
+            raise TypeError(f"returned witness metric {ordinal} serialized payload must be an object")
+        try:
+            WitnessMetricRecord.model_validate(payload)
+        except (ValidationError, TypeError, ValueError, RecursionError):
+            raise
+        records.append(payload)
+    if not records:
+        raise ValueError("measure_development returned no witness metrics")
+    return records
 
 
 def _validate_development_dossier_set(
@@ -1197,6 +1235,7 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
         "index_path": _relative_to_root(index_path, root),
         "manifest_path": _relative_to_root(holdout_path, root),
     }
+    development_report = generated_paths["development_report"]
     metrics = measure_development(
         passages,
         config,
@@ -1209,13 +1248,17 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
         index_path=expected_metric_provenance["index_path"],
         manifest_path=expected_metric_provenance["manifest_path"],
     )
+    returned_metric_records = _post_metric_call(
+        generated_paths["development_metrics"],
+        development_report,
+        lambda: _validate_returned_metric_records(metrics),
+    )
 
     evidence_result = ValidationResult()
     ledger_path = story_dir / "source-study" / "evidence-ledger.yml"
     profile_path = story_dir / "source-study" / "wells-profile.md"
     quantitative_path = story_dir / "source-study" / "quantitative-profile.yml"
     validation_path = story_dir / "source-study" / "validation.md"
-    development_report = generated_paths["development_report"]
     required_evidence_paths = [story_dir / "source-study" / name for name in CANONICAL_EVIDENCE_FILENAMES]
     for path in required_evidence_paths:
         if not path.exists():
@@ -1323,10 +1366,14 @@ def _develop(root: Path, slug: str) -> SourceAnalysisResult:
                 metrics_csv_path=generated_paths["development_metrics_csv"],
                 expected_provenance=expected_metric_provenance,
                 expected_witness_identities={
-                    (metric.witness_id, metric.source_id, metric.selection_id)
-                    for metric in metrics
+                    (
+                        record["witness_id"],
+                        record["source_id"],
+                        record["selection_id"],
+                    )
+                    for record in returned_metric_records
                 },
-                expected_metric_records=[metric.to_dict() for metric in metrics],
+                expected_metric_records=returned_metric_records,
             )
             return raise_for_issues(result, "Quantitative profile validation")
 

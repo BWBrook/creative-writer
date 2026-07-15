@@ -12,8 +12,11 @@ import json
 import re
 import unicodedata
 from dataclasses import dataclass, field
+from json import JSONDecodeError
 from pathlib import Path
 from typing import Iterable, Sequence
+
+from pydantic import ValidationError
 
 from creative_writer.exceptions import CreativeWriterError
 from creative_writer.models import SourceStudyAdmission, SourcesRegistry
@@ -21,8 +24,11 @@ from creative_writer.source_analysis_models import (
     AnalysisConfig,
     EvidenceClaim,
     EvidenceLedger,
+    GeneratedDevelopmentMetrics,
     PassageRecord,
     QuantitativeProfile,
+    WitnessQuantitativeProfile,
+    WitnessMetricRecord,
 )
 
 
@@ -34,10 +40,17 @@ PROTOCOL_PROFILE_SENTINEL = "No reviewed descriptive synthesis is recorded at pr
 FORBIDDEN_TEXT_MIN_TOKENS = 8
 _TOKEN_RE = re.compile(r"[^\W_]+(?:['’][^\W_]+)*", re.UNICODE)
 _PLACEHOLDER_RE = re.compile(r"\b(?:tbd|todo|placeholder|no reviewed|reserved for)\b", re.I)
-_METRIC_IDENTITY_RE = re.compile(
-    r"^[a-z0-9]+(?:-[a-z0-9]+)*(?:/[a-z0-9]+(?:-[a-z0-9]+)*)?$"
-)
-_METRIC_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+class DuplicateJSONKeyError(ValueError):
+    """Raised when a JSON object repeats a key at any nesting level."""
+
+
+def _reject_duplicate_json_keys(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    document: dict[str, object] = {}
+    for key, value in pairs:
+        if key in document:
+            raise DuplicateJSONKeyError(f"duplicate key: {key}")
+        document[key] = value
+    return document
 
 
 def _json_values_equal_exact(actual: object, expected: object) -> bool:
@@ -166,18 +179,11 @@ def _canonical_root_path(root: Path, path: Path) -> Path:
     return candidate.resolve(strict=False)
 
 
-def _identity_tuple(item: object) -> tuple[object, object, object]:
-    if isinstance(item, dict):
-        selection_id = item.get("selection_id") or None
-        return (item.get("witness_id"), item.get("source_id"), selection_id)
-    return (None, None, None)
-
-
-def _profile_identity_tuple(item: object) -> tuple[object, object, object]:
+def _profile_identity_tuple(item: WitnessQuantitativeProfile) -> tuple[str, str, str | None]:
     return (
-        getattr(item, "witness_id", None),
-        getattr(item, "source_id", None),
-        getattr(item, "selection_id", None),
+        item.witness_id,
+        item.source_id,
+        item.selection_id,
     )
 
 
@@ -982,100 +988,56 @@ def collect_quantitative_profile_issues(
     if stage_order[profile.stage] > stage_order[config.study_status]:
         result.errors.append(_error(metrics_path, "Quantitative profile stage cannot lead configured analysis stage"))
     try:
-        document = json.loads(metrics_path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, ValueError) as exc:
-        result.errors.append(_error(metrics_path, f"Unable to read generated metric JSON: {exc}"))
-        return result.sorted()
-    if not isinstance(document, dict):
-        result.errors.append(_error(metrics_path, "Generated development metric JSON must be a JSON object with a witnesses list"))
-        return result.sorted()
-    scalar_fields = (
-        "stage",
-        "study_id",
-        "config_sha256",
-        "index_sha256",
-        "manifest_sha256",
-    )
-    for field in scalar_fields:
-        value = document.get(field)
-        if not isinstance(value, str) or not value.strip():
-            result.errors.append(_error(metrics_path, "Generated development metric JSON scalar field must be a nonempty string", locator=field))
-    for field in ("config_sha256", "index_sha256", "manifest_sha256"):
-        value = document.get(field)
-        if isinstance(value, str) and not _METRIC_SHA256_RE.fullmatch(value):
-            result.errors.append(_error(metrics_path, "Generated development metric JSON provenance hash must be a SHA-256 string", locator=field))
-    if type(document.get("schema_version")) is not int or document.get("schema_version") != 1:
-        result.errors.append(_error(metrics_path, "Generated development metric JSON schema_version must be integer 1", locator="schema_version"))
-    if not isinstance(document.get("enabled_measurements"), list) or any(
-        not isinstance(item, str) or not item.strip()
-        for item in document.get("enabled_measurements", [])
-    ):
-        result.errors.append(_error(metrics_path, "Generated development metric JSON enabled_measurements must be a list of nonempty strings", locator="enabled_measurements"))
-    elif document["enabled_measurements"] != list(config.enabled_measurements):
-        result.errors.append(_error(metrics_path, "Generated development metric JSON enabled_measurements do not match the current analysis configuration", locator="enabled_measurements"))
-    if not isinstance(document.get("candidate_heuristics"), dict):
-        result.errors.append(_error(metrics_path, "Generated development metric JSON candidate_heuristics must be an object", locator="candidate_heuristics"))
-    provenance = document.get("provenance")
-    if not isinstance(provenance, dict):
-        result.errors.append(_error(metrics_path, "Generated development metric JSON provenance must be an object", locator="provenance"))
-    else:
-        for field, value in provenance.items():
-            if not isinstance(field, str) or not isinstance(value, str) or not value.strip():
-                result.errors.append(_error(metrics_path, "Generated development metric JSON provenance must contain only nonempty scalar strings", locator=str(field)))
-        for field in (
-            "study_id",
-            "stage",
-            "config_sha256",
-            "index_sha256",
-            "manifest_sha256",
-            "config_path",
-            "index_path",
-            "manifest_path",
-        ):
-            value = provenance.get(field)
-            if not isinstance(value, str) or not value.strip():
-                result.errors.append(_error(metrics_path, "Generated development metric JSON provenance fields must be nonempty strings", locator=field))
-        if expected_provenance is not None:
-            for field, expected in expected_provenance.items():
-                if field in document and document.get(field) != expected:
-                    result.errors.append(_error(metrics_path, "Generated development metric JSON contains stale top-level provenance", locator=field))
-                if provenance.get(field) != expected:
-                    result.errors.append(_error(metrics_path, "Generated development metric JSON contains stale provenance", locator=field))
-    metric_records = document.get("witnesses")
-    if not isinstance(metric_records, list):
-        result.errors.append(_error(metrics_path, "Generated development metric JSON must contain a list of object witness records"))
-        return result.sorted()
-    if any(not isinstance(item, dict) for item in metric_records):
-        result.errors.append(_error(metrics_path, "Generated development metric JSON must contain a list of object witness records"))
-        return result.sorted()
-    metric_identities: list[tuple[str, str, str | None]] = []
-    for ordinal, item in enumerate(metric_records, 1):
-        witness_id = item.get("witness_id")
-        source_id = item.get("source_id")
-        selection_id = item.get("selection_id")
-        valid_identity = (
-            isinstance(witness_id, str)
-            and bool(_METRIC_IDENTITY_RE.fullmatch(witness_id))
-            and isinstance(source_id, str)
-            and bool(re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", source_id))
-            and (selection_id is None or (
-                isinstance(selection_id, str)
-                and bool(re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", selection_id))
-            ))
-            and (
-                (selection_id is None and witness_id == source_id)
-                or (
-                    isinstance(selection_id, str)
-                    and witness_id == f"{source_id}/{selection_id}"
-                )
+        document = json.loads(
+            metrics_path.read_text(encoding="utf-8"),
+            object_pairs_hook=_reject_duplicate_json_keys,
+        )
+        parsed_document = GeneratedDevelopmentMetrics.model_validate(document)
+    except (
+        OSError,
+        UnicodeError,
+        JSONDecodeError,
+        DuplicateJSONKeyError,
+        RecursionError,
+        TypeError,
+        ValueError,
+        ValidationError,
+    ) as exc:
+        result.errors.append(
+            _error(
+                metrics_path,
+                f"Generated development metric JSON object/schema validation failed: {exc}",
             )
         )
-        if not valid_identity:
-            result.errors.append(_error(metrics_path, "Generated development metric witness identity must contain hashable strings matching the retained source/selection grammar", locator=f"witness {ordinal}"))
-            continue
-        metric_identities.append((witness_id, source_id, selection_id))
-    if len(metric_identities) != len(metric_records):
         return result.sorted()
+    if document["enabled_measurements"] != list(config.enabled_measurements):
+        result.errors.append(_error(metrics_path, "Generated development metric JSON enabled_measurements do not match the current analysis configuration", locator="enabled_measurements"))
+    provenance = document.get("provenance")
+    if expected_provenance is not None:
+        for field, expected in expected_provenance.items():
+            if field in document and document.get(field) != expected:
+                result.errors.append(_error(metrics_path, "Generated development metric JSON contains stale top-level provenance", locator=field))
+            if provenance.get(field) != expected:
+                result.errors.append(_error(metrics_path, "Generated development metric JSON contains stale provenance", locator=field))
+    metric_records = document.get("witnesses")
+
+    metric_identities = [
+        (item.witness_id, item.source_id, item.selection_id)
+        for item in parsed_document.witnesses
+    ]
+    if expected_metric_records is not None:
+        try:
+            for record in expected_metric_records:
+                WitnessMetricRecord.model_validate(record)
+        except (ValidationError, TypeError, ValueError, RecursionError) as exc:
+            result.errors.append(
+                _error(
+                    metrics_path,
+                    f"Independently measured writer return failed generated metric witness schema validation: {exc}",
+                    locator="returned witnesses",
+                )
+            )
+            return result.sorted()
     if expected_metric_records is not None and not _json_values_equal_exact(
         metric_records, list(expected_metric_records)
     ):
@@ -1088,7 +1050,7 @@ def collect_quantitative_profile_issues(
         result.errors.append(_error(metrics_path, "Quantitative metric study identity is stale"))
     if profile.study_id != config.study_id:
         result.errors.append(_error(metrics_path, "Quantitative profile study identity is stale"))
-    metric_witness_ids = [item.get("witness_id") for item in metric_records]
+    metric_witness_ids = [item.witness_id for item in parsed_document.witnesses]
     if len(metric_witness_ids) != len(set(metric_witness_ids)):
         result.errors.append(_error(metrics_path, "Generated development metric witness IDs must be unique"))
     metric_witnesses = set(metric_witness_ids)

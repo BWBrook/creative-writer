@@ -4423,6 +4423,26 @@ def _complete_committed_candidate_fixture(root: Path) -> Path:
     return story
 
 
+def test_validate_accepts_manifest_bound_generated_corpus_lock(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / ".gitignore").write_text("build/\n", encoding="utf-8")
+    _story, _ = _prepare_committed_candidate_fixture(tmp_path)
+    lock = tmp_path / "build/fixture/source-study/corpus-lock.json"
+
+    tracked = subprocess.run(
+        ["git", "ls-files", "--error-unmatch", str(lock.relative_to(tmp_path))],
+        cwd=tmp_path,
+        text=True,
+        capture_output=True,
+    )
+    assert tracked.returncode != 0
+
+    result = run_source_analysis(tmp_path, "fixture", "validate")
+
+    assert result.stage == "validate"
+
+
 def test_validate_frozen_pass_measures_only_heldout_wells_and_is_atomic(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

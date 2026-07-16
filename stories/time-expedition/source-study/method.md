@@ -31,6 +31,15 @@ control index. Their passage IDs, ordered records, partition membership, and
 SHA-256 bindings are checked as separate artifacts. No later stage reparses
 retained source Markdown.
 
+The real-corpus preparation is complete and its tracked partition manifest is
+locked. It covers twelve retained sources and fifteen analytical witnesses,
+with *The Star* reserved as a whole-work holdout. The remaining Tier 1-3
+witnesses have deterministic within-work development and holdout windows; all
+Tier 4 passages are isolated in the control index. A second preparation run
+reproduced the manifest, corpus lock, and all three indexes byte for byte.
+Observation, interpretation, and claim development remain unstarted at this
+checkpoint.
+
 Development reads only the development index and keeps measurements and
 observations per witness. The candidate freeze then records a reachable Git
 commit plus exact hashes for `analysis.yml`, `holdouts.yml`, the candidate

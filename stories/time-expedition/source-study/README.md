@@ -13,8 +13,9 @@ The generated review surface is
 `build/time-expedition/reports/source-admission-report.md`. It reconciles the
 admission record with retained-source metadata and shows authority, permitted
 and prohibited uses, selected subworks, edition risks, and retained
-fingerprints, derivation, provenance, and rights. Detailed analysis remains
-prohibited until a human reviews the completed admission report.
+fingerprints, derivation, provenance, and rights. The admitted corpus has now
+passed this gate and the deterministic Phase 2B partition is locked in
+`holdouts.yml`. Detailed evidentiary analysis has not yet begun.
 
 ## Phase 2B staged analysis
 
@@ -32,6 +33,12 @@ locks the corpus and writes three physically separate, hash-bound indexes:
 - `build/time-expedition/source-study/indexes/development.jsonl` for Tier 1-3 development material;
 - `build/time-expedition/source-study/indexes/heldout-wells.jsonl` for held-out Wells material;
 - `build/time-expedition/source-study/indexes/tier4-controls.jsonl` for Tier 4 comparative controls.
+
+The real partition contains twelve retained sources and fifteen analytical
+witnesses. *The Star* is held out in full; the other Tier 1-3 witnesses use
+deterministic within-work holdouts, while all Tier 4 material remains outside
+the development index. Re-running `prepare` reproduces the tracked manifest
+and generated indexes byte for byte.
 
 `develop` can read only the development index. Validation follows the strict
 two-pass sequence `frozen -> heldout_assessed -> complete`: the frozen pass

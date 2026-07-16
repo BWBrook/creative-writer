@@ -1081,7 +1081,7 @@ def test_source_analysis_cli_runs_complete_committed_lifecycle(
     )
     assert "tier4_controls" not in frozen_metrics
 
-    _record_heldout_assessed(story)
+    _commit_heldout_only_assessment(story)
     heldout_output = run_cli("validate")
     assert "Validation generation: " in heldout_output
     heldout_metrics = json.loads(
@@ -1090,8 +1090,11 @@ def test_source_analysis_cli_runs_complete_committed_lifecycle(
         )
     )
     assert heldout_metrics["tier4_controls"] is not None
+    assert "tier-four" in (
+        tmp_path / "build/fixture/source-study/validation/current/validation-packet.md"
+    ).read_text(encoding="utf-8")
 
-    _record_complete(story)
+    _author_and_commit_complete_outcomes(story)
     complete_output = run_cli("validate")
     assert "Validation generation: " in complete_output
     complete_report = (
@@ -4201,11 +4204,8 @@ def _commit_fixture_validation(story: Path, message: str = "update validation fi
     subprocess.run(["git", "commit", "-qm", message], cwd=root, check=True)
 
 
-def _validation_fixture_records(
-    root: Path, story: Path
-) -> tuple[PassageRecord, PassageRecord]:
+def _heldout_fixture_passage(root: Path, story: Path) -> PassageRecord:
     heldout_index = read_passage_index(root / "build/fixture/source-study/indexes/heldout-wells.jsonl")
-    control_index = read_passage_index(root / "build/fixture/source-study/indexes/tier4-controls.jsonl")
     manifest = HoldoutManifest.model_validate(
         yaml.safe_load((story / "source-study/holdouts.yml").read_text(encoding="utf-8"))
     )
@@ -4216,9 +4216,14 @@ def _validation_fixture_records(
         for window in witness.holdout_windows
         for passage_id in window.passage_ids
     }
-    heldout = next(item for item in heldout_index if item.passage_id in heldout_ids)
-    control = next(item for item in control_index if item.witness_id == "tier-four")
-    return heldout, control
+    return next(item for item in heldout_index if item.passage_id in heldout_ids)
+
+
+def _control_fixture_passage(root: Path) -> PassageRecord:
+    control_index = read_passage_index(
+        root / "build/fixture/source-study/indexes/tier4-controls.jsonl"
+    )
+    return next(item for item in control_index if item.witness_id == "tier-four")
 
 
 def _heldout_fixture_result(heldout: PassageRecord) -> dict[str, object]:
@@ -4249,26 +4254,29 @@ def _control_fixture_comparison(control: PassageRecord) -> dict[str, object]:
     }
 
 
-def _record_heldout_assessed(story: Path) -> None:
+def _commit_heldout_only_assessment(story: Path) -> None:
     root = story.parents[1]
-    heldout, control = _validation_fixture_records(root, story)
+    heldout = _heldout_fixture_passage(root, story)
     validation = _read_validation_payload(story)
     validation.update(
         {
             "validation_step": "heldout_assessed",
             "holdout_summary": "Held-out result was recorded for the original candidate claim.",
-            "control_summary": "A comparative control result was recorded only after held-out assessment.",
+            "control_summary": "Tier 4 controls remain unopened until this held-out assessment authorises the control packet.",
             "heldout_claim_results": [_heldout_fixture_result(heldout)],
-            "control_comparisons": [_control_fixture_comparison(control)],
+            "control_comparisons": [],
+            "reviewer_records": [],
+            "claim_transitions": [],
         }
     )
     _write_validation_payload(story, validation)
-    _commit_fixture_validation(story, "record held-out assessment")
+    _commit_fixture_validation(story, "record held-out-only assessment")
 
 
-def _record_complete(story: Path) -> None:
+def _author_and_commit_complete_outcomes(story: Path) -> None:
     root = story.parents[1]
-    heldout, control = _validation_fixture_records(root, story)
+    heldout = _heldout_fixture_passage(root, story)
+    control = _control_fixture_passage(root)
     ledger_path = story / "source-study/evidence-ledger.yml"
     ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
     ledger["stage"] = "validated"
@@ -4345,7 +4353,9 @@ def _record_complete(story: Path) -> None:
 
 def _complete_committed_candidate_fixture(root: Path) -> Path:
     story, _candidate_commit = _prepare_committed_candidate_fixture(root, with_claim=True)
-    _record_complete(story)
+    _commit_heldout_only_assessment(story)
+    run_source_analysis(root, "fixture", "validate")
+    _author_and_commit_complete_outcomes(story)
     return story
 
 
@@ -4398,81 +4408,116 @@ def test_validate_heldout_assessed_adds_separate_control_partition(tmp_path: Pat
     assert "tier-four" in packet
 
 
-@pytest.mark.parametrize(
-    ("invalid_field", "expected_message"),
-    [
-        ("passage", "non-control passage"),
-        ("witness", "outside the tier4_controls partition"),
-        ("role", "undeclared witness role"),
-        ("tier_partition", "non-control passage"),
-        ("cross_witness_passage", "non-control passage"),
-    ],
-)
-def test_validate_heldout_assessed_rejects_invalid_control_comparison_after_control_open(
+def test_public_cli_heldout_assessed_opens_controls_from_heldout_only_record(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
-    invalid_field: str,
-    expected_message: str,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     story, _ = _prepare_committed_candidate_fixture(tmp_path, with_claim=True)
-    _replace_validation_step(story, "heldout_assessed")
-    validation_path = story / "source-study/validation.md"
-    validation = yaml.safe_load(validation_path.read_text(encoding="utf-8").split("---", 2)[1])
-    heldout_records = parse_passage_partition(
-        (tmp_path / "build/fixture/source-study/indexes/heldout-wells.jsonl").read_bytes()
-    )
-    heldout = next(item for item in heldout_records if item.witness_id == "wells-alpha")
-    control_records = parse_passage_partition(
-        (tmp_path / "build/fixture/source-study/indexes/tier4-controls.jsonl").read_bytes()
-    )
-    control = next(item for item in control_records if item.witness_id == "tier-four")
-    comparison = {
-        "id": "control-fixture-claim",
-        "claim_id": "fixture-claim",
-        "expectation_target_id": "control-fixture",
-        "witness_id": control.witness_id,
-        "role": "tier-four role",
-        "passage_ids": [control.passage_id],
-        "comparison": "The negative control provides comparative material and does not authorize positive use.",
-        "result": "not_shared",
-        "notes": "Synthetic control comparison.",
-    }
-    if invalid_field == "passage":
-        comparison["passage_ids"] = ["missing-control-passage"]
-    elif invalid_field == "witness":
-        comparison["witness_id"] = heldout.witness_id
-    elif invalid_field == "role":
-        comparison["role"] = "undeclared control role"
-    elif invalid_field == "tier_partition":
-        comparison["passage_ids"] = [heldout.passage_id]
-    else:
-        comparison["passage_ids"] = [control.passage_id, heldout.passage_id]
-    validation["heldout_claim_results"] = [{
-        "id": "heldout-fixture-claim",
-        "claim_id": "fixture-claim",
-        "expectation_target_id": "heldout-fixture",
-        "witness_id": heldout.witness_id,
-        "role": "wells-alpha role",
-        "passage_ids": [heldout.passage_id],
-        "assessment": "qualifies",
-        "observed_tendency": "The bounded tendency is present with synthetic variation.",
-        "notes": "Synthetic held-out assessment.",
-    }]
-    validation["control_comparisons"] = [comparison]
-    validation_path.write_text(
-        "---\n" + yaml.safe_dump(validation, sort_keys=False) + "---\n\n# Synthetic validation\n",
-        encoding="utf-8",
-    )
-    _commit_fixture_validation(story, "record invalid control comparison")
+    monkeypatch.setattr(cli, "repo_root", lambda: tmp_path)
 
-    output_paths = [
-        tmp_path / "build/fixture/source-study/validation/current/validation-metrics.json",
-        tmp_path / "build/fixture/source-study/validation/current/validation-packet.md",
-        tmp_path / "build/fixture/source-study/validation/current/analysis-report.md",
-    ]
-    for path in output_paths:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(f"sentinel:{path.name}\n", encoding="utf-8")
+    assert cli.main(
+        ["source-analysis", "--story", "fixture", "--stage", "validate"]
+    ) == 0
+    capsys.readouterr()
+
+    fixture_reader = read_passage_index
+
+    def reject_fixture_control_read(path: Path) -> list[PassageRecord]:
+        if path.name == "tier4-controls.jsonl":
+            raise AssertionError("held-out assessment helper read Tier 4 before authorisation")
+        return fixture_reader(path)
+
+    def reject_control_comparison(*args: object, **kwargs: object) -> object:
+        raise AssertionError("held-out assessment helper constructed a control comparison")
+
+    read_trace: list[str] = []
+    read_bound_partition = source_analysis._read_bound_partition
+
+    def trace_bound_partition(*args: object, **kwargs: object) -> list[PassageRecord]:
+        read_trace.append(str(kwargs["expected_partition"]))
+        return read_bound_partition(*args, **kwargs)  # type: ignore[arg-type]
+
+    with monkeypatch.context() as guard:
+        guard.setitem(globals(), "read_passage_index", reject_fixture_control_read)
+        guard.setitem(
+            globals(), "_control_fixture_comparison", reject_control_comparison
+        )
+        guard.setattr(source_analysis, "_read_bound_partition", trace_bound_partition)
+
+        _commit_heldout_only_assessment(story)
+        committed = _read_validation_payload(story)
+        assert committed["heldout_claim_results"]
+        assert committed["control_comparisons"] == []
+        assert committed["reviewer_records"] == []
+        assert committed["claim_transitions"] == []
+
+        assert cli.main(
+            ["source-analysis", "--story", "fixture", "--stage", "validate"]
+        ) == 0
+
+    output = capsys.readouterr().out
+    assert "Source analysis stage `validate` completed" in output
+    assert "Validation generation:" in output
+    assert read_trace == ["heldout_wells", "tier4_controls"]
+    metrics = json.loads(
+        (
+            tmp_path
+            / "build/fixture/source-study/validation/current/validation-metrics.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert metrics["tier4_controls"]["partition"] == "tier4_controls"
+    packet = (
+        tmp_path / "build/fixture/source-study/validation/current/validation-packet.md"
+    ).read_text(encoding="utf-8")
+    assert "## tier4_controls" in packet
+    assert "tier-four" in packet
+
+
+@pytest.mark.parametrize(
+    "premature_field",
+    ["control_comparisons", "reviewer_records", "claim_transitions"],
+)
+def test_validate_heldout_assessed_rejects_premature_final_records_before_partition_open(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    premature_field: str,
+) -> None:
+    story, _ = _prepare_committed_candidate_fixture(tmp_path, with_claim=True)
+    _commit_heldout_only_assessment(story)
+    validation = _read_validation_payload(story)
+    if premature_field == "control_comparisons":
+        validation[premature_field] = [
+            _control_fixture_comparison(_control_fixture_passage(tmp_path))
+        ]
+    elif premature_field == "reviewer_records":
+        validation[premature_field] = [
+            {
+                "id": "reviewer-fixture-claim",
+                "claim_id": "fixture-claim",
+                "reviewer_id": "synthetic-reviewer",
+                "outcome": "qualified",
+                "heldout_result_ids": ["heldout-fixture-claim"],
+                "control_comparison_ids": ["control-fixture-claim"],
+                "notes": "Premature synthetic review.",
+            }
+        ]
+    else:
+        validation[premature_field] = [
+            {
+                "claim_id": "fixture-claim",
+                "from_status": "candidate",
+                "to_status": "qualified",
+                "from_confidence": "tentative",
+                "to_confidence": "moderate",
+                "reason": "Premature synthetic transition.",
+                "heldout_result_ids": ["heldout-fixture-claim"],
+                "control_comparison_ids": ["control-fixture-claim"],
+                "reviewer_record_ids": ["reviewer-fixture-claim"],
+            }
+        ]
+    _write_validation_payload(story, validation)
+    _commit_fixture_validation(story, f"record premature {premature_field}")
 
     read_trace: list[str] = []
     read_bound_partition = source_analysis._read_bound_partition
@@ -4483,13 +4528,13 @@ def test_validate_heldout_assessed_rejects_invalid_control_comparison_after_cont
 
     monkeypatch.setattr(source_analysis, "_read_bound_partition", trace_bound_partition)
 
-    with pytest.raises(CreativeWriterError, match=expected_message):
+    with pytest.raises(
+        CreativeWriterError,
+        match=rf"heldout_assessed.*premature.*{premature_field.replace('_', ' ')}",
+    ):
         run_source_analysis(tmp_path, "fixture", "validate")
 
-    assert read_trace == ["heldout_wells", "tier4_controls"]
-    assert [path.read_text(encoding="utf-8") for path in output_paths] == [
-        f"sentinel:{path.name}\n" for path in output_paths
-    ]
+    assert read_trace == []
 
 
 @pytest.mark.parametrize("validation_step", ["heldout_assessed", "complete"])
@@ -4772,14 +4817,17 @@ def test_production_entrypoint_runs_full_committed_validation_lifecycle(
     )
     assert "tier4_controls" not in frozen_metrics
 
-    _record_heldout_assessed(story)
+    _commit_heldout_only_assessment(story)
     assessed = run_source_analysis(tmp_path, "fixture", "validate")
     assessed_metrics = json.loads(
         assessed.generated_paths["validation_metrics"].read_text(encoding="utf-8")
     )
     assert assessed_metrics["tier4_controls"]["partition"] == "tier4_controls"
+    assert "tier-four" in assessed.generated_paths["validation_packet"].read_text(
+        encoding="utf-8"
+    )
 
-    _record_complete(story)
+    _author_and_commit_complete_outcomes(story)
     complete = run_source_analysis(tmp_path, "fixture", "validate")
     reused = run_source_analysis(tmp_path, "fixture", "validate")
 

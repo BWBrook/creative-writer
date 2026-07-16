@@ -43,9 +43,12 @@ from `frozen` to `heldout_assessed` to `complete`:
 
 1. `frozen` opens and assesses held-out Wells passages only.
 2. `heldout_assessed` is committed only after the held-out treatment is complete;
-   that record authorises the separate Tier 4 control pass.
-3. `complete` requires final claim outcomes, reviewer treatment, control
-   comparisons, and the final compiled report.
+   it contains no control comparisons, reviewer records, or claim transitions.
+   Its validation run authorises the separate Tier 4 pass and generates the
+   control-inclusive metrics and packet for human assessment.
+3. `complete` is committed after those generated controls are assessed. It
+   requires exact control comparisons, reviewer treatment, claim transitions,
+   final claim outcomes, and the final compiled report.
 
 The candidate profile and ledger remain available from their immutable Git
 objects throughout validation. At `complete`, the writer-facing

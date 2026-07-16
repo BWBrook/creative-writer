@@ -36,8 +36,11 @@ locks the corpus and writes three physically separate, hash-bound indexes:
 `develop` can read only the development index. Validation follows the strict
 two-pass sequence `frozen -> heldout_assessed -> complete`: the frozen pass
 reads held-out Wells only; after complete held-out assessments are committed,
-the `heldout_assessed` pass authorises and reads Tier 4 controls; the complete
-pass checks final outcomes and compiles the final report.
+the held-out-only `heldout_assessed` record authorises a pass that reads Tier 4
+and generates the control-inclusive metrics and packet. Control comparisons,
+reviewer records, and claim transitions are authored from that output and
+committed only for the `complete` pass, which checks final outcomes and
+compiles the final report.
 
 The candidate freeze records a reachable Git commit and exact hashes for the
 candidate `analysis.yml`, `holdouts.yml`, profile, and evidence ledger.

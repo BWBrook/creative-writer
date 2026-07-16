@@ -777,6 +777,25 @@ def _require_validation_treatment(
             )
 
 
+def _reject_premature_heldout_assessed_records(record: ValidationRecord) -> None:
+    if record.validation_step != "heldout_assessed":
+        return
+    premature = [
+        label
+        for label, values in (
+            ("control comparisons", record.control_comparisons),
+            ("reviewer records", record.reviewer_records),
+            ("claim transitions", record.claim_transitions),
+        )
+        if values
+    ]
+    if premature:
+        raise CreativeWriterError(
+            "heldout_assessed validation contains premature final records: "
+            + ", ".join(premature)
+        )
+
+
 def _validation_metric_partition(
     partition: str,
     passages: list[PassageRecord],
@@ -1280,6 +1299,7 @@ def _validate(root: Path, slug: str) -> SourceAnalysisResult:
         return _make_result(root, slug, generated_paths=generated_paths, holdout_path=_story_path(root, slug) / "source-study" / "holdouts.yml", witness_count=len(metrics.heldout_wells.witnesses), passage_count=len(corpus.heldout_ids), generation_id=generation_id)
 
     if validation.stage == "candidate_frozen" and validation.validation_step == "heldout_assessed":
+        _reject_premature_heldout_assessed_records(validation)
         _require_validation_treatment(validation, candidate_claims, require_controls=False, require_reviewers=False)
         heldout = open_heldout_wells(freeze)
         corpus = _corpus_from_capabilities(freeze, heldout, manifest=preflight.manifest)
@@ -1293,12 +1313,6 @@ def _validate(root: Path, slug: str) -> SourceAnalysisResult:
         control_access = authorize_control_access(freeze, heldout)
         controls = open_tier4_controls(control_access)
         corpus = _corpus_from_capabilities(freeze, heldout, controls, manifest=preflight.manifest)
-        _validate_record_partitions(
-            validation,
-            corpus,
-            candidate_claim_ids={claim.id for claim in candidate_claims},
-            candidate_claims=candidate_claims,
-        )
         metrics = _build_validation_metrics(config, validation, generated_paths, corpus)
         generation_id = _write_validation_outputs(
             generated_paths,
@@ -1460,6 +1474,7 @@ def authorize_control_access(capability: VerifiedFreeze, heldout: HeldoutCorpus)
         raise CreativeWriterError(
             "Tier 4 control authorization is unavailable before complete held-out assessment"
         )
+    _reject_premature_heldout_assessed_records(capability.validation)
     candidate_claim_ids = {claim.id for claim in capability.candidate_ledger.claims}
     _require_validation_treatment(
         capability.validation,
@@ -1537,13 +1552,14 @@ def open_tier4_controls(capability: VerifiedControlAccess) -> ControlCorpus:
         if witness.source_id in roles
     }
     controls = ControlCorpus(_CAPABILITY_SEAL, capability, tuple(records), frozenset(ids), witness_tiers, witness_roles)
-    corpus = _corpus_from_capabilities(freeze, capability.heldout, controls)
-    _validate_record_partitions(
-        freeze.validation,
-        corpus,
-        candidate_claim_ids={claim.id for claim in freeze.candidate_ledger.claims},
-        candidate_claims=freeze.candidate_ledger.claims,
-    )
+    if freeze.validation.validation_step == "complete":
+        corpus = _corpus_from_capabilities(freeze, capability.heldout, controls)
+        _validate_record_partitions(
+            freeze.validation,
+            corpus,
+            candidate_claim_ids={claim.id for claim in freeze.candidate_ledger.claims},
+            candidate_claims=freeze.candidate_ledger.claims,
+        )
     return controls
 
 

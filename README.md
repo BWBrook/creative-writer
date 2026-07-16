@@ -82,7 +82,10 @@ creative-writer source-analysis --story <slug> --stage validate
 `develop` reads only the development index; `validate` reports the managed
 validation generation. The validation record advances in order from `frozen`
 to `heldout_assessed` to `complete`, so held-out Wells material is assessed
-before Tier 4 controls can be opened. Candidate `analysis.yml` and
+before Tier 4 controls can be opened. The committed `heldout_assessed` record
+contains held-out results only; its validation run generates the
+control-inclusive packet used to author control comparisons, reviewer records,
+and claim transitions for `complete`. Candidate `analysis.yml` and
 `holdouts.yml` remain immutable for that validation run. At `complete`, the
 writer-facing profile and evidence ledger may be the separately hash-checked
 final versions required by the approved workflow. Phase 2B produces

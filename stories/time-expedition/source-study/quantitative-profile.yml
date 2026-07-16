@@ -1,5 +1,263 @@
 schema_version: 1
 study_id: time-expedition-wells-phase-2b
-stage: protocol
-generated_metrics: []
-witnesses: []
+stage: development
+generated_metrics:
+  - id: development-metrics
+    path: build/time-expedition/source-study/development-metrics.json
+    sha256: c50aa87e590a5b737458960f631c896cb74972abe8348837353749c396af4981
+  - id: development-metrics-csv
+    path: build/time-expedition/source-study/development-metrics.csv
+    sha256: 91a37a8d64bcb2273547991196637495f28b02a83bced39fa3f2e9575cbd854b
+witnesses:
+  - witness_id: the-time-machine
+    source_id: the-time-machine
+    selection_id: null
+    values:
+      total_words: 24773
+      total_passages: 240
+      total_sentences: 1439
+      total_sections: 12
+      sentence_length_distribution.median: 15
+      sentence_length_distribution.p90: 31
+      paragraph_length_distribution.count: 240
+      paragraph_length_distribution.median: 97.5
+      dialogue_proportion.dialogue_words: 22375
+      dialogue_proportion.denominator_words: 24773
+      dialogue_proportion.unknown_words: 0
+    variation: >-
+      The development partition spans twelve sections, with long paragraph
+      units alongside a lower median sentence length; section and passage
+      flags remain sampling aids rather than a pooled target.
+    limitations: >-
+      The quoted retrospective account is counted as dialogue by the
+      quotation-span classifier, so the 90.32% value does not measure
+      conversational exchange. Sentence boundaries are deterministic
+      approximations, and all exact decimals are provenance values rather
+      than claims of inferential precision.
+    interpretive_relevance: >-
+      These measurements locate the primary continuity and reported-testimony
+      witness for later close reading; they do not by themselves establish a
+      Wellsian norm.
+
+  - witness_id: selected-short-fiction/the-plattner-story
+    source_id: selected-short-fiction
+    selection_id: the-plattner-story
+    values:
+      total_words: 6312
+      total_passages: 35
+      total_sentences: 310
+      total_sections: 1
+      sentence_length_distribution.median: 18
+      sentence_length_distribution.p90: 34
+      paragraph_length_distribution.count: 35
+      paragraph_length_distribution.median: 170
+      dialogue_proportion.dialogue_words: 17
+      dialogue_proportion.denominator_words: 6312
+      dialogue_proportion.unknown_words: 0
+    variation: >-
+      This selected witness has one retained section and relatively long
+      paragraph units, so it supplies no within-witness section contrast.
+    limitations: >-
+      The selection is a bounded short-story witness, not a sample to pool
+      with the other three selected stories. Dialogue is a mechanical quoted-
+      span measure, and sentence boundaries remain approximations.
+    interpretive_relevance: >-
+      The measurements identify a compact short-form comparison for later
+      analysis of testimony and speculative explanation without extending its
+      authority beyond the declared roles.
+
+  - witness_id: selected-short-fiction/the-sea-raiders
+    source_id: selected-short-fiction
+    selection_id: the-sea-raiders
+    values:
+      total_words: 3048
+      total_passages: 31
+      total_sentences: 136
+      total_sections: 3
+      sentence_length_distribution.median: 20
+      sentence_length_distribution.p90: 40
+      paragraph_length_distribution.count: 31
+      paragraph_length_distribution.median: 99
+      dialogue_proportion.dialogue_words: 229
+      dialogue_proportion.denominator_words: 3048
+      dialogue_proportion.unknown_words: 0
+    variation: >-
+      Three retained sections permit limited local comparison; the short
+      witness combines a higher sentence-length tail with moderate paragraph
+      scale relative to the other selected stories.
+    limitations: >-
+      The small development sample makes extremes unstable, and quoted-span
+      dialogue does not distinguish speech from framed testimony. Exact scalar
+      values are retained solely to bind this profile to current output.
+    interpretive_relevance: >-
+      The witness can guide later close reading of compressed danger and
+      short-form escalation, but its measurements do not authorise a general
+      voice claim.
+
+  - witness_id: selected-short-fiction/the-crystal-egg
+    source_id: selected-short-fiction
+    selection_id: the-crystal-egg
+    values:
+      total_words: 5392
+      total_passages: 44
+      total_sentences: 239
+      total_sections: 1
+      sentence_length_distribution.median: 20
+      sentence_length_distribution.p90: 40
+      paragraph_length_distribution.count: 44
+      paragraph_length_distribution.median: 107
+      dialogue_proportion.dialogue_words: 148
+      dialogue_proportion.denominator_words: 5392
+      dialogue_proportion.unknown_words: 0
+    variation: >-
+      The retained selection is one section with moderate-to-long paragraph
+      units and a broad sentence-length tail; no section-level contrast is
+      available within this witness.
+    limitations: >-
+      This is an independent selected witness and must not be pooled with its
+      companion stories. Dialogue and sentence values inherit the declared
+      deterministic classifier limits.
+    interpretive_relevance: >-
+      The metrics mark a bounded observational-mystery comparison for direct
+      source inspection, not evidence that its numerical shape is distinctive.
+
+  - witness_id: certain-personal-matters
+    source_id: certain-personal-matters
+    selection_id: null
+    values:
+      total_words: 42657
+      total_passages: 319
+      total_sentences: 2289
+      total_sections: 43
+      sentence_length_distribution.median: 16
+      sentence_length_distribution.p90: 35
+      paragraph_length_distribution.count: 319
+      paragraph_length_distribution.median: 134
+      dialogue_proportion.dialogue_words: 4816
+      dialogue_proportion.denominator_words: 42657
+      dialogue_proportion.unknown_words: 1275
+    variation: >-
+      Forty-three retained sections create substantial internal variation;
+      the development output also records 1,275 words in passages whose quote
+      structure the classifier could not resolve.
+    limitations: >-
+      This is nonfiction evidence with editorial and heading structure, and
+      its dialogue-like material cannot be read as fictional social exchange.
+      Section sizes and quoted-span counts are descriptive only.
+    interpretive_relevance: >-
+      The witness provides bounded comparison for essay voice, humour, and
+      conversational explanation after direct reading, never fictional
+      continuity or an aggregate Wells target.
+
+  - witness_id: text-book-of-biology-part-1
+    source_id: text-book-of-biology-part-1
+    selection_id: null
+    values:
+      total_words: 44386
+      total_passages: 530
+      total_sentences: 3088
+      total_sections: 57
+      sentence_length_distribution.median: 10
+      sentence_length_distribution.p90: 33
+      paragraph_length_distribution.count: 404
+      paragraph_length_distribution.median: 77
+      dialogue_proportion.dialogue_words: 65
+      dialogue_proportion.denominator_words: 44386
+      dialogue_proportion.unknown_words: 503
+    variation: >-
+      Fifty-seven instructional sections and mixed block types produce wide
+      structural variation; paragraph statistics cover paragraph blocks and
+      should not be treated as a summary of every retained passage.
+    limitations: >-
+      Lists, headings, scientific notation, and 503 unresolved quote-structure
+      words affect the sentence and paragraph distributions. This nonfiction
+      witness has only its declared explanatory jurisdiction.
+    interpretive_relevance: >-
+      The values locate passages for later examination of terminology,
+      classification, analogy, and qualification without importing textbook
+      structure into fictional voice claims.
+
+  - witness_id: the-invisible-man
+    source_id: the-invisible-man
+    selection_id: null
+    values:
+      total_words: 38241
+      total_passages: 911
+      total_sentences: 3008
+      total_sections: 29
+      sentence_length_distribution.median: 9
+      sentence_length_distribution.p90: 27
+      paragraph_length_distribution.count: 911
+      paragraph_length_distribution.median: 23
+      dialogue_proportion.dialogue_words: 20122
+      dialogue_proportion.denominator_words: 38241
+      dialogue_proportion.unknown_words: 1273
+    variation: >-
+      Across twenty-nine sections, the witness has short median sentences and
+      paragraphs beside a long upper tail, with 1,273 words in passages whose
+      quote structure remains unresolved.
+    limitations: >-
+      The 52.62% dialogue proportion measures quoted spans and cannot by itself
+      distinguish conversational pacing, reported speech, or social function.
+      Candidate flags are numerous and must be sampled rather than counted as
+      findings.
+    interpretive_relevance: >-
+      The metrics identify the principal Tier 2 witness for sustained dialogue
+      and social friction, to be tested through close reading rather than
+      numerical imitation.
+
+  - witness_id: the-island-of-doctor-moreau
+    source_id: the-island-of-doctor-moreau
+    selection_id: null
+    values:
+      total_words: 36061
+      total_passages: 609
+      total_sentences: 2320
+      total_sections: 22
+      sentence_length_distribution.median: 13
+      sentence_length_distribution.p90: 31
+      paragraph_length_distribution.count: 608
+      paragraph_length_distribution.median: 33
+      dialogue_proportion.dialogue_words: 8926
+      dialogue_proportion.denominator_words: 36061
+      dialogue_proportion.unknown_words: 40
+    variation: >-
+      Twenty-two sections show a compact median paragraph scale with a much
+      broader upper range; only forty words fall under unresolved quote
+      classification.
+    limitations: >-
+      Quoted-span dialogue and approximate sentence segmentation cannot
+      establish scene function or narrator distance. Rates remain source-local
+      descriptive values.
+    interpretive_relevance: >-
+      The witness offers bounded evidence for first-person observation,
+      biological pressure, and moral argument once passages are read in
+      context; it has no continuity authority.
+
+  - witness_id: the-war-of-the-worlds
+    source_id: the-war-of-the-worlds
+    selection_id: null
+    values:
+      total_words: 47952
+      total_passages: 730
+      total_sentences: 2618
+      total_sections: 29
+      sentence_length_distribution.median: 16
+      sentence_length_distribution.p90: 36
+      paragraph_length_distribution.count: 729
+      paragraph_length_distribution.median: 58
+      dialogue_proportion.dialogue_words: 5481
+      dialogue_proportion.denominator_words: 47952
+      dialogue_proportion.unknown_words: 100
+    variation: >-
+      The twenty-nine sections combine mid-scale paragraphs with a broad
+      sentence-length tail; one hundred words occur in unresolved quote
+      structure.
+    limitations: >-
+      Global and scene-scale variation is not captured by witness-level
+      medians alone, while dialogue remains a mechanical quotation measure.
+      No value is pooled with another work.
+    interpretive_relevance: >-
+      The measurements provide source-local sampling context for catastrophe,
+      landscape observation, and public behaviour, subject to direct passage
+      evidence and Tier 2 jurisdiction.

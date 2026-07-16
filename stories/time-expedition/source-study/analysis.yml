@@ -3,7 +3,7 @@ study_id: time-expedition-wells-phase-2b
 composition_window:
   start: 1897
   end: 1899
-study_status: protocol
+study_status: development
 admission_registry:
   path: source-study/admission.yml
   sha256: 2ce57a2f427e4266fde6525f67508f966adf3daf4094d8dda50f567c7ab0ef3c

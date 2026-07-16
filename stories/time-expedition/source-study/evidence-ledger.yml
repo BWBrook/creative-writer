@@ -1,6 +1,6 @@
 schema_version: 1
 study_id: time-expedition-wells-phase-2b
-stage: development
+stage: validated
 mode: descriptive
 claims:
   - id: mediated-testimony-frame
@@ -16,8 +16,8 @@ claims:
         - the-time-machine
         - selected-short-fiction/the-plattner-story
         - selected-short-fiction/the-crystal-egg
-    classification: role_specific
-    status: candidate
+    classification: wells_characteristic_but_shared
+    status: validated
     confidence: moderate
     supporting_passages:
       - witness_id: the-time-machine
@@ -60,7 +60,10 @@ claims:
       outcome: no_material_counterexample
       notes: >-
         A targeted development search found changes in the source and stability of mediation, but each passage still makes testimony, transcription, or evidentiary assessment visible. No genuine resistant development passage was identified.
-    control_results: []
+    control_results:
+      - >-
+        beetle-mediated-narrators: shared; explicit narration, case-book extraction,
+        and compiled statements make mediation visible in the declared control role.
     scope_and_limits: >-
       Development-only cross_work scope is limited to frame architecture and testimony across the three cited development witnesses. This candidate records a bounded descriptive pattern in the retained witnesses and does not resolve the held-out witness.
     validation_expectation:
@@ -100,9 +103,9 @@ claims:
         - the-time-machine
         - the-island-of-doctor-moreau
         - certain-personal-matters
-    classification: role_specific
-    status: candidate
-    confidence: tentative
+    classification: wells_characteristic_but_shared
+    status: validated
+    confidence: moderate
     supporting_passages:
       - witness_id: the-time-machine
         source_id: the-time-machine
@@ -144,7 +147,10 @@ claims:
       outcome: no_material_counterexample
       notes: >-
         A targeted development search found materially different relations between present judgement and represented experience, but none removes narrator distance. The Moreau closing passage was therefore retained as related analytical history rather than resistant evidence.
-    control_results: []
+    control_results:
+      - >-
+        beetle-role-shaped-distance: shared; three control narrators use different
+        retrospective relations among experience, judgement, and self-presentation.
     scope_and_limits: >-
       Development-only cross_work scope is limited to the selected reported first-person, retrospective first-person, and essay passages across the-time-machine, the-island-of-doctor-moreau, and certain-personal-matters. Role and work are aliased in this sample, so the observed contrasts cannot identify a role effect or establish a general theory of narration.
     validation_expectation:
@@ -185,9 +191,9 @@ claims:
       eligible_witness_ids:
         - the-time-machine
         - the-war-of-the-worlds
-    classification: role_specific
-    status: candidate
-    confidence: tentative
+    classification: wells_characteristic_but_shared
+    status: validated
+    confidence: moderate
     supporting_passages:
       - witness_id: the-time-machine
         source_id: the-time-machine
@@ -222,7 +228,10 @@ claims:
         evidence_role: variation
         relevance_note: >-
           Astronomical observations lead directly to a categorical tidal-drag explanation without local modal qualification or correction in the passage.
-    control_results: []
+    control_results:
+      - >-
+        barbarians-romance-qualified-inference: shared; observed circumstances lead
+        to competing, viewpoint-limited explanations in the control passage.
     scope_and_limits: >-
       Development-only cross_work scope is limited to speculative method and evidence-to-speculation movement in the-time-machine and the-war-of-the-worlds. This candidate concerns transitions from observation to explanation in the retained development passages and not the truth of the fictional explanations.
     validation_expectation:
@@ -263,9 +272,9 @@ claims:
         - the-time-machine
         - the-island-of-doctor-moreau
         - text-book-of-biology-part-1
-    classification: role_specific
-    status: candidate
-    confidence: tentative
+    classification: wells_characteristic_but_shared
+    status: qualified
+    confidence: moderate
     supporting_passages:
       - witness_id: the-time-machine
         source_id: the-time-machine
@@ -308,7 +317,11 @@ claims:
         evidence_role: variation
         relevance_note: >-
           The tidal-drag account moves from astronomical observations to a categorical causal explanation with less local qualification.
-    control_results: []
+    control_results:
+      - >-
+        days-qualified-scientific-exposition: shared; engineering comparison,
+        recalculation, and acknowledged unknowns reproduce the broad expository
+        combination outside Wells.
     scope_and_limits: >-
       Development-only cross_work scope is limited to selected speculative-method, scientific-argument, instructional-exposition, and comparison passages across the-time-machine, the-island-of-doctor-moreau, and text-book-of-biology-part-1. Role and work are aliased in this sample, so the contrast does not identify a role effect; nonfiction instruction is not fictional continuity evidence.
     validation_expectation:
@@ -353,9 +366,9 @@ claims:
       eligible_witness_ids:
         - the-invisible-man
         - the-island-of-doctor-moreau
-    classification: role_specific
-    status: candidate
-    confidence: tentative
+    classification: wells_characteristic_but_shared
+    status: validated
+    confidence: moderate
     supporting_passages:
       - witness_id: the-invisible-man
         source_id: the-invisible-man
@@ -390,7 +403,10 @@ claims:
         evidence_role: variation
         relevance_note: >-
           A later exchange reduces the sustained turn pressure and changes the balance of social response.
-    control_results: []
+    control_results:
+      - >-
+        desert-group-dialogue: shared; a control scene distributes group talk across
+        several speakers, gesture, document handling, and laughter.
     scope_and_limits: >-
       Development-only cross_work scope is limited to the selected social-register, sustained-dialogue, and danger-context passages in the-invisible-man and the-island-of-doctor-moreau. The contexts and works are aliased, so the contrasts do not identify pressure or role as their cause and do not prescribe a single dialogue form.
     validation_expectation:
@@ -430,9 +446,9 @@ claims:
         - the-time-machine
         - the-invisible-man
         - certain-personal-matters
-    classification: role_specific
-    status: candidate
-    confidence: tentative
+    classification: wells_characteristic_but_shared
+    status: validated
+    confidence: moderate
     supporting_passages:
       - witness_id: the-time-machine
         source_id: the-time-machine
@@ -467,7 +483,10 @@ claims:
         evidence_role: variation
         relevance_note: >-
           A nearby essay passage shifts the local rhythm within the same essay role.
-    control_results: []
+    control_results:
+      - >-
+        days-role-shaped-syntax: shared; professional dialogue alternates compact
+        replies with extended technical contrast and questioning.
     scope_and_limits: >-
       Development-only cross_work scope is limited to the selected reported first-person, sustained-dialogue, and essay passages across the-time-machine, the-invisible-man, and certain-personal-matters. Role and work are aliased, so the contrasts do not identify a role effect. The Invisible Man transcription is not a diplomatic book witness, and serial and book paragraphing may differ; paragraph-level claims remain provisional.
     validation_expectation:
@@ -510,8 +529,8 @@ claims:
         - the-war-of-the-worlds
         - certain-personal-matters
         - text-book-of-biology-part-1
-    classification: role_specific
-    status: candidate
+    classification: wells_characteristic_but_shared
+    status: qualified
     confidence: tentative
     supporting_passages:
       - witness_id: the-war-of-the-worlds
@@ -547,7 +566,10 @@ claims:
         evidence_role: variation
         relevance_note: >-
           The essay expands from microscopic description into a cosmological observer analogy, exceeding the focal claim's local observational and classificatory scale.
-    control_results: []
+    control_results:
+      - >-
+        days-selective-observed-description: shared; machinery details are selected
+        and organised through spatial inspection and functional classification.
     scope_and_limits: >-
       Development-only cross_work scope is limited to the selected landscape-observation, microscopic-observation, and biological-terminology passages across the-war-of-the-worlds, certain-personal-matters, and text-book-of-biology-part-1. Role and work are aliased, so the contrast does not identify a role effect and does not extend to all descriptive language.
     validation_expectation:
@@ -588,8 +610,8 @@ claims:
       eligible_witness_ids:
         - selected-short-fiction/the-sea-raiders
         - the-war-of-the-worlds
-    classification: role_specific
-    status: candidate
+    classification: wells_characteristic_but_shared
+    status: qualified
     confidence: tentative
     supporting_passages:
       - witness_id: selected-short-fiction/the-sea-raiders
@@ -622,7 +644,10 @@ claims:
       outcome: no_material_counterexample
       notes: >-
         A targeted development search found adjacent extensions of the same consequence-before-closure mechanism, not resistant evidence. No genuine counterexample was identified in the eligible development passages searched.
-    control_results: []
+    control_results:
+      - >-
+        desert-danger-pacing: shared; visible approach and bodily reaction precede
+        explicit recognition of hostility in the control scene.
     scope_and_limits: >-
       Development-only cross_work scope is limited to biological danger and catastrophe across the two cited development witnesses. This tentative candidate compares disclosure of danger by observable consequence and does not equate local and global scales.
     validation_expectation:
@@ -660,9 +685,9 @@ claims:
       eligible_witness_ids:
         - the-invisible-man
         - certain-personal-matters
-    classification: role_specific
-    status: candidate
-    confidence: tentative
+    classification: wells_characteristic_but_shared
+    status: validated
+    confidence: moderate
     supporting_passages:
       - witness_id: the-invisible-man
         source_id: the-invisible-man
@@ -689,7 +714,10 @@ claims:
         evidence_role: variation
         relevance_note: >-
           A mock-scientific case for quarrelling uses hygienic and physiological claims, an alternate comic mechanism that limits the focal social-mismatch account.
-    control_results: []
+    control_results:
+      - >-
+        barbarians-satire-social-friction: shared; courteous literalism collides with
+        incompatible assumptions about taboo and respectability.
     scope_and_limits: >-
       Development-only cross_work scope is limited to the two cited focal passages in the-invisible-man and certain-personal-matters. This tentative candidate compares those fictional and essay instances of social mismatch and does not treat either witness as a general humour authority.
     validation_expectation:
@@ -729,7 +757,7 @@ claims:
         - selected-short-fiction/the-sea-raiders
         - selected-short-fiction/the-crystal-egg
     classification: role_specific
-    status: candidate
+    status: qualified
     confidence: moderate
     supporting_passages:
       - witness_id: the-time-machine
@@ -772,7 +800,10 @@ claims:
       outcome: no_material_counterexample
       notes: >-
         A targeted development search found different kinds of ended record, but all retained unresolved implications. The former Crystal Egg variation was therefore reclassified as support, and no genuine resistant development passage was identified.
-    control_results: []
+    control_results:
+      - >-
+        solomon-journey-closure: not_shared; the control closes its journey record by
+        settling principal outcomes and opening a practical next action.
     scope_and_limits: >-
       Development-only cross_work scope is limited to frame architecture and short-form architecture across the three cited development witnesses. This candidate concerns the relation between an ended record and unresolved implication and does not claim a common ending mechanism for all short fiction.
     validation_expectation:

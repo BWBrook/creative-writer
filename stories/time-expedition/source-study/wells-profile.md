@@ -1,14 +1,15 @@
 # Wells Descriptive Profile
 
-## Development candidate state
+## Final validated state
 
-Status: **reviewed development candidate**. This profile synthesizes reviewed
-development-only observations, quantitative context, and candidate claims from
-the evidence ledger. It has not undergone held-out Wells or Tier 4 control
-validation and records no validation outcome. *The Time Machine* remains the
-sole continuity and primary fictional voice authority. Tier 2 and Tier 3
-evidence is retained only within its declared analytical roles, with Tier 3
-serving as nonfiction comparison rather than fictional voice authority.
+Status: **validated Phase 2B descriptive profile**. This profile reconciles the
+frozen development evidence with predeclared held-out Wells assessments,
+negative/comparative controls, and distributed independent review. *The Time
+Machine* remains the sole continuity and primary fictional voice authority.
+Tier 2 and Tier 3 evidence remains bounded to its declared analytical roles,
+with Tier 3 serving as nonfiction comparison rather than fictional voice
+authority. Tier 4 evidence is used only to test discrimination and supplies no
+positive style authority.
 
 ## Analytical dimensions
 
@@ -29,12 +30,12 @@ in view within these passages.
 
 ##### Classification and confidence
 
-Classification: `role_specific`
+Classification: `wells_characteristic_but_shared`
 Confidence: `moderate`
 
 ##### Jurisdiction
 
-Development-only, cross-work finding for frame architecture and testimony in
+Validated, cross-work finding for frame architecture and testimony in
 *The Time Machine*, *The Plattner Story*, and *The Crystal Egg*. *The Time
 Machine* alone has continuity and primary voice authority; the two selected
 short stories supply bounded Tier 2 testimony comparisons.
@@ -68,14 +69,15 @@ the frame mechanism described here.
 
 ##### Control distinction
 
-Deferred until validation.
+Held-out frame and testimony passages repeat the mediation pattern, but the
+control's explicit narration and compiled statements show that the broad
+device is shared with neighbouring prose rather than corpus-distinctive.
 
 ##### Unresolved uncertainty
 
-Convergence across three independent development witnesses supports moderate
-confidence, but the evidence remains confined to the sampled roles and does
-not establish recurrence in held-out Wells material or distinctiveness from
-period conventions.
+The result remains limited to sampled frame and testimony roles; neither its
+frequency across Wells nor its discrimination from wider period practice is
+established by one control witness.
 
 ### 2. Narrator distance, focalisation, and mediation
 
@@ -94,12 +96,12 @@ self-account with self-mockery.
 
 ##### Classification and confidence
 
-Classification: `role_specific`
-Confidence: `tentative`
+Classification: `wells_characteristic_but_shared`
+Confidence: `moderate`
 
 ##### Jurisdiction
 
-Development-only, cross-work comparison of reported first-person account in
+Validated, cross-work comparison of reported first-person account in
 *The Time Machine*, retrospective first-person narration in *The Island of
 Doctor Moreau*, and essay voice in *Certain Personal Matters*. The Tier 3 essay
 passage is a nonfiction comparison and carries no fictional continuity or
@@ -133,13 +135,15 @@ norms.
 
 ##### Control distinction
 
-Deferred until validation.
+Held-out Wells passages confirm the three declared narrator-distance
+relations, while the multi-narrator control shows comparable retrospective
+adjustment outside Wells.
 
 ##### Unresolved uncertainty
 
-Role and work are completely aliased in the three-witness sample. The observed
-contrasts cannot identify a role effect, and the within-role variation and
-unassessed held-out passages keep confidence tentative.
+Role, narrator, work, and episode remain aliased. The evidence validates the
+selected contrasts but cannot identify role as their cause or establish a
+general period distribution.
 
 ### 3. Observation, inference, speculation, and self-correction
 
@@ -157,12 +161,12 @@ revisable, or vulnerable to perceptual error.
 
 ##### Classification and confidence
 
-Classification: `role_specific`
-Confidence: `tentative`
+Classification: `wells_characteristic_but_shared`
+Confidence: `moderate`
 
 ##### Jurisdiction
 
-Development-only, cross-work finding for speculative method in *The Time
+Validated, cross-work finding for speculative method in *The Time
 Machine* and evidence-to-speculation movement in *The War of the Worlds*. It
 describes transitions within the cited fictional passages, not the scientific
 truth of their explanations. *The Time Machine* alone carries continuity
@@ -195,14 +199,14 @@ the finding rests on close reading of two independent witnesses.
 
 ##### Control distinction
 
-Deferred until validation.
+Held-out Wells passages confirm revisable inference, but the control also
+moves from observed circumstances to a viewpoint-limited explanation.
 
 ##### Unresolved uncertainty
 
-Support comes from only two independent development witnesses, one of which
-also supplies a resistant passage. The sample therefore does not establish
-the frequency, causal source, or period distinctiveness of qualified
-inference.
+One control occurrence cannot separate author, genre, focalisation, or period,
+and the categorical development variation still limits claims about
+frequency.
 
 ### 4. Scientific exposition, analogy, qualification, and uncertainty
 
@@ -220,12 +224,12 @@ while retaining different local qualifications.
 
 ##### Classification and confidence
 
-Classification: `role_specific`
-Confidence: `tentative`
+Classification: `wells_characteristic_but_shared`
+Confidence: `moderate`
 
 ##### Jurisdiction
 
-Development-only, cross-work comparison of speculative method in *The Time
+Validated, cross-work comparison of speculative method in *The Time
 Machine*, scientific argument in *The Island of Doctor Moreau*, and
 instructional exposition plus comparison and classification in *Text Book of
 Biology, Part 1*. The textbook is Tier 3 nonfiction comparison only and has no
@@ -263,13 +267,15 @@ not expository norms or evidence of fictional voice.
 
 ##### Control distinction
 
-Deferred until validation.
+Held-out exposition generally retains observation or procedure with local
+bounds, although Moreau is more assertive; the technical control shares the
+broad combination of explanation and acknowledged uncertainty.
 
 ##### Unresolved uncertainty
 
-Expository role and work are aliased, and each device lacks independent
-replication within role. The evidence cannot separate a role effect from a
-work effect or establish distinctiveness before held-out assessment.
+Expository role, work, and subject remain confounded, and qualification is
+uneven within Wells. The evidence does not establish a Wells-specific degree
+or frequency of epistemic restraint.
 
 ### 5. Dialogue, speech attribution, class, and social friction
 
@@ -288,12 +294,12 @@ ordered speech.
 
 ##### Classification and confidence
 
-Classification: `role_specific`
-Confidence: `tentative`
+Classification: `wells_characteristic_but_shared`
+Confidence: `moderate`
 
 ##### Jurisdiction
 
-Development-only, cross-work comparison of social register and sustained
+Validated, cross-work comparison of social register and sustained
 dialogue in *The Invisible Man* with dialogue under stress in *The Island of
 Doctor Moreau*. Both are Tier 2 bounded role evidence and carry no continuity
 authority.
@@ -325,13 +331,15 @@ targets.
 
 ##### Control distinction
 
-Deferred until validation.
+Held-out Wells exchanges confirm that pressured dialogue has no uniform local
+organisation, while the control shows comparable distribution across voices
+and reactions in group dialogue.
 
 ##### Unresolved uncertainty
 
-Only two independent witnesses are represented, and context, role, and work
-are aliased. The evidence cannot identify pressure as the cause of the
-contrasts, while the modern *Invisible Man* transcription makes
+Speaker, scene, work, and pressure remain confounded. The evidence validates
+variation in the selected contexts, not a causal effect of pressure or a
+general dialogue rhythm. The modern *Invisible Man* transcription also keeps
 paragraph-level interpretation provisional.
 
 ### 6. Syntax, rhythm, punctuation, and paragraph movement
@@ -350,12 +358,12 @@ one uniform cadence.
 
 ##### Classification and confidence
 
-Classification: `role_specific`
-Confidence: `tentative`
+Classification: `wells_characteristic_but_shared`
+Confidence: `moderate`
 
 ##### Jurisdiction
 
-Development-only, cross-work comparison of reported first-person account in
+Validated, cross-work comparison of reported first-person account in
 *The Time Machine*, sustained dialogue in *The Invisible Man*, and essay voice
 in *Certain Personal Matters*. The essay is Tier 3 nonfiction comparison only;
 *The Time Machine* alone has continuity and primary voice authority.
@@ -390,14 +398,14 @@ norms.
 
 ##### Control distinction
 
-Deferred until validation.
+Held-out Wells passages repeat the declared local rhythm contrasts, while the
+professional-dialogue control also alternates compact and extended movements.
 
 ##### Unresolved uncertainty
 
-The local contrasts may arise from event type, work, transcription, or role,
-and the present sample cannot identify their separate effects. Material
-within-role variation and paragraph-witness uncertainty keep the finding
-tentative.
+Role remains inseparable from speaker, scene, event, and work. The evidence
+does not yield a stable syntactic norm or a Wells-distinctive cadence, and
+paragraph transcription remains a material limitation.
 
 ### 7. Diction, figurative language, and descriptive selectivity
 
@@ -415,12 +423,12 @@ landscape, a microscopic form, or an anatomical category.
 
 ##### Classification and confidence
 
-Classification: `role_specific`
+Classification: `wells_characteristic_but_shared`
 Confidence: `tentative`
 
 ##### Jurisdiction
 
-Development-only, cross-work comparison of landscape observation in *The War
+Validated, cross-work comparison of landscape observation in *The War
 of the Worlds*, microscopic observation in *Certain Personal Matters*, and
 biological terminology in *Text Book of Biology, Part 1*. The latter two are
 Tier 3 nonfiction comparisons and do not provide fictional continuity or
@@ -454,14 +462,15 @@ sampling scale only, with no pooled descriptive norm.
 
 ##### Control distinction
 
-Deferred until validation.
+Held-out landscape and biological passages retain observation-led selection,
+while the microscope passage mixes it with comic speculation; the machinery
+control shares functional descriptive organisation.
 
 ##### Unresolved uncertainty
 
-Role and work are aliased across three witnesses, and the microscope essay
-moves beyond the focal local mechanism. The sample does not identify a role
-effect or support extension to descriptive language outside the cited
-contexts.
+Selection is inferred from stated organisation rather than observable
+omission, and role, subject, work, humour, and analogy remain confounded.
+Distinctive frequency cannot be estimated.
 
 ### 8. Suspense, revelation, danger, and scene pressure
 
@@ -479,12 +488,12 @@ explanatory closure, with different scale and tempo in the two events.
 
 ##### Classification and confidence
 
-Classification: `role_specific`
+Classification: `wells_characteristic_but_shared`
 Confidence: `tentative`
 
 ##### Jurisdiction
 
-Development-only, cross-work comparison of biological danger in *The Sea
+Validated, cross-work comparison of biological danger in *The Sea
 Raiders* and catastrophe in *The War of the Worlds*. Both are Tier 2 evidence
 within their declared roles; neither has continuity authority.
 
@@ -513,14 +522,15 @@ so their source-level metrics are not comparable suspense norms.
 
 ##### Control distinction
 
-Deferred until validation.
+Held-out catastrophe retains delayed explanatory closure, but retrospective
+framing weakens the delay in the biological threat; the adventure control
+shares observation-before-recognition pacing.
 
 ##### Unresolved uncertainty
 
-The finding has only two independent development witnesses, and each focal
-passage is supported by an adjacent passage from the same event rather than an
-independent replication. Recurrence in other Wells passages and
-distinctiveness from neighbouring danger conventions remain unassessed.
+Advance framing, retrospective narration, event scale, and genre pressure vary
+together. The evidence does not identify a Wells-specific suspense mechanism
+or its prevalence.
 
 ### 9. Humour, irony, tonal shifts, and controlled awkwardness
 
@@ -538,12 +548,12 @@ recast as a personal slight.
 
 ##### Classification and confidence
 
-Classification: `role_specific`
-Confidence: `tentative`
+Classification: `wells_characteristic_but_shared`
+Confidence: `moderate`
 
 ##### Jurisdiction
 
-Development-only, cross-work comparison of comic friction in *The Invisible
+Validated, cross-work comparison of comic friction in *The Invisible
 Man* and humour in *Certain Personal Matters*. The Tier 3 essay is a bounded
 nonfiction comparison and does not provide fictional continuity or direct
 fictional voice authority.
@@ -574,13 +584,14 @@ drawn from them.
 
 ##### Control distinction
 
-Deferred until validation.
+Held-out fiction and essay passages repeat humour through social mismatch, but
+the control also makes incompatible assumptions comic through polite friction.
 
 ##### Unresolved uncertainty
 
-Only two independent focal witnesses support the comparison, and one witness
-also supplies an alternate comic mechanism. The evidence does not estimate
-how often the focal mechanism occurs or establish its period distinctiveness.
+Social mismatch interacts with narratorial irony, analogy, and character
+premise. One control cannot establish period prevalence or isolate the
+mechanism from adjacent comic devices.
 
 ### 10. Transitions, compression, reflection, and ending logic
 
@@ -602,7 +613,7 @@ Confidence: `moderate`
 
 ##### Jurisdiction
 
-Development-only, cross-work finding for frame architecture in *The Time
+Validated, cross-work finding for frame architecture in *The Time
 Machine* and short-form architecture in *The Sea Raiders* and *The Crystal
 Egg*. *The Time Machine* alone has continuity authority; the two selected
 stories are independent Tier 2 short-form comparisons.
@@ -635,10 +646,13 @@ witness-level metrics are sampling context rather than ending norms.
 
 ##### Control distinction
 
-Deferred until validation.
+The held-out short story preserves unresolved implications, while the
+held-out Time Machine sample confirms only local testimony closure. The
+journey control instead settles its principal outcomes, a local contrast
+rather than proof of Wells distinctiveness.
 
 ##### Unresolved uncertainty
 
-Three independent development witnesses support the bounded relation, but the
-evidence does not establish a shared terminal mechanism across forms, all
-short fiction, held-out Wells material, or neighbouring period works.
+The terminal *Time Machine* frame is absent from the held-out window, and only
+one journey-architecture control was tested. Wider ending practice and
+corpus-level distinctiveness therefore remain unresolved.

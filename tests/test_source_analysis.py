@@ -4337,7 +4337,9 @@ def _commit_heldout_only_assessment(story: Path) -> None:
     _commit_fixture_validation(story, "record held-out-only assessment")
 
 
-def _author_and_commit_complete_outcomes(story: Path) -> None:
+def _author_and_commit_complete_outcomes(
+    story: Path, *, update_control_fields: bool = False
+) -> None:
     root = story.parents[1]
     heldout = _heldout_fixture_passage(root, story)
     control = _control_fixture_passage(root)
@@ -4346,6 +4348,9 @@ def _author_and_commit_complete_outcomes(story: Path) -> None:
     ledger["stage"] = "validated"
     ledger["claims"][0]["status"] = "qualified"
     ledger["claims"][0]["confidence"] = "moderate"
+    if update_control_fields:
+        ledger["claims"][0]["classification"] = "wells_characteristic_but_shared"
+        ledger["claims"][0]["control_results"] = ["control-fixture-claim"]
     ledger_path.write_text(yaml.safe_dump(ledger, sort_keys=False), encoding="utf-8")
     profile_path = story / "source-study/wells-profile.md"
     profile_path.write_text(
@@ -4421,6 +4426,21 @@ def _complete_committed_candidate_fixture(root: Path) -> Path:
     run_source_analysis(root, "fixture", "validate")
     _author_and_commit_complete_outcomes(story)
     return story
+
+
+def test_complete_validation_accepts_control_derived_claim_fields(
+    tmp_path: Path,
+) -> None:
+    story, _candidate_commit = _prepare_committed_candidate_fixture(
+        tmp_path, with_claim=True
+    )
+    _commit_heldout_only_assessment(story)
+    run_source_analysis(tmp_path, "fixture", "validate")
+    _author_and_commit_complete_outcomes(story, update_control_fields=True)
+
+    result = run_source_analysis(tmp_path, "fixture", "validate")
+
+    assert result.stage == "validate"
 
 
 def test_validate_accepts_manifest_bound_generated_corpus_lock(

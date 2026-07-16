@@ -3893,6 +3893,37 @@ def test_leakage_rejects_a_within_work_holdout_passage_id_in_free_text(tmp_path:
         validate_leakage([path], forbidden_witness_ids=set(), forbidden_passages=[passage])
 
 
+def test_leakage_scans_passage_locators_without_one_regex_search_per_id(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    forbidden = [
+        SimpleNamespace(
+            passage_id=f"holdout:heading:{index}:{index:012x}",
+            normalized_text="",
+        )
+        for index in range(1, 2001)
+    ]
+    target = forbidden[1499].passage_id
+    path = tmp_path / "profile.md"
+    path.write_text(f"Archived locator: archive/{target}.md\n", encoding="utf-8")
+    search_calls = 0
+    original_search = source_evidence.re.search
+
+    def counting_search(pattern: str, text: str):
+        nonlocal search_calls
+        search_calls += 1
+        return original_search(pattern, text)
+
+    monkeypatch.setattr(source_evidence.re, "search", counting_search)
+
+    result = collect_leakage_issues(
+        [path], forbidden_witness_ids=set(), forbidden_passages=forbidden
+    )
+
+    assert any(issue.locator == target for issue in result.errors)
+    assert search_calls <= 1
+
+
 def test_develop_pipeline_rejects_holdout_passage_id_in_tracked_artifact(
     tmp_path: Path,
 ) -> None:

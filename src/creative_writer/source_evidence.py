@@ -42,6 +42,16 @@ PROTOCOL_PROFILE_SENTINEL = "No reviewed descriptive synthesis is recorded at pr
 FORBIDDEN_TEXT_MIN_TOKENS = 8
 _TOKEN_RE = re.compile(r"[^\W_]+(?:['’][^\W_]+)*", re.UNICODE)
 _PLACEHOLDER_RE = re.compile(r"\b(?:tbd|todo|placeholder|no reviewed|reserved for)\b", re.I)
+_PASSAGE_LOCATOR_RE = re.compile(
+    r"(?<![A-Za-z0-9_-])"
+    r"(?P<locator>"
+    r"[a-z0-9]+(?:-[a-z0-9]+)*(?:/[a-z0-9]+(?:-[a-z0-9]+)*)*"
+    r":[a-z0-9]+(?:-[a-z0-9]+)*:[1-9][0-9]*:[0-9a-f]{12}"
+    r")"
+    r"(?![A-Za-z0-9_-])"
+)
+
+
 class DuplicateJSONKeyError(ValueError):
     """Raised when a JSON object repeats a key at any nesting level."""
 
@@ -1229,6 +1239,23 @@ def validate_quantitative_profile(*args, **kwargs) -> ValidationResult:
     return raise_for_issues(result, "Quantitative profile validation")
 
 
+def _forbidden_passage_locators_in_text(
+    text: str, forbidden_ids: set[str]
+) -> set[str]:
+    """Extract bound passage locators once, including locators under path prefixes."""
+
+    found: set[str] = set()
+    for match in _PASSAGE_LOCATOR_RE.finditer(text):
+        candidate = match.group("locator")
+        witness_path, remainder = candidate.split(":", 1)
+        components = witness_path.split("/")
+        for start in range(len(components)):
+            locator = f"{'/'.join(components[start:])}:{remainder}"
+            if locator in forbidden_ids:
+                found.add(locator)
+    return found
+
+
 def collect_leakage_issues(
     paths: Sequence[Path],
     *,
@@ -1243,6 +1270,7 @@ def collect_leakage_issues(
 
     result = ValidationResult()
     forbidden_sequences: list[tuple[str, tuple[str, ...]]] = []
+    forbidden_passage_ids = {passage.passage_id for passage in forbidden_passages}
     for passage in forbidden_passages:
         tokens = tuple(token.casefold() for token in _TOKEN_RE.findall(unicodedata.normalize("NFC", passage.normalized_text)))
         if len(tokens) >= FORBIDDEN_TEXT_MIN_TOKENS:
@@ -1271,10 +1299,16 @@ def collect_leakage_issues(
             ]
             if disallowed or occurrences != len(allowed_node_ids):
                 result.errors.append(_error(path, "Forbidden holdout or Tier 4 witness ID appears in tracked development content", locator=witness_id))
-        for passage in forbidden_passages:
-            boundary = rf"(?<![A-Za-z0-9_-]){re.escape(passage.passage_id)}(?![A-Za-z0-9_-])"
-            if re.search(boundary, text):
-                result.errors.append(_error(path, "Forbidden holdout passage ID appears in tracked development content", locator=passage.passage_id))
+        for passage_id in sorted(
+            _forbidden_passage_locators_in_text(text, forbidden_passage_ids)
+        ):
+            result.errors.append(
+                _error(
+                    path,
+                    "Forbidden holdout passage ID appears in tracked development content",
+                    locator=passage_id,
+                )
+            )
         tokens = tuple(token.casefold() for token in _TOKEN_RE.findall(unicodedata.normalize("NFC", text)))
         for locator, sequence in forbidden_sequences:
             if any(

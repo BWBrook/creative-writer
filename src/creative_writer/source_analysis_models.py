@@ -1124,6 +1124,17 @@ class ReviewRunProvenance(StrictModel):
     def unique_record_references(cls, value: list[str], info) -> list[str]:
         return _validate_unique(value, info.field_name)
 
+    @model_validator(mode="after")
+    def validate_whole_study_outcome(self) -> "ReviewRunProvenance":
+        if (
+            self.stage == "whole_study_audit"
+            and self.outcome not in {"approved", "changes_requested"}
+        ):
+            raise ValueError(
+                "whole-study audit outcome must be approved or changes_requested"
+            )
+        return self
+
 
 class ReviewerRecord(StrictModel):
     id: Slug

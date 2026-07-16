@@ -4514,7 +4514,7 @@ def _author_and_commit_complete_outcomes(
                     "materials_seen": ["approved design", "final artifacts", "compiled report"],
                     "independent_of_candidate_authorship": True,
                     "anonymisation_status": "not_anonymised",
-                    "outcome": "No further synthetic changes requested.",
+                    "outcome": "approved",
                     "limitations": "This fixture does not model substantive literary rereading.",
                 },
             ],
@@ -5112,27 +5112,31 @@ def test_complete_validation_rejects_missing_or_mismatched_review_provenance(
         run_source_analysis(tmp_path, "fixture", "validate")
 
 
-@pytest.mark.parametrize("mutation", ["partial-coverage", "not-independent"])
-def test_whole_study_audit_provenance_covers_all_claims_independently(
+@pytest.mark.parametrize(
+    "mutation", ["partial-coverage", "not-independent", "changes-requested"]
+)
+def test_whole_study_audit_requires_approved_independent_full_claim_coverage(
     tmp_path: Path, mutation: str
 ) -> None:
     story = _complete_committed_candidate_fixture(tmp_path)
     payload = _read_validation_payload(story)
     candidate_claim_ids = {"fixture-claim"}
+    audit = next(
+        run
+        for run in payload["review_run_provenance"]  # type: ignore[index]
+        if run["stage"] == "whole_study_audit"
+    )
     if mutation == "partial-coverage":
         candidate_claim_ids.add("second-candidate-claim")
-    else:
-        audit = next(
-            run
-            for run in payload["review_run_provenance"]  # type: ignore[index]
-            if run["stage"] == "whole_study_audit"
-        )
+    elif mutation == "not-independent":
         audit["independent_of_candidate_authorship"] = False
+    else:
+        audit["outcome"] = "changes_requested"
     record = source_validation.ValidationRecord.model_validate(payload)
 
     with pytest.raises(
         CreativeWriterError,
-        match="independent whole-study audit.*all candidate claims",
+        match="approved independent whole-study audit.*all candidate claims",
     ):
         source_validation._validate_review_provenance(
             record,

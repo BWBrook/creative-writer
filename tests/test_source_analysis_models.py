@@ -25,6 +25,7 @@ from creative_writer.source_analysis_models import (
     WitnessDescriptor,
     WitnessMetricRecord,
     QuantitativeProfile,
+    ReviewRunProvenance,
     ValidationRecord,
     _heading_slug,
     parse_validation_document,
@@ -1336,6 +1337,46 @@ def test_validation_record_accepts_strict_review_run_provenance_and_reviewer_lin
 
     assert record.review_run_provenance[0].run_id == "heldout-frame-review"
     assert record.reviewer_records[0].review_run_ids[-1] == "claim-synthesis-review"
+
+
+@pytest.mark.parametrize("outcome", ["approved", "changes_requested"])
+def test_whole_study_audit_accepts_structured_outcomes(outcome: str) -> None:
+    record = ReviewRunProvenance.model_validate(
+        {
+            "run_id": "whole-study-audit",
+            "reviewer_id": "independent-reviewer",
+            "role_id": "independent-whole-study-auditor",
+            "stage": "whole_study_audit",
+            "assigned_claim_ids": ["claim-frame-1"],
+            "method": "Independent review of the final evidence layer.",
+            "materials_seen": ["final report"],
+            "independent_of_candidate_authorship": True,
+            "anonymisation_status": "not_anonymised",
+            "outcome": outcome,
+            "limitations": "The source identities were visible.",
+        }
+    )
+
+    assert record.outcome == outcome
+
+
+def test_whole_study_audit_rejects_unstructured_outcome() -> None:
+    with pytest.raises(ValidationError, match="whole-study audit outcome"):
+        ReviewRunProvenance.model_validate(
+            {
+                "run_id": "whole-study-audit",
+                "reviewer_id": "independent-reviewer",
+                "role_id": "independent-whole-study-auditor",
+                "stage": "whole_study_audit",
+                "assigned_claim_ids": ["claim-frame-1"],
+                "method": "Independent review of the final evidence layer.",
+                "materials_seen": ["final report"],
+                "independent_of_candidate_authorship": True,
+                "anonymisation_status": "not_anonymised",
+                "outcome": "No further changes requested.",
+                "limitations": "The source identities were visible.",
+            }
+        )
 
 
 def test_review_run_provenance_is_forbidden_before_complete_validation() -> None:

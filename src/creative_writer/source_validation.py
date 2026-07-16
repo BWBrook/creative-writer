@@ -1046,11 +1046,12 @@ def _validate_review_provenance(
     if not any(
         run.stage == "whole_study_audit"
         and run.independent_of_candidate_authorship
+        and run.outcome == "approved"
         and set(run.assigned_claim_ids) == candidate_claim_ids
         for run in record.review_run_provenance
     ):
         raise CreativeWriterError(
-            "Complete validation requires an independent whole-study audit "
+            "Complete validation requires an approved independent whole-study audit "
             "covering all candidate claims"
         )
 

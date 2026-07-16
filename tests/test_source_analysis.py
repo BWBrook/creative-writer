@@ -860,6 +860,26 @@ def test_prepare_rejects_cross_story_generated_path_symlink_before_output(
     assert not (tmp_path / "stories/fixture/source-study/holdouts.yml").exists()
 
 
+def test_prepare_accepts_published_validation_current_symlink(tmp_path: Path) -> None:
+    _fixture(tmp_path)
+    validation_root = tmp_path / "build/fixture/source-study/validation"
+    published = source_validation.publish_validation_generation(
+        validation_root,
+        {
+            "validation-metrics.json": b"{}\n",
+            "validation-packet.md": b"# Validation packet\n",
+            "analysis-report.md": b"# Analysis report\n",
+        },
+    )
+
+    result = run_source_analysis(tmp_path, "fixture", "prepare")
+
+    assert result.holdout_manifest_verified is True
+    assert (validation_root / "current").readlink() == Path(
+        f"generations/{published.generation_id}"
+    )
+
+
 def test_holdout_partition_error_names_partition_windows() -> None:
     config = _config_for_selection()
     passages = [_passage("wells-alpha", 1, 1)]

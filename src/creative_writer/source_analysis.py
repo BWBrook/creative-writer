@@ -331,7 +331,17 @@ def _resolve_generated_paths(
                 f"Generated path for {key} escapes repository root through a "
                 f"symlink: {relative} -> {target}"
             ) from exc
-        if target != exact_target:
+        current = exact_target.parent
+        managed_current = (
+            key in {"validation_metrics", "validation_packet", "analysis_report"}
+            and current.name == "current"
+            and current.is_symlink()
+            and current.parent.name == "validation"
+            and current.parent.resolve(strict=False) == current.parent
+            and re.fullmatch(r"generations/[0-9a-f]{64}", os.readlink(current))
+            is not None
+        )
+        if target != exact_target and not managed_current:
             raise CreativeWriterError(
                 f"Generated path for {key} redirects through a symlink: "
                 f"{relative} -> {target}; expected lexical target {exact_target}"

@@ -1,16 +1,16 @@
 ---
 schema_version: 1
 study_id: time-expedition-wells-phase-2b
-stage: candidate_frozen
-validation_step: heldout_assessed
+stage: validated
+validation_step: complete
 candidate_commit: a8f658d5b107cbd90e8e2e59b37e21e7042b3ca1
 candidate_analysis_sha256: a1b6c8a50e1527b587fa3861413cc78d87f02f9d2773768859ac629ba5258a6f
 candidate_manifest_sha256: 7ff1aaa6c96209ce8a22511840018d6e21580658d1421d4a8e76baef21690d67
 candidate_profile_sha256: a78c766eaeac350c32f25ab30ff76d089981dee733a6a44e47dd610ea2ab3caf
 candidate_ledger_sha256: 7c5e5022ab295a1178b06876398b955afda74ecdceafb63144c55bda4d8b48c7
 holdout_summary: All 25 predeclared held-out Wells targets have been assessed; 21 support the candidate tendency and 4 qualify its scope, with none disconfirming it.
-control_summary: Tier 4 controls remain quarantined until this complete held-out assessment is committed and a subsequent validation pass authorises access.
-reviewer_summary: Development evidence and the candidate profile received independent tier-specific and cross-work review before freeze; held-out assessments are complete and final validation review remains pending.
+control_summary: All 10 predeclared Tier 4 comparisons are complete; 9 share the bounded tendency and 1 does not, without granting controls positive authority or supporting a period-wide inference.
+reviewer_summary: Independent held-out and control readers supplied claim-level assessments; their distributed panel synthesis approves 6 bounded claims and qualifies 4, with none rejected.
 heldout_claim_results:
   - id: heldout-tm-frame
     claim_id: mediated-testimony-frame
@@ -417,25 +417,483 @@ heldout_claim_results:
       This is slower, retrospective survey rather than immediate pursuit, supporting
       the frozen tendency's stated variation in catastrophe tempo. The inference is
       local to the cited aftermath sequence.
-control_comparisons: []
-reviewer_records: []
-claim_transitions: []
-unresolved_uncertainty: Held-out Wells evidence supports or qualifies every candidate tendency, but role-work aliasing, limited replication, and period distinctiveness remain unresolved until the quarantined controls and independent validation review are complete.
-final_profile_sha256: null
-final_ledger_sha256: null
+control_comparisons:
+  - id: desert-group-dialogue
+    claim_id: dialogue-pressure-varies-by-context
+    expectation_target_id: desert-group
+    witness_id: a-desert-drama
+    role: group dialogue
+    passage_ids:
+    - a-desert-drama:chapter-i:33:21d52f787067
+    - a-desert-drama:chapter-i:34:331b0501e05f
+    - a-desert-drama:chapter-i:35:031d52d8dbf3
+    comparison: The control scene distributes group conversation across successive contributions from Sadie,
+      her aunt, and Stephens, with Stephens's reply also carried by a document handoff and Sadie's laughter.
+      This shares the frozen claim's local organisation of group talk through multiple voices and reactions,
+      although the selected turns are not uniformly brief.
+    result: shared
+    notes: This comparison is restricted to the declared group-dialogue role and the three cited passages.
+      A single control scene cannot establish that social pressure causes turn length or that the control
+      reproduces Wells's full cross-context variation. Shared dialogue distribution may be a role or period
+      convention; it is not evidence against historical plausibility, a positive profile of the control
+      author, or an authorship claim.
+  - id: desert-danger-pacing
+    claim_id: danger-through-observation
+    expectation_target_id: desert-danger
+    witness_id: a-desert-drama
+    role: danger pacing
+    passage_ids:
+    - a-desert-drama:stoppa-backa-cried-the-native-pilot-to-the-european-engineer:217:c5a008af45d1
+    - a-desert-drama:stoppa-backa-cried-the-native-pilot-to-the-european-engineer:219:9315b8d586ce
+    - a-desert-drama:chapter-iv:227:8c3a290209ac
+    comparison: The control first presents approaching camel riders as a picturesque sight, then records
+      a collective hush and involuntary physical reactions, and only afterward gives the Colonel's explicit
+      recognition that the riders are hostile. This shares the frozen claim's consequence-before-explanatory-closure
+      pacing at a local adventure scale.
+    result: shared
+    notes: The sequence is bounded to one approach scene, and an earlier contextual warning about Dervishes
+      makes the danger less wholly unexplained than the initial misrecognition alone suggests. The comparison
+      shows that the local pacing can occur under generic adventure pressure; it does not establish a universal
+      or period-wide suspense law, diminish historical plausibility, profile the control author positively,
+      or support an authorship inference.
+  - id: solomon-journey-closure
+    claim_id: short-form-evidentiary-closure
+    expectation_target_id: solomon-journey
+    witness_id: king-solomons-mines
+    role: journey architecture
+    passage_ids:
+    - king-solomons-mines:xx:1521:b6ceb2d61e7f
+    - king-solomons-mines:xx:1522:fccb8920e6ba
+    - king-solomons-mines:xx:1525:a22ed968478c
+    comparison: The control explicitly ends the history, compresses the repetitive return journey, confirms
+      the travellers' safe arrival, and closes with the narrator's concrete decision to sail and supervise
+      publication. It closes a journey record, but unlike the frozen claim it does not leave the expedition's
+      larger invoked implications unresolved; the principal outcomes are settled and the final sentence
+      opens a practical next action.
+    result: not_shared
+    notes: This distinction is local to the cited terminal sequence and depends on treating unresolved event
+      implications as different from ordinary continuation after a completed journey. The comparison does
+      not prove that generic journey endings cannot preserve epistemic uncertainty, establish period distinctiveness,
+      create a positive profile of the control author, or support an authorship claim.
+  - id: beetle-mediated-narrators
+    claim_id: mediated-testimony-frame
+    expectation_target_id: beetle-narrators
+    witness_id: the-beetle
+    role: multiple narrators
+    passage_ids:
+    - the-beetle:book-i-the-house-with-the-open-window:54:8440a05cc8de
+    - the-beetle:book-iv-in-pursuit:2249:a031a184a704
+    - the-beetle:chapter-xlviii:3234:45875e9c723b
+    comparison: The control makes mediation overt by labelling Holt's contribution a narration, presenting
+      Champnell's conclusion as an extract from a case-book, and finally disclosing that Holt's apparent
+      first-person record was compiled from statements made to two other participants. This shares the frozen
+      Wells claim's visible chain of testimony, transcription, and evidentiary access, although it distributes
+      that chain across a multi-narrator novel.
+    result: shared
+    notes: The comparison is confined to the declared multiple-narrator role and to explicit documentary
+      signals; it does not establish how continuously credibility and uncertainty operate between those
+      signals. Shared mediation in this control prevents a claim of corpus-level Wells distinctiveness,
+      but does not create a positive profile of Marsh, a period-wide rule, stylistic equivalence, or authorship
+      evidence.
+  - id: beetle-role-shaped-distance
+    claim_id: role-shaped-narrator-distance
+    expectation_target_id: beetle-multiple
+    witness_id: the-beetle
+    role: multiple narrators
+    passage_ids:
+    - the-beetle:chapter-ix:396:ff76f6bcefc4
+    - the-beetle:chapter-xviii:1235:b508bc2e1193
+    - the-beetle:chapter-xxiii:1752:eec3779ebde5
+    comparison: Three narrators place represented experience at different retrospective distances. Holt
+      separates possible fact from imagination and marks the continuing force of memory; Atherton recasts
+      his experience as a doubtful sworn statement; and Marjorie corrects her earlier understanding from
+      later hindsight. The control therefore shares the broad frozen tendency for narrator-specific relations
+      between experience, present judgement, and self-presentation.
+    result: shared
+    notes: Narrator, book division, episode, and rhetorical purpose are completely confounded, and the control
+      does not reproduce the Wells claim's essay-voice comparison. Shared marks only a bounded occurrence
+      outside Wells. It does not establish causal role-shaping, a general Victorian convention, a positive
+      control-author profile, stylistic equivalence, or authorship.
+  - id: barbarians-romance-qualified-inference
+    claim_id: qualified-speculative-inference
+    expectation_target_id: barbarians-romance
+    witness_id: the-british-barbarians
+    role: scientific-romance control
+    passage_ids:
+    - the-british-barbarians:i:37:087b5c821b52
+    comparison: The frozen Wells claim concerns observed detail moving into an explanation that remains
+      provisional, revisable, or perception-limited. Here Philip inventories the stranger's sudden appearance
+      and the visible approaches, poses competing explanations, and leaves his hedgerow explanation conditional
+      on a socially biased assumption; the movement from observation to explanation is therefore explicitly
+      limited by his viewpoint.
+    result: shared
+    notes: This is one local opening passage in the declared scientific-romance control, not evidence of
+      prevalence across the witness. Qualification is confounded with satirical focalisation through Philip's
+      snobbery and with the unexplained visitor premise. It neither establishes a general late-Victorian
+      convention nor supports a positive profile, stylistic attribution, or authorship claim.
+  - id: barbarians-satire-social-friction
+    claim_id: humour-through-social-friction
+    expectation_target_id: barbarians-satire
+    witness_id: the-british-barbarians
+    role: social satire
+    passage_ids:
+    - the-british-barbarians:ii:130:dc2c2c7ed9db
+    - the-british-barbarians:ii:132:3690dd63c4ac
+    - the-british-barbarians:ii:133:4e2614c49812
+    comparison: The frozen Wells claim locates humour in a mismatch between social manner and incompatible
+      understandings of the situation. Here Bertram's courteous, literal treatment of respectability as
+      taboo collides with Frida's sense that he has carried the joke too far and Philip's stiff insistence
+      that civilised England has no taboos; Bertram's polite catalogue then sharpens that mismatch.
+    result: shared
+    notes: The comparison is confined to this adjacent exchange in the declared social- satire role. Humour
+      also depends on narratorial irony, conceptual reversal, and the visitor premise, so social friction
+      is not isolated as the sole cause. One control work cannot establish period generality, a control-author
+      style profile, stylistic attribution, or authorship.
+  - id: days-qualified-scientific-exposition
+    claim_id: qualified-scientific-exposition
+    expectation_target_id: days-technical
+    witness_id: the-days-work
+    role: technical-work control
+    passage_ids:
+    - the-days-work:the-bridge-builders:72:c8e7cc2f7612
+    comparison: 'The engineer tests the bridge''s capacity against the observed flood by remembering, comparing,
+      estimating, and recalculating its components. His conclusion is locally qualified: the present load
+      is near the bridge''s limit, an embankment weakness remains possible, and river scour is an explicitly
+      unknown quantity. This supplies outside the declared Wells roles the frozen claim''s combination of
+      technical explanation, observable procedure, comparison, and bounded uncertainty.'
+    result: shared
+    notes: The observation is confined to one crisis passage in one technical-work control witness. Engineering
+      subject matter, professional focalisation, and immediate plot danger are confounded, so the passage
+      does not estimate frequency or separate author, genre, role, or period. Shared means only that the
+      bounded feature occurs in this control; it neither makes a positive profile of the control author
+      nor supports period-wide, stylistic-equivalence, historical-implausibility, or authorship claims.
+  - id: days-role-shaped-syntax
+    claim_id: role-shaped-syntax
+    expectation_target_id: days-dialogue
+    witness_id: the-days-work
+    role: professional dialogue
+    passage_ids:
+    - the-days-work:the-bridge-builders:17:204f12e196af
+    - the-days-work:the-bridge-builders:18:e96545431969
+    - the-days-work:the-bridge-builders:21:6b4843e20220
+    comparison: Within the professional exchange, a warning develops through a coordinated statement and
+      a qualified question, the reply contracts to two short declaratives, and a later turn expands through
+      technical contrast, comparison with a ship and gang-plank, and successive questions. The resulting
+      turn-to-turn sentence and paragraph movement is locally varied rather than a uniform cadence, sharing
+      the broad observable tendency in the frozen Wells claim without reproducing its three-role comparison.
+    result: shared
+    notes: These adjacent turns are one exchange, not independent replications, and their movement is confounded
+      with speaker, turn function, technical topic, represented speech, and scene. A single professional-dialogue
+      role cannot establish that role causes syntax or reproduce the frozen claim's cross-role design. Shared
+      therefore marks local occurrence outside Wells, not a positive control-author profile, a general late-Victorian
+      rule, stylistic equivalence, historical implausibility, or authorship evidence.
+  - id: days-selective-observed-description
+    claim_id: selective-observed-description
+    expectation_target_id: days-machinery
+    witness_id: the-days-work
+    role: machinery
+    passage_ids:
+    - the-days-work:the-bridge-builders:2:e421ff64ab2a
+    comparison: The bridge survey selects dimensions, materials, structural categories, spatial relations,
+      moving equipment, labour, sound, colour, and flame around the observable state and operation of the
+      works. The details are organised by spatial inspection and functional classification rather than offered
+      as an unstructured inventory, so the machinery control shares the frozen claim's broad descriptive
+      selectivity.
+    result: shared
+    notes: This is one long opening survey in one machinery-authorised witness; scale, engineering subject,
+      omniscient narration, spectacle, and narrative placement are confounded. Selection is inferred from
+      the organisation of stated details, not from evidence about omitted details. The comparison does not
+      establish frequency, causal role-shaping, a period-wide convention, stylistic equivalence, historical
+      implausibility, a positive profile of the control author, or authorship.
+reviewer_records:
+  - id: review-mediated-testimony-frame
+    claim_id: mediated-testimony-frame
+    reviewer_id: distributed-phase-2b-validation-panel
+    outcome: approved
+    heldout_result_ids:
+    - heldout-tm-frame
+    - heldout-star-testimony
+    control_comparison_ids:
+    - beetle-mediated-narrators
+    notes: Both held-out roles retain visible evidentiary mediation, while the control establishes that
+      overt narrative records also occur outside Wells. The bounded Wells finding is retained without a
+      distinctiveness claim.
+  - id: review-role-shaped-narrator-distance
+    claim_id: role-shaped-narrator-distance
+    reviewer_id: distributed-phase-2b-validation-panel
+    outcome: approved
+    heldout_result_ids:
+    - heldout-tm-reported
+    - heldout-moreau-retrospective
+    - heldout-matters-essay
+    control_comparison_ids:
+    - beetle-role-shaped-distance
+    notes: All three held-out role targets reproduce the declared forms of distance. Multiple control narrators
+      also separate experience from later judgement, so the contrasts are characteristic but not discriminating.
+  - id: review-qualified-speculative-inference
+    claim_id: qualified-speculative-inference
+    reviewer_id: distributed-phase-2b-validation-panel
+    outcome: approved
+    heldout_result_ids:
+    - heldout-tm-speculation
+    - heldout-war-inference
+    control_comparison_ids:
+    - barbarians-romance-qualified-inference
+    notes: Both held-out targets retain revisable or explicitly bounded explanation. The control supplies
+      the same broad observation-to-qualified-explanation movement under satirical focalisation.
+  - id: review-qualified-scientific-exposition
+    claim_id: qualified-scientific-exposition
+    reviewer_id: distributed-phase-2b-validation-panel
+    outcome: qualified
+    heldout_result_ids:
+    - heldout-tm-exposition
+    - heldout-moreau-argument
+    - heldout-biology-instruction
+    - heldout-biology-comparison
+    control_comparison_ids:
+    - days-qualified-scientific-exposition
+    notes: Three held-out targets support the claim, but Moreau's argument is less epistemically qualified
+      than expected. The technical-work control shares procedural explanation and bounded uncertainty.
+  - id: review-dialogue-pressure-varies-by-context
+    claim_id: dialogue-pressure-varies-by-context
+    reviewer_id: distributed-phase-2b-validation-panel
+    outcome: approved
+    heldout_result_ids:
+    - heldout-invisible-dialogue
+    - heldout-moreau-stress
+    control_comparison_ids:
+    - desert-group-dialogue
+    notes: Held-out scenes confirm substantial within- and cross-work variation under pressure. The group-dialogue
+      control shares distributed turns and reactions, preventing a distinctiveness inference.
+  - id: review-role-shaped-syntax
+    claim_id: role-shaped-syntax
+    reviewer_id: distributed-phase-2b-validation-panel
+    outcome: approved
+    heldout_result_ids:
+    - heldout-tm-rhythm
+    - heldout-invisible-rhythm
+    - heldout-matters-rhythm
+    control_comparison_ids:
+    - days-role-shaped-syntax
+    notes: All three held-out targets show the expected local movements, and the professional-dialogue control
+      also varies turn length and syntactic expansion. The result is descriptive rather than a role-effect
+      estimate.
+  - id: review-selective-observed-description
+    claim_id: selective-observed-description
+    reviewer_id: distributed-phase-2b-validation-panel
+    outcome: qualified
+    heldout_result_ids:
+    - heldout-war-landscape
+    - heldout-matters-microscope
+    - heldout-biology-terms
+    control_comparison_ids:
+    - days-selective-observed-description
+    notes: Landscape and biological terminology support local observational organisation, but the microscope
+      target is substantially redirected by humour and analogy. The machinery control shares functional
+      selection.
+  - id: review-danger-through-observation
+    claim_id: danger-through-observation
+    reviewer_id: distributed-phase-2b-validation-panel
+    outcome: qualified
+    heldout_result_ids:
+    - heldout-sea-danger
+    - heldout-war-catastrophe
+    control_comparison_ids:
+    - desert-danger-pacing
+    notes: Catastrophe supports consequence-before-explanation, while the biological target is weakened
+      by retrospective advance warning. The adventure control shares local recognition-after-observation
+      pacing.
+  - id: review-humour-through-social-friction
+    claim_id: humour-through-social-friction
+    reviewer_id: distributed-phase-2b-validation-panel
+    outcome: approved
+    heldout_result_ids:
+    - heldout-invisible-comic
+    - heldout-matters-humour
+    control_comparison_ids:
+    - barbarians-satire-social-friction
+    notes: Both held-out targets reproduce humour through incompatible social understandings. The social-satire
+      control shares the mechanism, alongside narratorial irony and conceptual reversal.
+  - id: review-short-form-evidentiary-closure
+    claim_id: short-form-evidentiary-closure
+    reviewer_id: distributed-phase-2b-validation-panel
+    outcome: qualified
+    heldout_result_ids:
+    - heldout-tm-ending
+    - heldout-star-ending
+    control_comparison_ids:
+    - solomon-journey-closure
+    notes: The Star supports resolved event record with open implications, but the Time Machine sample omits
+      the terminal frame. Haggard's journey closure settles its principal outcomes, yet one negative control
+      cannot establish distinctiveness.
+claim_transitions:
+  - claim_id: mediated-testimony-frame
+    from_status: candidate
+    to_status: validated
+    from_confidence: moderate
+    to_confidence: moderate
+    reason: Two supporting held-out targets validate recurrence, and the shared control corrects classification
+      without contradicting the bounded claim.
+    heldout_result_ids:
+    - heldout-tm-frame
+    - heldout-star-testimony
+    control_comparison_ids:
+    - beetle-mediated-narrators
+    reviewer_record_ids:
+    - review-mediated-testimony-frame
+  - claim_id: role-shaped-narrator-distance
+    from_status: candidate
+    to_status: validated
+    from_confidence: tentative
+    to_confidence: moderate
+    reason: Complete held-out support raises confidence, while the shared control removes any plausible
+      Wells-distinctive interpretation.
+    heldout_result_ids:
+    - heldout-tm-reported
+    - heldout-moreau-retrospective
+    - heldout-matters-essay
+    control_comparison_ids:
+    - beetle-role-shaped-distance
+    reviewer_record_ids:
+    - review-role-shaped-narrator-distance
+  - claim_id: qualified-speculative-inference
+    from_status: candidate
+    to_status: validated
+    from_confidence: tentative
+    to_confidence: moderate
+    reason: The predeclared Wells tendency recurs twice without contradiction; control sharing corrects
+      classification rather than weakening historical recurrence.
+    heldout_result_ids:
+    - heldout-tm-speculation
+    - heldout-war-inference
+    control_comparison_ids:
+    - barbarians-romance-qualified-inference
+    reviewer_record_ids:
+    - review-qualified-speculative-inference
+  - claim_id: qualified-scientific-exposition
+    from_status: candidate
+    to_status: qualified
+    from_confidence: tentative
+    to_confidence: moderate
+    reason: The tendency survives validation but requires explicit allowance for assertive scientific argument
+      and cannot be classified as distinctive.
+    heldout_result_ids:
+    - heldout-tm-exposition
+    - heldout-moreau-argument
+    - heldout-biology-instruction
+    - heldout-biology-comparison
+    control_comparison_ids:
+    - days-qualified-scientific-exposition
+    reviewer_record_ids:
+    - review-qualified-scientific-exposition
+  - claim_id: dialogue-pressure-varies-by-context
+    from_status: candidate
+    to_status: validated
+    from_confidence: tentative
+    to_confidence: moderate
+    reason: Both held-out targets support the bounded contrast; the shared control narrows classification
+      but does not contradict it.
+    heldout_result_ids:
+    - heldout-invisible-dialogue
+    - heldout-moreau-stress
+    control_comparison_ids:
+    - desert-group-dialogue
+    reviewer_record_ids:
+    - review-dialogue-pressure-varies-by-context
+  - claim_id: role-shaped-syntax
+    from_status: candidate
+    to_status: validated
+    from_confidence: tentative
+    to_confidence: moderate
+    reason: Three supporting held-out roles justify moderate confidence in the bounded contrast, with shared
+      control evidence correcting classification.
+    heldout_result_ids:
+    - heldout-tm-rhythm
+    - heldout-invisible-rhythm
+    - heldout-matters-rhythm
+    control_comparison_ids:
+    - days-role-shaped-syntax
+    reviewer_record_ids:
+    - review-role-shaped-syntax
+  - claim_id: selective-observed-description
+    from_status: candidate
+    to_status: qualified
+    from_confidence: tentative
+    to_confidence: tentative
+    reason: The claim remains useful only with the microscope qualification visible and with tentative confidence
+      after a shared control occurrence.
+    heldout_result_ids:
+    - heldout-war-landscape
+    - heldout-matters-microscope
+    - heldout-biology-terms
+    control_comparison_ids:
+    - days-selective-observed-description
+    reviewer_record_ids:
+    - review-selective-observed-description
+  - claim_id: danger-through-observation
+    from_status: candidate
+    to_status: qualified
+    from_confidence: tentative
+    to_confidence: tentative
+    reason: Mixed held-out assessment and a shared control require qualification without rejecting the bounded
+      local tendency.
+    heldout_result_ids:
+    - heldout-sea-danger
+    - heldout-war-catastrophe
+    control_comparison_ids:
+    - desert-danger-pacing
+    reviewer_record_ids:
+    - review-danger-through-observation
+  - claim_id: humour-through-social-friction
+    from_status: candidate
+    to_status: validated
+    from_confidence: tentative
+    to_confidence: moderate
+    reason: Complete held-out recurrence supports moderate confidence, while the shared control rules out
+      a Wells-distinctive classification.
+    heldout_result_ids:
+    - heldout-invisible-comic
+    - heldout-matters-humour
+    control_comparison_ids:
+    - barbarians-satire-social-friction
+    reviewer_record_ids:
+    - review-humour-through-social-friction
+  - claim_id: short-form-evidentiary-closure
+    from_status: candidate
+    to_status: qualified
+    from_confidence: moderate
+    to_confidence: moderate
+    reason: One supportive and one scope-limited held-out result justify qualification; the non-shared control
+      preserves role specificity but cannot prove uniqueness.
+    heldout_result_ids:
+    - heldout-tm-ending
+    - heldout-star-ending
+    control_comparison_ids:
+    - solomon-journey-closure
+    reviewer_record_ids:
+    - review-short-form-evidentiary-closure
+unresolved_uncertainty: Role-work aliasing, limited within-role replication, transcription sensitivity, one-control discrimination, and the absence of the terminal Time Machine frame from its held-out window remain material limits; no result supports an authorship verdict or period-wide rule.
+final_profile_sha256: 975b29b86bf174f03d65ed843514b9340cc99493f1b48857add9c0023eb100e3
+final_ledger_sha256: c9d01946ca8c68492369a9962c1953ffb1c83948d61863c152fc8514d51b54e1
 ---
 
 # Validation Record
 
-## Held-out Wells assessment
+## Final Phase 2B validation
 
 The candidate profile, evidence ledger, analysis contract, and holdout manifest
 remain bound to the recorded candidate Git commit and SHA-256 values. All 25
-predeclared held-out Wells targets have now been assessed against that frozen
-candidate: 21 support the expected tendency and four qualify its scope. No
-target disconfirms the candidate tendency.
+predeclared held-out Wells targets were assessed against that frozen candidate:
+21 support the expected tendency and four qualify its scope. No target
+disconfirms its candidate tendency.
 
-This record does not itself authorise control access while dirty. Once committed,
-a subsequent validation pass may open the Tier 4 controls. Control comparison,
-claim transitions, final classifications, and final profile reconciliation remain
-pending.
+All ten predeclared Tier 4 comparisons were then assessed within their negative
+or comparative roles. Nine show that the bounded feature also occurs outside
+Wells; the Haggard journey ending provides one local non-match. These controls
+correct classification but supply no positive style authority.
+
+Distributed independent evidence readers approve six bounded claims and qualify
+four. None is rejected or assigned strong confidence. The final descriptive
+profile and evidence ledger are bound to their recorded SHA-256 values. This
+record completes Phase 2B only; operational guidance, linting, story planning,
+and prose generation remain outside its authority.

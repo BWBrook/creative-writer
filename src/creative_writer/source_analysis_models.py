@@ -1096,6 +1096,35 @@ class ControlComparison(StrictModel):
         return _validate_unique(value, "passage_ids")
 
 
+class ReviewRunProvenance(StrictModel):
+    """One concrete review run contributing to the validation record."""
+
+    run_id: Slug
+    reviewer_id: NonEmptyText
+    role_id: Slug
+    stage: Literal[
+        "heldout_review",
+        "control_review",
+        "claim_synthesis",
+        "whole_study_audit",
+    ]
+    assigned_claim_ids: list[Slug] = Field(min_length=1)
+    method: NonEmptyText
+    materials_seen: list[NonEmptyText] = Field(min_length=1)
+    independent_of_candidate_authorship: StrictBool
+    anonymisation_status: Literal[
+        "anonymised", "not_anonymised", "mixed", "not_applicable"
+    ]
+    outcome: NonEmptyText
+    produced_record_ids: list[Slug] = Field(default_factory=list)
+    limitations: NonEmptyText
+
+    @field_validator("assigned_claim_ids", "produced_record_ids")
+    @classmethod
+    def unique_record_references(cls, value: list[str], info) -> list[str]:
+        return _validate_unique(value, info.field_name)
+
+
 class ReviewerRecord(StrictModel):
     id: Slug
     claim_id: Slug
@@ -1103,9 +1132,10 @@ class ReviewerRecord(StrictModel):
     outcome: Literal["approved", "qualified", "rejected", "inconclusive"]
     heldout_result_ids: list[Slug] = Field(min_length=1)
     control_comparison_ids: list[Slug] = Field(min_length=1)
+    review_run_ids: list[Slug] = Field(min_length=1)
     notes: NonEmptyText
 
-    @field_validator("heldout_result_ids", "control_comparison_ids")
+    @field_validator("heldout_result_ids", "control_comparison_ids", "review_run_ids")
     @classmethod
     def unique_references(cls, value: list[str], info) -> list[str]:
         return _validate_unique(value, info.field_name)
@@ -1130,6 +1160,7 @@ class ValidationRecord(StrictModel):
     )
     control_comparisons: list[ControlComparison] = Field(default_factory=list)
     reviewer_records: list[ReviewerRecord] = Field(default_factory=list)
+    review_run_provenance: list[ReviewRunProvenance] = Field(default_factory=list)
     claim_transitions: list[ClaimTransition] = Field(default_factory=list)
     unresolved_uncertainty: NonEmptyText
     final_profile_sha256: SHA256 | None = None
@@ -1163,6 +1194,14 @@ class ValidationRecord(StrictModel):
         )
         return value
 
+    @field_validator("review_run_provenance")
+    @classmethod
+    def unique_review_run_ids(
+        cls, value: list[ReviewRunProvenance]
+    ) -> list[ReviewRunProvenance]:
+        _validate_unique([item.run_id for item in value], "review run IDs")
+        return value
+
     @field_validator("claim_transitions")
     @classmethod
     def unique_transition_claim_ids(
@@ -1173,6 +1212,8 @@ class ValidationRecord(StrictModel):
 
     @model_validator(mode="after")
     def validate_stage_hashes(self) -> "ValidationRecord":
+        if self.stage != "validated" and self.review_run_provenance:
+            raise ValueError("review provenance is not allowed before complete validation")
         if self.stage != "validated" and (
             self.final_profile_sha256 is not None or self.final_ledger_sha256 is not None
         ):

@@ -10,7 +10,7 @@ candidate_profile_sha256: a78c766eaeac350c32f25ab30ff76d089981dee733a6a44e47dd61
 candidate_ledger_sha256: 7c5e5022ab295a1178b06876398b955afda74ecdceafb63144c55bda4d8b48c7
 holdout_summary: All 25 predeclared held-out Wells targets have been assessed; 21 support the candidate tendency and 4 qualify its scope, with none disconfirming it.
 control_summary: All 10 predeclared Tier 4 comparisons are complete; 9 share the bounded tendency and 1 does not, without granting controls positive authority or supporting a period-wide inference.
-reviewer_summary: Independent held-out and control readers supplied claim-level assessments; their distributed panel synthesis approves 6 bounded claims and qualifies 4, with none rejected.
+reviewer_summary: Independent delegated readers supplied all held-out and most control assessments; root completed the two Beetle controls and synthesized 6 validated and 4 qualified claim decisions, and the initial independent whole-study audit requested completion-gate repairs.
 heldout_claim_results:
   - id: heldout-tm-frame
     claim_id: mediated-testimony-frame
@@ -608,8 +608,12 @@ control_comparisons:
 reviewer_records:
   - id: review-mediated-testimony-frame
     claim_id: mediated-testimony-frame
-    reviewer_id: distributed-phase-2b-validation-panel
+    reviewer_id: root-claim-synthesis
     outcome: approved
+    review_run_ids:
+    - heldout-frame-narrator-closure
+    - control-beetle-root
+    - root-claim-synthesis
     heldout_result_ids:
     - heldout-tm-frame
     - heldout-star-testimony
@@ -620,8 +624,12 @@ reviewer_records:
       distinctiveness claim.
   - id: review-role-shaped-narrator-distance
     claim_id: role-shaped-narrator-distance
-    reviewer_id: distributed-phase-2b-validation-panel
+    reviewer_id: root-claim-synthesis
     outcome: approved
+    review_run_ids:
+    - heldout-frame-narrator-closure
+    - control-beetle-root
+    - root-claim-synthesis
     heldout_result_ids:
     - heldout-tm-reported
     - heldout-moreau-retrospective
@@ -632,8 +640,12 @@ reviewer_records:
       also separate experience from later judgement, so the contrasts are characteristic but not discriminating.
   - id: review-qualified-speculative-inference
     claim_id: qualified-speculative-inference
-    reviewer_id: distributed-phase-2b-validation-panel
+    reviewer_id: root-claim-synthesis
     outcome: approved
+    review_run_ids:
+    - heldout-inference-exposition
+    - control-british-barbarians
+    - root-claim-synthesis
     heldout_result_ids:
     - heldout-tm-speculation
     - heldout-war-inference
@@ -643,8 +655,12 @@ reviewer_records:
       the same broad observation-to-qualified-explanation movement under satirical focalisation.
   - id: review-qualified-scientific-exposition
     claim_id: qualified-scientific-exposition
-    reviewer_id: distributed-phase-2b-validation-panel
+    reviewer_id: root-claim-synthesis
     outcome: qualified
+    review_run_ids:
+    - heldout-inference-exposition
+    - control-days-work
+    - root-claim-synthesis
     heldout_result_ids:
     - heldout-tm-exposition
     - heldout-moreau-argument
@@ -656,8 +672,12 @@ reviewer_records:
       than expected. The technical-work control shares procedural explanation and bounded uncertainty.
   - id: review-dialogue-pressure-varies-by-context
     claim_id: dialogue-pressure-varies-by-context
-    reviewer_id: distributed-phase-2b-validation-panel
+    reviewer_id: root-claim-synthesis
     outcome: approved
+    review_run_ids:
+    - heldout-dialogue-syntax-humour
+    - control-adventure
+    - root-claim-synthesis
     heldout_result_ids:
     - heldout-invisible-dialogue
     - heldout-moreau-stress
@@ -667,8 +687,12 @@ reviewer_records:
       control shares distributed turns and reactions, preventing a distinctiveness inference.
   - id: review-role-shaped-syntax
     claim_id: role-shaped-syntax
-    reviewer_id: distributed-phase-2b-validation-panel
+    reviewer_id: root-claim-synthesis
     outcome: approved
+    review_run_ids:
+    - heldout-dialogue-syntax-humour
+    - control-days-work
+    - root-claim-synthesis
     heldout_result_ids:
     - heldout-tm-rhythm
     - heldout-invisible-rhythm
@@ -680,8 +704,12 @@ reviewer_records:
       estimate.
   - id: review-selective-observed-description
     claim_id: selective-observed-description
-    reviewer_id: distributed-phase-2b-validation-panel
+    reviewer_id: root-claim-synthesis
     outcome: qualified
+    review_run_ids:
+    - heldout-description-danger
+    - control-days-work
+    - root-claim-synthesis
     heldout_result_ids:
     - heldout-war-landscape
     - heldout-matters-microscope
@@ -693,8 +721,12 @@ reviewer_records:
       selection.
   - id: review-danger-through-observation
     claim_id: danger-through-observation
-    reviewer_id: distributed-phase-2b-validation-panel
+    reviewer_id: root-claim-synthesis
     outcome: qualified
+    review_run_ids:
+    - heldout-description-danger
+    - control-adventure
+    - root-claim-synthesis
     heldout_result_ids:
     - heldout-sea-danger
     - heldout-war-catastrophe
@@ -705,8 +737,12 @@ reviewer_records:
       pacing.
   - id: review-humour-through-social-friction
     claim_id: humour-through-social-friction
-    reviewer_id: distributed-phase-2b-validation-panel
+    reviewer_id: root-claim-synthesis
     outcome: approved
+    review_run_ids:
+    - heldout-dialogue-syntax-humour
+    - control-british-barbarians
+    - root-claim-synthesis
     heldout_result_ids:
     - heldout-invisible-comic
     - heldout-matters-humour
@@ -716,8 +752,12 @@ reviewer_records:
       control shares the mechanism, alongside narratorial irony and conceptual reversal.
   - id: review-short-form-evidentiary-closure
     claim_id: short-form-evidentiary-closure
-    reviewer_id: distributed-phase-2b-validation-panel
+    reviewer_id: root-claim-synthesis
     outcome: qualified
+    review_run_ids:
+    - heldout-frame-narrator-closure
+    - control-adventure
+    - root-claim-synthesis
     heldout_result_ids:
     - heldout-tm-ending
     - heldout-star-ending
@@ -726,6 +766,241 @@ reviewer_records:
     notes: The Star supports resolved event record with open implications, but the Time Machine sample omits
       the terminal frame. Haggard's journey closure settles its principal outcomes, yet one negative control
       cannot establish distinctiveness.
+review_run_provenance:
+  - run_id: heldout-frame-narrator-closure
+    reviewer_id: delegated-heldout-reader-frame-narrator-closure
+    role_id: delegated-heldout-reader
+    stage: heldout_review
+    assigned_claim_ids:
+    - mediated-testimony-frame
+    - role-shaped-narrator-distance
+    - short-form-evidentiary-closure
+    method: Independent delegated reading of the assigned held-out Wells packet with source and witness IDs visible.
+    materials_seen:
+    - frozen candidate claim assignments
+    - held-out Wells packet
+    - passage context windows
+    independent_of_candidate_authorship: true
+    anonymisation_status: not_anonymised
+    outcome: Held-out assessments recorded for the assigned frame, narrator-distance, and closure claims.
+    produced_record_ids:
+    - heldout-tm-frame
+    - heldout-star-testimony
+    - heldout-tm-reported
+    - heldout-tm-ending
+    limitations: The delegated reviewer and source IDs were not anonymised; the opaque delegated-agent ID was not retained.
+  - run_id: heldout-inference-exposition
+    reviewer_id: delegated-heldout-reader-inference-exposition
+    role_id: delegated-heldout-reader
+    stage: heldout_review
+    assigned_claim_ids:
+    - qualified-speculative-inference
+    - qualified-scientific-exposition
+    method: Independent delegated reading of the assigned held-out Wells packet with source and witness IDs visible.
+    materials_seen:
+    - frozen candidate claim assignments
+    - held-out Wells packet
+    - passage context windows
+    independent_of_candidate_authorship: true
+    anonymisation_status: not_anonymised
+    outcome: Held-out assessments recorded for inference and exposition claims.
+    produced_record_ids:
+    - heldout-tm-speculation
+    - heldout-war-inference
+    - heldout-tm-exposition
+    - heldout-moreau-argument
+    - heldout-biology-instruction
+    - heldout-biology-comparison
+    limitations: The delegated reviewer and source IDs were not anonymised; the opaque delegated-agent ID was not retained.
+  - run_id: heldout-dialogue-syntax-humour
+    reviewer_id: delegated-heldout-reader-dialogue-syntax-humour
+    role_id: delegated-heldout-reader
+    stage: heldout_review
+    assigned_claim_ids:
+    - dialogue-pressure-varies-by-context
+    - role-shaped-syntax
+    - humour-through-social-friction
+    method: Independent delegated reading of the assigned held-out Wells packet with source and witness IDs visible.
+    materials_seen:
+    - frozen candidate claim assignments
+    - held-out Wells packet
+    - passage context windows
+    independent_of_candidate_authorship: true
+    anonymisation_status: not_anonymised
+    outcome: Held-out assessments recorded for dialogue, syntax, and humour claims.
+    produced_record_ids:
+    - heldout-invisible-dialogue
+    - heldout-moreau-stress
+    - heldout-tm-rhythm
+    - heldout-invisible-rhythm
+    - heldout-matters-rhythm
+    - heldout-invisible-comic
+    - heldout-matters-humour
+    limitations: The delegated reviewer and source IDs were not anonymised; the opaque delegated-agent ID was not retained.
+  - run_id: heldout-description-danger
+    reviewer_id: delegated-heldout-reader-description-danger
+    role_id: delegated-heldout-reader
+    stage: heldout_review
+    assigned_claim_ids:
+    - selective-observed-description
+    - danger-through-observation
+    method: Independent delegated reading of the assigned held-out Wells packet with source and witness IDs visible.
+    materials_seen:
+    - frozen candidate claim assignments
+    - held-out Wells packet
+    - passage context windows
+    independent_of_candidate_authorship: true
+    anonymisation_status: not_anonymised
+    outcome: Held-out assessments recorded for description and danger claims.
+    produced_record_ids:
+    - heldout-war-landscape
+    - heldout-matters-microscope
+    - heldout-biology-terms
+    - heldout-sea-danger
+    - heldout-war-catastrophe
+    limitations: The delegated reviewer and source IDs were not anonymised; the opaque delegated-agent ID was not retained.
+  - run_id: control-adventure
+    reviewer_id: delegated-control-reader-adventure
+    role_id: delegated-control-reader
+    stage: control_review
+    assigned_claim_ids:
+    - dialogue-pressure-varies-by-context
+    - danger-through-observation
+    - short-form-evidentiary-closure
+    method: Independent delegated reading of the assigned Tier 4 control packet with source and witness IDs visible.
+    materials_seen:
+    - frozen candidate claim assignments
+    - Tier 4 control packet
+    - passage context windows
+    independent_of_candidate_authorship: true
+    anonymisation_status: not_anonymised
+    outcome: Comparative control assessments recorded for dialogue, danger, and closure claims.
+    produced_record_ids:
+    - desert-group-dialogue
+    - desert-danger-pacing
+    - solomon-journey-closure
+    limitations: The delegated reviewer and source IDs were not anonymised; controls have negative/comparative jurisdiction only, and the opaque delegated-agent ID was not retained.
+  - run_id: control-british-barbarians
+    reviewer_id: delegated-control-reader-british-barbarians
+    role_id: delegated-control-reader
+    stage: control_review
+    assigned_claim_ids:
+    - qualified-speculative-inference
+    - humour-through-social-friction
+    method: Independent delegated reading of the assigned Tier 4 control packet with source and witness IDs visible.
+    materials_seen:
+    - frozen candidate claim assignments
+    - Tier 4 control packet
+    - passage context windows
+    independent_of_candidate_authorship: true
+    anonymisation_status: not_anonymised
+    outcome: Comparative control assessments recorded for inference and humour claims.
+    produced_record_ids:
+    - barbarians-romance-qualified-inference
+    - barbarians-satire-social-friction
+    limitations: The delegated reviewer and source IDs were not anonymised; controls have negative/comparative jurisdiction only, and the opaque delegated-agent ID was not retained.
+  - run_id: control-days-work
+    reviewer_id: delegated-control-reader-days-work
+    role_id: delegated-control-reader
+    stage: control_review
+    assigned_claim_ids:
+    - qualified-scientific-exposition
+    - role-shaped-syntax
+    - selective-observed-description
+    method: Independent delegated reading of the assigned Tier 4 control packet with source and witness IDs visible.
+    materials_seen:
+    - frozen candidate claim assignments
+    - Tier 4 control packet
+    - passage context windows
+    independent_of_candidate_authorship: true
+    anonymisation_status: not_anonymised
+    outcome: Comparative control assessments recorded for exposition, syntax, and description claims.
+    produced_record_ids:
+    - days-qualified-scientific-exposition
+    - days-role-shaped-syntax
+    - days-selective-observed-description
+    limitations: The delegated reviewer and source IDs were not anonymised; controls have negative/comparative jurisdiction only, and the opaque delegated-agent ID was not retained.
+  - run_id: control-beetle-root
+    reviewer_id: root-local-control-reader-beetle
+    role_id: root-control-reader
+    stage: control_review
+    assigned_claim_ids:
+    - mediated-testimony-frame
+    - role-shaped-narrator-distance
+    method: Local root completion of the Beetle control comparison after the delegated Beetle reader was timeboxed.
+    materials_seen:
+    - frozen candidate claim assignments
+    - Beetle control passages
+    - passage context windows
+    independent_of_candidate_authorship: false
+    anonymisation_status: not_anonymised
+    outcome: Comparative control assessments recorded for mediation and narrator-distance claims.
+    produced_record_ids:
+    - beetle-mediated-narrators
+    - beetle-role-shaped-distance
+    limitations: This run was completed locally by root after the delegated Beetle reader was timeboxed; it was not independent of candidate authorship, and source and witness IDs were visible.
+  - run_id: root-claim-synthesis
+    reviewer_id: root-claim-synthesis
+    role_id: root-claim-synthesis
+    stage: claim_synthesis
+    assigned_claim_ids:
+    - mediated-testimony-frame
+    - role-shaped-narrator-distance
+    - qualified-speculative-inference
+    - qualified-scientific-exposition
+    - dialogue-pressure-varies-by-context
+    - role-shaped-syntax
+    - selective-observed-description
+    - danger-through-observation
+    - humour-through-social-friction
+    - short-form-evidentiary-closure
+    method: Root synthesis of claim decisions from the independently authored held-out and control results, plus the two locally completed Beetle comparisons.
+    materials_seen:
+    - held-out result records
+    - control comparison records
+    - candidate and final ledger/profile artifacts
+    independent_of_candidate_authorship: false
+    anonymisation_status: not_anonymised
+    outcome: Final statuses and classifications synthesized; no fresh blind review was performed.
+    produced_record_ids:
+    - review-mediated-testimony-frame
+    - review-role-shaped-narrator-distance
+    - review-qualified-speculative-inference
+    - review-qualified-scientific-exposition
+    - review-dialogue-pressure-varies-by-context
+    - review-role-shaped-syntax
+    - review-selective-observed-description
+    - review-danger-through-observation
+    - review-humour-through-social-friction
+    - review-short-form-evidentiary-closure
+    limitations: Root synthesis was not an independent fresh reviewer; it converted distributed validation results into the ten ReviewerRecord decisions.
+  - run_id: final-audit-initial
+    reviewer_id: codex-task-019f68e6-2a2e-7812-9536-b50984f45aaa
+    role_id: independent-whole-study-auditor
+    stage: whole_study_audit
+    assigned_claim_ids:
+    - mediated-testimony-frame
+    - role-shaped-narrator-distance
+    - qualified-speculative-inference
+    - qualified-scientific-exposition
+    - dialogue-pressure-varies-by-context
+    - role-shaped-syntax
+    - selective-observed-description
+    - danger-through-observation
+    - humour-through-social-friction
+    - short-form-evidentiary-closure
+    method: Independent whole-study audit of the approved design and plan, full Git range, final artifacts, and generated report.
+    materials_seen:
+    - approved design
+    - approved implementation plan
+    - full Git range
+    - final artifacts
+    - generated analysis report
+    independent_of_candidate_authorship: true
+    anonymisation_status: not_anonymised
+    outcome: changes_requested
+    produced_record_ids: []
+    limitations: Reviewed repository evidence rather than independently rereading the complete literary corpus; this was a non-blind audit, and completion approval remains an external final gate.
 claim_transitions:
   - claim_id: mediated-testimony-frame
     from_status: candidate
@@ -892,8 +1167,11 @@ or comparative roles. Nine show that the bounded feature also occurs outside
 Wells; the Haggard journey ending provides one local non-match. These controls
 correct classification but supply no positive style authority.
 
-Distributed independent evidence readers approve six bounded claims and qualify
-four. None is rejected or assigned strong confidence. The final descriptive
-profile and evidence ledger are bound to their recorded SHA-256 values. This
-record completes Phase 2B only; operational guidance, linting, story planning,
-and prose generation remain outside its authority.
+Independent delegated readers supplied all held-out assessments and most control
+comparisons. Root completed the two Beetle controls and synthesized six validated
+and four qualified claim decisions; none is rejected or assigned strong
+confidence. The initial independent whole-study audit requested the profile,
+report, and review-provenance completion-gate repairs now recorded here. The final
+descriptive profile and evidence ledger remain bound to their recorded SHA-256
+values. Operational guidance, linting, story planning, and prose generation remain
+outside this record's authority.

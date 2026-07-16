@@ -36,6 +36,7 @@ from creative_writer.source_analysis_models import (
 
 PROTOCOL_OBSERVATION_SENTINEL = "No reviewed observations are recorded at protocol status."
 PROTOCOL_PROFILE_SENTINEL = "No reviewed descriptive synthesis is recorded at protocol status."
+FINAL_PROFILE_SENTINEL = "No validated descriptive synthesis is recorded for this dimension."
 # Exact normalized passage sequences shorter than this are too likely to be
 # ordinary Victorian phrasing to identify copied source prose mechanically.
 # Partial or edited copies remain a human-review risk.
@@ -49,6 +50,10 @@ _PASSAGE_LOCATOR_RE = re.compile(
     r":[a-z0-9]+(?:-[a-z0-9]+)*:[1-9][0-9]*:[0-9a-f]{12}"
     r")"
     r"(?![A-Za-z0-9_-])"
+)
+_OVERT_PROFILE_PRESCRIPTION_RE = re.compile(
+    r"(?im)^\s*(?:writers?|future authors?|the writer)\s+(?:should|must|ought to)\b"
+    r"|^\s*(?:use|avoid|prefer|imitate|write)\s+(?!of\b)"
 )
 
 
@@ -893,10 +898,15 @@ def _profile_finding_issues(
         ordinal = int(ordinal_text)
         findings = _entry_blocks(section_content, re.compile(r"^#### Finding (\d+)$"))
         if not findings:
-            if section_content.strip() not in {PROTOCOL_PROFILE_SENTINEL, "Protocol placeholder."}:
+            if section_content.strip() not in {
+                PROTOCOL_PROFILE_SENTINEL,
+                "Protocol placeholder.",
+                FINAL_PROFILE_SENTINEL,
+            }:
                 result.errors.append(_error(path, "Profile dimension must contain contiguous findings or the exact protocol placeholder", locator=f"dimension {ordinal}"))
             elif stage in {"candidate_frozen", "validated"}:
-                result.errors.append(_error(path, "Candidate/final profile cannot retain protocol placeholders", locator=f"dimension {ordinal}"))
+                if section_content.strip() != FINAL_PROFILE_SENTINEL or stage != "validated":
+                    result.errors.append(_error(path, "Candidate/final profile cannot retain protocol placeholders", locator=f"dimension {ordinal}"))
             continue
         first_finding_line = findings[0][0]
         if any(line.strip() for line in section_content.splitlines()[:first_finding_line]):
@@ -960,6 +970,11 @@ def _profile_finding_issues(
                     continue
                 if not _content_is_human(field_value):
                     result.errors.append(_error(path, f"{field_name} must contain non-placeholder prose", locator=f"dimension {ordinal} finding {finding_number}"))
+                if (
+                    field_name != "Prohibited overgeneralisation"
+                    and _OVERT_PROFILE_PRESCRIPTION_RE.search(field_value)
+                ):
+                    result.errors.append(_error(path, "Profile contains an overt Phase 2C prescription", locator=f"dimension {ordinal} finding {finding_number}"))
             if stage == "validated" and values["Control distinction"].strip() == "Deferred until validation.":
                 result.errors.append(_error(path, "Validated profile findings require a completed control distinction", locator=f"dimension {ordinal} finding {finding_number}"))
             classification_lines = _nonblank_lines(values["Classification and confidence"])
@@ -1012,8 +1027,9 @@ def collect_profile_issues(
     config: AnalysisConfig,
     *,
     stage: str | None = None,
+    content: str | None = None,
 ) -> ValidationResult:
-    text = _read(path)
+    text = _read(path) if content is None else content
     active_stage = stage or ledger.stage or config.study_status
     return _profile_finding_issues(path, text, config=config, claims={claim.id: claim for claim in ledger.claims}, stage=active_stage)
 

@@ -1228,3 +1228,133 @@ def test_validation_models_reject_forbidden_aggregate_score_fields() -> None:
 
     with pytest.raises(ValidationError, match="authenticity_score"):
         ValidationRecord.model_validate(payload)
+
+
+def test_validation_record_accepts_strict_review_run_provenance_and_reviewer_links() -> None:
+    payload = _validation()
+    payload.update(
+        {
+            "stage": "validated",
+            "validation_step": "complete",
+            "candidate_commit": COMMIT,
+            "candidate_analysis_sha256": HASH,
+            "candidate_manifest_sha256": HASH,
+            "candidate_profile_sha256": HASH,
+            "candidate_ledger_sha256": HASH,
+            "final_profile_sha256": HASH,
+            "final_ledger_sha256": HASH,
+            "heldout_claim_results": [
+                {
+                    "id": "heldout-frame-result",
+                    "claim_id": "claim-frame-1",
+                    "expectation_target_id": "heldout-frame",
+                    "witness_id": "the-time-machine",
+                    "role": "declared role",
+                    "passage_ids": ["the-time-machine:chapter-one:1:" + HASH[:12]],
+                    "assessment": "supports",
+                    "observed_tendency": "The bounded tendency recurs.",
+                    "notes": "Synthetic held-out result.",
+                }
+            ],
+            "control_comparisons": [
+                {
+                    "id": "control-frame-result",
+                    "claim_id": "claim-frame-1",
+                    "expectation_target_id": "control-frame",
+                    "witness_id": "tier-four-control",
+                    "role": "declared role",
+                    "passage_ids": ["tier-four-control:chapter-one:1:" + HASH[:12]],
+                    "comparison": "The control is comparative only.",
+                    "result": "not_shared",
+                    "notes": "Synthetic control result.",
+                }
+            ],
+            "reviewer_records": [
+                {
+                    "id": "reviewer-frame-record",
+                    "claim_id": "claim-frame-1",
+                    "reviewer_id": "reviewer-one",
+                    "outcome": "approved",
+                    "heldout_result_ids": ["heldout-frame-result"],
+                    "control_comparison_ids": ["control-frame-result"],
+                    "review_run_ids": [
+                        "heldout-frame-review",
+                        "control-frame-review",
+                        "claim-synthesis-review",
+                    ],
+                    "notes": "Synthetic reviewer record.",
+                }
+            ],
+            "review_run_provenance": [
+                {
+                    "run_id": "heldout-frame-review",
+                    "reviewer_id": "delegated-reviewer-one",
+                    "role_id": "delegated-heldout-reader",
+                    "stage": "heldout_review",
+                    "assigned_claim_ids": ["claim-frame-1"],
+                    "method": "Independent delegated held-out reading.",
+                    "materials_seen": ["held-out packet", "candidate claim"],
+                    "independent_of_candidate_authorship": True,
+                    "anonymisation_status": "not_anonymised",
+                    "outcome": "Assessment recorded.",
+                    "produced_record_ids": ["heldout-frame-result"],
+                    "limitations": "Source and witness IDs were visible.",
+                },
+                {
+                    "run_id": "control-frame-review",
+                    "reviewer_id": "delegated-reviewer-two",
+                    "role_id": "delegated-control-reader",
+                    "stage": "control_review",
+                    "assigned_claim_ids": ["claim-frame-1"],
+                    "method": "Independent delegated control reading.",
+                    "materials_seen": ["control packet", "candidate claim"],
+                    "independent_of_candidate_authorship": True,
+                    "anonymisation_status": "not_anonymised",
+                    "outcome": "Comparison recorded.",
+                    "produced_record_ids": ["control-frame-result"],
+                    "limitations": "Source and witness IDs were visible.",
+                },
+                {
+                    "run_id": "claim-synthesis-review",
+                    "reviewer_id": "root-reviewer",
+                    "role_id": "root-claim-synthesis",
+                    "stage": "claim_synthesis",
+                    "assigned_claim_ids": ["claim-frame-1"],
+                    "method": "Synthesis of recorded validation results.",
+                    "materials_seen": ["held-out result", "control result"],
+                    "independent_of_candidate_authorship": False,
+                    "anonymisation_status": "not_anonymised",
+                    "outcome": "Reviewer decision retained.",
+                    "produced_record_ids": ["reviewer-frame-record"],
+                    "limitations": "This was not a fresh blind review.",
+                },
+            ],
+        }
+    )
+
+    record = ValidationRecord.model_validate(payload)
+
+    assert record.review_run_provenance[0].run_id == "heldout-frame-review"
+    assert record.reviewer_records[0].review_run_ids[-1] == "claim-synthesis-review"
+
+
+def test_review_run_provenance_is_forbidden_before_complete_validation() -> None:
+    payload = _validation()
+    payload["review_run_provenance"] = [
+        {
+            "run_id": "premature-review",
+            "reviewer_id": "reviewer-one",
+            "role_id": "delegated-reader",
+            "stage": "heldout_review",
+            "assigned_claim_ids": ["claim-frame-1"],
+            "method": "Premature synthetic review.",
+            "materials_seen": ["candidate claim"],
+            "independent_of_candidate_authorship": True,
+            "anonymisation_status": "not_anonymised",
+            "outcome": "Recorded.",
+            "limitations": "Premature fixture.",
+        }
+    ]
+
+    with pytest.raises(ValidationError, match="review provenance.*before complete"):
+        ValidationRecord.model_validate(payload)

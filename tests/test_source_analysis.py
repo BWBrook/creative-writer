@@ -4177,6 +4177,27 @@ def _prepare_committed_candidate_fixture(
     root: Path, *, with_claim: bool = False
 ) -> tuple[Path, str]:
     story, _ = _fixture(root)
+    quantitative_path = story / "source-study/quantitative-profile.yml"
+    quantitative = yaml.safe_load(quantitative_path.read_text(encoding="utf-8"))
+    quantitative.update(
+        {
+            "stage": "development",
+            "witnesses": [
+                {
+                    "witness_id": "wells-alpha",
+                    "source_id": "wells-alpha",
+                    "selection_id": None,
+                    "values": {"total_words": 42, "total_passages": 8},
+                    "variation": "Synthetic per-witness variation is retained.",
+                    "limitations": "Synthetic values are not inferential estimates.",
+                    "interpretive_relevance": "A bounded baseline for the report contract.",
+                }
+            ],
+        }
+    )
+    quantitative_path.write_text(
+        yaml.safe_dump(quantitative, sort_keys=False), encoding="utf-8"
+    )
     subprocess.run(["git", "init", "-q"], cwd=root, check=True)
     subprocess.run(["git", "config", "user.email", "fixture@example.test"], cwd=root, check=True)
     subprocess.run(["git", "config", "user.name", "Fixture"], cwd=root, check=True)
@@ -4216,7 +4237,14 @@ def _prepare_committed_candidate_fixture(
         ]
     ledger_path.write_text(yaml.safe_dump(ledger, sort_keys=False), encoding="utf-8")
     subprocess.run(
-        ["git", "add", "stories/fixture/source-study/analysis.yml", "stories/fixture/source-study/evidence-ledger.yml", "stories/fixture/source-study/wells-profile.md"],
+        [
+            "git",
+            "add",
+            "stories/fixture/source-study/analysis.yml",
+            "stories/fixture/source-study/evidence-ledger.yml",
+            "stories/fixture/source-study/wells-profile.md",
+            "stories/fixture/source-study/quantitative-profile.yml",
+        ],
         cwd=root,
         check=True,
     )
@@ -4374,8 +4402,18 @@ def _author_and_commit_complete_outcomes(
     ledger_path.write_text(yaml.safe_dump(ledger, sort_keys=False), encoding="utf-8")
     profile_path = story / "source-study/wells-profile.md"
     profile_path.write_text(
-        profile_path.read_text(encoding="utf-8")
-        + "\n## Final reviewed synthesis\n\nThe synthetic final profile records the reviewed boundary.\n",
+        _fixture_final_profile(
+            yaml.safe_load((story / "source-study/analysis.yml").read_text(encoding="utf-8")),
+            next(
+                item
+                for item in read_passage_index(
+                    root / "build/fixture/source-study/indexes/development.jsonl"
+                )
+                if item.witness_id == "wells-alpha"
+            ).passage_id,
+            classification=ledger["claims"][0]["classification"],
+            confidence=ledger["claims"][0]["confidence"],
+        ),
         encoding="utf-8",
     )
     (story / "source-study/period-controls.md").write_text(
@@ -4415,8 +4453,70 @@ def _author_and_commit_complete_outcomes(
                     "outcome": "qualified",
                     "heldout_result_ids": ["heldout-fixture-claim"],
                     "control_comparison_ids": ["control-fixture-claim"],
+                    "review_run_ids": [
+                        "heldout-fixture-review",
+                        "control-fixture-review",
+                        "claim-synthesis-fixture",
+                    ],
                     "notes": "The claim is retained with a bounded qualification.",
                 }
+            ],
+            "review_run_provenance": [
+                {
+                    "run_id": "heldout-fixture-review",
+                    "reviewer_id": "synthetic-heldout-reader",
+                    "role_id": "delegated-heldout-reader",
+                    "stage": "heldout_review",
+                    "assigned_claim_ids": ["fixture-claim"],
+                    "method": "Independent delegated held-out reading.",
+                    "materials_seen": ["held-out packet", "candidate claim"],
+                    "independent_of_candidate_authorship": True,
+                    "anonymisation_status": "not_anonymised",
+                    "outcome": "Assessment recorded.",
+                    "produced_record_ids": ["heldout-fixture-claim"],
+                    "limitations": "Synthetic source and witness IDs were visible.",
+                },
+                {
+                    "run_id": "control-fixture-review",
+                    "reviewer_id": "synthetic-control-reader",
+                    "role_id": "delegated-control-reader",
+                    "stage": "control_review",
+                    "assigned_claim_ids": ["fixture-claim"],
+                    "method": "Independent delegated control reading.",
+                    "materials_seen": ["control packet", "candidate claim"],
+                    "independent_of_candidate_authorship": True,
+                    "anonymisation_status": "not_anonymised",
+                    "outcome": "Comparison recorded.",
+                    "produced_record_ids": ["control-fixture-claim"],
+                    "limitations": "Synthetic source and witness IDs were visible.",
+                },
+                {
+                    "run_id": "claim-synthesis-fixture",
+                    "reviewer_id": "synthetic-root-synthesis",
+                    "role_id": "root-claim-synthesis",
+                    "stage": "claim_synthesis",
+                    "assigned_claim_ids": ["fixture-claim"],
+                    "method": "Synthesis of recorded held-out and control results.",
+                    "materials_seen": ["held-out result", "control result"],
+                    "independent_of_candidate_authorship": False,
+                    "anonymisation_status": "not_anonymised",
+                    "outcome": "Reviewer decision retained.",
+                    "produced_record_ids": ["reviewer-fixture-claim"],
+                    "limitations": "This was not a fresh blind review.",
+                },
+                {
+                    "run_id": "final-audit-fixture",
+                    "reviewer_id": "synthetic-final-auditor",
+                    "role_id": "independent-whole-study-auditor",
+                    "stage": "whole_study_audit",
+                    "assigned_claim_ids": ["fixture-claim"],
+                    "method": "Independent whole-study audit of the synthetic evidence layer.",
+                    "materials_seen": ["approved design", "final artifacts", "compiled report"],
+                    "independent_of_candidate_authorship": True,
+                    "anonymisation_status": "not_anonymised",
+                    "outcome": "No further synthetic changes requested.",
+                    "limitations": "This fixture does not model substantive literary rereading.",
+                },
             ],
             "claim_transitions": [
                 {
@@ -4438,6 +4538,75 @@ def _author_and_commit_complete_outcomes(
     )
     _write_validation_payload(story, validation, heading="# Synthetic final validation")
     _commit_fixture_validation(story, "record final validation")
+
+
+def _fixture_final_profile(
+    config: dict[str, object],
+    passage_id: str,
+    *,
+    classification: str = "role_specific",
+    confidence: str = "moderate",
+) -> str:
+    dimensions = config["dimensions"]
+    assert isinstance(dimensions, list)
+    sections: list[str] = ["# Wells Descriptive Profile", "", "## Final validated state", ""]
+    for ordinal, dimension in enumerate(dimensions, 1):
+        assert isinstance(dimension, dict)
+        label = dimension["label"]
+        assert isinstance(label, str)
+        sections.extend([f"### {ordinal}. {label}", ""])
+        if ordinal != 1:
+            sections.extend(
+                [
+                    "No validated descriptive synthesis is recorded for this dimension.",
+                    "",
+                ]
+            )
+            continue
+        sections.extend(
+            [
+                "#### Finding 1",
+                "",
+                "##### Claim IDs",
+                "",
+                "- `fixture-claim`",
+                "",
+                "##### Finding",
+                "",
+                "The bounded fixture account uses a declared frame.",
+                "",
+                "##### Classification and confidence",
+                "",
+                f"Classification: `{classification}`",
+                f"Confidence: `{confidence}`",
+                "",
+                "##### Jurisdiction",
+                "",
+                "The finding is limited to the declared fixture witness and role.",
+                "",
+                "##### Evidence",
+                "",
+                f"- `{passage_id}`",
+                "",
+                "##### Variation and counterexamples",
+                "",
+                "A targeted search recorded bounded variation and no material counterexample.",
+                "",
+                "##### Quantitative context",
+                "",
+                "The per-witness baseline is descriptive context rather than an inferential target.",
+                "",
+                "##### Control distinction",
+                "",
+                "The Tier 4 comparison remains comparative and does not authorize positive use.",
+                "",
+                "##### Unresolved uncertainty",
+                "",
+                "The finding remains limited to the declared synthetic witness and role.",
+                "",
+            ]
+        )
+    return "\n".join(sections).rstrip() + "\n"
 
 
 def _complete_committed_candidate_fixture(root: Path) -> Path:
@@ -4621,9 +4790,10 @@ def test_validate_heldout_assessed_rejects_premature_final_records_before_partit
                 "claim_id": "fixture-claim",
                 "reviewer_id": "synthetic-reviewer",
                 "outcome": "qualified",
-                "heldout_result_ids": ["heldout-fixture-claim"],
-                "control_comparison_ids": ["control-fixture-claim"],
-                "notes": "Premature synthetic review.",
+                    "heldout_result_ids": ["heldout-fixture-claim"],
+                    "control_comparison_ids": ["control-fixture-claim"],
+                    "review_run_ids": ["premature-review"],
+                    "notes": "Premature synthetic review.",
             }
         ]
     else:
@@ -4812,6 +4982,163 @@ def test_validate_compiles_qualified_final_ledger_and_retains_transition_evidenc
     assert "p-value" not in report.lower()
     final_ledger = yaml.safe_load((story / "source-study/evidence-ledger.yml").read_text(encoding="utf-8"))
     assert final_ledger["claims"][0]["status"] == "qualified"
+
+
+def _commit_final_profile_variant(story: Path, replacement: str) -> None:
+    root = story.parents[1]
+    profile_path = story / "source-study/wells-profile.md"
+    profile_path.write_text(replacement, encoding="utf-8")
+    subprocess.run(
+        ["git", "add", "stories/fixture/source-study/wells-profile.md"],
+        cwd=root,
+        check=True,
+    )
+    subprocess.run(["git", "commit", "-qm", "mutate final profile fixture"], cwd=root, check=True)
+    validation = _read_validation_payload(story)
+    validation["final_profile_sha256"] = _sha256(profile_path)
+    _write_validation_payload(story, validation, heading="# Synthetic final validation")
+    _commit_fixture_validation(story, "record mutated final profile hash")
+
+
+@pytest.mark.parametrize(
+    ("variant", "message"),
+    [
+        (
+            "extra-heading",
+            "Profile finding contains an unexpected heading",
+        ),
+        (
+            "stale-classification-confidence",
+            "Profile classification and confidence do not match linked claim",
+        ),
+        (
+            "orphaned-claim",
+            "Non-rejected claim is orphaned from the profile",
+        ),
+        (
+            "phase-2c-prescription",
+            "overt Phase 2C prescription",
+        ),
+    ],
+)
+def test_final_validation_rejects_trusted_profile_contract_failures(
+    tmp_path: Path, variant: str, message: str
+) -> None:
+    story = _complete_committed_candidate_fixture(tmp_path)
+    profile_path = story / "source-study/wells-profile.md"
+    profile = profile_path.read_text(encoding="utf-8")
+    if variant == "extra-heading":
+        profile = profile.replace(
+            "##### Evidence\n",
+            "###### Unexpected heading\n\nUnexpected record.\n\n##### Evidence\n",
+            1,
+        )
+    elif variant == "stale-classification-confidence":
+        profile = profile.replace("Confidence: `moderate`", "Confidence: `tentative`", 1)
+    elif variant == "orphaned-claim":
+        profile = profile.replace("- `fixture-claim`\n", "", 1)
+    else:
+        profile = profile.replace(
+            "The bounded fixture account uses a declared frame.",
+            "Writers should use this pattern in Phase 2C.",
+            1,
+        )
+    _commit_final_profile_variant(story, profile)
+
+    with pytest.raises(CreativeWriterError, match=message):
+        run_source_analysis(tmp_path, "fixture", "validate")
+
+
+def test_final_report_is_a_traceable_human_handoff_with_stage_appropriate_inputs(
+    tmp_path: Path,
+) -> None:
+    story = _complete_committed_candidate_fixture(tmp_path)
+
+    result = run_source_analysis(tmp_path, "fixture", "validate")
+    report = result.generated_paths["analysis_report"].read_text(encoding="utf-8")
+    heldout = _heldout_fixture_passage(tmp_path, story)
+    control = _control_fixture_passage(tmp_path)
+
+    assert "## Corpus and authority summary" in report
+    assert "Tier 1" in report and "Tier 4" in report
+    assert "## Method and limitations" in report
+    assert "## Per-witness quantitative baselines" in report
+    assert "wells-alpha" in report and "total_words: 42" in report
+    assert "## Final profile synthesis by dimension" in report
+    assert "## Final descriptive claims" in report
+    assert "`fixture-claim`" in report
+    assert "Counterexample search:" in report
+    assert heldout.passage_id in report
+    assert control.passage_id in report
+    assert "## Held-out results" in report
+    assert "Synthetic held-out assessment." in report
+    assert "## Control comparisons" in report
+    assert "Synthetic control comparison." in report
+    assert "## Review provenance and records" in report
+    assert "heldout-fixture-review" in report
+    assert "## Claim transitions" in report
+    assert "## Candidate and final hashes" in report
+    assert "## Unresolved uncertainty and rejected claims" in report
+    assert "## Phase 2C stop boundary" in report
+    assert "Authored candidate claims" not in report
+    assert "authenticity score" not in report.lower()
+
+
+def test_final_validation_does_not_fall_back_to_mutable_profile_bytes(
+    tmp_path: Path,
+) -> None:
+    story = _complete_committed_candidate_fixture(tmp_path)
+    profile_path = story / "source-study/wells-profile.md"
+    profile_path.write_text("# Mutable working-tree profile\n", encoding="utf-8")
+
+    with pytest.raises(CreativeWriterError, match="dirty or staged"):
+        run_source_analysis(tmp_path, "fixture", "validate")
+
+
+@pytest.mark.parametrize("mutation", ["missing-run", "unknown-run"])
+def test_complete_validation_rejects_missing_or_mismatched_review_provenance(
+    tmp_path: Path, mutation: str
+) -> None:
+    story = _complete_committed_candidate_fixture(tmp_path)
+    validation = _read_validation_payload(story)
+    if mutation == "missing-run":
+        validation["review_run_provenance"] = []
+    else:
+        validation["reviewer_records"][0]["review_run_ids"][0] = "unknown-review-run"
+    _write_validation_payload(story, validation, heading="# Synthetic final validation")
+    _commit_fixture_validation(story, f"mutate {mutation} provenance")
+
+    with pytest.raises(CreativeWriterError, match="review provenance"):
+        run_source_analysis(tmp_path, "fixture", "validate")
+
+
+@pytest.mark.parametrize("mutation", ["partial-coverage", "not-independent"])
+def test_whole_study_audit_provenance_covers_all_claims_independently(
+    tmp_path: Path, mutation: str
+) -> None:
+    story = _complete_committed_candidate_fixture(tmp_path)
+    payload = _read_validation_payload(story)
+    candidate_claim_ids = {"fixture-claim"}
+    if mutation == "partial-coverage":
+        candidate_claim_ids.add("second-candidate-claim")
+    else:
+        audit = next(
+            run
+            for run in payload["review_run_provenance"]  # type: ignore[index]
+            if run["stage"] == "whole_study_audit"
+        )
+        audit["independent_of_candidate_authorship"] = False
+    record = source_validation.ValidationRecord.model_validate(payload)
+
+    with pytest.raises(
+        CreativeWriterError,
+        match="independent whole-study audit.*all candidate claims",
+    ):
+        source_validation._validate_review_provenance(
+            record,
+            candidate_claim_ids,
+            require_complete=True,
+        )
 
 
 def test_validate_rejects_protocol_status_before_quarantine_read(tmp_path: Path) -> None:

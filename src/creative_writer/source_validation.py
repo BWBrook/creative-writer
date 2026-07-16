@@ -23,7 +23,12 @@ from creative_writer.models import SourceStudyAdmission, SourcesRegistry
 from creative_writer.source_analysis_models import AnalysisConfig, CorpusLock, EvidenceLedger, EvidenceClaim, HoldoutManifest, PassageIndexBinding, PassageRecord, QuantitativeProfile, ControlComparison, HeldoutClaimResult, ReviewerRecord, ValidationMetricPartition, ValidationMetricProvenance, ValidationMetricWitness, ValidationMetricsDocument, ValidationRecord, WitnessMetricRecord, WitnessDescriptor, WitnessHoldouts, load_validation_document, parse_validation_document
 from creative_writer.source_passages import context_window, parse_passage_partition
 from creative_writer.source_metrics import measure_validation_partition
-from creative_writer.source_evidence import ValidationIssue, ValidationResult, validate_period_controls
+from creative_writer.source_evidence import (
+    ValidationIssue,
+    ValidationResult,
+    validate_period_controls,
+    validate_profile_claim_links,
+)
 
 TOOL_VERSION = f"creative-writer {__version__}"
 GENERATED_FILENAMES = {"corpus_lock": "corpus-lock.json", "development_passage_index": "indexes/development.jsonl", "heldout_wells_passage_index": "indexes/heldout-wells.jsonl", "tier4_control_passage_index": "indexes/tier4-controls.jsonl", "development_metrics": "development-metrics.json", "development_metrics_csv": "development-metrics.csv", "development_report": "development-report.md", "validation_metrics": "validation/current/validation-metrics.json", "validation_packet": "validation/current/validation-packet.md", "analysis_report": "validation/current/analysis-report.md"}
@@ -95,6 +100,7 @@ class _ValidationPreflight:
     config: AnalysisConfig
     validation: ValidationRecord
     candidate_ledger: EvidenceLedger
+    candidate_quantitative_profile: QuantitativeProfile
     candidate_profile_bytes: bytes
     candidate_ledger_bytes: bytes
     candidate_profile_path: Path
@@ -594,6 +600,7 @@ def _preflight_validation(root: Path, slug: str) -> _ValidationPreflight:
     candidate_manifest_path = source_study / "holdouts.yml"
     candidate_profile_path = source_study / "wells-profile.md"
     candidate_ledger_path = source_study / "evidence-ledger.yml"
+    candidate_quantitative_profile_path = source_study / "quantitative-profile.yml"
     candidate_paths = {
         "analysis": candidate_analysis_path,
         "manifest": candidate_manifest_path,
@@ -607,6 +614,10 @@ def _preflight_validation(root: Path, slug: str) -> _ValidationPreflight:
         name: _candidate_git_blob_record(root, validation.candidate_commit, relative)
         for name, relative in candidate_relative.items()
     }
+    quantitative_relative = _relative_to_root(candidate_quantitative_profile_path, root)
+    quantitative_blob = _candidate_git_blob_record(
+        root, validation.candidate_commit, quantitative_relative
+    )
     recorded_hashes = {
         "analysis": validation.candidate_analysis_sha256,
         "manifest": validation.candidate_manifest_sha256,
@@ -628,6 +639,11 @@ def _preflight_validation(root: Path, slug: str) -> _ValidationPreflight:
             candidate_relative[name],
             expected_object_id=candidate_blobs[name][0] if name in {"analysis", "manifest"} or validation.stage == "candidate_frozen" else None,
         )
+    _verify_current_candidate_file(
+        root,
+        candidate_quantitative_profile_path,
+        quantitative_relative,
+    )
 
     try:
         config = AnalysisConfig.model_validate(
@@ -640,6 +656,9 @@ def _preflight_validation(root: Path, slug: str) -> _ValidationPreflight:
         candidate_ledger_bytes = candidate_blobs["ledger"][1]
         raw_ledger = yaml.safe_load(candidate_ledger_bytes.decode("utf-8"))
         candidate_ledger = EvidenceLedger.model_validate(raw_ledger)
+        candidate_quantitative_profile = QuantitativeProfile.model_validate(
+            yaml.safe_load(quantitative_blob[1].decode("utf-8"))
+        )
     except (UnicodeError, yaml.YAMLError, ValidationError, TypeError) as exc:
         raise CreativeWriterError(f"Frozen candidate files are not valid structured content: {exc}") from exc
     if config.study_status not in {"candidate_frozen", "validated"}:
@@ -708,6 +727,7 @@ def _preflight_validation(root: Path, slug: str) -> _ValidationPreflight:
         config=config,
         validation=validation,
         candidate_ledger=candidate_ledger,
+        candidate_quantitative_profile=candidate_quantitative_profile,
         candidate_profile_bytes=candidate_profile_bytes,
         candidate_ledger_bytes=candidate_ledger_bytes,
         candidate_profile_path=candidate_profile_path,
@@ -952,6 +972,120 @@ def _validate_record_partitions(
             raise CreativeWriterError(f"Reviewer `{reviewer.id}` does not link the complete control comparison set")
 
 
+def _validate_review_provenance(
+    record: ValidationRecord,
+    candidate_claim_ids: set[str],
+    *,
+    require_complete: bool,
+) -> None:
+    """Validate the distributed review-run graph before final publication."""
+
+    runs = {run.run_id: run for run in record.review_run_provenance}
+    if not require_complete:
+        if runs:
+            raise CreativeWriterError(
+                "Review provenance is not permitted before complete validation"
+            )
+        return
+    if not runs:
+        raise CreativeWriterError(
+            "Complete validation requires review provenance runs"
+        )
+
+    heldout = {item.id: item for item in record.heldout_claim_results}
+    controls = {item.id: item for item in record.control_comparisons}
+    reviewers = {item.id: item for item in record.reviewer_records}
+    record_claims = {
+        **{item_id: item.claim_id for item_id, item in heldout.items()},
+        **{item_id: item.claim_id for item_id, item in controls.items()},
+        **{item_id: item.claim_id for item_id, item in reviewers.items()},
+    }
+    if len(record_claims) != len(heldout) + len(controls) + len(reviewers):
+        raise CreativeWriterError("Review provenance record IDs must be unique across record types")
+
+    produced_by: dict[str, str] = {}
+    for run in record.review_run_provenance:
+        assigned = set(run.assigned_claim_ids)
+        unknown_claims = assigned - candidate_claim_ids
+        if unknown_claims:
+            raise CreativeWriterError(
+                f"Review run `{run.run_id}` assigns undeclared claim(s): {sorted(unknown_claims)}"
+            )
+        for record_id in run.produced_record_ids:
+            if record_id not in record_claims:
+                raise CreativeWriterError(
+                    f"Review run `{run.run_id}` links unknown record `{record_id}`"
+                )
+            if record_id in produced_by:
+                raise CreativeWriterError(
+                    f"Review record `{record_id}` is produced by more than one review run"
+                )
+            if record_claims[record_id] not in assigned:
+                raise CreativeWriterError(
+                    f"Review run `{run.run_id}` links record `{record_id}` for an unassigned claim"
+                )
+            produced_by[record_id] = run.run_id
+            if record_id in heldout and run.stage != "heldout_review":
+                raise CreativeWriterError(
+                    f"Held-out result `{record_id}` is linked from a non-held-out review run"
+                )
+            if record_id in controls and run.stage != "control_review":
+                raise CreativeWriterError(
+                    f"Control comparison `{record_id}` is linked from a non-control review run"
+                )
+            if record_id in reviewers and run.stage != "claim_synthesis":
+                raise CreativeWriterError(
+                    f"Reviewer record `{record_id}` is linked from a non-synthesis review run"
+                )
+
+    missing_records = set(record_claims) - set(produced_by)
+    if missing_records:
+        raise CreativeWriterError(
+            f"Complete validation has review records without provenance links: {sorted(missing_records)}"
+        )
+    if not any(
+        run.stage == "whole_study_audit"
+        and run.independent_of_candidate_authorship
+        and set(run.assigned_claim_ids) == candidate_claim_ids
+        for run in record.review_run_provenance
+    ):
+        raise CreativeWriterError(
+            "Complete validation requires an independent whole-study audit "
+            "covering all candidate claims"
+        )
+
+    for reviewer in record.reviewer_records:
+        linked_runs = []
+        for run_id in reviewer.review_run_ids:
+            run = runs.get(run_id)
+            if run is None:
+                raise CreativeWriterError(
+                    f"Reviewer record `{reviewer.id}` links unknown review provenance run `{run_id}`"
+                )
+            if reviewer.claim_id not in run.assigned_claim_ids:
+                raise CreativeWriterError(
+                    f"Reviewer record `{reviewer.id}` links review provenance run `{run_id}` for a different claim"
+                )
+            linked_runs.append(run)
+        stages = {run.stage for run in linked_runs}
+        if "claim_synthesis" not in stages:
+            raise CreativeWriterError(
+                f"Reviewer record `{reviewer.id}` must link a claim-synthesis run"
+            )
+        for result_id in reviewer.heldout_result_ids:
+            run_id = produced_by.get(result_id)
+            if run_id is None or not any(run.run_id == run_id for run in linked_runs):
+                raise CreativeWriterError(
+                    f"Reviewer record `{reviewer.id}` does not link the provenance run for held-out result `{result_id}`"
+                )
+        for comparison_id in reviewer.control_comparison_ids:
+            run_id = produced_by.get(comparison_id)
+            if run_id is None or not any(run.run_id == run_id for run in linked_runs):
+                raise CreativeWriterError(
+                    f"Reviewer record `{reviewer.id}` does not link the provenance run for control comparison `{comparison_id}`"
+                )
+
+
 def _validation_packet(
     corpus: _ValidationCorpus, *, include_controls: bool, context_radius: int
 ) -> str:
@@ -1002,51 +1136,173 @@ def _validation_report(
     metrics: ValidationMetricsDocument,
     final: bool,
     report_ledger: EvidenceLedger | None = None,
+    final_profile_text: str | None = None,
 ) -> str:
+    ledger = report_ledger or preflight.candidate_ledger
     lines = [
         "# Phase 2B analysis report",
         "",
-        "This report separates deterministic measurements from authored candidate claims and human validation records.",
+        "This report is a deterministic compilation of the trusted validation record, corpus bindings, quantitative profile, descriptive profile, evidence ledger, and review records.",
         "",
-        "## Deterministic measurements",
+        "## Corpus and authority summary",
         "",
         f"- Study: `{config.study_id}`",
         f"- Validation step: `{preflight.validation.validation_step}`",
-        "- Measurements are reported independently by witness; no pooled target is calculated.",
+        f"- Composition window: `{config.composition_window.start}-{config.composition_window.end}`",
+        f"- Corpus counts: {preflight.lock.counts.model_dump(mode='json')}",
+        f"- Admission registry: `{config.admission_registry.path}` (`{config.admission_registry.sha256}`)",
+        f"- Source registry: `{config.source_registry.path}` (`{config.source_registry.sha256}`)",
+        f"- Authority policy: `{config.authority_policy_version}`",
+        "- Authority tiers:",
     ]
-    for partition in (metrics.heldout_wells, metrics.tier4_controls):
-        if partition is None:
+    for policy in config.authority_tiers:
+        if policy.tier == 4 and metrics.tier4_controls is None:
             continue
-        lines.extend(["", f"### Partition: `{partition.partition}`", ""])
-        for witness in partition.witnesses:
+        roles = ", ".join(f"`{role}`" for role in policy.analytical_roles)
+        lines.append(
+            f"  - Tier {policy.tier}: {policy.jurisdiction} Roles: {roles or '`none declared`'}."
+        )
+    lines.extend(["- Partition bindings:"])
+    for binding in (
+        preflight.manifest.development_passage_index,
+        preflight.manifest.heldout_wells_passage_index,
+        preflight.manifest.tier4_control_passage_index,
+    ):
+        if binding.partition == "tier4_controls" and metrics.tier4_controls is None:
+            continue
+        lines.append(
+            f"  - `{binding.partition}`: `{binding.path}` ({binding.passage_count} passages; "
+            f"witnesses={binding.witness_ids}; SHA-256 `{binding.sha256}`)."
+        )
+    lines.extend(
+        [
+            "",
+            "## Method and limitations",
+            "",
+            f"- Input format: `{config.passage_rules.input_format}`; context radius: `{config.passage_rules.context_radius}` substantive blocks.",
+            f"- Partition algorithm: `{config.partition.algorithm_version}` with seed `{config.partition.seed}` and holdout fraction `{config.partition.holdout_fraction}`.",
+            f"- Enabled measurements: {', '.join(f'`{item}`' for item in config.enabled_measurements)}.",
+            "- Measurements remain per witness; no pooled Wells target, significance test, authorship verdict, or metric-to-authenticity rule is calculated.",
+            f"- Validation summary: {preflight.validation.holdout_summary}",
+            f"- Control summary: {preflight.validation.control_summary if metrics.tier4_controls is not None else 'Control material remains quarantined at this stage.'}",
+            f"- Review summary: {preflight.validation.reviewer_summary}",
+            "",
+            "## Per-witness quantitative baselines",
+            "",
+        ]
+    )
+    if preflight.candidate_quantitative_profile.witnesses:
+        for witness in preflight.candidate_quantitative_profile.witnesses:
             lines.append(
-                f"- Witness `{witness.witness_id}` (source `{witness.source_id}`, tier `{witness.authority_tier}`): "
-                f"{witness.metrics.total_words} words across {witness.metrics.total_passages} passages."
+                f"### Witness `{witness.witness_id}` (source `{witness.source_id}`)"
             )
-    lines.extend(["", "## Authored candidate claims", ""])
-    authored_ledger = report_ledger or preflight.candidate_ledger
-    for claim in authored_ledger.claims:
-        lines.append(f"- `{claim.id}`: {claim.statement} ({claim.status}, {claim.confidence}).")
+            lines.append(
+                "- Values: "
+                + "; ".join(
+                    f"`{key}: {value}`" for key, value in sorted(witness.values.items())
+                )
+            )
+            lines.extend(
+                [
+                    f"- Variation: {witness.variation}",
+                    f"- Limitations: {witness.limitations}",
+                    f"- Interpretive relevance: {witness.interpretive_relevance}",
+                    "",
+                ]
+            )
+    else:
+        lines.append("- No candidate-frozen per-witness quantitative baselines were recorded.")
+
+    if final and final_profile_text is not None:
+        lines.extend(["", "## Final profile synthesis by dimension", ""])
+        profile_lines = final_profile_text.splitlines()
+        dimension_starts = [
+            index for index, line in enumerate(profile_lines) if line.startswith("### ")
+        ]
+        for index, start in enumerate(dimension_starts):
+            end = dimension_starts[index + 1] if index + 1 < len(dimension_starts) else len(profile_lines)
+            lines.extend(profile_lines[start:end])
+            lines.append("")
+
+    lines.extend(
+        [
+            f"## {'Final descriptive claims' if final else 'Candidate descriptive claims'}",
+            "",
+        ]
+    )
+    for claim in ledger.claims:
+        support = ", ".join(
+            f"`{reference.passage_id}` ({reference.witness_id})"
+            for reference in claim.supporting_passages
+        ) or "none"
+        counterexamples = ", ".join(
+            f"`{reference.passage_id}` ({reference.witness_id})"
+            for reference in claim.counterexample_passages
+        ) or "none"
+        search = claim.counterexample_search
+        search_summary = (
+            "not recorded"
+            if search is None
+            else (
+                f"`{search.method}` / `{search.coverage}` / `{search.outcome}`; "
+                f"witnesses={search.witness_ids}; passage locators={search.searched_passage_ids}; "
+                f"notes={search.notes}"
+            )
+        )
+        lines.extend(
+            [
+                f"### Claim `{claim.id}`",
+                "",
+                f"- Statement: {claim.statement}",
+                f"- Status: `{claim.status}`; confidence: `{claim.confidence}`; classification: `{claim.classification}`.",
+                f"- Jurisdiction: `{claim.jurisdiction.scope}`; roles={claim.jurisdiction.roles}; eligible witnesses={claim.jurisdiction.eligible_witness_ids}.",
+                f"- Supporting passage locators: {support}.",
+                f"- Counterexample/variation passage locators: {counterexamples}.",
+                f"- Counterexample search: {search_summary}.",
+                f"- Scope and limits: {claim.scope_and_limits}",
+                "",
+            ]
+        )
     lines.extend(["", "## Held-out results", ""])
     if preflight.validation.heldout_claim_results:
         for result in preflight.validation.heldout_claim_results:
-            lines.append(f"- `{result.id}` for `{result.claim_id}` at `{result.witness_id}`: {result.assessment}. {result.observed_tendency}")
+            lines.append(
+                f"- `{result.id}` for claim `{result.claim_id}` at `{result.witness_id}`: "
+                f"{result.assessment}; passage locators={result.passage_ids}. "
+                f"{result.observed_tendency} Notes: {result.notes}"
+            )
     else:
-        lines.append("- No authored held-out claim results have been recorded yet.")
-    lines.extend(["", "## Controls", ""])
+        lines.append("- Held-out results have not been recorded at this stage.")
+    lines.extend(["", "## Control comparisons", ""])
     if metrics.tier4_controls is None:
-        lines.append("Control material remains unopened until held-out claim assessments are recorded.")
+        lines.append("- Control material remains quarantined until held-out assessment authorises access.")
     elif preflight.validation.control_comparisons:
         for comparison in preflight.validation.control_comparisons:
-            lines.append(f"- `{comparison.id}` for `{comparison.claim_id}` at `{comparison.witness_id}`: {comparison.result}. {comparison.comparison}")
+            lines.append(
+                f"- `{comparison.id}` for claim `{comparison.claim_id}` at `{comparison.witness_id}`: "
+                f"`{comparison.result}`; passage locators={comparison.passage_ids}. "
+                f"{comparison.comparison} Notes: {comparison.notes}"
+            )
     else:
-        lines.append("No authored control comparisons have been recorded yet.")
-    lines.extend(["", "## Reviewer records", ""])
-    if preflight.validation.reviewer_records:
+        lines.append("- Tier 4 material is accessible at this validation step, but no control comparison has been recorded yet.")
+    lines.extend(["", "## Review provenance and records", ""])
+    if preflight.validation.review_run_provenance:
+        for run in preflight.validation.review_run_provenance:
+            lines.append(
+                f"- Run `{run.run_id}` ({run.stage}) by `{run.reviewer_id}` / role `{run.role_id}`: "
+                f"assigned claims={run.assigned_claim_ids}; method={run.method}; materials={run.materials_seen}; "
+                f"independent_of_candidate_authorship={run.independent_of_candidate_authorship}; "
+                f"anonymisation={run.anonymisation_status}; outcome={run.outcome}; "
+                f"produced records={run.produced_record_ids or 'none'}; limitations={run.limitations}"
+            )
         for reviewer in preflight.validation.reviewer_records:
-            lines.append(f"- `{reviewer.id}` for `{reviewer.claim_id}` by `{reviewer.reviewer_id}`: {reviewer.outcome}. {reviewer.notes}")
+            lines.append(
+                f"- Reviewer record `{reviewer.id}` for claim `{reviewer.claim_id}` by `{reviewer.reviewer_id}`: "
+                f"outcome=`{reviewer.outcome}`; review runs={reviewer.review_run_ids}; "
+                f"held-out records={reviewer.heldout_result_ids}; controls={reviewer.control_comparison_ids}. {reviewer.notes}"
+            )
     else:
-        lines.append("Independent reviewer records are not yet complete.")
+        lines.append("- Review-run provenance is not yet present at this stage.")
     lines.extend(["", "## Claim transitions", ""])
     if preflight.validation.claim_transitions:
         for transition in preflight.validation.claim_transitions:
@@ -1057,27 +1313,35 @@ def _validation_report(
                 f"reviewers={transition.reviewer_record_ids}."
             )
     else:
-        lines.append("- No final claim transitions have been recorded yet.")
-    lines.extend(["", "## Rejected claims", ""])
-    rejected = [claim for claim in authored_ledger.claims if claim.status == "rejected"]
+        lines.append("- No final claim transitions have been recorded at this stage.")
+    lines.extend(["", "## Candidate and final hashes", ""])
+    lines.extend(
+        [
+            f"- Candidate commit: `{preflight.validation.candidate_commit}`",
+            f"- Candidate analysis SHA-256: `{preflight.validation.candidate_analysis_sha256}`",
+            f"- Candidate manifest SHA-256: `{preflight.validation.candidate_manifest_sha256}`",
+            f"- Candidate profile SHA-256: `{preflight.validation.candidate_profile_sha256}`",
+            f"- Candidate ledger SHA-256: `{preflight.validation.candidate_ledger_sha256}`",
+            f"- Final profile SHA-256: `{preflight.validation.final_profile_sha256 or 'not recorded at this stage'}`",
+            f"- Final ledger SHA-256: `{preflight.validation.final_ledger_sha256 or 'not recorded at this stage'}`",
+        ]
+    )
+    lines.extend(["", "## Unresolved uncertainty and rejected claims", "", f"- {preflight.validation.unresolved_uncertainty}"])
+    rejected = [claim for claim in ledger.claims if claim.status == "rejected"]
     if rejected:
-        lines.extend(f"- `{claim.id}` remains retained as rejected." for claim in rejected)
+        lines.extend(f"- Rejected claim retained: `{claim.id}` — {claim.notes}" for claim in rejected)
     else:
-        lines.append("- None in the frozen candidate ledger.")
+        lines.append("- No rejected claims are present in the report ledger.")
     lines.extend(
         [
             "",
-            "## Limitations",
-            "",
-            "These descriptive measurements provide no inferential test, authorship attribution, or pooled aggregate judgement.",
-            "",
             "## Phase 2C stop boundary",
             "",
-            "This output does not authorise style guidance, style-card changes, story planning, or manuscript changes. Phase 2C requires separate design approval after human Phase 2B approval.",
+            "This report remains descriptive. It does not authorise style guidance, style-card changes, writing instructions, phrase banks, linter implementation, story planning, or manuscript changes. Phase 2C requires separate design approval and explicit human approval of Phase 2B.",
         ]
     )
     if final:
-        lines.extend(["", "## Final compiled status", "", "The final report includes the recorded claim transitions and retained rejected claims."])
+        lines.extend(["", "## Final compiled status", "", "The final report includes the trusted final profile, validated ledger, recorded validation outcomes, review provenance, and retained rejected claims."])
     return "\n".join(lines).rstrip() + "\n"
 
 
@@ -1343,6 +1607,11 @@ def _validate(root: Path, slug: str) -> SourceAnalysisResult:
         candidate_claim_ids={claim.id for claim in candidate_claims},
         candidate_claims=candidate_claims,
     )
+    _validate_review_provenance(
+        validation,
+        {claim.id for claim in candidate_claims},
+        require_complete=True,
+    )
     story_dir = _story_path(root, slug)
     final_profile_path = story_dir / "source-study" / "wells-profile.md"
     final_ledger_path = story_dir / "source-study" / "evidence-ledger.yml"
@@ -1357,6 +1626,10 @@ def _validate(root: Path, slug: str) -> SourceAnalysisResult:
         ) from exc
     if sha256_bytes(final_profile_bytes) != validation.final_profile_sha256:
         raise CreativeWriterError("Final profile SHA-256 does not match validation.md")
+    try:
+        final_profile_text = final_profile_bytes.decode("utf-8")
+    except UnicodeError as exc:
+        raise CreativeWriterError("Final profile artifact is not valid UTF-8") from exc
     try:
         _ledger_mode, _ledger_oid, final_ledger_bytes = _head_blob(
             root, _relative_to_root(final_ledger_path, root)
@@ -1381,6 +1654,13 @@ def _validate(root: Path, slug: str) -> SourceAnalysisResult:
         raise CreativeWriterError(f"Unable to read final validation artifacts from trusted HEAD blobs: {exc}") from exc
     if final_ledger.stage != "validated" or final_ledger.study_id != config.study_id:
         raise CreativeWriterError("Final evidence ledger must be validated and match the study")
+    validate_profile_claim_links(
+        final_profile_path,
+        final_ledger,
+        config,
+        stage="validated",
+        content=final_profile_text,
+    )
     try:
         controls_text = _trusted_controls_bytes.decode("utf-8")
     except UnicodeError as exc:
@@ -1398,7 +1678,15 @@ def _validate(root: Path, slug: str) -> SourceAnalysisResult:
         generated_paths,
         metrics=metrics,
         packet=_validation_packet(corpus, include_controls=True, context_radius=config.passage_rules.context_radius),
-            report=_validation_report(config=config, preflight=preflight, corpus=corpus, metrics=metrics, final=True, report_ledger=final_ledger),
+            report=_validation_report(
+                config=config,
+                preflight=preflight,
+                corpus=corpus,
+                metrics=metrics,
+                final=True,
+                report_ledger=final_ledger,
+                final_profile_text=final_profile_text,
+            ),
     )
     return _make_result(root, slug, generated_paths=generated_paths, holdout_path=story_dir / "source-study" / "holdouts.yml", witness_count=len(corpus.witness_tiers), passage_count=len(corpus.passages), generation_id=generation_id)
 

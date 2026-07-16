@@ -319,13 +319,13 @@ _YamlPath = tuple[str | int, ...]
 _YamlScalarOccurrence = tuple[_YamlPath, str, int]
 
 
-def _is_allowed_control_witness_path(path: _YamlPath) -> bool:
+def _is_allowed_validation_witness_path(path: _YamlPath) -> bool:
     return (
         len(path) == 6
         and path[0] == "claims"
         and isinstance(path[1], int)
         and path[2] == "validation_expectation"
-        and path[3] == "control_targets"
+        and path[3] in {"heldout_targets", "control_targets"}
         and isinstance(path[4], int)
         and path[5] == "witness_id"
     )
@@ -1290,12 +1290,13 @@ def collect_leakage_issues(
                 node_id
                 for document_path, value, node_id in yaml_occurrences
                 if value == witness_id
-                and _is_allowed_control_witness_path(document_path)
+                and _is_allowed_validation_witness_path(document_path)
             }
             disallowed = [
                 document_path
                 for document_path, value, _node_id in yaml_occurrences
-                if value == witness_id and not _is_allowed_control_witness_path(document_path)
+                if value == witness_id
+                and not _is_allowed_validation_witness_path(document_path)
             ]
             if disallowed or occurrences != len(allowed_node_ids):
                 result.errors.append(_error(path, "Forbidden holdout or Tier 4 witness ID appears in tracked development content", locator=witness_id))

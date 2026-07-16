@@ -3590,6 +3590,39 @@ def test_yaml_alias_reuse_cannot_escape_the_exact_control_target_path(tmp_path: 
     assert any("witness ID" in issue.message for issue in result.errors)
 
 
+def test_whole_work_holdout_is_allowed_only_at_exact_heldout_target_path(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "evidence-ledger.yml"
+    path.write_text(
+        "claims:\n"
+        "  - validation_expectation:\n"
+        "      heldout_targets:\n"
+        "        - witness_id: selected-short-fiction/the-star\n",
+        encoding="utf-8",
+    )
+
+    result = validate_leakage(
+        [path],
+        forbidden_witness_ids={"selected-short-fiction/the-star"},
+        forbidden_passages=[],
+    )
+
+    assert not result.errors
+
+    path.write_text(
+        path.read_text(encoding="utf-8")
+        + "      notes: selected-short-fiction/the-star\n",
+        encoding="utf-8",
+    )
+    result = collect_leakage_issues(
+        [path],
+        forbidden_witness_ids={"selected-short-fiction/the-star"},
+        forbidden_passages=[],
+    )
+    assert any("witness ID" in issue.message for issue in result.errors)
+
+
 def test_yaml_alias_at_two_exact_control_target_paths_counts_one_lexical_scalar(
     tmp_path: Path,
 ) -> None:

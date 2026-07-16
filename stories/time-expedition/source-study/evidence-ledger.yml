@@ -1,5 +1,799 @@
 schema_version: 1
 study_id: time-expedition-wells-phase-2b
-stage: protocol
+stage: development
 mode: descriptive
-claims: []
+claims:
+  - id: mediated-testimony-frame
+    dimension: frame-architecture
+    statement: >-
+      Across the primary frame and selected short fiction, extraordinary events are mediated through visible acts of testimony, transcription, or evidentiary assessment, allowing credibility and uncertainty to coexist.
+    jurisdiction:
+      scope: cross_work
+      roles:
+        - frame architecture
+        - testimony
+      eligible_witness_ids:
+        - the-time-machine
+        - selected-short-fiction/the-plattner-story
+        - selected-short-fiction/the-crystal-egg
+    classification: role_specific
+    status: candidate
+    confidence: moderate
+    supporting_passages:
+      - witness_id: the-time-machine
+        source_id: the-time-machine
+        selection_id: null
+        passage_id: the-time-machine:ii:101:b859a93fec21
+        authority_tier: 1
+        evidence_role: support
+        relevance_note: >-
+          The primary frame presents extraordinary testimony within a visible social and evidentiary setting.
+      - witness_id: selected-short-fiction/the-plattner-story
+        source_id: selected-short-fiction
+        selection_id: the-plattner-story
+        passage_id: selected-short-fiction/the-plattner-story:the-plattner-story:1:725f01ec6e50
+        authority_tier: 2
+        evidence_role: support
+        relevance_note: >-
+          The selected story opens its other-world account through a bounded testimony frame.
+      - witness_id: selected-short-fiction/the-crystal-egg
+        source_id: selected-short-fiction
+        selection_id: the-crystal-egg
+        passage_id: selected-short-fiction/the-crystal-egg:the-crystal-egg:38:10e7d6a3eb44
+        authority_tier: 2
+        evidence_role: support
+        relevance_note: >-
+          The selected story mediates an extraordinary object through reported observation and assessment.
+    counterexample_passages: []
+    counterexample_search:
+      witness_ids:
+        - the-time-machine
+        - selected-short-fiction/the-plattner-story
+        - selected-short-fiction/the-crystal-egg
+      dimensions: [frame-architecture]
+      method: manual_close_reading
+      coverage: targeted
+      searched_passage_ids:
+        - the-time-machine:xii:295:f1c0304026cb
+        - selected-short-fiction/the-plattner-story:the-plattner-story:17:361fdbf88b7c
+        - selected-short-fiction/the-crystal-egg:the-crystal-egg:24:99161d95fcc5
+      outcome: no_material_counterexample
+      notes: >-
+        A targeted development search found changes in the source and stability of mediation, but each passage still makes testimony, transcription, or evidentiary assessment visible. No genuine resistant development passage was identified.
+    control_results: []
+    scope_and_limits: >-
+      Development-only cross_work scope is limited to frame architecture and testimony across the three cited development witnesses. This candidate records a bounded descriptive pattern in the retained witnesses and does not resolve the held-out witness.
+    validation_expectation:
+      heldout_targets:
+        - id: tm-frame
+          witness_id: the-time-machine
+          role: frame architecture
+        - id: star-testimony
+          witness_id: selected-short-fiction/the-star
+          role: testimony
+      control_targets:
+        - id: beetle-narrators
+          witness_id: the-beetle
+          role: multiple narrators
+      heldout_tendency: >-
+        The held-out frame and testimony targets should each show visible mediation of extraordinary events with credibility or uncertainty left in view.
+      disconfirming_result: >-
+        The proposed cross-role recurrence is disconfirmed if either held-out target lacks visible mediation or fails to keep evidentiary credibility and uncertainty in view.
+      control_expectation: >-
+        Metadata-only control expectation: the named control target tests whether multiple narration can account for the pattern without the declared frame-and-testimony combination.
+    prohibited_overgeneralisation: >-
+      Do not convert this bounded description into a universal account of Wells, a period-wide rule, or a prescription that fiction should use visible testimony frames.
+    notes: >-
+      Metrics are sampling context; direct passage reading governs interpretation. Moderate confidence reflects convergence across three independent development witnesses: the-time-machine, the-plattner-story, and the-crystal-egg. Controls remain unopened, so the classification is role_specific. The targeted counterexample search found variation in mediation but no genuine resistant development passage.
+
+  - id: role-shaped-narrator-distance
+    dimension: narrator-distance
+    statement: >-
+      Among the selected role-context passages, reported testimony interrupts remembered experience from the present telling, retrospective survival narration establishes documentary distance, and essay persona layers self-account with self-mockery.
+    jurisdiction:
+      scope: cross_work
+      roles:
+        - reported first-person account
+        - retrospective first-person narration
+        - essay voice
+      eligible_witness_ids:
+        - the-time-machine
+        - the-island-of-doctor-moreau
+        - certain-personal-matters
+    classification: role_specific
+    status: candidate
+    confidence: tentative
+    supporting_passages:
+      - witness_id: the-time-machine
+        source_id: the-time-machine
+        selection_id: null
+        passage_id: the-time-machine:ix:247:7c7656f6a229
+        authority_tier: 1
+        evidence_role: support
+        relevance_note: >-
+          The reported first-person account separates remembered experience from its later presentation.
+      - witness_id: the-island-of-doctor-moreau
+        source_id: the-island-of-doctor-moreau
+        selection_id: null
+        passage_id: the-island-of-doctor-moreau:i:2:522a64e3a5eb
+        authority_tier: 2
+        evidence_role: support
+        relevance_note: >-
+          The retrospective survival narrative establishes distance between ordeal and narration.
+      - witness_id: certain-personal-matters
+        source_id: certain-personal-matters
+        selection_id: null
+        passage_id: certain-personal-matters:of-conversation:58:1e55fc6db37a
+        authority_tier: 3
+        evidence_role: support
+        relevance_note: >-
+          The essay voice addresses experience as conversational reflection rather than fictional testimony.
+    counterexample_passages: []
+    counterexample_search:
+      witness_ids:
+        - the-island-of-doctor-moreau
+        - the-time-machine
+        - certain-personal-matters
+      dimensions: [narrator-distance]
+      method: manual_close_reading
+      coverage: targeted
+      searched_passage_ids:
+        - the-island-of-doctor-moreau:xxii:742:1a01256f2dfe
+        - the-time-machine:iii:104:39e25a125192
+        - certain-personal-matters:the-writing-of-essays:255:60e7e43f4b48
+      outcome: no_material_counterexample
+      notes: >-
+        A targeted development search found materially different relations between present judgement and represented experience, but none removes narrator distance. The Moreau closing passage was therefore retained as related analytical history rather than resistant evidence.
+    control_results: []
+    scope_and_limits: >-
+      Development-only cross_work scope is limited to the selected reported first-person, retrospective first-person, and essay passages across the-time-machine, the-island-of-doctor-moreau, and certain-personal-matters. Role and work are aliased in this sample, so the observed contrasts cannot identify a role effect or establish a general theory of narration.
+    validation_expectation:
+      heldout_targets:
+        - id: tm-reported
+          witness_id: the-time-machine
+          role: reported first-person account
+        - id: moreau-retrospective
+          witness_id: the-island-of-doctor-moreau
+          role: retrospective first-person narration
+        - id: matters-essay
+          witness_id: certain-personal-matters
+          role: essay voice
+      control_targets:
+        - id: beetle-multiple
+          witness_id: the-beetle
+          role: multiple narrators
+      heldout_tendency: >-
+        The held-out targets should be assessed for the three bounded contrasts between represented experience and present narration described in the development passages.
+      disconfirming_result: >-
+        The claim is disconfirmed if the held-out targets converge on the same relation between represented experience and present narration and do not reproduce the bounded contrasts.
+      control_expectation: >-
+        Metadata-only control expectation: the named control target tests whether multiple narrators produce the same distance pattern independently of the three declared roles.
+    prohibited_overgeneralisation: >-
+      Do not treat these role-bound differences as universal properties of first-person writing, as a period-wide rule, or as a prescription for narrator distance.
+    notes: >-
+      Metrics are sampling context; direct passage reading governs interpretation. Confidence is tentative despite three independent witnesses because role and work are completely aliased and the targeted development search found substantial within-role variation. Controls remain unopened, so the classification is role_specific.
+
+  - id: qualified-speculative-inference
+    dimension: observation-inference
+    statement: >-
+      In the selected speculative-testimony and catastrophe passages, movement from observed detail to explanation is marked as provisional, revisable, or vulnerable to perceptual error.
+    jurisdiction:
+      scope: cross_work
+      roles:
+        - speculative method
+        - evidence-to-speculation movement
+      eligible_witness_ids:
+        - the-time-machine
+        - the-war-of-the-worlds
+    classification: role_specific
+    status: candidate
+    confidence: tentative
+    supporting_passages:
+      - witness_id: the-time-machine
+        source_id: the-time-machine
+        selection_id: null
+        passage_id: the-time-machine:iv:147:5a08c0c8cfcb
+        authority_tier: 1
+        evidence_role: support
+        relevance_note: >-
+          The speculative method moves from observed conditions toward an explicitly qualified explanation.
+      - witness_id: the-war-of-the-worlds
+        source_id: the-war-of-the-worlds
+        selection_id: null
+        passage_id: the-war-of-the-worlds:i:10:dc75deedfa61
+        authority_tier: 2
+        evidence_role: support
+        relevance_note: >-
+          The catastrophe narrative records evidence before settling on an explanation of the event.
+      - witness_id: the-war-of-the-worlds
+        source_id: the-war-of-the-worlds
+        selection_id: null
+        passage_id: the-war-of-the-worlds:ii:27:b70ea6d8ec6a
+        authority_tier: 2
+        evidence_role: support
+        relevance_note: >-
+          Ogilvy initially attributes the sound to unequal cooling because he has not considered that the cylinder might be hollow.
+    counterexample_passages:
+      - witness_id: the-time-machine
+        source_id: the-time-machine
+        selection_id: null
+        passage_id: the-time-machine:xi:264:2537c034e240
+        authority_tier: 1
+        evidence_role: variation
+        relevance_note: >-
+          Astronomical observations lead directly to a categorical tidal-drag explanation without local modal qualification or correction in the passage.
+    control_results: []
+    scope_and_limits: >-
+      Development-only cross_work scope is limited to speculative method and evidence-to-speculation movement in the-time-machine and the-war-of-the-worlds. This candidate concerns transitions from observation to explanation in the retained development passages and not the truth of the fictional explanations.
+    validation_expectation:
+      heldout_targets:
+        - id: tm-speculation
+          witness_id: the-time-machine
+          role: speculative method
+        - id: war-inference
+          witness_id: the-war-of-the-worlds
+          role: evidence-to-speculation movement
+      control_targets:
+        - id: barbarians-romance
+          witness_id: the-british-barbarians
+          role: scientific-romance control
+      heldout_tendency: >-
+        The held-out targets should mark at least some movement from observation to explanation as provisional, revisable, or perception-limited.
+      disconfirming_result: >-
+        The claim is disconfirmed if both held-out targets move from observation to explanation without qualification or revision.
+      control_expectation: >-
+        Metadata-only control expectation: the named control target tests whether qualified speculative inference is separable from a neighbouring scientific-romance convention.
+    prohibited_overgeneralisation: >-
+      Do not turn this bounded pattern into a universal feature of speculative narrative, a period-wide rule, or a prescription to qualify every fictional inference.
+    notes: >-
+      Metrics are sampling context; direct passage reading governs interpretation. Confidence is tentative because the support comes from only two independent development witnesses; the two War passages are not independent witnesses. Controls remain unopened, so the classification is role_specific.
+
+  - id: qualified-scientific-exposition
+    dimension: scientific-exposition
+    statement: >-
+      Across the selected role-context passages, scientific exposition links unfamiliar claims to observations, analogies, procedures, or classifications while retaining different local qualifications.
+    jurisdiction:
+      scope: cross_work
+      roles:
+        - speculative method
+        - scientific argument
+        - instructional exposition
+        - comparison and classification
+      eligible_witness_ids:
+        - the-time-machine
+        - the-island-of-doctor-moreau
+        - text-book-of-biology-part-1
+    classification: role_specific
+    status: candidate
+    confidence: tentative
+    supporting_passages:
+      - witness_id: the-time-machine
+        source_id: the-time-machine
+        selection_id: null
+        passage_id: the-time-machine:v:165:29fe69fce8b4
+        authority_tier: 1
+        evidence_role: support
+        relevance_note: >-
+          An analogy defines the observer's epistemic limits and bounds the resulting general impression; it is not an explanatory procedure.
+      - witness_id: the-island-of-doctor-moreau
+        source_id: the-island-of-doctor-moreau
+        selection_id: null
+        passage_id: the-island-of-doctor-moreau:xiv:393:f95f34e93225
+        authority_tier: 2
+        evidence_role: support
+        relevance_note: >-
+          Moreau's scientific argument connects an unfamiliar claim to observation and analogy.
+      - witness_id: text-book-of-biology-part-1
+        source_id: text-book-of-biology-part-1
+        selection_id: null
+        passage_id: text-book-of-biology-part-1:2-the-theory-of-evolution:472:f51263a926c6
+        authority_tier: 3
+        evidence_role: support
+        relevance_note: >-
+          The instructional exposition qualifies a biological explanation through observed evidence.
+      - witness_id: text-book-of-biology-part-1
+        source_id: text-book-of-biology-part-1
+        selection_id: null
+        passage_id: text-book-of-biology-part-1:note-on-making-comparisons:527:75c6e3818b0d
+        authority_tier: 3
+        evidence_role: support
+        relevance_note: >-
+          The textbook passage makes comparison and classification explicit parts of explanation.
+    counterexample_passages:
+      - witness_id: the-time-machine
+        source_id: the-time-machine
+        selection_id: null
+        passage_id: the-time-machine:xi:264:2537c034e240
+        authority_tier: 1
+        evidence_role: variation
+        relevance_note: >-
+          The tidal-drag account moves from astronomical observations to a categorical causal explanation with less local qualification.
+    control_results: []
+    scope_and_limits: >-
+      Development-only cross_work scope is limited to selected speculative-method, scientific-argument, instructional-exposition, and comparison passages across the-time-machine, the-island-of-doctor-moreau, and text-book-of-biology-part-1. Role and work are aliased in this sample, so the contrast does not identify a role effect; nonfiction instruction is not fictional continuity evidence.
+    validation_expectation:
+      heldout_targets:
+        - id: tm-exposition
+          witness_id: the-time-machine
+          role: speculative method
+        - id: moreau-argument
+          witness_id: the-island-of-doctor-moreau
+          role: scientific argument
+        - id: biology-instruction
+          witness_id: text-book-of-biology-part-1
+          role: instructional exposition
+        - id: biology-comparison
+          witness_id: text-book-of-biology-part-1
+          role: comparison and classification
+      control_targets:
+        - id: days-technical
+          witness_id: the-days-work
+          role: technical-work control
+      heldout_tendency: >-
+        The held-out targets should connect unfamiliar claims to evidence, analogy, procedure, or classification while retaining the local qualifications described for each role-context passage.
+      disconfirming_result: >-
+        The proposed cross-role recurrence is disconfirmed if any held-out target either lacks an observable link, explanatory comparison, procedure, or classification, or presents that link without visible local qualification.
+      control_expectation: >-
+        Metadata-only control expectation: the named control target tests whether technical exposition supplies the same pattern outside the declared Wells roles.
+    prohibited_overgeneralisation: >-
+      Do not make this bounded descriptive comparison a universal rule for scientific exposition, a period-wide law, or a writing prescription to qualify every unfamiliar claim.
+    notes: >-
+      Metrics are sampling context; direct passage reading governs interpretation. Confidence is tentative despite three independent development witnesses because expository role and work are aliased and the devices are not independently replicated within each role. Controls remain unopened, so the classification is role_specific.
+
+  - id: dialogue-pressure-varies-by-context
+    dimension: dialogue-social-friction
+    statement: >-
+      Among the selected role-context passages, village group talk is distributed across brief voices, a coercive exchange pairs a broken threat with a long appeasing reply, and argument under danger takes the form of one extended ordered speech.
+    jurisdiction:
+      scope: cross_work
+      roles:
+        - social register
+        - sustained dialogue
+        - dialogue under stress
+      eligible_witness_ids:
+        - the-invisible-man
+        - the-island-of-doctor-moreau
+    classification: role_specific
+    status: candidate
+    confidence: tentative
+    supporting_passages:
+      - witness_id: the-invisible-man
+        source_id: the-invisible-man
+        selection_id: null
+        passage_id: the-invisible-man:iii:92:8c3779ecfb78
+        authority_tier: 2
+        evidence_role: support
+        relevance_note: >-
+          Social register is carried through group talk with distributed turns and reactions.
+      - witness_id: the-invisible-man
+        source_id: the-invisible-man
+        selection_id: null
+        passage_id: the-invisible-man:ix:342:8ec129f34188
+        authority_tier: 2
+        evidence_role: support
+        relevance_note: >-
+          Sustained dialogue uses repeated turns and interruption under continuing social pressure.
+      - witness_id: the-island-of-doctor-moreau
+        source_id: the-island-of-doctor-moreau
+        selection_id: null
+        passage_id: the-island-of-doctor-moreau:xiii:366:c305934608be
+        authority_tier: 2
+        evidence_role: support
+        relevance_note: >-
+          Under danger, Moreau delivers one extended ordered speech that combines tests, character evidence, and a rhetorical question.
+    counterexample_passages:
+      - witness_id: the-invisible-man
+        source_id: the-invisible-man
+        selection_id: null
+        passage_id: the-invisible-man:xiii:444:6e6a04602732
+        authority_tier: 2
+        evidence_role: variation
+        relevance_note: >-
+          A later exchange reduces the sustained turn pressure and changes the balance of social response.
+    control_results: []
+    scope_and_limits: >-
+      Development-only cross_work scope is limited to the selected social-register, sustained-dialogue, and danger-context passages in the-invisible-man and the-island-of-doctor-moreau. The contexts and works are aliased, so the contrasts do not identify pressure or role as their cause and do not prescribe a single dialogue form.
+    validation_expectation:
+      heldout_targets:
+        - id: invisible-dialogue
+          witness_id: the-invisible-man
+          role: sustained dialogue
+        - id: moreau-stress
+          witness_id: the-island-of-doctor-moreau
+          role: dialogue under stress
+      control_targets:
+        - id: desert-group
+          witness_id: a-desert-drama
+          role: group dialogue
+      heldout_tendency: >-
+        The held-out targets should be compared for bounded contrasts in turn length, repetition, silence, gesture, and ordered speech without assuming that pressure causes those contrasts.
+      disconfirming_result: >-
+        The claim is disconfirmed if the held-out passages converge on the same local organisation and provide no contrast comparable to the development passages.
+      control_expectation: >-
+        Metadata-only control expectation: the named control target tests whether group dialogue alone accounts for the observed distribution of turns and reactions.
+    prohibited_overgeneralisation: >-
+      Do not treat these selected passage differences as universal dialogue laws, a period-wide rule, or a prescription for how fictional conversations should be shaped.
+    notes: >-
+      Metrics are sampling context; direct passage reading governs interpretation. Confidence is tentative because only two independent development witnesses are represented and the Invisible Man supplies substantial within-role variation. Controls remain unopened, so the classification is role_specific.
+
+  - id: role-shaped-syntax
+    dimension: syntax-rhythm
+    statement: >-
+      The selected reported-experiment, sustained-exchange, and essay-address passages have contrasting local sentence and paragraph movements rather than one uniform cadence.
+    jurisdiction:
+      scope: cross_work
+      roles:
+        - reported first-person account
+        - sustained dialogue
+        - essay voice
+      eligible_witness_ids:
+        - the-time-machine
+        - the-invisible-man
+        - certain-personal-matters
+    classification: role_specific
+    status: candidate
+    confidence: tentative
+    supporting_passages:
+      - witness_id: the-time-machine
+        source_id: the-time-machine
+        selection_id: null
+        passage_id: the-time-machine:iii:102:301f3d1a7670
+        authority_tier: 1
+        evidence_role: support
+        relevance_note: >-
+          The reported first-person account uses sentence movement suited to experimental report and recollection.
+      - witness_id: the-invisible-man
+        source_id: the-invisible-man
+        selection_id: null
+        passage_id: the-invisible-man:ix:342:8ec129f34188
+        authority_tier: 2
+        evidence_role: support
+        relevance_note: >-
+          Sustained dialogue produces a different local rhythm through turns, interruption, and response.
+      - witness_id: certain-personal-matters
+        source_id: certain-personal-matters
+        selection_id: null
+        passage_id: certain-personal-matters:the-writing-of-essays:263:4f9b481f9634
+        authority_tier: 3
+        evidence_role: support
+        relevance_note: >-
+          Essay address uses paragraph movement suited to reflective explanation and direct discussion.
+    counterexample_passages:
+      - witness_id: certain-personal-matters
+        source_id: certain-personal-matters
+        selection_id: null
+        passage_id: certain-personal-matters:the-writing-of-essays:261:7635cd06f9a3
+        authority_tier: 3
+        evidence_role: variation
+        relevance_note: >-
+          A nearby essay passage shifts the local rhythm within the same essay role.
+    control_results: []
+    scope_and_limits: >-
+      Development-only cross_work scope is limited to the selected reported first-person, sustained-dialogue, and essay passages across the-time-machine, the-invisible-man, and certain-personal-matters. Role and work are aliased, so the contrasts do not identify a role effect. The Invisible Man transcription is not a diplomatic book witness, and serial and book paragraphing may differ; paragraph-level claims remain provisional.
+    validation_expectation:
+      heldout_targets:
+        - id: tm-rhythm
+          witness_id: the-time-machine
+          role: reported first-person account
+        - id: invisible-rhythm
+          witness_id: the-invisible-man
+          role: sustained dialogue
+        - id: matters-rhythm
+          witness_id: certain-personal-matters
+          role: essay voice
+      control_targets:
+        - id: days-dialogue
+          witness_id: the-days-work
+          role: professional dialogue
+      heldout_tendency: >-
+        The held-out targets should provide a second comparison of local sentence and paragraph movement across the three declared role-contexts.
+      disconfirming_result: >-
+        The claim is disconfirmed if the held-out targets show no comparable contrast in local syntax or paragraph movement, subject to the transcription limitation.
+      control_expectation: >-
+        Metadata-only control expectation: the named control target tests whether professional dialogue produces the same rhythm pattern without the declared Wells role set.
+    prohibited_overgeneralisation: >-
+      Do not turn these local role differences into a universal account of prose rhythm, a period-wide rule, or a writing prescription for sentence and paragraph movement.
+    notes: >-
+      Metrics are sampling context; direct passage reading governs interpretation. Confidence is tentative despite three independent witnesses because role and work are aliased, within-role variation is material, and Invisible Man paragraph boundaries are transcription-sensitive. Controls remain unopened, so the classification is role_specific.
+
+  - id: selective-observed-description
+    dimension: diction-description
+    statement: >-
+      Across the selected role-context passages, concrete details are organised around a local act of observation, comparison, or classification: a changed landscape, a microscopic form, or an anatomical category.
+    jurisdiction:
+      scope: cross_work
+      roles:
+        - landscape observation
+        - microscopic observation
+        - biological terminology
+      eligible_witness_ids:
+        - the-war-of-the-worlds
+        - certain-personal-matters
+        - text-book-of-biology-part-1
+    classification: role_specific
+    status: candidate
+    confidence: tentative
+    supporting_passages:
+      - witness_id: the-war-of-the-worlds
+        source_id: the-war-of-the-worlds
+        selection_id: null
+        passage_id: the-war-of-the-worlds:v:101:8debc943c595
+        authority_tier: 2
+        evidence_role: support
+        relevance_note: >-
+          Concrete spatial, colour, smoke, and fire details organise a local observation of the altered common without stating an explicit inference.
+      - witness_id: certain-personal-matters
+        source_id: certain-personal-matters
+        selection_id: null
+        passage_id: certain-personal-matters:through-a-microscope:347:7b18b6dc9623
+        authority_tier: 3
+        evidence_role: support
+        relevance_note: >-
+          Microscopic description selects visible features that support an observational comparison.
+      - witness_id: text-book-of-biology-part-1
+        source_id: text-book-of-biology-part-1
+        selection_id: null
+        passage_id: text-book-of-biology-part-1:9-classificatory-points:186:a0fe8a3fc993
+        authority_tier: 3
+        evidence_role: support
+        relevance_note: >-
+          Biological terminology selects anatomical features for a classificatory distinction.
+    counterexample_passages:
+      - witness_id: certain-personal-matters
+        source_id: certain-personal-matters
+        selection_id: null
+        passage_id: certain-personal-matters:through-a-microscope:350:7c9d58d283ac
+        authority_tier: 3
+        evidence_role: variation
+        relevance_note: >-
+          The essay expands from microscopic description into a cosmological observer analogy, exceeding the focal claim's local observational and classificatory scale.
+    control_results: []
+    scope_and_limits: >-
+      Development-only cross_work scope is limited to the selected landscape-observation, microscopic-observation, and biological-terminology passages across the-war-of-the-worlds, certain-personal-matters, and text-book-of-biology-part-1. Role and work are aliased, so the contrast does not identify a role effect and does not extend to all descriptive language.
+    validation_expectation:
+      heldout_targets:
+        - id: war-landscape
+          witness_id: the-war-of-the-worlds
+          role: landscape observation
+        - id: matters-microscope
+          witness_id: certain-personal-matters
+          role: microscopic observation
+        - id: biology-terms
+          witness_id: text-book-of-biology-part-1
+          role: biological terminology
+      control_targets:
+        - id: days-machinery
+          witness_id: the-days-work
+          role: machinery
+      heldout_tendency: >-
+        The held-out targets should organise concrete details around a local act of observation, comparison, or classification.
+      disconfirming_result: >-
+        The claim is disconfirmed if the held-out descriptions lack a discernible local observational, comparative, or classificatory organisation.
+      control_expectation: >-
+        Metadata-only control expectation: the named control target tests whether selective description is attributable to machinery-focused technical prose rather than the declared observation roles.
+    prohibited_overgeneralisation: >-
+      Do not treat this bounded selection pattern as universal descriptive practice, a period-wide rule, or a prescription to include only inferentially useful detail.
+    notes: >-
+      Metrics are sampling context; direct passage reading governs interpretation. Confidence is tentative despite three independent witnesses because role and work are aliased and the microscope essay expands beyond the focal local mechanism. Controls remain unopened, so the classification is role_specific.
+
+  - id: danger-through-observation
+    dimension: suspense-scene-pressure
+    statement: >-
+      Dangerous phenomena are disclosed through accumulating observable consequences before explanatory closure, though the scale and tempo differ between local biological threat and catastrophe.
+    jurisdiction:
+      scope: cross_work
+      roles:
+        - biological danger
+        - catastrophe
+      eligible_witness_ids:
+        - selected-short-fiction/the-sea-raiders
+        - the-war-of-the-worlds
+    classification: role_specific
+    status: candidate
+    confidence: tentative
+    supporting_passages:
+      - witness_id: selected-short-fiction/the-sea-raiders
+        source_id: selected-short-fiction
+        selection_id: the-sea-raiders
+        passage_id: selected-short-fiction/the-sea-raiders:ii:19:013c203950dd
+        authority_tier: 2
+        evidence_role: support
+        relevance_note: >-
+          Local biological danger accumulates through observed consequences before its full explanation.
+      - witness_id: the-war-of-the-worlds
+        source_id: the-war-of-the-worlds
+        selection_id: null
+        passage_id: the-war-of-the-worlds:v:98:0fa76c4fe402
+        authority_tier: 2
+        evidence_role: support
+        relevance_note: >-
+          Catastrophe is disclosed through successive observable effects before explanatory closure.
+    counterexample_passages: []
+    counterexample_search:
+      witness_ids:
+        - the-war-of-the-worlds
+        - selected-short-fiction/the-sea-raiders
+      dimensions: [suspense-scene-pressure]
+      method: manual_close_reading
+      coverage: targeted
+      searched_passage_ids:
+        - the-war-of-the-worlds:v:99:fac4a552deba
+        - selected-short-fiction/the-sea-raiders:ii:21:4c409fc107a3
+      outcome: no_material_counterexample
+      notes: >-
+        A targeted development search found adjacent extensions of the same consequence-before-closure mechanism, not resistant evidence. No genuine counterexample was identified in the eligible development passages searched.
+    control_results: []
+    scope_and_limits: >-
+      Development-only cross_work scope is limited to biological danger and catastrophe across the two cited development witnesses. This tentative candidate compares disclosure of danger by observable consequence and does not equate local and global scales.
+    validation_expectation:
+      heldout_targets:
+        - id: sea-danger
+          witness_id: selected-short-fiction/the-sea-raiders
+          role: biological danger
+        - id: war-catastrophe
+          witness_id: the-war-of-the-worlds
+          role: catastrophe
+      control_targets:
+        - id: desert-danger
+          witness_id: a-desert-drama
+          role: danger pacing
+      heldout_tendency: >-
+        The held-out targets should disclose danger through accumulating consequences before a complete explanatory account, with different local and catastrophe tempos.
+      disconfirming_result: >-
+        The claim is disconfirmed if either held-out target supplies explanatory closure before observable consequences accumulate.
+      control_expectation: >-
+        Metadata-only control expectation: the named control target tests whether the same danger pacing arises from generic adventure pressure.
+    prohibited_overgeneralisation: >-
+      Do not turn this tentative bounded pattern into a universal suspense law, a period-wide rule, or a prescription to delay explanation in every danger scene.
+    notes: >-
+      Metrics are sampling context; direct passage reading governs interpretation. Confidence is tentative because there are only two independent development witnesses and each focal passage is supported by an adjacent passage from the same event. Controls remain unopened, so the classification is role_specific; the targeted search found no genuine resistant development passage.
+
+  - id: humour-through-social-friction
+    dimension: humour-irony
+    statement: >-
+      In the two focal passages, humour arises from social mismatch: Bunting's ceremonious response meets Cuss's panic, and a staged mustard reference is recast as a personal slight.
+    jurisdiction:
+      scope: cross_work
+      roles:
+        - comic friction
+        - humour
+      eligible_witness_ids:
+        - the-invisible-man
+        - certain-personal-matters
+    classification: role_specific
+    status: candidate
+    confidence: tentative
+    supporting_passages:
+      - witness_id: the-invisible-man
+        source_id: the-invisible-man
+        selection_id: null
+        passage_id: the-invisible-man:iv:156:bea3b86ad1a8
+        authority_tier: 2
+        evidence_role: support
+        relevance_note: >-
+          Fictional comic friction comes from social manner colliding with the immediate predicament.
+      - witness_id: certain-personal-matters
+        source_id: certain-personal-matters
+        selection_id: null
+        passage_id: certain-personal-matters:the-pleasure-of-quarrelling:359:58b49bd92afb
+        authority_tier: 3
+        evidence_role: support
+        relevance_note: >-
+          Essay humour emerges when conversational assumptions mismatch the situation under discussion.
+    counterexample_passages:
+      - witness_id: certain-personal-matters
+        source_id: certain-personal-matters
+        selection_id: null
+        passage_id: certain-personal-matters:the-pleasure-of-quarrelling:353:5d0691c29fcf
+        authority_tier: 3
+        evidence_role: variation
+        relevance_note: >-
+          A mock-scientific case for quarrelling uses hygienic and physiological claims, an alternate comic mechanism that limits the focal social-mismatch account.
+    control_results: []
+    scope_and_limits: >-
+      Development-only cross_work scope is limited to the two cited focal passages in the-invisible-man and certain-personal-matters. This tentative candidate compares those fictional and essay instances of social mismatch and does not treat either witness as a general humour authority.
+    validation_expectation:
+      heldout_targets:
+        - id: invisible-comic
+          witness_id: the-invisible-man
+          role: comic friction
+        - id: matters-humour
+          witness_id: certain-personal-matters
+          role: humour
+      control_targets:
+        - id: barbarians-satire
+          witness_id: the-british-barbarians
+          role: social satire
+      heldout_tendency: >-
+        The held-out targets should be assessed for recurrence of the bounded social-mismatch mechanism described in the two focal passages.
+      disconfirming_result: >-
+        The claim is disconfirmed if neither held-out target contains the bounded social-mismatch mechanism, or if alternate mechanisms account for the relevant humour more directly.
+      control_expectation: >-
+        Metadata-only control expectation: the named control target tests whether the pattern is indistinguishable from neighbouring social satire.
+    prohibited_overgeneralisation: >-
+      Do not make this tentative comparison a universal account of humour, a period-wide rule, or a prescription to generate comedy through social mismatch.
+    notes: >-
+      Metrics are sampling context; direct passage reading governs interpretation. Confidence is tentative because the claim is supported by only two independent focal witnesses and the essay supplies an alternate mock-scientific comic mechanism. Controls remain unopened, so the classification is role_specific.
+
+  - id: short-form-evidentiary-closure
+    dimension: transitions-ending-logic
+    statement: >-
+      In the sampled frame and short-form endings, the available evidentiary record closes while the event's larger implications remain unresolved.
+    jurisdiction:
+      scope: cross_work
+      roles:
+        - frame architecture
+        - short-form architecture
+      eligible_witness_ids:
+        - the-time-machine
+        - selected-short-fiction/the-sea-raiders
+        - selected-short-fiction/the-crystal-egg
+    classification: role_specific
+    status: candidate
+    confidence: moderate
+    supporting_passages:
+      - witness_id: the-time-machine
+        source_id: the-time-machine
+        selection_id: null
+        passage_id: the-time-machine:epilogue:308:6c18eecffc7e
+        authority_tier: 1
+        evidence_role: support
+        relevance_note: >-
+          The frame closes the available account while preserving uncertainty about its wider significance.
+      - witness_id: selected-short-fiction/the-sea-raiders
+        source_id: selected-short-fiction
+        selection_id: the-sea-raiders
+        passage_id: selected-short-fiction/the-sea-raiders:iii:41:670a0256413b
+        authority_tier: 2
+        evidence_role: support
+        relevance_note: >-
+          The short story closes its immediate evidence while leaving broader implications outside the record.
+      - witness_id: selected-short-fiction/the-crystal-egg
+        source_id: selected-short-fiction
+        selection_id: the-crystal-egg
+        passage_id: selected-short-fiction/the-crystal-egg:the-crystal-egg:51:025f5af2df0e
+        authority_tier: 2
+        evidence_role: support
+        relevance_note: >-
+          The story ends the traceable custody of the crystal while leaving its observer-world implications unresolved.
+    counterexample_passages: []
+    counterexample_search:
+      witness_ids:
+        - the-time-machine
+        - selected-short-fiction/the-sea-raiders
+        - selected-short-fiction/the-crystal-egg
+      dimensions: [transitions-ending-logic]
+      method: manual_close_reading
+      coverage: targeted
+      searched_passage_ids:
+        - the-time-machine:xii:307:35705813eba3
+        - selected-short-fiction/the-sea-raiders:iii:40:e98cff08edf4
+        - selected-short-fiction/the-crystal-egg:the-crystal-egg:51:025f5af2df0e
+      outcome: no_material_counterexample
+      notes: >-
+        A targeted development search found different kinds of ended record, but all retained unresolved implications. The former Crystal Egg variation was therefore reclassified as support, and no genuine resistant development passage was identified.
+    control_results: []
+    scope_and_limits: >-
+      Development-only cross_work scope is limited to frame architecture and short-form architecture across the three cited development witnesses. This candidate concerns the relation between an ended record and unresolved implication and does not claim a common ending mechanism for all short fiction.
+    validation_expectation:
+      heldout_targets:
+        - id: tm-ending
+          witness_id: the-time-machine
+          role: frame architecture
+        - id: star-ending
+          witness_id: selected-short-fiction/the-star
+          role: short-form architecture
+      control_targets:
+        - id: solomon-journey
+          witness_id: king-solomons-mines
+          role: journey architecture
+      heldout_tendency: >-
+        The held-out targets should end the available account while retaining some unresolved implication beyond the immediate evidence.
+      disconfirming_result: >-
+        The proposed cross-role recurrence is disconfirmed if either held-out target fails to close an identifiable evidentiary record or resolves the larger implications invoked by its ending.
+      control_expectation: >-
+        Metadata-only control expectation: the named control target tests whether evidentiary closure is distinct from generic journey architecture.
+    prohibited_overgeneralisation: >-
+      Do not turn this bounded ending pattern into a universal account of closure, a period-wide rule, or a prescription to leave implications unresolved.
+    notes: >-
+      Metrics are sampling context; direct passage reading governs interpretation. Moderate confidence reflects three independent development witnesses: the-time-machine, the-sea-raiders, and the-crystal-egg, with a bounded mechanism and no major identification claim. Controls remain unopened, so the classification is role_specific; the targeted search found no genuine resistant development passage.

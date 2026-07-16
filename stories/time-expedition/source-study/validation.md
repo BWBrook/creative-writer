@@ -10,7 +10,12 @@ candidate_profile_sha256: a78c766eaeac350c32f25ab30ff76d089981dee733a6a44e47dd61
 candidate_ledger_sha256: 7c5e5022ab295a1178b06876398b955afda74ecdceafb63144c55bda4d8b48c7
 holdout_summary: All 25 predeclared held-out Wells targets have been assessed; 21 support the candidate tendency and 4 qualify its scope, with none disconfirming it.
 control_summary: All 10 predeclared Tier 4 comparisons are complete; 9 share the bounded tendency and 1 does not, without granting controls positive authority or supporting a period-wide inference.
-reviewer_summary: Independent delegated readers supplied all held-out and most control assessments; root completed the two Beetle controls and synthesized 6 validated and 4 qualified claim decisions, and the initial independent whole-study audit requested completion-gate repairs.
+reviewer_summary: >-
+  Independent delegated readers supplied all held-out and most control
+  assessments; root completed the two Beetle controls and synthesized 6
+  validated and 4 qualified claim decisions. The initial independent
+  whole-study audit requested completion-gate repairs, and its independent
+  follow-up approved the repaired evidence layer.
 heldout_claim_results:
   - id: heldout-tm-frame
     claim_id: mediated-testimony-frame
@@ -1004,6 +1009,33 @@ review_run_provenance:
     outcome: changes_requested
     produced_record_ids: []
     limitations: Reviewed repository evidence rather than independently rereading the complete literary corpus; this was a non-blind audit, and completion approval remains an external final gate.
+  - run_id: final-audit-rereview
+    reviewer_id: codex-task-019f6914-6c96-7291-9fce-2aa8c3f97100
+    role_id: independent-whole-study-auditor
+    stage: whole_study_audit
+    assigned_claim_ids:
+    - mediated-testimony-frame
+    - role-shaped-narrator-distance
+    - qualified-speculative-inference
+    - qualified-scientific-exposition
+    - dialogue-pressure-varies-by-context
+    - role-shaped-syntax
+    - selective-observed-description
+    - danger-through-observation
+    - humour-through-social-friction
+    - short-form-evidentiary-closure
+    method: Independent acceptance review of the initial completion-gate repairs, followed by focused re-review of the audit-approval gate fix.
+    materials_seen:
+    - approved design and implementation plan
+    - repair commits 4d621be, 145fe4e, and 626b04e
+    - tracked final profile, ledger, controls, and validation record
+    - generated analysis report
+    - focused regression and chronology evidence
+    independent_of_candidate_authorship: true
+    anonymisation_status: not_anonymised
+    outcome: approved
+    produced_record_ids: []
+    limitations: This was a non-blind repository acceptance review, not an independent rereading of the complete literary corpus; source, witness, and claim identities remained visible.
 claim_transitions:
   - claim_id: mediated-testimony-frame
     from_status: candidate
@@ -1174,7 +1206,9 @@ Independent delegated readers supplied all held-out assessments and most control
 comparisons. Root completed the two Beetle controls and synthesized six validated
 and four qualified claim decisions; none is rejected or assigned strong
 confidence. The initial independent whole-study audit requested the profile,
-report, and review-provenance completion-gate repairs now recorded here. The final
-descriptive profile and evidence ledger remain bound to their recorded SHA-256
-values. Operational guidance, linting, story planning, and prose generation remain
-outside this record's authority.
+report, and review-provenance completion-gate repairs now recorded here. Its
+independent follow-up found no remaining Critical, Important, or Minor issue and
+approved the repaired evidence layer. The final descriptive profile and evidence
+ledger remain bound to their recorded SHA-256 values. Operational guidance,
+linting, story planning, and prose generation remain outside this record's
+authority.

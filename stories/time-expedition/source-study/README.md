@@ -13,9 +13,9 @@ The generated review surface is
 `build/time-expedition/reports/source-admission-report.md`. It reconciles the
 admission record with retained-source metadata and shows authority, permitted
 and prohibited uses, selected subworks, edition risks, and retained
-fingerprints, derivation, provenance, and rights. The admitted corpus has now
-passed this gate and the deterministic Phase 2B partition is locked in
-`holdouts.yml`. Detailed evidentiary analysis has not yet begun.
+fingerprints, derivation, provenance, and rights. The admitted corpus passed
+this gate, the deterministic Phase 2B partition is locked in `holdouts.yml`,
+and detailed analysis is technically complete.
 
 ## Phase 2B staged analysis
 
@@ -40,7 +40,9 @@ deterministic within-work holdouts, while all Tier 4 material remains outside
 the development index. Re-running `prepare` reproduces the tracked manifest
 and generated indexes byte for byte.
 
-`develop` can read only the development index. Validation follows the strict
+`develop` can read only the development index and is available only before the
+candidate freeze, while analysis status is `protocol` or `development`.
+Validation follows the strict
 two-pass sequence `frozen -> heldout_assessed -> complete`: the frozen pass
 reads held-out Wells only; after complete held-out assessments are committed,
 the held-out-only `heldout_assessed` record authorises a pass that reads Tier 4
@@ -54,11 +56,29 @@ candidate `analysis.yml`, `holdouts.yml`, profile, and evidence ledger.
 Candidate `analysis.yml` and `holdouts.yml` are immutable authorities for the
 entire validation lifecycle, as are the candidate Git objects for the profile
 and ledger. At `complete`, the writer-facing profile and ledger may contain
-reviewed final forms, but each is read from trusted Git content and checked
-against its separately recorded final SHA-256 before use. Generated validation
-outputs publish through the managed `validation/current` generation pointer.
+reviewed final forms. Each is read from a trusted Git blob and checked against
+its separately recorded final SHA-256; the profile is then semantically
+validated against the final ledger and analysis contract before use. Generated
+validation outputs publish through the managed `validation/current` generation
+pointer.
+
+## Phase 2B result
+
+The final evidence layer contains ten frozen candidate claims. Held-out Wells
+assessment produced 21 supporting and four qualifying target results. Tier 4
+comparison found nine broad features shared with neighbouring prose and one
+local non-match in the Haggard journey ending. Root synthesis of the distributed
+assessments retained six claims as `validated` and four as `qualified`; none was
+rejected or assigned strong confidence. An independent acceptance audit first
+requested completion-gate repairs, then approved the repaired evidence layer on
+re-review.
+
+The writer-facing synthesis is `wells-profile.md`, the claim store is
+`evidence-ledger.yml`, and the negative-control analysis is
+`period-controls.md`. The generated compiled report is
+`build/time-expedition/source-study/validation/current/analysis-report.md`.
 
 This workflow remains descriptive and source-bound. It does not author style
 guidance, alter a style card, plan the Permian material, or change manuscript
 prose. Phase 2C is an explicit stop boundary requiring separate design
-approval and human approval of Phase 2B.
+approval and Barry's substantive approval of this Phase 2B evidence layer.

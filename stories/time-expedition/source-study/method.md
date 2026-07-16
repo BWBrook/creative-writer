@@ -37,8 +37,8 @@ with *The Star* reserved as a whole-work holdout. The remaining Tier 1-3
 witnesses have deterministic within-work development and holdout windows; all
 Tier 4 passages are isolated in the control index. A second preparation run
 reproduced the manifest, corpus lock, and all three indexes byte for byte.
-Observation, interpretation, and claim development remain unstarted at this
-checkpoint.
+Observation, interpretation, claim development, candidate freeze, and
+validation are now complete.
 
 Development reads only the development index and keeps measurements and
 observations per witness. The candidate freeze then records a reachable Git
@@ -63,13 +63,32 @@ The candidate profile and ledger remain available from their immutable Git
 objects throughout validation. At `complete`, the writer-facing
 `wells-profile.md` and `evidence-ledger.yml` may be reviewed final versions;
 they are read from trusted Git blobs and checked against separately recorded
-final SHA-256 values before parsing. The generated validation triple is
-published atomically through `validation/current`.
+final SHA-256 values before parsing. The profile is also semantically validated
+against the final ledger and analysis contract. The generated validation triple
+is published atomically through `validation/current`.
+
+## Phase 2B outcome
+
+The frozen candidate contained ten descriptive claims. Twenty-one held-out
+targets supported their expected tendency and four qualified its scope; none
+disconfirmed it. Nine Tier 4 comparisons found a broad shared occurrence,
+while the Haggard journey ending supplied one local non-match. Independent
+delegated reading supplied the held-out and most control assessments. Root
+synthesis produced six validated and four qualified final claims, no rejections,
+and no strong-confidence result. A separate independent acceptance audit
+requested completion-gate repairs and approved the repaired evidence layer on
+re-review.
+
+These outcomes describe the admitted corpus only. Role and work often remain
+aliased, control coverage is one declared target per claim, and the held-out
+*Time Machine* ending window does not include its terminal frame. The final
+report therefore makes no authorship attribution, pooled inferential test, or
+period-wide claim.
 
 ## Phase 2C stop
 
 Phase 2B remains descriptive. It does not produce style guidance, style-card
 changes, phrase banks, Permian research or planning, operational instructions,
 or manuscript prose. The complete validation report is the explicit Phase 2C
-stop boundary; Phase 2C requires separate design approval and human approval
-of the Phase 2B evidence layer.
+stop boundary; Phase 2C requires separate design approval and Barry's
+substantive approval of the Phase 2B evidence layer.

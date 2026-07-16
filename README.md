@@ -78,19 +78,27 @@ creative-writer source-analysis --story <slug> --stage develop
 creative-writer source-analysis --story <slug> --stage validate
 ```
 
-`prepare` creates the corpus lock and three physical passage indexes;
-`develop` reads only the development index; `validate` reports the managed
-validation generation. The validation record advances in order from `frozen`
-to `heldout_assessed` to `complete`, so held-out Wells material is assessed
-before Tier 4 controls can be opened. The committed `heldout_assessed` record
-contains held-out results only; its validation run generates the
-control-inclusive packet used to author control comparisons, reviewer records,
-and claim transitions for `complete`. Candidate `analysis.yml` and
-`holdouts.yml` remain immutable for that validation run. At `complete`, the
-writer-facing profile and evidence ledger may be the separately hash-checked
-final versions required by the approved workflow. Phase 2B produces
+`prepare` creates or verifies the corpus lock and three physical passage
+indexes; `develop` reads only the development index and is intentionally
+limited to the pre-freeze `protocol`/`development` lifecycle; `validate`
+reports the managed validation generation. The validation record advances in
+order from `frozen` to `heldout_assessed` to `complete`, so held-out Wells
+material is assessed before Tier 4 controls can be opened. The committed
+`heldout_assessed` record contains held-out results only; its validation run
+generates the control-inclusive packet used to author control comparisons,
+reviewer records, and claim transitions for `complete`. Candidate
+`analysis.yml` and `holdouts.yml` remain immutable for that validation run. At
+`complete`, the writer-facing profile and evidence ledger may be the separately
+hash-checked final versions required by the approved workflow. Phase 2B produces
 descriptive evidence only and stops before Phase 2C style guidance, planning,
 or manuscript changes.
+
+The `time-expedition` Phase 2B study is technically complete and has passed its
+independent acceptance re-review. Its final evidence layer contains six
+validated and four qualified claims, with no rejected or strong-confidence
+claims. The compiled report is available at
+`build/time-expedition/source-study/validation/current/analysis-report.md`.
+Phase 2C remains pending Barry's substantive approval of that evidence layer.
 
 For a simple script wrapper, you can also run:
 

@@ -787,7 +787,10 @@ review_run_provenance:
     - heldout-tm-frame
     - heldout-star-testimony
     - heldout-tm-reported
+    - heldout-moreau-retrospective
+    - heldout-matters-essay
     - heldout-tm-ending
+    - heldout-star-ending
     limitations: The delegated reviewer and source IDs were not anonymised; the opaque delegated-agent ID was not retained.
   - run_id: heldout-inference-exposition
     reviewer_id: delegated-heldout-reader-inference-exposition

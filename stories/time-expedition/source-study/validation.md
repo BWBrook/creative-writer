@@ -1212,3 +1212,15 @@ approved the repaired evidence layer. The final descriptive profile and evidence
 ledger remain bound to their recorded SHA-256 values. Operational guidance,
 linting, story planning, and prose generation remain outside this record's
 authority.
+
+## Human approval
+
+Barry W. Brook gave substantive approval to the Phase 2B evidence layer on
+23 July 2026. This closes Phase 2B and authorises the next ideation session; it
+does not itself approve a Phase 2C design or operational writing rules.
+
+The agreed sequence is Permian story ideation, Phase 2C operational
+distillation, then a Permian research dossier before manuscript drafting. The
+research dossier must keep modern scientific nomenclature and interpretation
+distinct from the species names, geological terminology, climatic vocabulary,
+and biological classifications plausibly available in the late 1890s.

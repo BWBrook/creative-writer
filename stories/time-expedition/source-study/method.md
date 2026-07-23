@@ -90,5 +90,5 @@ period-wide claim.
 Phase 2B remains descriptive. It does not produce style guidance, style-card
 changes, phrase banks, Permian research or planning, operational instructions,
 or manuscript prose. The complete validation report is the explicit Phase 2C
-stop boundary; Phase 2C requires separate design approval and Barry's
-substantive approval of the Phase 2B evidence layer.
+stop boundary. Barry approved the Phase 2B evidence layer on 23 July 2026;
+Phase 2C still requires its own design approval.

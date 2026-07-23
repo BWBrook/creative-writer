@@ -81,4 +81,13 @@ The writer-facing synthesis is `wells-profile.md`, the claim store is
 This workflow remains descriptive and source-bound. It does not author style
 guidance, alter a style card, plan the Permian material, or change manuscript
 prose. Phase 2C is an explicit stop boundary requiring separate design
-approval and Barry's substantive approval of this Phase 2B evidence layer.
+approval. Barry gave substantive approval to the Phase 2B evidence layer on
+23 July 2026.
+
+## Approved handoff
+
+The agreed order is Permian story ideation, Phase 2C operational distillation,
+then the Permian research dossier before manuscript drafting. That dossier must
+distinguish current scientific nomenclature and interpretation from the names,
+geological concepts, climatic vocabulary, and biological classifications
+available to an informed writer and traveller in the late 1890s.

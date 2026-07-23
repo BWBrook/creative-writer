@@ -98,7 +98,9 @@ independent acceptance re-review. Its final evidence layer contains six
 validated and four qualified claims, with no rejected or strong-confidence
 claims. The compiled report is available at
 `build/time-expedition/source-study/validation/current/analysis-report.md`.
-Phase 2C remains pending Barry's substantive approval of that evidence layer.
+Barry gave substantive approval on 23 July 2026. The agreed next sequence is
+Permian story ideation, then a separately designed Phase 2C, followed by the
+Permian research dossier before manuscript drafting.
 
 For a simple script wrapper, you can also run:
 

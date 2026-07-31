@@ -225,6 +225,31 @@ def test_generate_review_pack_rejects_absolute_manifest_name(tmp_path: Path) -> 
         )
 
 
+def test_generate_review_pack_rejects_windows_drive_relative_manifest_name(
+    tmp_path: Path,
+) -> None:
+    story_dir = create_story(tmp_path, "windows-drive-pack-name", "original")
+    (story_dir / "manuscript" / "01-opening.md").write_text(
+        "Opening line.\n",
+        encoding="utf-8",
+    )
+    manifest_path = story_dir / "review-packs" / "C:outside.yml"
+    _write_valid_review_pack_manifest(manifest_path)
+    assert manifest_path.is_file()
+
+    with pytest.raises(
+        CreativeWriterError,
+        match="story-local YAML filename",
+    ) as exc_info:
+        generate_review_pack(
+            tmp_path,
+            "windows-drive-pack-name",
+            "C:outside.yml",
+        )
+
+    assert "does not exist" not in str(exc_info.value)
+
+
 @pytest.mark.parametrize(
     ("pack_name", "manifest_relative"),
     [

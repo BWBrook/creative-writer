@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 from creative_writer.exceptions import CreativeWriterError
 from creative_writer.files import ensure_directory, load_chapter_document, load_yaml_model
@@ -113,6 +113,7 @@ def _resolve_pack_manifest_path(story_dir: Path, pack: str) -> Path:
     if (
         not pack_name
         or "\\" in pack_name
+        or bool(PureWindowsPath(pack_name).drive)
         or candidate.is_absolute()
         or len(candidate.parts) != 1
         or pack_name in {".", ".."}

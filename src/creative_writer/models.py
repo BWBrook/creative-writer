@@ -92,6 +92,24 @@ class LintSettings(BaseModel):
     )
 
 
+class StyleLintSettings(BaseModel):
+    """Optional story-local style-lint configuration."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    profile: NonEmptyStr
+    generic_ai_audit: bool = True
+
+    @field_validator("profile")
+    @classmethod
+    def validate_profile(cls, value: str) -> str:
+        if not _is_canonical_relative_posix_path(value) or not value.endswith(
+            (".yml", ".yaml")
+        ):
+            raise ValueError("style-lint profile must be a story-relative YAML path")
+        return value
+
+
 class ContractConfig(BaseModel):
     """Human/AI contract for a story project."""
 
@@ -102,6 +120,7 @@ class ContractConfig(BaseModel):
     authority_mode: Literal["direct_edit", "suggest_only", "review_first"]
     review_mode: Literal["git_diff", "summary", "none", "excerpt_pack"]
     lint: LintSettings = Field(default_factory=LintSettings)
+    style_lint: StyleLintSettings | None = None
 
 
 class CompositionWindow(BaseModel):
@@ -474,6 +493,21 @@ class TimelineRegistry(BaseModel):
     events: list[TimelineEvent] = Field(default_factory=list)
 
 
+class ReviewPackStyleContext(BaseModel):
+    """Optional style-triage context for one review-pack entry."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    finding_ids: list[Slug] = Field(default_factory=list)
+    profile_id: Slug
+    profile_version: str = Field(pattern=r"^\d+\.\d+\.\d+$")
+    claim_ids: list[Slug] = Field(default_factory=list)
+    narrative_role: Slug
+    ai_disposition: Literal["dismiss", "revise", "monitor", "escalate"]
+    ai_rationale: NonEmptyStr
+    decision_impact: NonEmptyStr
+
+
 class ReviewPackEntry(BaseModel):
     """One targeted excerpt request inside a review pack."""
 
@@ -487,6 +521,7 @@ class ReviewPackEntry(BaseModel):
     kind: Literal["confidence", "uncertainty"]
     question: NonEmptyStr
     context: str = ""
+    style: ReviewPackStyleContext | None = None
 
     @field_validator("manuscript")
     @classmethod
@@ -528,6 +563,8 @@ class ChapterFrontMatter(BaseModel):
     plot_devices: list[str] = Field(default_factory=list)
     timeline_events: list[str] = Field(default_factory=list)
     images: list[str] = Field(default_factory=list)
+    style_roles: list[str] = Field(default_factory=list)
+    style_packets: list[str] = Field(default_factory=list)
 
     @field_validator(
         "manuscript",
@@ -557,6 +594,8 @@ class ChapterFrontMatter(BaseModel):
         "plot_devices",
         "timeline_events",
         "images",
+        "style_roles",
+        "style_packets",
     )
     @classmethod
     def validate_lists(cls, value: list[str]) -> list[str]:

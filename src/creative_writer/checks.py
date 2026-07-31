@@ -19,6 +19,7 @@ from creative_writer.models import (
     StoryConfig,
     TimelineRegistry,
 )
+from creative_writer.prose_heuristics import run_surface_heuristics
 from creative_writer.review_packs import review_pack_manifest_paths, validate_review_pack_manifest
 
 MANDATORY_ARTIFACTS = [
@@ -32,10 +33,6 @@ MANDATORY_ARTIFACTS = [
 ]
 IGNORED_SCENE_CARD_FILES = {"README.md", "_template.md"}
 
-CONTRASTIVE_PATTERN = re.compile(
-    r"\b(?:not only\b[^.!?\n]{0,80}\bbut also|not\b[^.!?\n]{0,80}\bbut)\b",
-    re.IGNORECASE,
-)
 MARKDOWN_IMAGE_PATTERN = re.compile(r"!\[[^\]]*\]\(([^)]+)\)")
 HTML_IMAGE_PATTERN = re.compile(r'<img[^>]+src="([^"]+)"', re.IGNORECASE)
 
@@ -403,31 +400,14 @@ def check_story(root: Path, slug: str) -> CheckResult:
                 )
 
             if result.contract:
-                em_dash_count = chapter.manuscript_body.count("—")
-                em_dash_lint = result.contract.lint.em_dash
-                if em_dash_lint.enabled and em_dash_count > em_dash_lint.max_per_chapter:
-                    _add_warning(
-                        result,
-                        chapter.manuscript_path,
-                        f"Em dash count {em_dash_count} exceeds configured limit "
-                        f"{em_dash_lint.max_per_chapter}.",
-                    )
-
-                contrastive_lint = result.contract.lint.contrastive_parallelism
-                contrastive_hits = len(
-                    CONTRASTIVE_PATTERN.findall(chapter.manuscript_body)
-                )
-                if (
-                    contrastive_lint.enabled
-                    and contrastive_hits
-                    > contrastive_lint.max_instances_per_chapter
+                for warning in run_surface_heuristics(
+                    chapter.manuscript_body,
+                    result.contract.lint,
                 ):
                     _add_warning(
                         result,
                         chapter.manuscript_path,
-                        f"Contrastive parallelism count {contrastive_hits} exceeds "
-                        f"configured limit "
-                        f"{contrastive_lint.max_instances_per_chapter}.",
+                        warning.observed,
                     )
 
     chapter_index = {

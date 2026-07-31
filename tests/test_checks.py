@@ -86,6 +86,10 @@ Stub text.
 
     assert result.ok
     assert len(result.warnings) == 2
+    assert [warning.message for warning in result.warnings] == [
+        "Em dash count 1 exceeds configured limit 0.",
+        "Contrastive parallelism count 1 exceeds configured limit 0.",
+    ]
 
 
 def test_invalid_story_schema_is_blocking(tmp_path: Path) -> None:

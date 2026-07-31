@@ -56,6 +56,13 @@ def _write_review(
     path.write_text(f"---\n{front_matter}---\n\n{body}", encoding="utf-8")
 
 
+def _write_manuscript(story_dir: Path) -> Path:
+    path = story_dir / "manuscript" / "01-opening.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("Opening manuscript.\n", encoding="utf-8")
+    return path
+
+
 def _style_context() -> StyleContext:
     profile = SimpleNamespace(
         profile_id="wells-1895-1899",
@@ -116,6 +123,7 @@ def test_load_style_review_rejects_empty_markdown_body(tmp_path: Path) -> None:
 def test_validate_style_reviews_accepts_missing_fingerprinted_lint_report(
     tmp_path: Path,
 ) -> None:
+    _write_manuscript(tmp_path)
     path = tmp_path / "style-reviews" / "chapter-one.md"
     _write_review(path)
 
@@ -135,6 +143,7 @@ def test_validate_style_reviews_accepts_missing_fingerprinted_lint_report(
 def test_validate_style_reviews_accepts_human_story_review(
     tmp_path: Path,
 ) -> None:
+    _write_manuscript(tmp_path)
     payload = valid_style_review_payload()
     payload.update(
         scope="story",
@@ -167,6 +176,7 @@ def test_validate_style_reviews_rejects_unknown_context_references(
     mutation: dict[str, Any],
     expected: str,
 ) -> None:
+    _write_manuscript(tmp_path)
     payload = valid_style_review_payload()
     payload.update(mutation)
     path = tmp_path / "style-reviews" / "invalid-reference.md"
@@ -186,6 +196,7 @@ def test_validate_style_reviews_rejects_unknown_context_references(
 def test_validate_style_reviews_reports_invalid_review_without_stopping(
     tmp_path: Path,
 ) -> None:
+    _write_manuscript(tmp_path)
     invalid = tmp_path / "style-reviews" / "a-invalid.md"
     invalid.parent.mkdir(parents=True)
     invalid.write_text("No front matter.\n", encoding="utf-8")
@@ -200,3 +211,95 @@ def test_validate_style_reviews_reports_invalid_review_without_stopping(
 
     assert len(errors) == 1
     assert str(invalid) in errors[0]
+
+
+def test_validate_style_reviews_rejects_symlinked_review_directory(
+    tmp_path: Path,
+) -> None:
+    _write_manuscript(tmp_path)
+    external_dir = tmp_path.parent / f"{tmp_path.name}-external-reviews"
+    _write_review(external_dir / "chapter-one.md")
+    review_dir = tmp_path / "style-reviews"
+    review_dir.symlink_to(external_dir, target_is_directory=True)
+
+    errors = validate_style_reviews(
+        tmp_path,
+        _style_context(),
+        {"manuscript/01-opening.md"},
+    )
+
+    assert errors == [
+        f"{review_dir}: style-reviews directory must not be a symlink"
+    ]
+
+
+def test_validate_style_reviews_rejects_symlinked_review_file(
+    tmp_path: Path,
+) -> None:
+    _write_manuscript(tmp_path)
+    external = tmp_path.parent / f"{tmp_path.name}-external-review.md"
+    _write_review(external)
+    review_dir = tmp_path / "style-reviews"
+    review_dir.mkdir()
+    review_link = review_dir / "chapter-one.md"
+    review_link.symlink_to(external)
+
+    errors = validate_style_reviews(
+        tmp_path,
+        _style_context(),
+        {"manuscript/01-opening.md"},
+    )
+
+    assert errors == [
+        f"{review_link}: style review file must not be a symlink"
+    ]
+
+
+def test_validate_style_reviews_rejects_manuscript_symlink_escape(
+    tmp_path: Path,
+) -> None:
+    external = tmp_path.parent / f"{tmp_path.name}-external-manuscript.md"
+    external.write_text("External manuscript.\n", encoding="utf-8")
+    manuscript = tmp_path / "manuscript" / "01-opening.md"
+    manuscript.parent.mkdir()
+    manuscript.symlink_to(external)
+    _write_review(tmp_path / "style-reviews" / "chapter-one.md")
+
+    errors = validate_style_reviews(
+        tmp_path,
+        _style_context(),
+        {"manuscript/01-opening.md"},
+    )
+
+    assert len(errors) == 1
+    assert errors[0].startswith(f"{manuscript}: ")
+    assert "resolves outside the story manuscript directory" in errors[0]
+    assert str(external.resolve()) in errors[0]
+
+
+def test_validate_style_reviews_rejects_duplicate_ids_deterministically(
+    tmp_path: Path,
+) -> None:
+    _write_manuscript(tmp_path)
+    first = tmp_path / "style-reviews" / "a-first.md"
+    second = tmp_path / "style-reviews" / "b-second.md"
+    _write_review(first)
+    _write_review(second)
+    expected = [
+        f"{second}: duplicate review_id `chapter-one-first-pass`; "
+        f"first declared in {first}"
+    ]
+
+    first_run = validate_style_reviews(
+        tmp_path,
+        _style_context(),
+        {"manuscript/01-opening.md"},
+    )
+    second_run = validate_style_reviews(
+        tmp_path,
+        _style_context(),
+        {"manuscript/01-opening.md"},
+    )
+
+    assert first_run == expected
+    assert second_run == expected

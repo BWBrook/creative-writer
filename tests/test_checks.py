@@ -102,6 +102,7 @@ def _write_style_review(
     story_dir: Path,
     *,
     mutation: dict[str, Any] | None = None,
+    filename: str = "opening-first-pass.md",
 ) -> Path:
     payload: dict[str, Any] = {
         "review_id": "opening-first-pass",
@@ -123,7 +124,7 @@ def _write_style_review(
         "outcome": "qualified",
     }
     payload.update(mutation or {})
-    path = story_dir / "style-reviews" / "opening-first-pass.md"
+    path = story_dir / "style-reviews" / filename
     path.parent.mkdir(parents=True, exist_ok=True)
     front_matter = yaml.safe_dump(
         payload,
@@ -803,6 +804,97 @@ def test_check_reports_invalid_tracked_style_review(
         and "unknown style packet" in error.message
         for error in result.errors
     )
+
+
+def test_check_rejects_symlinked_style_review_directory(
+    configured_style_story: Path,
+) -> None:
+    root = configured_style_story.parent.parent
+    external_holder = root / "external-review-holder"
+    _write_style_review(external_holder)
+    review_dir = configured_style_story / "style-reviews"
+    review_dir.symlink_to(
+        external_holder / "style-reviews",
+        target_is_directory=True,
+    )
+
+    result = check_story(root, "configured-style")
+
+    assert not result.ok
+    assert any(
+        error.location == str(review_dir)
+        and "style-reviews directory must not be a symlink" in error.message
+        for error in result.errors
+    )
+
+
+def test_check_rejects_symlinked_style_review_file(
+    configured_style_story: Path,
+) -> None:
+    root = configured_style_story.parent.parent
+    external_holder = root / "external-review-holder"
+    external_review = _write_style_review(external_holder)
+    review_dir = configured_style_story / "style-reviews"
+    review_dir.mkdir()
+    review_link = review_dir / "linked-review.md"
+    review_link.symlink_to(external_review)
+
+    result = check_story(root, "configured-style")
+
+    assert not result.ok
+    assert any(
+        error.location == str(review_link)
+        and "style review file must not be a symlink" in error.message
+        for error in result.errors
+    )
+
+
+def test_check_rejects_configured_manuscript_symlink_escape(
+    configured_style_story: Path,
+) -> None:
+    root = configured_style_story.parent.parent
+    external = root / "external-manuscript.md"
+    external.write_text("External manuscript.\n", encoding="utf-8")
+    manuscript = configured_style_story / "manuscript" / "01-opening.md"
+    manuscript.unlink()
+    manuscript.symlink_to(external)
+    _write_style_review(configured_style_story)
+
+    result = check_story(root, "configured-style")
+
+    assert not result.ok
+    assert any(
+        error.location == str(manuscript)
+        and "resolves outside the story manuscript directory" in error.message
+        for error in result.errors
+    )
+
+
+def test_check_rejects_duplicate_style_review_ids(
+    configured_style_story: Path,
+) -> None:
+    first = _write_style_review(
+        configured_style_story,
+        filename="a-first.md",
+    )
+    second = _write_style_review(
+        configured_style_story,
+        filename="b-second.md",
+    )
+
+    result = check_story(
+        configured_style_story.parent.parent,
+        "configured-style",
+    )
+
+    duplicate_errors = [
+        error
+        for error in result.errors
+        if "duplicate review_id" in error.message
+    ]
+    assert len(duplicate_errors) == 1
+    assert duplicate_errors[0].location == str(second)
+    assert str(first) in duplicate_errors[0].message
 
 
 def test_importing_cli_does_not_load_explicit_analysis_modules() -> None:

@@ -10,6 +10,7 @@ from pydantic import ValidationError
 from creative_writer.exceptions import CreativeWriterError
 from creative_writer.files import split_front_matter
 from creative_writer.models import ReviewPackEntry
+from creative_writer.source_analysis_common import validate_relative_path
 from creative_writer.style_models import StyleReviewFrontMatter
 from creative_writer.style_profiles import StyleContext
 
@@ -27,18 +28,37 @@ def style_review_paths(story_dir: Path) -> list[Path]:
     """Return real tracked style reviews in deterministic lexical order."""
 
     directory = story_dir / "style-reviews"
+    if directory.is_symlink():
+        raise CreativeWriterError(
+            f"{directory}: style-reviews directory must not be a symlink"
+        )
     if not directory.is_dir():
         return []
-    return [
-        path
-        for path in sorted(directory.glob("*.md"))
-        if path.name not in IGNORED_STYLE_REVIEW_FILES and path.is_file()
-    ]
+
+    paths: list[Path] = []
+    for path in sorted(directory.glob("*.md")):
+        if path.name in IGNORED_STYLE_REVIEW_FILES:
+            continue
+        if path.is_symlink():
+            raise CreativeWriterError(
+                f"{path}: style review file must not be a symlink"
+            )
+        if path.is_file():
+            paths.append(path)
+    return paths
 
 
 def load_style_review(path: Path) -> StyleReviewDocument:
     """Load one strict style review with a substantive Markdown body."""
 
+    if path.parent.is_symlink():
+        raise CreativeWriterError(
+            f"{path.parent}: style-reviews directory must not be a symlink"
+        )
+    if path.is_symlink():
+        raise CreativeWriterError(
+            f"{path}: style review file must not be a symlink"
+        )
     try:
         text = path.read_text(encoding="utf-8")
     except (OSError, UnicodeError) as exc:
@@ -64,6 +84,68 @@ def load_style_review(path: Path) -> StyleReviewDocument:
     )
 
 
+def _configured_manuscript_errors(
+    story_dir: Path,
+    manuscript_paths: set[str],
+) -> list[str]:
+    errors: list[str] = []
+    try:
+        real_story_dir = story_dir.resolve(strict=True)
+    except OSError as exc:
+        return [f"{story_dir}: unable to resolve story directory: {exc}"]
+
+    manuscript_dir = real_story_dir / "manuscript"
+    try:
+        real_manuscript_dir = manuscript_dir.resolve(strict=True)
+    except OSError as exc:
+        return [
+            f"{manuscript_dir}: unable to resolve story manuscript "
+            f"directory: {exc}"
+        ]
+    if real_manuscript_dir != manuscript_dir:
+        return [
+            f"{manuscript_dir}: story manuscript directory must not be a "
+            "symlink"
+        ]
+
+    for relative in sorted(manuscript_paths):
+        manuscript = real_story_dir / relative
+        try:
+            validate_relative_path(relative)
+        except CreativeWriterError as exc:
+            errors.append(
+                f"{manuscript}: configured manuscript path is not canonical: "
+                f"{exc}"
+            )
+            continue
+        if not relative.startswith("manuscript/") or not relative.endswith(".md"):
+            errors.append(
+                f"{manuscript}: configured manuscript must be below "
+                "manuscript/ and end in .md"
+            )
+            continue
+        try:
+            resolved = manuscript.resolve(strict=True)
+        except OSError as exc:
+            errors.append(
+                f"{manuscript}: unable to resolve configured manuscript: {exc}"
+            )
+            continue
+        try:
+            resolved.relative_to(real_manuscript_dir)
+        except ValueError:
+            errors.append(
+                f"{manuscript}: configured manuscript resolves outside the "
+                f"story manuscript directory: {resolved}"
+            )
+            continue
+        if not resolved.is_file():
+            errors.append(
+                f"{manuscript}: configured manuscript is not a regular file"
+            )
+    return errors
+
+
 def validate_style_reviews(
     story_dir: Path,
     context: StyleContext,
@@ -71,9 +153,16 @@ def validate_style_reviews(
 ) -> list[str]:
     """Return path-preserving errors for invalid tracked style reviews."""
 
-    errors: list[str] = []
+    errors = _configured_manuscript_errors(story_dir, manuscript_paths)
     known_packets = set(context.packets)
-    for path in style_review_paths(story_dir):
+    try:
+        paths = style_review_paths(story_dir)
+    except CreativeWriterError as exc:
+        errors.append(str(exc))
+        return errors
+
+    review_ids: dict[str, Path] = {}
+    for path in paths:
         try:
             document = load_style_review(path)
         except CreativeWriterError as exc:
@@ -81,6 +170,14 @@ def validate_style_reviews(
             continue
 
         review = document.front_matter
+        first_path = review_ids.get(review.review_id)
+        if first_path is None:
+            review_ids[review.review_id] = path
+        else:
+            errors.append(
+                f"{path}: duplicate review_id `{review.review_id}`; "
+                f"first declared in {first_path}"
+            )
         if review.profile_id != context.profile.profile_id:
             errors.append(
                 f"{path}: profile ID `{review.profile_id}` does not match "

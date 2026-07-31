@@ -12,6 +12,22 @@ clues_resolved: []
 plot_devices: []
 timeline_events: []
 images: []
+style_roles:
+  - frame
+  - reported-account
+  - notebook
+  - scientific-inference
+  - scientific-exposition
+  - social-dialogue
+  - danger-action
+  - reflection-closure
+style_packets:
+  - frame-and-testimony
+  - traveller-account
+  - observation-and-exposition
+  - dialogue-and-social-friction
+  - danger-and-action
+  - reflection-and-closure
 ---
 
 ## Expedition purpose

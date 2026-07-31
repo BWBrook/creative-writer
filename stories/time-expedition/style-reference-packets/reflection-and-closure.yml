@@ -1,0 +1,60 @@
+schema_version: 1
+id: reflection-and-closure
+title: Reflection and closure
+purpose: Compare endings that close an available evidentiary record while preserving unresolved implication, including authentic variation and one locally contrasting journey control.
+profile_id: wells-1895-1899
+profile_version: 1.0.0
+roles:
+  - frame
+  - reflection-closure
+claim_ids:
+  - short-form-evidentiary-closure
+context_radius: 1
+entries:
+  - id: time-machine-epilogue-residue
+    passage_id: the-time-machine:epilogue:308:6c18eecffc7e
+    kind: positive_example
+    claim_ids:
+      - short-form-evidentiary-closure
+    authority_tier: 1
+    permitted_use: frame and Traveller evidence
+    selection_note: The available account closes by narrowing what can be claimed while disappearance and future history remain unresolved.
+  - id: crystal-egg-custody-ending
+    passage_id: selected-short-fiction/the-crystal-egg:the-crystal-egg:51:025f5af2df0e
+    kind: positive_example
+    claim_ids:
+      - short-form-evidentiary-closure
+    authority_tier: 2
+    permitted_use: bounded short-story and scene comparison
+    selection_note: The object's traceable custody ends while its implications for the observer worlds remain open.
+  - id: time-machine-local-testimony-closure
+    passage_id: the-time-machine:xii:279:e22b90a63db0
+    kind: authentic_variation
+    claim_ids:
+      - short-form-evidentiary-closure
+    authority_tier: 1
+    permitted_use: frame and Traveller evidence
+    selection_note: Held-out Tier 1 evidence closes the narrated journey locally and reopens its truth status, but the window omits the terminal frame.
+  - id: star-distant-assessment
+    passage_id: selected-short-fiction/the-star:the-star:39:de14ba922638
+    kind: positive_example
+    claim_ids:
+      - short-form-evidentiary-closure
+    authority_tier: 2
+    permitted_use: bounded short-story and scene comparison
+    selection_note: The record restricts itself to the event's coming and passing before a distant assessment exposes unresolved significance.
+  - id: solomon-settled-journey-control
+    passage_id: king-solomons-mines:xx:1521:b6ceb2d61e7f
+    kind: negative_control
+    claim_ids:
+      - short-form-evidentiary-closure
+    authority_tier: 4
+    permitted_use: journey architecture
+    selection_note: The control closes its history by settling principal outcomes and opening a practical next action, a local contrast rather than positive Haggard guidance.
+prohibited_uses:
+  - Do not use selected short fiction or the Tier 4 control as Time Expedition continuity.
+  - Do not import unselected stories, control characters, places, incidents, lost-world content, imperial assumptions, or racial ideology.
+  - Do not let selected short fiction or a control override The Time Machine.
+  - Do not use the Tier 4 control for style prescription or phrase borrowing.
+  - Do not turn unresolved implication into a universal ending rule or proof of Wellsian distinctiveness.
+anti_copying_guidance: Study narrative method, evidentiary sequence, role, and cadence. Do not borrow distinctive phrases, sentence skeletons, images, or local wording.

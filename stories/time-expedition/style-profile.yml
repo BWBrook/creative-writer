@@ -1,0 +1,522 @@
+schema_version: 1
+profile_id: wells-1895-1899
+version: 1.0.0
+title: "Late-1890s H. G. Wells operational style profile"
+eligible_claim_statuses: [validated, qualified]
+provenance:
+  study_id: time-expedition-wells-phase-2b
+  analysis:
+    path: stories/time-expedition/source-study/analysis.yml
+    sha256: a1b6c8a50e1527b587fa3861413cc78d87f02f9d2773768859ac629ba5258a6f
+  source_registry:
+    path: stories/time-expedition/original/sources.yml
+    sha256: a5ae71f7f2437e3309ab7ff638388c7623214fd095544ff6470cdb7ad34e9677
+  holdout_manifest:
+    path: stories/time-expedition/source-study/holdouts.yml
+    sha256: 7ff1aaa6c96209ce8a22511840018d6e21580658d1421d4a8e76baef21690d67
+  evidence_ledger:
+    path: stories/time-expedition/source-study/evidence-ledger.yml
+    sha256: c9d01946ca8c68492369a9962c1953ffb1c83948d61863c152fc8514d51b54e1
+  validation_record:
+    path: stories/time-expedition/source-study/validation.md
+    sha256: 39582142777a486157b2249e1f317710099dc2ef8f4e047080cdd53875bd23e4
+  passage_indexes:
+    development:
+      path: build/time-expedition/source-study/indexes/development.jsonl
+      sha256: 76131fb52a054567695800cf2028f956679cf1f1723bc80a471f7252d181a3c8
+    heldout_wells:
+      path: build/time-expedition/source-study/indexes/heldout-wells.jsonl
+      sha256: c503a29906aa6fbdbd4847daed698de405d936e9513f6dba020dbde16e74ed6d
+    tier4_controls:
+      path: build/time-expedition/source-study/indexes/tier4-controls.jsonl
+      sha256: 8534aba41eb247f00ebb579cfcc8b8635e66c5e0a339792a76d712cddf45b936
+  approved_review_run_id: final-audit-rereview
+default_packet_ids:
+  - frame-and-testimony
+  - traveller-account
+  - observation-and-exposition
+  - dialogue-and-social-friction
+  - danger-and-action
+  - reflection-and-closure
+change_basis: "Initial operationalisation of the human-approved Phase 2B Wells evidence layer and the approved Phase 2C design dated 2026-07-31."
+profile_review_refs:
+  - "source-study/validation.md#final-audit-rereview"
+  - "docs/superpowers/specs/2026-07-31-wells-phase-2c-operational-style-design.md"
+roles:
+  - id: frame
+    label: Frame
+    description: The outer chain through which testimony, records, and judgements reach the reader.
+    phase_2b_roles:
+      - frame architecture
+      - testimony
+  - id: reported-account
+    label: Reported account
+    description: The Time Traveller's remembered first-person experience as delivered through a later telling.
+    phase_2b_roles:
+      - reported first-person account
+      - retrospective first-person narration
+  - id: notebook
+    label: Notebook
+    description: A documentary record that mediates the Traveller's account through testimony and reported experience.
+    phase_2b_roles:
+      - testimony
+      - reported first-person account
+  - id: scientific-inference
+    label: Scientific inference
+    description: Observed particulars moving into provisional explanation, revision, or bounded conjecture.
+    phase_2b_roles:
+      - speculative method
+      - evidence-to-speculation movement
+      - landscape observation
+      - microscopic observation
+  - id: scientific-exposition
+    label: Scientific exposition
+    description: Scene-pressured explanation using observation, analogy, procedure, comparison, or classification.
+    phase_2b_roles:
+      - speculative method
+      - scientific argument
+      - instructional exposition
+      - comparison and classification
+      - biological terminology
+  - id: social-dialogue
+    label: Social dialogue
+    description: Speech shaped by occupation, status, disagreement, danger, misunderstanding, or comic friction.
+    phase_2b_roles:
+      - social register
+      - sustained dialogue
+      - dialogue under stress
+      - comic friction
+      - humour
+  - id: danger-action
+    label: Danger and action
+    description: Biological or catastrophic danger disclosed through selected observation before and during action.
+    phase_2b_roles:
+      - biological danger
+      - catastrophe
+      - landscape observation
+      - biological terminology
+  - id: reflection-closure
+    label: Reflection and closure
+    description: The ending of an available record while uncertainty or larger implication remains in view.
+    phase_2b_roles:
+      - frame architecture
+      - short-form architecture
+rules:
+  - id: practice-mediated-testimony
+    name: Mediated testimony
+    family: practice
+    advisory: review
+    claim_ids:
+      - mediated-testimony-frame
+    roles:
+      - frame
+      - notebook
+    scope: story
+    evaluation_mode: manual_question
+    review_question: Does the extraordinary claim reach the reader through a legible chain of witnessing, telling, record, or contest rather than unmediated authorial assertion?
+    source_passage_ids:
+      - the-time-machine:ii:101:b859a93fec21
+      - selected-short-fiction/the-plattner-story:the-plattner-story:1:725f01ec6e50
+    variation_passage_ids:
+      - the-time-machine:ii:79:3f712a420f66
+    control_passage_ids: []
+    packet_ids:
+      - frame-and-testimony
+    interpretation_limits: >-
+      Development-only cross_work scope is limited to frame architecture and testimony across the three cited development witnesses. This candidate records a bounded descriptive pattern in the retained witnesses and does not resolve the held-out witness. Prohibited overgeneralisation: Do not convert this bounded description into a universal account of Wells, a period-wide rule, or a prescription that fiction should use visible testimony frames.
+  - id: practice-role-shaped-distance
+    name: Role-shaped narrator distance
+    family: practice
+    advisory: review
+    claim_ids:
+      - role-shaped-narrator-distance
+    roles:
+      - reported-account
+      - notebook
+    scope: chapter
+    evaluation_mode: manual_question
+    review_question: Does narrator distance suit the current role, and are shifts between remembered experience, present telling, and reflective hindsight legible?
+    source_passage_ids:
+      - the-time-machine:ix:247:7c7656f6a229
+      - the-time-machine:xii:276:23b26487ff8e
+    variation_passage_ids:
+      - the-island-of-doctor-moreau:i:2:522a64e3a5eb
+    control_passage_ids: []
+    packet_ids:
+      - traveller-account
+    interpretation_limits: >-
+      Development-only cross_work scope is limited to the selected reported first-person, retrospective first-person, and essay passages across the-time-machine, the-island-of-doctor-moreau, and certain-personal-matters. Role and work are aliased in this sample, so the observed contrasts cannot identify a role effect or establish a general theory of narration. Prohibited overgeneralisation: Do not treat these role-bound differences as universal properties of first-person writing, as a period-wide rule, or as a prescription for narrator distance.
+  - id: practice-qualified-inference
+    name: Qualified speculative inference
+    family: practice
+    advisory: review
+    claim_ids:
+      - qualified-speculative-inference
+    roles:
+      - scientific-inference
+    scope: passage
+    evaluation_mode: manual_question
+    review_question: Does inference proceed from observed particulars through provisional explanation, with uncertainty or correction where the evidence demands it?
+    source_passage_ids:
+      - the-time-machine:iv:147:5a08c0c8cfcb
+    variation_passage_ids: []
+    control_passage_ids: []
+    packet_ids:
+      - observation-and-exposition
+    interpretation_limits: >-
+      Development-only cross_work scope is limited to speculative method and evidence-to-speculation movement in the-time-machine and the-war-of-the-worlds. This candidate concerns transitions from observation to explanation in the retained development passages and not the truth of the fictional explanations. Prohibited overgeneralisation: Do not turn this bounded pattern into a universal feature of speculative narrative, a period-wide rule, or a prescription to qualify every fictional inference.
+  - id: locator-qualified-inference
+    name: Qualified inference locator
+    family: practice
+    advisory: notice
+    claim_ids:
+      - qualified-speculative-inference
+    roles:
+      - scientific-inference
+    scope: passage
+    evaluation_mode: locator
+    review_question: Where do qualifying terms occur, and do they mark genuine epistemic limits rather than habitual hedging?
+    signal:
+      kind: lexicon_locator
+      terms:
+        - perhaps
+        - probably
+        - possibly
+        - apparently
+        - evidently
+        - seemed
+        - suppose
+        - conjecture
+      max_examples: 8
+    source_passage_ids:
+      - the-time-machine:iv:147:5a08c0c8cfcb
+    variation_passage_ids: []
+    control_passage_ids: []
+    packet_ids:
+      - observation-and-exposition
+    interpretation_limits: >-
+      Development-only cross_work scope is limited to speculative method and evidence-to-speculation movement in the-time-machine and the-war-of-the-worlds. This candidate concerns transitions from observation to explanation in the retained development passages and not the truth of the fictional explanations. Prohibited overgeneralisation: Do not turn this bounded pattern into a universal feature of speculative narrative, a period-wide rule, or a prescription to qualify every fictional inference.
+  - id: practice-qualified-exposition
+    name: Qualified scientific exposition
+    family: practice
+    advisory: review
+    claim_ids:
+      - qualified-scientific-exposition
+    roles:
+      - scientific-exposition
+    scope: passage
+    evaluation_mode: manual_question
+    review_question: Does explanation answer pressure created by scene or evidence, use analogy and classification selectively, and avoid halting the narrative?
+    source_passage_ids:
+      - the-time-machine:v:165:29fe69fce8b4
+    variation_passage_ids:
+      - text-book-of-biology-part-1:note-on-making-comparisons:527:75c6e3818b0d
+    control_passage_ids: []
+    packet_ids:
+      - observation-and-exposition
+    interpretation_limits: >-
+      Development-only cross_work scope is limited to selected speculative-method, scientific-argument, instructional-exposition, and comparison passages across the-time-machine, the-island-of-doctor-moreau, and text-book-of-biology-part-1. Role and work are aliased in this sample, so the contrast does not identify a role effect; nonfiction instruction is not fictional continuity evidence. Prohibited overgeneralisation: Do not make this bounded descriptive comparison a universal rule for scientific exposition, a period-wide law, or a writing prescription to qualify every unfamiliar claim.
+  - id: practice-dialogue-pressure
+    name: Dialogue pressure by context
+    family: practice
+    advisory: review
+    claim_ids:
+      - dialogue-pressure-varies-by-context
+    roles:
+      - social-dialogue
+    scope: chapter
+    evaluation_mode: manual_question
+    review_question: Is dialogue pressure suited to social and occupational context, with disagreement enacted through role and status rather than interchangeable exposition?
+    source_passage_ids:
+      - the-invisible-man:iii:92:8c3779ecfb78
+      - the-invisible-man:vii:223:04a2271ebbf5
+    variation_passage_ids:
+      - the-island-of-doctor-moreau:v:115:8ddf9cdc824d
+    control_passage_ids: []
+    packet_ids:
+      - dialogue-and-social-friction
+    interpretation_limits: >-
+      Development-only cross_work scope is limited to the selected social-register, sustained-dialogue, and danger-context passages in the-invisible-man and the-island-of-doctor-moreau. The contexts and works are aliased, so the contrasts do not identify pressure or role as their cause and do not prescribe a single dialogue form. Prohibited overgeneralisation: Do not treat these selected passage differences as universal dialogue laws, a period-wide rule, or a prescription for how fictional conversations should be shaped.
+  - id: diagnostic-dialogue-context
+    name: Dialogue context diagnostic
+    family: diagnostic
+    advisory: notice
+    claim_ids:
+      - dialogue-pressure-varies-by-context
+    roles:
+      - social-dialogue
+    scope: chapter
+    evaluation_mode: contextual_diagnostic
+    review_question: What does the approximate quoted-speech proportion reveal about this chapter's declared role, once parser limitations and authentic variation are considered?
+    signal:
+      kind: dialogue_profile
+      minimum_words: 200
+    source_passage_ids:
+      - the-invisible-man:iii:92:8c3779ecfb78
+      - the-invisible-man:vii:223:04a2271ebbf5
+    variation_passage_ids:
+      - the-island-of-doctor-moreau:v:115:8ddf9cdc824d
+    control_passage_ids: []
+    packet_ids:
+      - dialogue-and-social-friction
+    interpretation_limits: >-
+      Development-only cross_work scope is limited to the selected social-register, sustained-dialogue, and danger-context passages in the-invisible-man and the-island-of-doctor-moreau. The contexts and works are aliased, so the contrasts do not identify pressure or role as their cause and do not prescribe a single dialogue form. Prohibited overgeneralisation: Do not treat these selected passage differences as universal dialogue laws, a period-wide rule, or a prescription for how fictional conversations should be shaped.
+  - id: diagnostic-role-shaped-syntax
+    name: Role-shaped syntax diagnostic
+    family: diagnostic
+    advisory: notice
+    claim_ids:
+      - role-shaped-syntax
+    roles:
+      - reported-account
+      - notebook
+      - social-dialogue
+    scope: chapter
+    evaluation_mode: contextual_diagnostic
+    review_question: Do the sentence and paragraph distributions suit the declared role without being treated as a target cadence?
+    signal:
+      kind: sentence_profile
+      speech_attribution_verbs:
+        - said
+        - asked
+        - replied
+        - answered
+        - remarked
+        - exclaimed
+        - cried
+      minimum_sentences: 12
+    source_passage_ids:
+      - the-time-machine:iii:102:301f3d1a7670
+      - the-invisible-man:vii:223:04a2271ebbf5
+    variation_passage_ids: []
+    control_passage_ids: []
+    packet_ids:
+      - traveller-account
+      - dialogue-and-social-friction
+    interpretation_limits: >-
+      Development-only cross_work scope is limited to the selected reported first-person, sustained-dialogue, and essay passages across the-time-machine, the-invisible-man, and certain-personal-matters. Role and work are aliased, so the contrasts do not identify a role effect. The Invisible Man transcription is not a diplomatic book witness, and serial and book paragraphing may differ; paragraph-level claims remain provisional. Prohibited overgeneralisation: Do not turn these local role differences into a universal account of prose rhythm, a period-wide rule, or a writing prescription for sentence and paragraph movement.
+  - id: practice-selective-description
+    name: Selective observed description
+    family: practice
+    advisory: review
+    claim_ids:
+      - selective-observed-description
+    roles:
+      - scientific-inference
+      - scientific-exposition
+      - danger-action
+    scope: passage
+    evaluation_mode: manual_question
+    review_question: Are observed details selected for inference or pressure, or has description become a comprehensive inventory?
+    source_passage_ids:
+      - the-war-of-the-worlds:v:101:8debc943c595
+    variation_passage_ids: []
+    control_passage_ids: []
+    packet_ids:
+      - observation-and-exposition
+    interpretation_limits: >-
+      Development-only cross_work scope is limited to the selected landscape-observation, microscopic-observation, and biological-terminology passages across the-war-of-the-worlds, certain-personal-matters, and text-book-of-biology-part-1. Role and work are aliased, so the contrast does not identify a role effect and does not extend to all descriptive language. Prohibited overgeneralisation: Do not treat this bounded selection pattern as universal descriptive practice, a period-wide rule, or a prescription to include only inferentially useful detail.
+  - id: practice-danger-through-observation
+    name: Danger through observation
+    family: practice
+    advisory: review
+    claim_ids:
+      - danger-through-observation
+    roles:
+      - danger-action
+    scope: passage
+    evaluation_mode: manual_question
+    review_question: Does danger first emerge through observation and altered interpretation before action accelerates?
+    source_passage_ids:
+      - selected-short-fiction/the-sea-raiders:ii:19:013c203950dd
+      - the-war-of-the-worlds:v:98:0fa76c4fe402
+      - the-war-of-the-worlds:xi:243:e7d3b67be077
+    variation_passage_ids:
+      - selected-short-fiction/the-sea-raiders:i:11:e706bbe4a853
+    control_passage_ids: []
+    packet_ids:
+      - danger-and-action
+    interpretation_limits: >-
+      Development-only cross_work scope is limited to biological danger and catastrophe across the two cited development witnesses. This tentative candidate compares disclosure of danger by observable consequence and does not equate local and global scales. Prohibited overgeneralisation: Do not turn this tentative bounded pattern into a universal suspense law, a period-wide rule, or a prescription to delay explanation in every danger scene.
+  - id: practice-humour-social-friction
+    name: Humour through social friction
+    family: practice
+    advisory: review
+    claim_ids:
+      - humour-through-social-friction
+    roles:
+      - social-dialogue
+    scope: passage
+    evaluation_mode: manual_question
+    review_question: Does humour arise from social friction, misunderstanding, or status rather than inserted quips?
+    source_passage_ids:
+      - the-invisible-man:iv:156:bea3b86ad1a8
+    variation_passage_ids: []
+    control_passage_ids: []
+    packet_ids:
+      - dialogue-and-social-friction
+    interpretation_limits: >-
+      Development-only cross_work scope is limited to the two cited focal passages in the-invisible-man and certain-personal-matters. This tentative candidate compares those fictional and essay instances of social mismatch and does not treat either witness as a general humour authority. Prohibited overgeneralisation: Do not make this tentative comparison a universal account of humour, a period-wide rule, or a prescription to generate comedy through social mismatch.
+  - id: practice-evidentiary-closure
+    name: Evidentiary closure
+    family: practice
+    advisory: review
+    claim_ids:
+      - short-form-evidentiary-closure
+    roles:
+      - frame
+      - reflection-closure
+    scope: story
+    evaluation_mode: manual_question
+    review_question: Does the ending leave a final evidentiary fact, residue, or altered uncertainty rather than explain the theme or seal emotional acceptance?
+    source_passage_ids:
+      - the-time-machine:epilogue:308:6c18eecffc7e
+      - selected-short-fiction/the-crystal-egg:the-crystal-egg:51:025f5af2df0e
+      - selected-short-fiction/the-star:the-star:39:de14ba922638
+    variation_passage_ids:
+      - the-time-machine:xii:279:e22b90a63db0
+    control_passage_ids: []
+    packet_ids:
+      - reflection-and-closure
+    interpretation_limits: >-
+      Development-only cross_work scope is limited to frame architecture and short-form architecture across the three cited development witnesses. This candidate concerns the relation between an ended record and unresolved implication and does not claim a common ending mechanism for all short fiction. Prohibited overgeneralisation: Do not turn this bounded ending pattern into a universal account of closure, a period-wide rule, or a prescription to leave implications unresolved.
+  - id: diagnostic-repeated-phrases
+    name: Repeated phrase diagnostic
+    family: diagnostic
+    advisory: review
+    claim_ids: []
+    roles: []
+    scope: story
+    evaluation_mode: contextual_diagnostic
+    review_question: Is this repeated phrase a deliberate motif or an unnoticed reusable sentence component?
+    signal:
+      kind: repeated_ngram
+      ngram_size: 3
+      minimum_occurrences: 3
+      minimum_words: 300
+      stop_words:
+        - "the"
+        - "a"
+        - "an"
+        - "and"
+        - "but"
+        - "if"
+        - "in"
+        - "of"
+        - "on"
+        - "to"
+    source_passage_ids: []
+    variation_passage_ids: []
+    control_passage_ids: []
+    packet_ids: []
+    interpretation_limits: This signal is a locator, not a Wells requirement; repetition may be deliberate structure, testimony, or motif.
+  - id: diagnostic-repeated-openings
+    name: Repeated paragraph opening diagnostic
+    family: diagnostic
+    advisory: review
+    claim_ids: []
+    roles: []
+    scope: chapter
+    evaluation_mode: contextual_diagnostic
+    review_question: Do the recurring paragraph openings create purposeful structure, or do they flatten the prose into a repeated launch pattern?
+    signal:
+      kind: paragraph_opening
+      prefix_words: 3
+      minimum_occurrences: 3
+      minimum_paragraphs: 8
+    source_passage_ids: []
+    variation_passage_ids: []
+    control_passage_ids: []
+    packet_ids: []
+    interpretation_limits: This signal is a locator, not a Wells requirement; repeated openings may serve deliberate documentary or rhetorical structure.
+  - id: diagnostic-uniform-cadence
+    name: Uniform cadence diagnostic
+    family: diagnostic
+    advisory: review
+    claim_ids: []
+    roles: []
+    scope: chapter
+    evaluation_mode: contextual_diagnostic
+    review_question: Is the unusually even sentence cadence an intentional role effect, or has local syntactic variation collapsed?
+    signal:
+      kind: sentence_profile
+      speech_attribution_verbs:
+        - said
+        - asked
+        - replied
+        - answered
+        - remarked
+        - exclaimed
+        - cried
+      minimum_sentences: 20
+    tolerance:
+      metric: sentence_length_cv
+      minimum_sample_size: 20
+      review_below: 0.28
+      reference_witness_ids:
+        - the-time-machine
+        - the-invisible-man
+        - the-island-of-doctor-moreau
+        - the-war-of-the-worlds
+        - selected-short-fiction/the-plattner-story
+        - selected-short-fiction/the-sea-raiders
+        - selected-short-fiction/the-crystal-egg
+        - selected-short-fiction/the-star
+      rationale: This broad review threshold locates unusually even local cadence; it is not a target, Wells norm, or pooled authority-corpus average.
+    source_passage_ids: []
+    variation_passage_ids: []
+    control_passage_ids: []
+    packet_ids: []
+    interpretation_limits: This signal is a locator, not a Wells requirement; sentence boundaries are approximate and authentic role-specific variation remains admissible.
+  - id: anti-drift-generic-victorian-costume
+    name: Generic Victorian costume
+    family: anti_drift
+    advisory: review
+    claim_ids: []
+    roles: []
+    scope: passage
+    evaluation_mode: manual_question
+    review_question: Would this passage still feel period-authentic without its antique diction and social furniture, or is costume substituting for narrative method?
+    source_passage_ids: []
+    variation_passage_ids: []
+    control_passage_ids:
+      - the-beetle:book-i-the-house-with-the-open-window:54:8440a05cc8de
+      - the-british-barbarians:ii:130:dc2c2c7ed9db
+    packet_ids:
+      - frame-and-testimony
+      - dialogue-and-social-friction
+    interpretation_limits: Period vocabulary is not itself a defect and remains legitimate when its narrative function is sound; Tier 4 controls supply negative comparison only.
+  - id: anti-drift-neighbouring-adventure-voice
+    name: Neighbouring adventure voice
+    family: anti_drift
+    advisory: review
+    claim_ids: []
+    roles: []
+    scope: chapter
+    evaluation_mode: manual_question
+    review_question: Has the expedition borrowed heroic certainty, motivation, or cadence from a control author rather than using that source only to test period convention?
+    source_passage_ids: []
+    variation_passage_ids: []
+    control_passage_ids:
+      - the-days-work:the-bridge-builders:72:c8e7cc2f7612
+      - a-desert-drama:stoppa-backa-cried-the-native-pilot-to-the-european-engineer:217:c5a008af45d1
+      - king-solomons-mines:xx:1521:b6ceb2d61e7f
+    packet_ids:
+      - observation-and-exposition
+      - danger-and-action
+      - reflection-and-closure
+    interpretation_limits: Adventure energy is not itself a defect and remains legitimate when its narrative function is sound; Tier 4 controls supply negative comparison only.
+  - id: anti-drift-modern-hard-sf-explanation
+    name: Modern hard-SF explanation
+    family: anti_drift
+    advisory: review
+    claim_ids: []
+    roles: []
+    scope: passage
+    evaluation_mode: manual_question
+    review_question: Does this explanation rely on modern knowledge or confidence unavailable to a late-1890s speculative narrator, instead of period-bounded observation and conjecture?
+    source_passage_ids: []
+    variation_passage_ids: []
+    control_passage_ids: []
+    packet_ids: []
+    interpretation_limits: Technical detail is not itself a defect and remains legitimate when its narrative function is sound; Phase 2B admitted no modern hard-SF control, so this rule has no source locator.

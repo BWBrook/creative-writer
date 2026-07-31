@@ -1,0 +1,51 @@
+schema_version: 1
+id: frame-and-testimony
+title: Frame and testimony
+purpose: Compare visible chains of witnessing, telling, recording, and contest while preserving uncertainty and authentic variation in how testimony reaches the reader.
+profile_id: wells-1895-1899
+profile_version: 1.0.0
+roles:
+  - frame
+  - notebook
+claim_ids:
+  - mediated-testimony-frame
+context_radius: 1
+entries:
+  - id: time-machine-account-transfer
+    passage_id: the-time-machine:ii:101:b859a93fec21
+    kind: positive_example
+    claim_ids:
+      - mediated-testimony-frame
+    authority_tier: 1
+    permitted_use: frame and Traveller evidence
+    selection_note: The Tier 1 frame makes the transfer from witnessed speech to an incomplete written account explicit.
+  - id: plattner-testimony-assessment
+    passage_id: selected-short-fiction/the-plattner-story:the-plattner-story:1:725f01ec6e50
+    kind: positive_example
+    claim_ids:
+      - mediated-testimony-frame
+    authority_tier: 2
+    permitted_use: bounded short-story and scene comparison
+    selection_note: The selected story opens through an overt assessment of testimony while suspicion remains unresolved.
+  - id: time-machine-frame-scepticism
+    passage_id: the-time-machine:ii:79:3f712a420f66
+    kind: authentic_variation
+    claim_ids:
+      - mediated-testimony-frame
+    authority_tier: 1
+    permitted_use: frame and Traveller evidence
+    selection_note: Held-out Tier 1 variation makes belief a social and evidentiary problem through collective scepticism before the reported account.
+  - id: beetle-compiled-testimony-control
+    passage_id: the-beetle:book-i-the-house-with-the-open-window:54:8440a05cc8de
+    kind: negative_control
+    claim_ids:
+      - mediated-testimony-frame
+    authority_tier: 4
+    permitted_use: negative period, sensational, and horror comparison
+    selection_note: The control explicitly labels a narration within a compiled testimony chain, showing that visible mediation is shared rather than uniquely Wellsian.
+prohibited_uses:
+  - Do not use later-adaptation material or unsupported generalisation from one passage.
+  - Do not treat selected short fiction or the Tier 4 control as Time Expedition continuity.
+  - Do not let selected short fiction override The Time Machine or use unselected stories.
+  - Do not use the Tier 4 control for style prescription or phrase borrowing.
+anti_copying_guidance: Study narrative method, evidentiary sequence, role, and cadence. Do not borrow distinctive phrases, sentence skeletons, images, or local wording.

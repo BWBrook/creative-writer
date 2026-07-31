@@ -1,0 +1,63 @@
+schema_version: 1
+id: observation-and-exposition
+title: Observation and exposition
+purpose: Compare observation-led inference, scene-pressured explanation, selective description, and authentic nonfiction variation without treating qualification as a verbal quota.
+profile_id: wells-1895-1899
+profile_version: 1.0.0
+roles:
+  - scientific-inference
+  - scientific-exposition
+  - danger-action
+claim_ids:
+  - qualified-speculative-inference
+  - qualified-scientific-exposition
+  - selective-observed-description
+context_radius: 1
+entries:
+  - id: time-machine-revised-inference
+    passage_id: the-time-machine:iv:147:5a08c0c8cfcb
+    kind: positive_example
+    claim_ids:
+      - qualified-speculative-inference
+    authority_tier: 1
+    permitted_use: primary voice evidence
+    selection_note: The Traveller retrospectively identifies a simple and plausible causal account as mistaken, keeping inference revisable.
+  - id: time-machine-bounded-analogy
+    passage_id: the-time-machine:v:165:29fe69fce8b4
+    kind: positive_example
+    claim_ids:
+      - qualified-scientific-exposition
+    authority_tier: 1
+    permitted_use: primary voice evidence
+    selection_note: Analogy bounds the observer's access and resulting general impression rather than supplying an exhaustive explanation.
+  - id: war-observed-landscape
+    passage_id: the-war-of-the-worlds:v:101:8debc943c595
+    kind: positive_example
+    claim_ids:
+      - selective-observed-description
+    authority_tier: 2
+    permitted_use: bounded catastrophe and observational-style comparison
+    selection_note: Spatial, colour, smoke, and fire details organise a situated observation of an altered landscape.
+  - id: biology-comparison-variation
+    passage_id: text-book-of-biology-part-1:note-on-making-comparisons:527:75c6e3818b0d
+    kind: authentic_variation
+    claim_ids:
+      - qualified-scientific-exposition
+    authority_tier: 3
+    permitted_use: scientific vocabulary and explanatory-method comparison
+    selection_note: Tier 3 nonfiction compares homologous features while retaining local uncertainty, showing role-specific explanatory variation rather than fictional voice.
+  - id: days-work-technical-control
+    passage_id: the-days-work:the-bridge-builders:72:c8e7cc2f7612
+    kind: negative_control
+    claim_ids:
+      - qualified-scientific-exposition
+    authority_tier: 4
+    permitted_use: negative period, technical, and professional-register comparison
+    selection_note: The control also links technical explanation to observation and bounded uncertainty, demonstrating a shared mechanism without positive Kipling authority.
+prohibited_uses:
+  - Do not use The War of the Worlds, the biology textbook, or the Tier 4 control as Time Expedition continuity.
+  - Do not import Martian inventions, post-1890s scientific knowledge, or textbook prose as direct fictional voice.
+  - Do not let a Tier 2 or Tier 3 source override The Time Machine.
+  - Do not use the Tier 4 control for style prescription or phrase borrowing.
+  - Do not turn qualification, analogy, or descriptive selection into a universal rule or numerical target.
+anti_copying_guidance: Study narrative method, evidentiary sequence, role, and cadence. Do not borrow distinctive phrases, sentence skeletons, images, or local wording.

@@ -1,0 +1,62 @@
+schema_version: 1
+id: dialogue-and-social-friction
+title: Dialogue and social friction
+purpose: Compare role-shaped exchanges, local syntactic expansion and contraction, and humour produced through social mismatch without prescribing one dialogue rhythm.
+profile_id: wells-1895-1899
+profile_version: 1.0.0
+roles:
+  - social-dialogue
+claim_ids:
+  - dialogue-pressure-varies-by-context
+  - role-shaped-syntax
+  - humour-through-social-friction
+context_radius: 1
+entries:
+  - id: invisible-man-village-voices
+    passage_id: the-invisible-man:iii:92:8c3779ecfb78
+    kind: positive_example
+    claim_ids:
+      - dialogue-pressure-varies-by-context
+    authority_tier: 2
+    permitted_use: dialogue and social-style comparison
+    selection_note: Village response is distributed across brief voices, social labels, dialect utterances, and narratorial summary.
+  - id: invisible-man-ceremony-and-panic
+    passage_id: the-invisible-man:iv:156:bea3b86ad1a8
+    kind: positive_example
+    claim_ids:
+      - humour-through-social-friction
+    authority_tier: 2
+    permitted_use: dialogue and social-style comparison
+    selection_note: A ceremonious response collides with an agitated report, making social mismatch carry the humour.
+  - id: invisible-man-demand-and-interruption
+    passage_id: the-invisible-man:vii:223:04a2271ebbf5
+    kind: positive_example
+    claim_ids:
+      - dialogue-pressure-varies-by-context
+      - role-shaped-syntax
+    authority_tier: 2
+    permitted_use: dialogue and social-style comparison
+    selection_note: A long repetitive demand accumulates pressure before gesture and a compact command contract and stop the exchange.
+  - id: moreau-stress-variation
+    passage_id: the-island-of-doctor-moreau:v:115:8ddf9cdc824d
+    kind: authentic_variation
+    claim_ids:
+      - dialogue-pressure-varies-by-context
+    authority_tier: 2
+    permitted_use: bounded narrative and scientific-style comparison
+    selection_note: A compressed three-cornered altercation uses refrain, gesture, and a broken threat, showing that pressured dialogue has no fixed local organisation.
+  - id: british-barbarians-friction-control
+    passage_id: the-british-barbarians:ii:130:dc2c2c7ed9db
+    kind: negative_control
+    claim_ids:
+      - humour-through-social-friction
+    authority_tier: 4
+    permitted_use: negative period and genre comparison
+    selection_note: Courteous literalism collides with assumptions about respectability, showing that social-friction humour is shared with neighbouring satire.
+prohibited_uses:
+  - Do not use The Invisible Man, The Island of Doctor Moreau, or the Tier 4 control as Time Expedition continuity.
+  - Do not import Invisible Man or Moreau characterisation, inventions, or frame architecture.
+  - Do not let a Tier 2 source override The Time Machine.
+  - Do not use the Tier 4 control for style prescription or phrase borrowing.
+  - Do not convert local turn patterns, class markers, or comic mismatch into a universal dialogue formula.
+anti_copying_guidance: Study narrative method, evidentiary sequence, role, and cadence. Do not borrow distinctive phrases, sentence skeletons, images, or local wording.

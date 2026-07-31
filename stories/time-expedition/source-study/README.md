@@ -78,11 +78,26 @@ The writer-facing synthesis is `wells-profile.md`, the claim store is
 `period-controls.md`. The generated compiled report is
 `build/time-expedition/source-study/validation/current/analysis-report.md`.
 
-This workflow remains descriptive and source-bound. It does not author style
-guidance, alter a style card, plan the Permian material, or change manuscript
-prose. Phase 2C is an explicit stop boundary requiring separate design
-approval. Barry gave substantive approval to the Phase 2B evidence layer on
-23 July 2026.
+This workflow remains descriptive and source-bound. Phase 2B did not author
+style guidance, alter a style card, plan the Permian material, or change
+manuscript prose. Barry gave substantive approval to the Phase 2B evidence
+layer on 23 July 2026.
+
+## Phase 2C operational handoff
+
+The approved Phase 2C consumer is `../style-profile.yml`, version `1.0.0`. It
+binds the final analysis, source registry, holdout manifest, ledger, validation
+record, and all three generated indexes by SHA-256. It may operationalise only
+claims whose final status is `validated` or `qualified`, and every rule retains
+the linked claim's exact scope, limits, and prohibited overgeneralisation.
+
+Six manifests under `../style-reference-packets/` select the approved focal
+locators for deliberate role-matched comparison. Tier 4 passages remain
+negative controls and may appear only under `Negative comparisons`; the
+`traveller-account` packet intentionally uses Wells variation without a Tier 4
+control. The writer-facing `../style-guide.md` and `../style-card.md` distil
+this evidence but do not supersede it. Phase 2C adds no historical or scientific
+research and changes no manuscript prose.
 
 ## Approved handoff
 

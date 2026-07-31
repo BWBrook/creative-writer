@@ -1,0 +1,52 @@
+schema_version: 1
+id: traveller-account
+title: Traveller account
+purpose: Compare the reported account's movement among remembered experience, present telling, reflective distance, and local syntactic pressure without imposing one first-person cadence.
+profile_id: wells-1895-1899
+profile_version: 1.0.0
+roles:
+  - reported-account
+  - notebook
+claim_ids:
+  - role-shaped-narrator-distance
+  - role-shaped-syntax
+context_radius: 1
+entries:
+  - id: time-machine-reflective-interruption
+    passage_id: the-time-machine:ix:247:7c7656f6a229
+    kind: positive_example
+    claim_ids:
+      - role-shaped-narrator-distance
+    authority_tier: 1
+    permitted_use: primary voice evidence
+    selection_note: The Traveller interrupts remembered grief from the later telling and then returns to the experienced scene.
+  - id: time-machine-procedural-rhythm
+    passage_id: the-time-machine:iii:102:301f3d1a7670
+    kind: positive_example
+    claim_ids:
+      - role-shaped-syntax
+    authority_tier: 1
+    permitted_use: frame and Traveller evidence
+    selection_note: Procedural reconstruction expands through coordinated clauses and semicolons before shorter units mark shock and verification.
+  - id: time-machine-present-telling
+    passage_id: the-time-machine:xii:276:23b26487ff8e
+    kind: positive_example
+    claim_ids:
+      - role-shaped-narrator-distance
+    authority_tier: 1
+    permitted_use: primary voice evidence
+    selection_note: Held-out Tier 1 evidence marks the present act of telling from within recollection and reopens the account for audience judgement.
+  - id: moreau-documentary-distance
+    passage_id: the-island-of-doctor-moreau:i:2:522a64e3a5eb
+    kind: authentic_variation
+    claim_ids:
+      - role-shaped-narrator-distance
+    authority_tier: 2
+    permitted_use: bounded narrative and scientific-style comparison
+    selection_note: Retrospective narration places personal testimony against an existing documentary account, offering a different relation between experience and later record.
+prohibited_uses:
+  - Do not import Moreau characters or inventions or use Moreau as Time Expedition continuity.
+  - Do not let The Island of Doctor Moreau override The Time Machine.
+  - Do not turn role-bound distance or local syntax into a fixed cadence, universal first-person rule, or period-wide prescription.
+  - Do not copy local wording.
+anti_copying_guidance: Study narrative method, evidentiary sequence, role, and cadence. Do not borrow distinctive phrases, sentence skeletons, images, or local wording.

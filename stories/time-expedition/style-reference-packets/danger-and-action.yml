@@ -1,0 +1,59 @@
+schema_version: 1
+id: danger-and-action
+title: Danger and action
+purpose: Compare danger disclosed through accumulating observable consequences across biological encounter, catastrophe, and authentic variation before action accelerates.
+profile_id: wells-1895-1899
+profile_version: 1.0.0
+roles:
+  - danger-action
+claim_ids:
+  - danger-through-observation
+context_radius: 1
+entries:
+  - id: sea-raiders-apprehended-danger
+    passage_id: selected-short-fiction/the-sea-raiders:ii:19:013c203950dd
+    kind: positive_example
+    claim_ids:
+      - danger-through-observation
+    authority_tier: 2
+    permitted_use: bounded short-story and scene comparison
+    selection_note: Ambiguous movement becomes apprehended biological danger when a pause permits clearer observation.
+  - id: war-catastrophe-recognition
+    passage_id: the-war-of-the-worlds:v:98:0fa76c4fe402
+    kind: positive_example
+    claim_ids:
+      - danger-through-observation
+    authority_tier: 2
+    permitted_use: bounded catastrophe and observational-style comparison
+    selection_note: A falling person and igniting vegetation disclose catastrophic danger before the narrator recognises its moving source.
+  - id: sea-raiders-advance-framing-variation
+    passage_id: selected-short-fiction/the-sea-raiders:i:11:e706bbe4a853
+    kind: authentic_variation
+    claim_ids:
+      - danger-through-observation
+    authority_tier: 2
+    permitted_use: bounded short-story and scene comparison
+    selection_note: Retrospective framing has already named the species and fatalities, weakening but not eliminating consequence-before-recognition pacing.
+  - id: war-aftermath-survey
+    passage_id: the-war-of-the-worlds:xi:243:e7d3b67be077
+    kind: positive_example
+    claim_ids:
+      - danger-through-observation
+    authority_tier: 2
+    permitted_use: bounded catastrophe and observational-style comparison
+    selection_note: A slower retrospective survey accumulates ruins, fire, smoke, and flight while the narrator still lacks a complete account.
+  - id: desert-drama-danger-control
+    passage_id: a-desert-drama:stoppa-backa-cried-the-native-pilot-to-the-european-engineer:217:c5a008af45d1
+    kind: negative_control
+    claim_ids:
+      - danger-through-observation
+    authority_tier: 4
+    permitted_use: negative period and adventure comparison
+    selection_note: Approaching riders move from picturesque observation through bodily reaction to hostile recognition, showing that the sequence is shared under adventure pressure.
+prohibited_uses:
+  - Do not use selected short fiction, The War of the Worlds, or the Tier 4 control as Time Expedition continuity.
+  - Do not import Martian inventions, unselected stories, control incidents, or control ideology.
+  - Do not let a Tier 2 source override The Time Machine.
+  - Do not use the Tier 4 control for style prescription or phrase borrowing.
+  - Do not turn consequence-before-recognition into a universal suspense law or a requirement to delay every explanation.
+anti_copying_guidance: Study narrative method, evidentiary sequence, role, and cadence. Do not borrow distinctive phrases, sentence skeletons, images, or local wording.

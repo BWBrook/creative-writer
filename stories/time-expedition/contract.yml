@@ -9,3 +9,6 @@ lint:
   contrastive_parallelism:
     enabled: true
     max_instances_per_chapter: 1
+style_lint:
+  profile: style-profile.yml
+  generic_ai_audit: true

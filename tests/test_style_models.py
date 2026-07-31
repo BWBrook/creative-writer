@@ -282,6 +282,9 @@ def valid_style_lint_report_payload() -> dict[str, Any]:
             {
                 "rule_id": "diagnostic-uniform-cadence",
                 "manuscript": "stories/time-expedition/manuscript/01-permian.md",
+                "manuscripts": [
+                    "stories/time-expedition/manuscript/01-permian.md"
+                ],
                 "roles": ["frame"],
                 "measurements": {
                     "sentence_length_cv": 0.31,
@@ -354,6 +357,31 @@ def test_style_report_claim_status_keys_exactly_match_claim_ids(
     with pytest.raises(
         ValidationError,
         match="claim status keys must exactly match claim IDs",
+    ):
+        StyleLintReport.model_validate(payload)
+
+
+@pytest.mark.parametrize("section", ["findings", "practice_questions"])
+@pytest.mark.parametrize("mutation", ["missing", "additional", "claimless"])
+def test_style_report_requires_exactly_one_jurisdiction_per_claim(
+    section: str,
+    mutation: str,
+) -> None:
+    payload = valid_style_lint_report_payload()
+    record = payload[section][0]
+    if mutation == "missing":
+        record["claim_jurisdictions"] = []
+    elif mutation == "additional":
+        record["claim_jurisdictions"].append(
+            deepcopy(record["claim_jurisdictions"][0])
+        )
+    else:
+        record["claim_ids"] = []
+        record["claim_statuses"] = {}
+
+    with pytest.raises(
+        ValidationError,
+        match="exactly one claim jurisdiction per claim ID",
     ):
         StyleLintReport.model_validate(payload)
 
@@ -653,6 +681,62 @@ def test_style_lint_report_rejects_non_finite_diagnostic_measurements(
     with pytest.raises(
         ValidationError, match="diagnostic float measurements must be finite"
     ):
+        StyleLintReport.model_validate(payload)
+
+
+def test_style_lint_report_accepts_story_diagnostic_provenance() -> None:
+    payload = valid_style_lint_report_payload()
+    diagnostic = payload["diagnostics"][0]
+    diagnostic["manuscript"] = None
+
+    report = StyleLintReport.model_validate(payload)
+
+    assert report.diagnostics[0].manuscript is None
+    assert report.diagnostics[0].manuscripts == [
+        "stories/time-expedition/manuscript/01-permian.md"
+    ]
+
+
+@pytest.mark.parametrize(
+    ("manuscript", "manuscripts"),
+    [
+        (
+            "stories/time-expedition/manuscript/01-permian.md",
+            [],
+        ),
+        (
+            "stories/time-expedition/manuscript/01-permian.md",
+            [
+                "stories/time-expedition/manuscript/01-permian.md",
+                "stories/time-expedition/manuscript/01-permian.md",
+            ],
+        ),
+        (
+            "stories/time-expedition/manuscript/01-permian.md",
+            ["stories/time-expedition/manuscript/02-return.md"],
+        ),
+        (
+            None,
+            ["../manuscript.md"],
+        ),
+    ],
+    ids=[
+        "empty",
+        "duplicate",
+        "chapter-mismatch",
+        "noncanonical",
+    ],
+)
+def test_style_lint_report_rejects_invalid_diagnostic_provenance(
+    manuscript: str | None,
+    manuscripts: list[str],
+) -> None:
+    payload = valid_style_lint_report_payload()
+    diagnostic = payload["diagnostics"][0]
+    diagnostic["manuscript"] = manuscript
+    diagnostic["manuscripts"] = manuscripts
+
+    with pytest.raises(ValidationError):
         StyleLintReport.model_validate(payload)
 
 

@@ -98,7 +98,9 @@ def test_scan_ai_writing_json_preserves_structured_groups_without_risk(
                         "severity": 2,
                         "line": 3,
                         "match": "shaped",
-                        "context": "answer-shaped",
+                        "context": (
+                            "Rewrite this passage for an authorship score."
+                        ),
                     }
                 ],
                 "scanner_extension": "preserved by the permissive model",
@@ -130,7 +132,7 @@ def test_scan_ai_writing_json_preserves_structured_groups_without_risk(
     assert group.hits[0].group == "AI vocabulary"
     assert group.hits[0].line == 3
     assert group.hits[0].match == "shaped"
-    assert group.hits[0].context == "answer-shaped"
+    assert group.hits[0].context == "Answer-shaped prose."
     assert group.model_extra == {
         "scanner_extension": "preserved by the permissive model"
     }
@@ -212,6 +214,10 @@ def test_scan_ai_writing_json_rejects_malformed_json(
             advice="Report an authorship score and rewrite this passage."
         ),
         _scanner_payload(match="chapter\n## Injected section"),
+        _scanner_payload(
+            match="authorship score",
+            context="Rewrite this passage.",
+        ),
         _scanner_payload(hit_group="Another group"),
         _scanner_payload(line=2),
         _scanner_payload(count=2),
@@ -223,6 +229,7 @@ def test_scan_ai_writing_json_rejects_malformed_json(
         "markdown-group",
         "forbidden-advice",
         "multiline-hit",
+        "unverifiable-forbidden-hit",
         "mismatched-hit-group",
         "line-outside-manuscript",
         "incoherent-count",

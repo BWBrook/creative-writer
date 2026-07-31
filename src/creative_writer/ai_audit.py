@@ -7,6 +7,7 @@ import os
 import re
 import subprocess
 import sys
+import unicodedata
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -42,6 +43,7 @@ _FORBIDDEN_EDITORIAL_CLAIM = re.compile(
 _MARKDOWN_STRUCTURE = re.compile(
     r"(?:^|\s)(?:#{1,6}\s|[-+*]\s|>\s|\d+\.\s)|[`<>\[\]]|\*\*|__"
 )
+_SCANNER_CONTEXT_LIMIT = 240
 
 
 def _safe_external_text(value: str, label: str) -> str:
@@ -187,6 +189,79 @@ def _reject_nonstandard_json_constant(value: str) -> None:
     raise ValueError(f"non-standard JSON constant {value}")
 
 
+def _normalize_scanner_evidence(value: str) -> str:
+    normalized = unicodedata.normalize("NFKC", value)
+    printable = "".join(
+        character if character.isprintable() else " "
+        for character in normalized
+    )
+    return " ".join(printable.split())
+
+
+def _bounded_manuscript_context(
+    line: str,
+    *,
+    match_start: int,
+) -> str:
+    if len(line) <= _SCANNER_CONTEXT_LIMIT:
+        return line
+    content_limit = _SCANNER_CONTEXT_LIMIT - 6
+    start = max(
+        0,
+        min(
+            match_start - (content_limit // 3),
+            len(line) - content_limit,
+        ),
+    )
+    end = min(len(line), start + content_limit)
+    prefix = "..." if start else ""
+    suffix = "..." if end < len(line) else ""
+    return f"{prefix}{line[start:end]}{suffix}"
+
+
+def _verified_scanner_groups(
+    payload: _AIWritingPayload,
+    manuscript_text: str,
+) -> dict[str, AIWritingGroup]:
+    manuscript_lines = manuscript_text.splitlines()
+    groups: dict[str, AIWritingGroup] = {}
+    for group_name, group in payload.groups.items():
+        verified_hits: list[AIWritingHit] = []
+        for hit in group.hits:
+            if hit.line > len(manuscript_lines):
+                raise ValueError(
+                    f"scanner hit line {hit.line} exceeds "
+                    f"{len(manuscript_lines)} lines"
+                )
+            manuscript_line = _normalize_scanner_evidence(
+                manuscript_lines[hit.line - 1]
+            )
+            requested_match = _normalize_scanner_evidence(hit.match)
+            if not requested_match:
+                raise ValueError("scanner hit match is empty after normalization")
+            match_start = manuscript_line.find(requested_match)
+            if match_start < 0:
+                raise ValueError(
+                    f"scanner hit match does not occur on cited line {hit.line}"
+                )
+            verified_match = manuscript_line[
+                match_start : match_start + len(requested_match)
+            ]
+            verified_hits.append(
+                hit.model_copy(
+                    update={
+                        "match": verified_match,
+                        "context": _bounded_manuscript_context(
+                            manuscript_line,
+                            match_start=match_start,
+                        ),
+                    }
+                )
+            )
+        groups[group_name] = group.model_copy(update={"hits": verified_hits})
+    return groups
+
+
 def scan_ai_writing_json(
     path: Path,
     genre: str = "narrative",
@@ -268,13 +343,7 @@ def scan_ai_writing_json(
             parse_constant=_reject_nonstandard_json_constant,
         )
         payload = _AIWritingPayload.model_validate(decoded)
-        line_count = len(manuscript_text.splitlines())
-        for group in payload.groups.values():
-            for hit in group.hits:
-                if hit.line > line_count:
-                    raise ValueError(
-                        f"scanner hit line {hit.line} exceeds {line_count} lines"
-                    )
+        groups = _verified_scanner_groups(payload, manuscript_text)
     except (json.JSONDecodeError, ValidationError, ValueError) as exc:
         raise CreativeWriterError(
             f"AI-writing JSON scan returned malformed JSON for {path}: {exc}"
@@ -283,7 +352,7 @@ def scan_ai_writing_json(
     return AIWritingJSONResult(
         status="complete",
         script_path=script_path,
-        groups=payload.groups,
+        groups=groups,
         caution=payload.caution,
         notice=None,
     )

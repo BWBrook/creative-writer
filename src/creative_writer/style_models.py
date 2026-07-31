@@ -377,6 +377,10 @@ class StyleFinding(StrictModel):
             raise ValueError(
                 "finding claim status keys must exactly match claim IDs"
             )
+        if len(self.claim_jurisdictions) != len(self.claim_ids):
+            raise ValueError(
+                "findings require exactly one claim jurisdiction per claim ID"
+            )
         return self
 
 
@@ -427,12 +431,18 @@ class StylePracticeQuestion(StrictModel):
             raise ValueError(
                 "practice-question claim status keys must exactly match claim IDs"
             )
+        if len(self.claim_jurisdictions) != len(self.claim_ids):
+            raise ValueError(
+                "practice questions require exactly one claim jurisdiction "
+                "per claim ID"
+            )
         return self
 
 
 class StyleDiagnosticRecord(StrictModel):
     rule_id: Slug
-    manuscript: RelativePath
+    manuscript: RelativePath | None
+    manuscripts: list[RelativePath] = Field(min_length=1)
     roles: list[Slug]
     measurements: dict[
         NonEmptyText, StrictInt | StrictFloat | NonEmptyText | None
@@ -442,9 +452,21 @@ class StyleDiagnosticRecord(StrictModel):
     triggered: StrictBool
     limitations: NonEmptyText
 
-    _manuscript = field_validator("manuscript")(
-        _validate_canonical_relative_path
-    )
+    @field_validator("manuscript")
+    @classmethod
+    def canonical_manuscript(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return _validate_canonical_relative_path(value)
+
+    @field_validator("manuscripts")
+    @classmethod
+    def canonical_unique_manuscripts(cls, value: list[str]) -> list[str]:
+        canonical = [
+            _validate_canonical_relative_path(manuscript)
+            for manuscript in value
+        ]
+        return _validate_unique(canonical, "diagnostic manuscript paths")
 
     @field_validator("measurements")
     @classmethod
@@ -462,6 +484,18 @@ class StyleDiagnosticRecord(StrictModel):
     @classmethod
     def unique_roles(cls, value: list[str]) -> list[str]:
         return _validate_unique(value, "diagnostic role IDs")
+
+    @model_validator(mode="after")
+    def validate_provenance(self) -> "StyleDiagnosticRecord":
+        if (
+            self.manuscript is not None
+            and self.manuscripts != [self.manuscript]
+        ):
+            raise ValueError(
+                "chapter diagnostic manuscript must match its sole "
+                "manuscripts entry"
+            )
+        return self
 
 
 class GenericAIReportSection(StrictModel):

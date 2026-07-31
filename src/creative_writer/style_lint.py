@@ -21,12 +21,14 @@ from creative_writer.checks import check_story
 from creative_writer.exceptions import CreativeWriterError
 from creative_writer.files import (
     ensure_directory,
+    load_chapter_document,
     load_yaml_model,
     split_front_matter,
 )
 from creative_writer.models import (
     ChapterDocument,
     ChapterFrontMatter,
+    ContractConfig,
     StoryConfig,
 )
 from creative_writer.prose_heuristics import run_surface_heuristics
@@ -64,6 +66,10 @@ _CATEGORY_RANK = {
 _GENERIC_CAUTION = (
     "Generic AI-writing signals are separate editorial prompts and provide "
     "no positive Wells evidence."
+)
+_GENERIC_SCANNER_ID = "creative-writer-ai-writing-scanner"
+_GENERIC_UNAVAILABLE_NOTICE = (
+    "The optional creative-writer AI-writing scanner is unavailable."
 )
 _SENTENCE_CAVEAT = (
     "Sentence boundaries are approximate and inherit the project's "
@@ -121,6 +127,7 @@ class _PreflightChapter:
     stub_path: Path
     manuscript_path: Path
     stub_stem: str
+    document: ChapterDocument
 
 
 @dataclass(frozen=True, slots=True)
@@ -133,6 +140,8 @@ class _ReportTarget:
 @dataclass(frozen=True, slots=True)
 class _PreflightLayout:
     story_dir: Path
+    story: StoryConfig
+    contract: ContractConfig
     chapters: tuple[_PreflightChapter, ...]
     story_target: _ReportTarget
     chapter_targets: dict[str, _ReportTarget]
@@ -251,6 +260,7 @@ def _preflight_layout(root: Path, slug: str) -> _PreflightLayout:
                 f"Story {slug} has duplicate resolved stub identity"
             ) from exc
         raise
+    contract = load_yaml_model(contract_path, ContractConfig)
     if story.style_card is not None:
         style_card = _contained_path(story_dir, story.style_card, "style card")
         _require_file(style_card, "style card")
@@ -314,11 +324,26 @@ def _preflight_layout(root: Path, slug: str) -> _PreflightLayout:
                 f"{stub_path.stem}"
             )
         stem_keys.add(stem_key)
+        try:
+            document = load_chapter_document(story_dir, stub_path)
+        except UnicodeDecodeError as exc:
+            raise CreativeWriterError(
+                f"Chapter manuscript is not valid UTF-8: {manuscript_path}"
+            ) from exc
+        except OSError as exc:
+            raise CreativeWriterError(
+                f"Unable to load chapter document {stub_path}: {exc}"
+            ) from exc
+        if document.manuscript_path != manuscript_path:
+            raise CreativeWriterError(
+                f"Chapter manuscript path changed during preflight: {stub_path}"
+            )
         chapters.append(
             _PreflightChapter(
                 stub_path=stub_path,
                 manuscript_path=manuscript_path,
                 stub_stem=stub_path.stem,
+                document=document,
             )
         )
 
@@ -392,6 +417,8 @@ def _preflight_layout(root: Path, slug: str) -> _PreflightLayout:
 
     return _PreflightLayout(
         story_dir=story_dir,
+        story=story,
+        contract=contract,
         chapters=tuple(chapters),
         story_target=story_target,
         chapter_targets=chapter_targets,
@@ -419,6 +446,24 @@ def _applicable_rules(
         for resolved in context.rules
         if resolved.rule.scope in scopes and _applies(resolved, roles)
     ]
+
+
+def _story_rule_groups(
+    context: StyleContext,
+    chapters: Sequence[ChapterDocument],
+) -> dict[tuple[int, ...], list[ResolvedStyleRule]]:
+    groups: dict[tuple[int, ...], list[ResolvedStyleRule]] = {}
+    for resolved in context.rules:
+        if resolved.rule.scope != "story":
+            continue
+        applicable_indexes = tuple(
+            index
+            for index, chapter in enumerate(chapters)
+            if _applies(resolved, chapter.front_matter.style_roles)
+        )
+        if applicable_indexes:
+            groups.setdefault(applicable_indexes, []).append(resolved)
+    return groups
 
 
 def _single_signal_configuration(
@@ -459,6 +504,24 @@ def _single_signal_configuration(
             f"Applicable {kind} rules require incompatible one-pass settings"
         )
     return signals[0]
+
+
+def _validate_shared_pass_compatibility(
+    context: StyleContext,
+    chapters: Sequence[ChapterDocument],
+) -> None:
+    rule_sets = [
+        _applicable_rules(
+            context,
+            chapter.front_matter.style_roles,
+            {"passage", "chapter"},
+        )
+        for chapter in chapters
+    ]
+    rule_sets.extend(_story_rule_groups(context, chapters).values())
+    for rules in rule_sets:
+        _single_signal_configuration(rules, "repeated_ngram")
+        _single_signal_configuration(rules, "paragraph_opening")
 
 
 def _validate_measurement_contract(
@@ -703,6 +766,7 @@ def _evaluate_rules(
     *,
     roles: Sequence[str],
     manuscript: str,
+    diagnostic_manuscripts: Sequence[str] | None = None,
 ) -> StyleRuleEvaluation:
     questions: list[StylePracticeQuestion] = []
     records: list[StyleDiagnosticRecord] = []
@@ -812,7 +876,16 @@ def _evaluate_rules(
         records.append(
             StyleDiagnosticRecord(
                 rule_id=rule.id,
-                manuscript=manuscript,
+                manuscript=(
+                    manuscript
+                    if diagnostic_manuscripts is None
+                    else None
+                ),
+                manuscripts=(
+                    [manuscript]
+                    if diagnostic_manuscripts is None
+                    else list(diagnostic_manuscripts)
+                ),
                 roles=_matching_roles(resolved, roles),
                 measurements=measurements,
                 sample_size=sample_size,
@@ -1329,11 +1402,21 @@ def _render_markdown(report: StyleLintReport) -> str:
                 ", ".join(f"`{role}`" for role in diagnostic.roles)
                 or "None"
             )
+            provenance = ", ".join(
+                f"`{manuscript}`"
+                for manuscript in diagnostic.manuscripts
+            )
+            heading = (
+                f"on `{diagnostic.manuscript}`"
+                if diagnostic.manuscript is not None
+                else f"across {provenance}"
+            )
             lines.extend(
                 [
-                    f"### `{diagnostic.rule_id}` on `{diagnostic.manuscript}`",
+                    f"### `{diagnostic.rule_id}` {heading}",
                     "",
                     f"- Roles: {roles}",
+                    f"- Manuscripts measured: {provenance}",
                     f"- Sample size: {diagnostic.sample_size}",
                     f"- Review threshold crossed: "
                     f"`{'yes' if diagnostic.triggered else 'no'}`",
@@ -1621,6 +1704,41 @@ def generate_style_lint(
     resolved_root = root.resolve(strict=False)
     layout = _preflight_layout(resolved_root, slug)
     story_dir = layout.story_dir
+    configured_profile = (
+        layout.contract.style_lint.profile
+        if layout.contract.style_lint is not None
+        else None
+    )
+    profile_path = resolve_style_profile_path(
+        story_dir,
+        configured_profile,
+        profile_override,
+    )
+    context = load_style_context(resolved_root, story_dir, profile_path)
+    preflight_documents = [
+        chapter.document for chapter in layout.chapters
+    ]
+    metadata_errors = validate_chapter_style_metadata(
+        context,
+        preflight_documents,
+    )
+    if metadata_errors:
+        raise CreativeWriterError(
+            "Invalid chapter style metadata:\n" + "\n".join(metadata_errors)
+        )
+    _validate_measurement_contract(context.rules)
+    selected_preflight_documents = _select_chapters(
+        story_dir,
+        preflight_documents,
+        chapter_selector,
+    )
+    _validate_shared_pass_compatibility(
+        context,
+        selected_preflight_documents,
+    )
+    profile_sha256 = sha256_file(context.profile_path)
+    packet_manifest_sha256s = _packet_hashes(story_dir, context)
+
     checked = check_story(resolved_root, slug)
     if (
         not checked.ok
@@ -1631,6 +1749,10 @@ def generate_style_lint(
         raise CreativeWriterError(
             f"Cannot style-lint {slug}. Fix blocking issues first. "
             f"See {checked.report_path}."
+        )
+    if checked.story != layout.story or checked.contract != layout.contract:
+        raise CreativeWriterError(
+            "Story configuration changed after style-lint preflight"
         )
     if len(checked.chapters) != len(layout.chapters):
         raise CreativeWriterError(
@@ -1652,33 +1774,20 @@ def generate_style_lint(
             raise CreativeWriterError(
                 "Configured chapter paths changed after path preflight"
             )
-
-    configured_profile = (
-        checked.contract.style_lint.profile
-        if checked.contract.style_lint is not None
-        else None
-    )
-    profile_path = resolve_style_profile_path(
-        story_dir,
-        configured_profile,
-        profile_override,
-    )
-    context = load_style_context(resolved_root, story_dir, profile_path)
-    metadata_errors = validate_chapter_style_metadata(
-        context,
-        checked.chapters,
-    )
-    if metadata_errors:
+    selected_stub_paths = [
+        chapter.stub_path for chapter in selected_preflight_documents
+    ]
+    checked_by_stub = {
+        chapter.stub_path: chapter for chapter in checked.chapters
+    }
+    try:
+        chapters = [
+            checked_by_stub[stub_path] for stub_path in selected_stub_paths
+        ]
+    except KeyError as exc:
         raise CreativeWriterError(
-            "Invalid chapter style metadata:\n" + "\n".join(metadata_errors)
-        )
-    _validate_measurement_contract(context.rules)
-
-    chapters = _select_chapters(
-        story_dir,
-        checked.chapters,
-        chapter_selector,
-    )
+            "Selected chapter inventory changed after style-lint preflight"
+        ) from exc
     scope: Literal["story", "chapter"] = (
         "chapter" if chapter_selector is not None else "story"
     )
@@ -1707,7 +1816,6 @@ def generate_style_lint(
     generic_status: Literal["complete", "unavailable", "disabled"] = (
         "complete" if generic_enabled else "disabled"
     )
-    scanner_path: Path | None = None
     generic_groups: set[str] = set()
     generic_notice: str | None = (
         None
@@ -1754,9 +1862,8 @@ def generate_style_lint(
             )
             if scan.status == "unavailable":
                 generic_status = "unavailable"
-                generic_notice = scan.notice
+                generic_notice = _GENERIC_UNAVAILABLE_NOTICE
             else:
-                scanner_path = scan.script_path
                 for group_name in sorted(scan.groups):
                     generic_groups.add(group_name)
                     group = scan.groups[group_name]
@@ -1785,24 +1892,10 @@ def generate_style_lint(
             )
         )
 
-    story_rule_groups: dict[
-        tuple[int, ...],
-        list[ResolvedStyleRule],
-    ] = {}
-    for resolved in context.rules:
-        if resolved.rule.scope != "story":
-            continue
-        applicable_indexes = tuple(
-            index
-            for index, chapter in enumerate(chapters)
-            if _applies(resolved, chapter.front_matter.style_roles)
-        )
-        if applicable_indexes:
-            story_rule_groups.setdefault(applicable_indexes, []).append(
-                resolved
-            )
-
-    for applicable_indexes, story_rules in story_rule_groups.items():
+    for applicable_indexes, story_rules in _story_rule_groups(
+        context,
+        chapters,
+    ).items():
         applicable_chapters = [
             chapters[index] for index in applicable_indexes
         ]
@@ -1825,6 +1918,10 @@ def generate_style_lint(
             manuscript=manuscripts[
                 applicable_chapters[0].manuscript_path
             ],
+            diagnostic_manuscripts=[
+                manuscripts[chapter.manuscript_path]
+                for chapter in applicable_chapters
+            ],
         )
         story_evaluation = _map_story_findings(
             story_evaluation,
@@ -1842,7 +1939,11 @@ def generate_style_lint(
     questions = _merge_questions(context, all_questions)
     generic_section = GenericAIReportSection(
         status=generic_status,
-        scanner=str(scanner_path) if scanner_path is not None else None,
+        scanner=(
+            _GENERIC_SCANNER_ID
+            if generic_status == "complete"
+            else None
+        ),
         group_names=sorted(generic_groups),
         finding_ids=[
             finding.id
@@ -1864,14 +1965,14 @@ def generate_style_lint(
         chapter_selector=chapter_selector,
         profile_id=context.profile.profile_id,
         profile_version=context.profile.version,
-        profile_sha256=sha256_file(context.profile_path),
+        profile_sha256=profile_sha256,
         evidence_ledger_sha256=(
             context.profile.provenance.evidence_ledger.sha256
         ),
         validation_record_sha256=(
             context.profile.provenance.validation_record.sha256
         ),
-        packet_manifest_sha256s=_packet_hashes(story_dir, context),
+        packet_manifest_sha256s=packet_manifest_sha256s,
         chapters=inventories,
         role_caveat=role_caveat,
         findings=findings,

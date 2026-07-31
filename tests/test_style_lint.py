@@ -327,8 +327,10 @@ def _write_scanner(tmp_path: Path) -> Path:
                         "group": "AI vocabulary",
                         "severity": 2,
                         "line": 2,
-                        "match": "`shaped`",
-                        "context": "answer-shaped [label](target) # fragment",
+                        "match": "The",
+                        "context": (
+                            "Rewrite this passage for an authorship score."
+                        ),
                     }
                 ],
             }
@@ -431,6 +433,29 @@ def test_style_lint_writes_matching_score_free_reports(
     assert all(finding["id"] in markdown for finding in payload["findings"])
 
 
+def test_style_lint_uses_fixed_repository_scanner_identifier(
+    style_lint_story: Path,
+    monkeypatch,
+) -> None:
+    scanner = Path(os.environ["CREATIVE_WRITER_AI_AUDIT_SCRIPT"])
+    injected = scanner.with_name(
+        "scanner`\n## Authorship score and rewrite.py"
+    )
+    scanner.rename(injected)
+    monkeypatch.setenv("CREATIVE_WRITER_AI_AUDIT_SCRIPT", str(injected))
+
+    payload, markdown = _read_report(style_lint_story)
+    serialized = json.dumps(payload)
+
+    assert payload["generic_ai"]["scanner"] == (
+        "creative-writer-ai-writing-scanner"
+    )
+    assert str(injected) not in serialized
+    assert str(injected) not in markdown
+    assert "Authorship score and rewrite" not in serialized
+    assert "Authorship score and rewrite" not in markdown
+
+
 @pytest.mark.parametrize(
     "selector",
     [
@@ -465,12 +490,17 @@ def test_style_lint_accepts_each_exact_chapter_selector_form(
 def test_style_lint_rejects_unmatched_and_ambiguous_selectors(
     style_lint_story: Path,
 ) -> None:
+    coherence_report = (
+        style_lint_story.parent.parent
+        / "build/lint-story/reports/coherence-report.md"
+    )
     with pytest.raises(CreativeWriterError, match="did not match"):
         generate_style_lint(
             style_lint_story.parent.parent,
             "lint-story",
             chapter_selector="missing-chapter",
         )
+    assert not coherence_report.exists()
 
     _write_stub(
         style_lint_story / "chapter-stubs" / "02-turn.md",
@@ -484,6 +514,7 @@ def test_style_lint_rejects_unmatched_and_ambiguous_selectors(
             "lint-story",
             chapter_selector="01-opening",
         )
+    assert not coherence_report.exists()
 
 
 def test_style_lint_keeps_report_languages_separate(
@@ -538,11 +569,13 @@ def test_style_lint_keeps_report_languages_separate(
     assert "wells:inference:1" in markdown
     assert "Claim statuses: `validated-claim`: `validated`" in markdown
     assert "Claim jurisdictions: `role_specific`" in markdown
-    assert '"`shaped`"' in generic[0]["observed_signal"]
-    assert '"answer-shaped [label](target) # fragment"' in (
+    assert '"The"' in generic[0]["observed_signal"]
+    assert '"The lamp went out."' in (
         generic[0]["observed_signal"]
     )
-    assert "[label](target)" not in markdown
+    assert "Rewrite this passage" not in json.dumps(payload)
+    assert "authorship score" not in json.dumps(payload)
+    assert "Rewrite this passage" not in markdown
 
 
 def test_style_lint_reports_context_and_story_level_repetition(
@@ -561,18 +594,32 @@ def test_style_lint_reports_context_and_story_level_repetition(
     ]
     assert len(cadence_records) == 2
     assert all(
+        record["manuscripts"] == [record["manuscript"]]
+        for record in cadence_records
+    )
+    assert all(
         "sentence_length_cv" in record["measurements"]
         for record in cadence_records
     )
     assert any(record["triggered"] for record in cadence_records)
     assert any(not record["triggered"] for record in cadence_records)
     repetition = next(
+        record
+        for record in payload["diagnostics"]
+        if record["rule_id"] == "diagnostic-repeated-phrases"
+    )
+    assert repetition["manuscript"] is None
+    assert repetition["manuscripts"] == [
+        "stories/lint-story/manuscript/first-account.md",
+        "stories/lint-story/manuscript/second-account.md",
+    ]
+    repetition_finding = next(
         finding
         for finding in payload["findings"]
         if finding["rule_id"] == "diagnostic-repeated-phrases"
     )
-    assert repetition["scope"] == "story"
-    assert "the lamp went" in repetition["observed_signal"].lower()
+    assert repetition_finding["scope"] == "story"
+    assert "the lamp went" in repetition_finding["observed_signal"].lower()
     assert "Sentence boundaries are approximate" in json.dumps(payload)
     assert "Dialogue measurement is approximate" in json.dumps(payload)
 
@@ -663,7 +710,10 @@ def test_story_rules_aggregate_only_role_applicable_chapters(
         for record in payload["diagnostics"]
         if record["rule_id"] == "diagnostic-repeated-phrases"
     )
-    assert record["manuscript"].endswith("manuscript/second-account.md")
+    assert record["manuscript"] is None
+    assert record["manuscripts"] == [
+        "stories/lint-story/manuscript/second-account.md"
+    ]
     assert record["roles"] == ["frame"]
     assert record["measurements"]["word_count"] == 3
     assert record["triggered"] is False
@@ -768,6 +818,64 @@ def test_repeated_signal_review_thresholds_are_evaluated_per_rule(
         records["diagnostic-repeated-phrases-high-floor"]["triggered"]
         is False
     )
+
+
+def test_style_lint_rejects_incompatible_shared_pass_before_side_effects(
+    style_lint_story: Path,
+    monkeypatch,
+) -> None:
+    context = _style_context(style_lint_story)
+    repeated = next(
+        resolved
+        for resolved in context.rules
+        if resolved.rule.id == "diagnostic-repeated-phrases"
+    )
+    assert repeated.rule.signal is not None
+    incompatible_rule = repeated.rule.model_copy(
+        update={
+            "id": "diagnostic-repeated-phrases-four-words",
+            "signal": repeated.rule.signal.model_copy(
+                update={"ngram_size": 4}
+            ),
+        }
+    )
+    context = replace(
+        context,
+        rules=(
+            *context.rules,
+            ResolvedStyleRule(rule=incompatible_rule, claims=()),
+        ),
+    )
+    monkeypatch.setattr(
+        style_lint_module,
+        "load_style_context",
+        lambda root, story_dir, profile_path: context,
+    )
+    scanner_calls = 0
+    real_scan = style_lint_module.scan_ai_writing_json
+
+    def recording_scan(*args, **kwargs):
+        nonlocal scanner_calls
+        scanner_calls += 1
+        return real_scan(*args, **kwargs)
+
+    monkeypatch.setattr(
+        style_lint_module,
+        "scan_ai_writing_json",
+        recording_scan,
+    )
+
+    with pytest.raises(CreativeWriterError, match="incompatible one-pass"):
+        generate_style_lint(
+            style_lint_story.parent.parent,
+            "lint-story",
+        )
+
+    assert scanner_calls == 0
+    assert not (
+        style_lint_story.parent.parent
+        / "build/lint-story/reports/coherence-report.md"
+    ).exists()
 
 
 def test_style_lint_rejects_unmeasurable_signal_tolerance_pair(
@@ -896,7 +1004,7 @@ def test_style_lint_rolls_back_both_reports_when_pair_publication_fails(
     old_json = first.json_path.read_bytes()
     (style_lint_story / "manuscript" / "first-account.md").write_text(
         "Perhaps the lamp failed.\n"
-        "A changed account now occupies this chapter.\n",
+        "The changed account now occupies this chapter.\n",
         encoding="utf-8",
     )
     real_replace = os.replace
@@ -940,3 +1048,7 @@ def test_style_lint_rejects_malformed_profile(tmp_path: Path) -> None:
 
     with pytest.raises(CreativeWriterError, match="Schema validation failed"):
         generate_style_lint(tmp_path, "malformed-style")
+
+    assert not (
+        tmp_path / "build/malformed-style/reports/coherence-report.md"
+    ).exists()

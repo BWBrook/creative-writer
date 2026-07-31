@@ -1050,21 +1050,34 @@ def _make_capture_environment(tmp_path: Path) -> tuple[dict[str, str], Path]:
 
 
 @pytest.mark.parametrize(
-    "variables",
+    ("variables", "expected"),
     [
-        [
-            "STORY=time-expedition",
-            "PACK=frame-and-testimony",
-        ],
-        [
-            "STORY=time-expedition",
-            "PACK=frame-and-testimony",
-            "PROFILE=style-profile.yml",
-        ],
+        (
+            [
+                "STORY=time-expedition",
+                "PACK=frame-and-testimony",
+            ],
+            (
+                'uv run creative-writer style-reference --story "time-expedition" '
+                '--pack "frame-and-testimony"'
+            ),
+        ),
+        (
+            [
+                "STORY=time-expedition",
+                "PACK=frame-and-testimony",
+                "PROFILE=style-profile.yml",
+            ],
+            (
+                'uv run creative-writer style-reference --story "time-expedition" '
+                '--pack "frame-and-testimony" --profile "style-profile.yml"'
+            ),
+        ),
     ],
 )
 def test_make_style_reference_omits_empty_profile_flag(
     variables: list[str],
+    expected: str,
 ) -> None:
     repository = Path(__file__).resolve().parents[1]
     completed = subprocess.run(
@@ -1076,19 +1089,70 @@ def test_make_style_reference_omits_empty_profile_flag(
     )
 
     assert completed.returncode == 0, completed.stderr
-    assert completed.stdout == (
-        'case "${RAW_STORY}" in *[![:space:]]*) ;; *) '
-        "printf '%s\\n' 'STORY is required for style-reference' "
-        '>&2; exit 2 ;; esac; \\\n'
-        'case "${RAW_PACK}" in *[![:space:]]*) ;; *) '
-        "printf '%s\\n' 'PACK is required for style-reference' "
-        '>&2; exit 2 ;; esac; \\\n'
-        'set -- uv run creative-writer style-reference '
-        '"--story=${RAW_STORY}" "--pack=${RAW_PACK}"; \\\n'
-        'case "${RAW_PROFILE}" in *[![:space:]]*) '
-        'set -- "$@" "--profile=${RAW_PROFILE}" ;; esac; \\\n'
-        'exec "$@"\n'
+    assert completed.stdout == f"{expected}\n"
+
+
+@pytest.mark.parametrize(
+    ("variables", "message"),
+    [
+        (["PACK=frame-and-testimony"], "STORY is required for style-reference"),
+        (["STORY=   ", "PACK=frame-and-testimony"], "STORY is required for style-reference"),
+        (["STORY=time-expedition"], "PACK is required for style-reference"),
+        (["STORY=time-expedition", "PACK=   "], "PACK is required for style-reference"),
+    ],
+)
+def test_make_style_reference_dry_run_requires_nonblank_story_and_pack(
+    variables: list[str],
+    message: str,
+) -> None:
+    repository = Path(__file__).resolve().parents[1]
+    completed = subprocess.run(
+        ["make", "-n", "style-reference", *variables],
+        cwd=repository,
+        text=True,
+        capture_output=True,
+        check=False,
     )
+
+    assert completed.returncode != 0
+    assert message in completed.stderr
+    assert completed.stdout == ""
+
+
+def test_make_style_reference_dry_run_does_not_expand_adversarial_values(
+    tmp_path: Path,
+) -> None:
+    repository = Path(__file__).resolve().parents[1]
+    make_expansion = tmp_path / "make-expansion"
+    backtick_expansion = tmp_path / "backtick-expansion"
+    story = "-story"
+    pack = (
+        f'-pack "quoted" `touch {backtick_expansion}` '
+        f'$(shell touch {make_expansion}) $HOME'
+    )
+    profile = "-profile-$HOME.yml"
+    completed = subprocess.run(
+        [
+            "make",
+            "-n",
+            "style-reference",
+            f"STORY={story}",
+            f"PACK={pack}",
+            f"PROFILE={profile}",
+        ],
+        cwd=repository,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert completed.stdout == (
+        f'uv run creative-writer style-reference --story "{story}" '
+        f'--pack "{pack}" --profile "{profile}"\n'
+    )
+    assert not make_expansion.exists()
+    assert not backtick_expansion.exists()
 
 
 def test_make_style_reference_omits_blank_profile_at_runtime(

@@ -26,6 +26,10 @@ style-lint style-reference: override PACK := $(value PACK)
 style-lint style-reference: override PROFILE := $(value PROFILE)
 style-lint style-reference: override CHAPTER := $(value CHAPTER)
 
+# MAKEFLAGS stores compact short flags first; long-option words begin with "-".
+MAKE_SHORT_FLAGS := $(firstword $(MAKEFLAGS))
+MAKE_DRY_RUN := $(if $(filter -%,$(MAKE_SHORT_FLAGS)),,$(findstring n,$(MAKE_SHORT_FLAGS)))
+
 init-story:
 	uv run creative-writer init-story --story "$(STORY)" --kind "$(KIND)" $(STYLE_CARD_ARG)
 
@@ -37,6 +41,18 @@ style-cards:
 check:
 	uv run creative-writer check --story "$(STORY)"
 
+ifneq ($(MAKE_DRY_RUN),)
+.SILENT:
+
+style-lint:
+	$(if $(strip $(value RAW_STORY)),,$(error STORY is required for style-lint))
+	$(info uv run creative-writer style-lint --story "$(value RAW_STORY)"$(if $(strip $(value RAW_PROFILE)), --profile "$(value RAW_PROFILE)")$(if $(strip $(value RAW_CHAPTER)), --chapter "$(value RAW_CHAPTER)"))
+
+style-reference:
+	$(if $(strip $(value RAW_STORY)),,$(error STORY is required for style-reference))
+	$(if $(strip $(value RAW_PACK)),,$(error PACK is required for style-reference))
+	$(info uv run creative-writer style-reference --story "$(value RAW_STORY)" --pack "$(value RAW_PACK)"$(if $(strip $(value RAW_PROFILE)), --profile "$(value RAW_PROFILE)"))
+else
 style-lint:
 	@case "$${RAW_STORY}" in *[![:space:]]*) ;; *) printf '%s\n' 'STORY is required for style-lint' >&2; exit 2 ;; esac; \
 	set -- uv run creative-writer style-lint "--story=$${RAW_STORY}"; \
@@ -50,6 +66,7 @@ style-reference:
 	set -- uv run creative-writer style-reference "--story=$${RAW_STORY}" "--pack=$${RAW_PACK}"; \
 	case "$${RAW_PROFILE}" in *[![:space:]]*) set -- "$$@" "--profile=$${RAW_PROFILE}" ;; esac; \
 	exec "$$@"
+endif
 
 epub:
 	uv run creative-writer epub --story "$(STORY)"

@@ -1199,18 +1199,29 @@ def _make_capture_environment(tmp_path: Path) -> tuple[dict[str, str], Path]:
 
 
 @pytest.mark.parametrize(
-    "variables",
+    ("variables", "expected"),
     [
-        ["STORY=time-expedition"],
-        [
-            "STORY=time-expedition",
-            "PROFILE=style-profile.yml",
-            "CHAPTER=01-last-week-of-the-permian",
-        ],
+        (
+            ["STORY=time-expedition"],
+            'uv run creative-writer style-lint --story "time-expedition"',
+        ),
+        (
+            [
+                "STORY=time-expedition",
+                "PROFILE=style-profile.yml",
+                "CHAPTER=01-last-week-of-the-permian",
+            ],
+            (
+                'uv run creative-writer style-lint --story "time-expedition" '
+                '--profile "style-profile.yml" '
+                '--chapter "01-last-week-of-the-permian"'
+            ),
+        ),
     ],
 )
 def test_make_style_lint_omits_empty_optional_flags(
     variables: list[str],
+    expected: str,
 ) -> None:
     repository = Path(__file__).resolve().parents[1]
     completed = subprocess.run(
@@ -1222,17 +1233,68 @@ def test_make_style_lint_omits_empty_optional_flags(
     )
 
     assert completed.returncode == 0, completed.stderr
-    assert completed.stdout == (
-        'case "${RAW_STORY}" in *[![:space:]]*) ;; *) '
-        "printf '%s\\n' 'STORY is required for style-lint' "
-        '>&2; exit 2 ;; esac; \\\n'
-        'set -- uv run creative-writer style-lint "--story=${RAW_STORY}"; \\\n'
-        'case "${RAW_PROFILE}" in *[![:space:]]*) '
-        'set -- "$@" "--profile=${RAW_PROFILE}" ;; esac; \\\n'
-        'case "${RAW_CHAPTER}" in *[![:space:]]*) '
-        'set -- "$@" "--chapter=${RAW_CHAPTER}" ;; esac; \\\n'
-        'exec "$@"\n'
+    assert completed.stdout == f"{expected}\n"
+
+
+@pytest.mark.parametrize("story_assignment", [None, "STORY=   "])
+def test_make_style_lint_dry_run_requires_nonblank_story(
+    story_assignment: str | None,
+) -> None:
+    repository = Path(__file__).resolve().parents[1]
+    command = ["make", "-n", "style-lint"]
+    if story_assignment is not None:
+        command.append(story_assignment)
+
+    completed = subprocess.run(
+        command,
+        cwd=repository,
+        text=True,
+        capture_output=True,
+        check=False,
     )
+
+    assert completed.returncode != 0
+    assert "STORY is required for style-lint" in completed.stderr
+    assert completed.stdout == ""
+
+
+def test_make_style_lint_dry_run_does_not_expand_adversarial_values(
+    tmp_path: Path,
+) -> None:
+    repository = Path(__file__).resolve().parents[1]
+    make_expansion = tmp_path / "make-expansion"
+    backtick_expansion = tmp_path / "backtick-expansion"
+    dollar_expansion = tmp_path / "dollar-expansion"
+    story = (
+        f'-story "quoted" `touch {backtick_expansion}` '
+        f'$$(touch {dollar_expansion}) '
+        f'$(shell touch {make_expansion}) $HOME'
+    )
+    profile = '-profile "quoted".yml'
+    chapter = "-chapter-$HOME"
+    completed = subprocess.run(
+        [
+            "make",
+            "-n",
+            "style-lint",
+            f"STORY={story}",
+            f"PROFILE={profile}",
+            f"CHAPTER={chapter}",
+        ],
+        cwd=repository,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert completed.stdout == (
+        f'uv run creative-writer style-lint --story "{story}" '
+        f'--profile "{profile}" --chapter "{chapter}"\n'
+    )
+    assert not make_expansion.exists()
+    assert not backtick_expansion.exists()
+    assert not dollar_expansion.exists()
 
 
 def test_make_style_lint_omits_blank_optional_flags_at_runtime(
@@ -1247,6 +1309,34 @@ def test_make_style_lint_omits_blank_optional_flags_at_runtime(
             "STORY=time-expedition",
             "PROFILE=",
             "CHAPTER=   ",
+        ],
+        cwd=repository,
+        env=environment,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert json.loads(capture_path.read_text(encoding="utf-8")) == [
+        "run",
+        "creative-writer",
+        "style-lint",
+        "--story=time-expedition",
+    ]
+
+
+def test_make_long_option_with_n_keeps_style_lint_runtime_path(
+    tmp_path: Path,
+) -> None:
+    repository = Path(__file__).resolve().parents[1]
+    environment, capture_path = _make_capture_environment(tmp_path)
+    completed = subprocess.run(
+        [
+            "make",
+            "--no-print-directory",
+            "style-lint",
+            "STORY=time-expedition",
         ],
         cwd=repository,
         env=environment,

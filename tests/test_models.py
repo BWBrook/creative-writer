@@ -171,6 +171,23 @@ def test_chapter_stub_rejects_empty_style_metadata_members(field: str) -> None:
         ChapterFrontMatter.model_validate(payload)
 
 
+@pytest.mark.parametrize(
+    ("field", "member"),
+    [
+        ("style_roles", "frame"),
+        ("style_packets", "frame-and-testimony"),
+    ],
+)
+def test_chapter_stub_rejects_duplicate_style_metadata_after_normalization(
+    field: str, member: str
+) -> None:
+    payload = old_chapter_payload()
+    payload[field] = [member, f" {member} "]
+
+    with pytest.raises(ValidationError, match=rf"{field} must be unique"):
+        ChapterFrontMatter.model_validate(payload)
+
+
 def test_old_review_pack_manifest_still_parses_without_style_context() -> None:
     manifest = ReviewPackManifest.model_validate(old_review_pack_payload())
 
@@ -194,6 +211,34 @@ def test_review_pack_entry_accepts_optional_style_context() -> None:
 
     assert manifest.entries[0].style is not None
     assert manifest.entries[0].style.ai_disposition == "escalate"
+
+
+@pytest.mark.parametrize(
+    ("field", "member"),
+    [
+        ("finding_ids", "finding-001"),
+        ("claim_ids", "qualified-speculative-inference"),
+    ],
+)
+def test_review_pack_style_context_rejects_duplicate_id_members(
+    field: str, member: str
+) -> None:
+    payload = old_review_pack_payload()
+    style = {
+        "finding_ids": [],
+        "profile_id": "wells-1895-1899",
+        "profile_version": "1.0.0",
+        "claim_ids": [],
+        "narrative_role": "scientific-inference",
+        "ai_disposition": "monitor",
+        "ai_rationale": "The local signal may be harmless.",
+        "decision_impact": "The answer will guide later review.",
+    }
+    style[field] = [member, member]
+    payload["entries"][0]["style"] = style
+
+    with pytest.raises(ValidationError, match=rf"{field} must be unique"):
+        ReviewPackManifest.model_validate(payload)
 
 
 def test_review_pack_style_context_rejects_malformed_profile_version() -> None:

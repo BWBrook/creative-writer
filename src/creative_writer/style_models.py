@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Annotated, Literal
 
 from pydantic import (
@@ -178,6 +179,13 @@ class StyleTolerance(StrictModel):
     review_above: StrictFloat | None = None
     reference_witness_ids: list[NonEmptyText] = Field(min_length=1)
     rationale: NonEmptyText
+
+    @field_validator("review_below", "review_above")
+    @classmethod
+    def require_finite_bounds(cls, value: float | None) -> float | None:
+        if value is not None and not math.isfinite(value):
+            raise ValueError("style tolerance bounds must be finite")
+        return value
 
     @field_validator("reference_witness_ids")
     @classmethod
@@ -358,6 +366,14 @@ class StyleFinding(StrictModel):
         }
         return _validate_unique(value, labels[info.field_name])
 
+    @model_validator(mode="after")
+    def validate_line_range(self) -> "StyleFinding":
+        if self.line_end < self.line_start:
+            raise ValueError(
+                "line_end must be greater than or equal to line_start"
+            )
+        return self
+
 
 class StyleChapterInventory(StrictModel):
     stub: RelativePath
@@ -414,6 +430,18 @@ class StyleDiagnosticRecord(StrictModel):
     _manuscript = field_validator("manuscript")(
         _validate_canonical_relative_path
     )
+
+    @field_validator("measurements")
+    @classmethod
+    def require_finite_float_measurements(
+        cls, value: dict[str, int | float | str | None]
+    ) -> dict[str, int | float | str | None]:
+        if any(
+            isinstance(measurement, float) and not math.isfinite(measurement)
+            for measurement in value.values()
+        ):
+            raise ValueError("diagnostic float measurements must be finite")
+        return value
 
     @field_validator("roles")
     @classmethod

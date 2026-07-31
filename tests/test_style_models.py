@@ -495,6 +495,22 @@ def test_style_profile_rejects_tolerance_without_numeric_bound() -> None:
         StyleProfile.model_validate(payload)
 
 
+@pytest.mark.parametrize("field", ["review_below", "review_above"])
+@pytest.mark.parametrize(
+    "value",
+    [float("nan"), float("inf"), float("-inf")],
+    ids=["nan", "positive-infinity", "negative-infinity"],
+)
+def test_style_profile_rejects_non_finite_tolerance_bounds(
+    field: str, value: float
+) -> None:
+    payload = valid_style_profile_payload()
+    payload["rules"][2]["tolerance"][field] = value
+
+    with pytest.raises(ValidationError, match="tolerance bounds must be finite"):
+        StyleProfile.model_validate(payload)
+
+
 @pytest.mark.parametrize(
     "signal",
     [
@@ -541,6 +557,18 @@ def test_style_lint_report_rejects_score_field() -> None:
         StyleLintReport.model_validate(payload)
 
 
+def test_style_lint_report_rejects_reversed_finding_line_range() -> None:
+    payload = valid_style_lint_report_payload()
+    payload["findings"][0]["line_start"] = 20
+    payload["findings"][0]["line_end"] = 10
+
+    with pytest.raises(
+        ValidationError,
+        match="line_end must be greater than or equal to line_start",
+    ):
+        StyleLintReport.model_validate(payload)
+
+
 @pytest.mark.parametrize(
     ("status", "partial"),
     [
@@ -570,6 +598,23 @@ def test_style_lint_report_accepts_unavailable_ai_as_partial() -> None:
     report = StyleLintReport.model_validate(payload)
 
     assert report.partial is True
+
+
+@pytest.mark.parametrize(
+    "value",
+    [float("nan"), float("inf"), float("-inf")],
+    ids=["nan", "positive-infinity", "negative-infinity"],
+)
+def test_style_lint_report_rejects_non_finite_diagnostic_measurements(
+    value: float,
+) -> None:
+    payload = valid_style_lint_report_payload()
+    payload["diagnostics"][0]["measurements"]["sentence_length_cv"] = value
+
+    with pytest.raises(
+        ValidationError, match="diagnostic float measurements must be finite"
+    ):
+        StyleLintReport.model_validate(payload)
 
 
 def test_style_lint_report_rejects_noncanonical_manuscript_path() -> None:

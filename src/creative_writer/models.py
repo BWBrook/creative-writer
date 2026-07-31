@@ -507,6 +507,13 @@ class ReviewPackStyleContext(BaseModel):
     ai_rationale: NonEmptyStr
     decision_impact: NonEmptyStr
 
+    @field_validator("finding_ids", "claim_ids")
+    @classmethod
+    def validate_unique_ids(cls, value: list[str], info) -> list[str]:
+        if len(value) != len(set(value)):
+            raise ValueError(f"{info.field_name} must be unique")
+        return value
+
 
 class ReviewPackEntry(BaseModel):
     """One targeted excerpt request inside a review pack."""
@@ -598,8 +605,14 @@ class ChapterFrontMatter(BaseModel):
         "style_packets",
     )
     @classmethod
-    def validate_lists(cls, value: list[str]) -> list[str]:
-        return _validate_string_list(value)
+    def validate_lists(cls, value: list[str], info) -> list[str]:
+        cleaned = _validate_string_list(value)
+        if (
+            info.field_name in {"style_roles", "style_packets"}
+            and len(cleaned) != len(set(cleaned))
+        ):
+            raise ValueError(f"{info.field_name} must be unique")
+        return cleaned
 
 
 @dataclass(slots=True)

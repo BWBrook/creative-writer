@@ -8,6 +8,9 @@ import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from creative_writer.checks import check_story
 from creative_writer.exceptions import CreativeWriterError
@@ -31,9 +34,58 @@ class AIWritingAuditResult:
     script_path: Path
 
 
-def _resolve_script_path() -> Path:
+class AIWritingHit(BaseModel):
+    """One location-aware hit from the external surface scanner."""
+
+    model_config = ConfigDict(extra="allow")
+
+    group: str
+    severity: int
+    line: int = Field(ge=1)
+    match: str
+    context: str
+
+
+class AIWritingGroup(BaseModel):
+    """One scanner group, retaining its original identity and advice."""
+
+    model_config = ConfigDict(extra="allow")
+
+    count: int = Field(ge=0)
+    severity: int = Field(ge=0)
+    advice: str
+    hits: list[AIWritingHit] = Field(default_factory=list)
+
+
+class _AIWritingPayload(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    groups: dict[str, AIWritingGroup]
+    caution: str
+
+
+@dataclass(slots=True)
+class AIWritingJSONResult:
+    """Structured scanner result for the separately labelled style report."""
+
+    status: Literal["complete", "unavailable"]
+    script_path: Path | None
+    groups: dict[str, AIWritingGroup]
+    caution: str
+    notice: str | None
+
+
+def _configured_script_path() -> Path:
     configured = os.environ.get(AI_AUDIT_SCRIPT_ENV)
-    script_path = Path(configured).expanduser() if configured else DEFAULT_AI_AUDIT_SCRIPT
+    return (
+        Path(configured).expanduser()
+        if configured
+        else DEFAULT_AI_AUDIT_SCRIPT
+    )
+
+
+def _resolve_script_path() -> Path:
+    script_path = _configured_script_path()
     if not script_path.exists():
         raise CreativeWriterError(
             "AI-writing audit script not found. Set "
@@ -41,6 +93,69 @@ def _resolve_script_path() -> Path:
             f"Looked for: {script_path}"
         )
     return script_path
+
+
+def scan_ai_writing_json(
+    path: Path,
+    genre: str = "narrative",
+    *,
+    unavailable_is_error: bool = True,
+) -> AIWritingJSONResult:
+    """Run the scanner's structured mode without importing aggregate risk."""
+
+    try:
+        script_path = _resolve_script_path()
+    except CreativeWriterError:
+        if unavailable_is_error:
+            raise
+        missing_path = _configured_script_path()
+        return AIWritingJSONResult(
+            status="unavailable",
+            script_path=None,
+            groups={},
+            caution="The optional generic surface scan did not run.",
+            notice=f"Generic AI-writing scanner unavailable: {missing_path}",
+        )
+
+    command = [
+        sys.executable,
+        str(script_path),
+        "--genre",
+        genre,
+        "--json",
+        str(path),
+    ]
+    try:
+        completed = subprocess.run(
+            command,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        stderr = exc.stderr.strip() or exc.stdout.strip() or "unknown audit error"
+        raise CreativeWriterError(
+            f"AI-writing JSON scan failed for {path}: {stderr}"
+        ) from exc
+    except OSError as exc:
+        raise CreativeWriterError(
+            f"Unable to execute AI-writing JSON scan for {path}: {exc}"
+        ) from exc
+
+    try:
+        payload = _AIWritingPayload.model_validate_json(completed.stdout)
+    except ValidationError as exc:
+        raise CreativeWriterError(
+            f"AI-writing JSON scan returned malformed JSON for {path}: {exc}"
+        ) from exc
+
+    return AIWritingJSONResult(
+        status="complete",
+        script_path=script_path,
+        groups=payload.groups,
+        caution=payload.caution,
+        notice=None,
+    )
 
 
 def generate_ai_writing_audit(

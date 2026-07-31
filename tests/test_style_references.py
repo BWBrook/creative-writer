@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 from pathlib import Path
+import re
 from types import SimpleNamespace
 from typing import Any
 
@@ -518,6 +519,31 @@ def test_style_reference_accepts_yml_suffix_and_reports_output_metadata(
     assert result.source_indexes_prepared is False
 
 
+def test_style_reference_rejects_symlinked_output_target(
+    style_packet_story: StylePacketFixture,
+) -> None:
+    outside = style_packet_story.root / "unrelated.md"
+    outside.write_text("must remain unchanged\n", encoding="utf-8")
+    output_dir = (
+        style_packet_story.root
+        / "build"
+        / "packet-story"
+        / "style"
+        / "reference-packets"
+    )
+    output_dir.mkdir(parents=True)
+    (output_dir / "frame.md").symlink_to(outside)
+
+    with pytest.raises(CreativeWriterError, match="symlink|redirects"):
+        generate_style_reference(
+            style_packet_story.root,
+            "packet-story",
+            "frame",
+        )
+
+    assert outside.read_text(encoding="utf-8") == "must remain unchanged\n"
+
+
 def test_style_reference_compiles_manifest_order_and_negative_section(
     style_packet_story: StylePacketFixture,
 ) -> None:
@@ -539,6 +565,39 @@ def test_style_reference_compiles_manifest_order_and_negative_section(
     )
     assert "Tier four control wording." not in positive_section
     assert "Tier four control wording." in negative_section
+    rendered_entry_ids = re.findall(
+        r"^### \d+\. [^:]+: `([^`]+)`$",
+        body,
+        flags=re.MULTILINE,
+    )
+    assert rendered_entry_ids == ["positive", "variation", "control"]
+
+
+@pytest.mark.parametrize(
+    "entry_ids",
+    [
+        ["control", "positive", "variation"],
+        ["positive", "control", "variation"],
+    ],
+    ids=["leading-control", "interleaved-control"],
+)
+def test_style_reference_rejects_section_incompatible_manifest_order(
+    style_packet_story: StylePacketFixture,
+    entry_ids: list[str],
+) -> None:
+    manifest = style_packet_story.context.packets["frame"]
+    entries = {entry.id: entry for entry in manifest.entries}
+    manifest.entries = [entries[entry_id] for entry_id in entry_ids]
+
+    with pytest.raises(
+        CreativeWriterError,
+        match="negative-control.*follow|section ordering",
+    ):
+        generate_style_reference(
+            style_packet_story.root,
+            "packet-story",
+            "frame",
+        )
 
 
 def test_style_reference_renders_provenance_claims_and_writer_guidance(
@@ -590,6 +649,70 @@ def test_style_reference_preserves_original_text_and_bounds_context_by_heading(
     assert "Held-out context before." in body
     assert "Authentic variation focal." in body
     assert "Held-out next heading excluded." not in body
+
+
+def test_style_reference_stops_context_at_same_heading_source_ordinal_gaps(
+    style_packet_story: StylePacketFixture,
+) -> None:
+    separated_before = _passage(
+        witness_id="heldout-wells",
+        source_id="heldout-wells",
+        source_ordinal=5,
+        heading="Testimony",
+        heading_ordinal=1,
+        normalized_text="Separated same-heading passage before.",
+    )
+    focal = _passage(
+        witness_id="heldout-wells",
+        source_id="heldout-wells",
+        source_ordinal=11,
+        heading="Testimony",
+        heading_ordinal=2,
+        normalized_text="Gap-bounded authentic variation focal.",
+    )
+    separated_after = _passage(
+        witness_id="heldout-wells",
+        source_id="heldout-wells",
+        source_ordinal=17,
+        heading="Testimony",
+        heading_ordinal=3,
+        normalized_text="Separated same-heading passage after.",
+    )
+    heldout_path = style_packet_story.index_paths["heldout_wells"]
+    heldout_path.write_bytes(
+        serialize_passage_partition(
+            [separated_before, focal, separated_after]
+        )
+    )
+    heldout_reference = (
+        style_packet_story.context.profile.provenance.passage_indexes.heldout_wells
+    )
+    heldout_reference.sha256 = sha256_file(heldout_path)
+
+    old_passage_id = style_packet_story.passage_ids["variation"]
+    variation_entry = style_packet_story.context.packets["frame"].entries[1]
+    variation_entry.passage_id = focal.passage_id
+    old_evidence = style_packet_story.context.evidence_catalog.pop(old_passage_id)
+    style_packet_story.context.evidence_catalog[focal.passage_id] = EvidencePassage(
+        passage_id=focal.passage_id,
+        witness_id=old_evidence.witness_id,
+        source_id=old_evidence.source_id,
+        selection_id=old_evidence.selection_id,
+        authority_tier=old_evidence.authority_tier,
+        claim_ids=old_evidence.claim_ids,
+        evidence_kinds=old_evidence.evidence_kinds,
+    )
+
+    result = generate_style_reference(
+        style_packet_story.root,
+        "packet-story",
+        "frame",
+    )
+    body = result.output_path.read_text(encoding="utf-8")
+
+    assert "Gap-bounded authentic variation focal." in body
+    assert "Separated same-heading passage before." not in body
+    assert "Separated same-heading passage after." not in body
 
 
 def test_style_reference_renders_source_identity_and_passage_metadata(

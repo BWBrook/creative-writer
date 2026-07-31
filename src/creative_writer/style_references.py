@@ -308,6 +308,43 @@ def _validate_record_identity(
         )
 
 
+def _is_contiguous_context_pair(
+    left: PassageRecord,
+    right: PassageRecord,
+) -> bool:
+    return (
+        left.witness_id == right.witness_id
+        and left.heading_path == right.heading_path
+        and left.source_ordinal + 1 == right.source_ordinal
+    )
+
+
+def _partition_context_window(
+    passages: list[PassageRecord],
+    passage_id: str,
+    radius: int,
+) -> list[PassageRecord]:
+    focal = context_window(passages, passage_id, 0)[0]
+    focal_index = next(
+        index
+        for index, passage in enumerate(passages)
+        if passage.passage_id == focal.passage_id
+    )
+    start = focal_index
+    while start > 0 and _is_contiguous_context_pair(
+        passages[start - 1],
+        passages[start],
+    ):
+        start -= 1
+    end = focal_index
+    while end + 1 < len(passages) and _is_contiguous_context_pair(
+        passages[end],
+        passages[end + 1],
+    ):
+        end += 1
+    return context_window(passages[start : end + 1], passage_id, radius)
+
+
 def _resolve_entries(
     context: StyleContext,
     manifest: StyleReferencePacket,
@@ -336,7 +373,7 @@ def _resolve_entries(
             ResolvedStylePacketEntry(
                 manifest_entry=entry,
                 focal=focal,
-                context=context_window(
+                context=_partition_context_window(
                     indexes[partition],
                     entry.passage_id,
                     radius,
@@ -347,6 +384,20 @@ def _resolve_entries(
             )
         )
     return resolved
+
+
+def _validate_section_order(manifest: StyleReferencePacket) -> None:
+    negative_section_started = False
+    for entry in manifest.entries:
+        if entry.kind == "negative_control" or entry.authority_tier == 4:
+            negative_section_started = True
+            continue
+        if negative_section_started:
+            raise CreativeWriterError(
+                f"Packet {manifest.id} section ordering is invalid: "
+                "negative-control entries must follow all non-control entries; "
+                f"entry {entry.id} appears after the negative section began"
+            )
 
 
 def _claim_index(context: StyleContext) -> dict[str, EvidenceClaim]:
@@ -574,6 +625,7 @@ def generate_style_reference(
             f"Packet manifest {manifest_path} declares ID {manifest.id}, "
             f"expected {pack_name}"
         )
+    _validate_section_order(manifest)
 
     bindings = _index_bindings(resolved_root, context)
     prepared = _prepare_missing_indexes(
@@ -594,7 +646,10 @@ def generate_style_reference(
         f"build/{slug}/style/reference-packets",
     )
     ensure_directory(output_dir)
-    output_path = output_dir / f"{pack_name}.md"
+    output_path = safe_relative_path(
+        resolved_root,
+        f"build/{slug}/style/reference-packets/{pack_name}.md",
+    )
     try:
         output_path.write_text(
             _render_reference(slug, context, manifest, entries),

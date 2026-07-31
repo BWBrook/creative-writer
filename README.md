@@ -174,6 +174,11 @@ make style-reference STORY=<slug> PACK=<name>
 make style-reference STORY=<slug> PACK=<name> PROFILE=<path>
 ```
 
+An explicit profile override fully replaces the `contract.yml` profile for
+that command; the superseded profile is not validated. The Make targets reject
+a blank `STORY` (and a blank `PACK` for `style-reference`) before invoking the
+CLI.
+
 `style-lint` requires a configured profile or an override. Its default
 whole-story run writes matching advisory reports to
 `build/<slug>/style/lint-report.md` and

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 import shutil
+import subprocess
+import sys
 from typing import Any
 
 import pytest
@@ -603,3 +605,67 @@ def test_check_accepts_mixed_style_roles_without_warning(
 
     assert result.ok, [error.message for error in result.errors]
     assert not result.warnings
+
+
+def test_importing_cli_does_not_load_explicit_analysis_modules() -> None:
+    repository = Path(__file__).resolve().parents[1]
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import sys\n"
+                "import creative_writer.cli\n"
+                "blocked = (\n"
+                "    'creative_writer.style_lint',\n"
+                "    'creative_writer.style_references',\n"
+                "    'creative_writer.style_diagnostics',\n"
+                "    'creative_writer.ai_audit',\n"
+                ")\n"
+                "print(','.join(name for name in blocked if name in sys.modules))\n"
+            ),
+        ],
+        cwd=repository,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert completed.stdout == "\n"
+
+
+def test_check_cli_path_does_not_load_explicit_analysis_modules(
+    tmp_path: Path,
+) -> None:
+    create_story(tmp_path, "plain-story", "original")
+    repository = Path(__file__).resolve().parents[1]
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "from pathlib import Path\n"
+                "import sys\n"
+                "import creative_writer.cli as cli\n"
+                "cli.repo_root = lambda: Path(sys.argv[1])\n"
+                "status = cli.main(['check', '--story', 'plain-story'])\n"
+                "blocked = (\n"
+                "    'creative_writer.style_lint',\n"
+                "    'creative_writer.style_references',\n"
+                "    'creative_writer.style_diagnostics',\n"
+                "    'creative_writer.ai_audit',\n"
+                ")\n"
+                "loaded = ','.join(name for name in blocked if name in sys.modules)\n"
+                "print(f'PROBE:{status}:{loaded}')\n"
+            ),
+            str(tmp_path),
+        ],
+        cwd=repository,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert completed.stdout.splitlines()[-1] == "PROBE:0:"

@@ -15,15 +15,16 @@ else
 EXPORT_OUTPUT_ARG := --output-name "$(OUTPUT)"
 endif
 
-STYLE_PROFILE_ARG :=
-ifneq ($(strip $(PROFILE)),)
-STYLE_PROFILE_ARG := --profile "$(PROFILE)"
-endif
+override RAW_STORY := $(value STORY)
+override RAW_PACK := $(value PACK)
+override RAW_PROFILE := $(value PROFILE)
+override RAW_CHAPTER := $(value CHAPTER)
+export RAW_STORY RAW_PACK RAW_PROFILE RAW_CHAPTER
 
-STYLE_CHAPTER_ARG :=
-ifneq ($(strip $(CHAPTER)),)
-STYLE_CHAPTER_ARG := --chapter "$(CHAPTER)"
-endif
+style-lint style-reference: override STORY := $(value STORY)
+style-lint style-reference: override PACK := $(value PACK)
+style-lint style-reference: override PROFILE := $(value PROFILE)
+style-lint style-reference: override CHAPTER := $(value CHAPTER)
 
 init-story:
 	uv run creative-writer init-story --story "$(STORY)" --kind "$(KIND)" $(STYLE_CARD_ARG)
@@ -37,10 +38,18 @@ check:
 	uv run creative-writer check --story "$(STORY)"
 
 style-lint:
-	uv run creative-writer style-lint --story "$(STORY)"$(if $(STYLE_PROFILE_ARG), $(STYLE_PROFILE_ARG))$(if $(STYLE_CHAPTER_ARG), $(STYLE_CHAPTER_ARG))
+	@case "$${RAW_STORY}" in *[![:space:]]*) ;; *) printf '%s\n' 'STORY is required for style-lint' >&2; exit 2 ;; esac; \
+	set -- uv run creative-writer style-lint "--story=$${RAW_STORY}"; \
+	case "$${RAW_PROFILE}" in *[![:space:]]*) set -- "$$@" "--profile=$${RAW_PROFILE}" ;; esac; \
+	case "$${RAW_CHAPTER}" in *[![:space:]]*) set -- "$$@" "--chapter=$${RAW_CHAPTER}" ;; esac; \
+	exec "$$@"
 
 style-reference:
-	uv run creative-writer style-reference --story "$(STORY)" --pack "$(PACK)"$(if $(STYLE_PROFILE_ARG), $(STYLE_PROFILE_ARG))
+	@case "$${RAW_STORY}" in *[![:space:]]*) ;; *) printf '%s\n' 'STORY is required for style-reference' >&2; exit 2 ;; esac; \
+	case "$${RAW_PACK}" in *[![:space:]]*) ;; *) printf '%s\n' 'PACK is required for style-reference' >&2; exit 2 ;; esac; \
+	set -- uv run creative-writer style-reference "--story=$${RAW_STORY}" "--pack=$${RAW_PACK}"; \
+	case "$${RAW_PROFILE}" in *[![:space:]]*) set -- "$$@" "--profile=$${RAW_PROFILE}" ;; esac; \
+	exec "$$@"
 
 epub:
 	uv run creative-writer epub --story "$(STORY)"

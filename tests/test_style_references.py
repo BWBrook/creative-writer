@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -12,6 +14,7 @@ import pytest
 import yaml
 
 import creative_writer.cli as cli_module
+import creative_writer.style_references as style_references_module
 from creative_writer.exceptions import CreativeWriterError
 from creative_writer.source_analysis_common import sha256_file
 from creative_writer.source_analysis_models import PassageRecord
@@ -997,10 +1000,9 @@ def test_style_reference_cli_reports_output_entries_and_index_preparation(
 
     monkeypatch.setattr(cli_module, "repo_root", lambda: tmp_path)
     monkeypatch.setattr(
-        cli_module,
+        style_references_module,
         "generate_style_reference",
         generate,
-        raising=False,
     )
 
     status = cli_module.main(
@@ -1026,35 +1028,43 @@ def test_style_reference_cli_reports_output_entries_and_index_preparation(
     ]
 
 
+def _make_capture_environment(tmp_path: Path) -> tuple[dict[str, str], Path]:
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    capture_path = tmp_path / "argv.json"
+    fake_uv = fake_bin / "uv"
+    fake_uv.write_text(
+        "#!/usr/bin/env python3\n"
+        "import json\n"
+        "import os\n"
+        "import sys\n"
+        "with open(os.environ['MAKE_CAPTURE_PATH'], 'w', encoding='utf-8') as handle:\n"
+        "    json.dump(sys.argv[1:], handle)\n",
+        encoding="utf-8",
+    )
+    fake_uv.chmod(0o755)
+    environment = os.environ.copy()
+    environment["PATH"] = f"{fake_bin}{os.pathsep}{environment['PATH']}"
+    environment["MAKE_CAPTURE_PATH"] = str(capture_path)
+    return environment, capture_path
+
+
 @pytest.mark.parametrize(
-    ("variables", "expected"),
+    "variables",
     [
-        (
-            [
-                "STORY=time-expedition",
-                "PACK=frame-and-testimony",
-            ],
-            (
-                'uv run creative-writer style-reference --story "time-expedition" '
-                '--pack "frame-and-testimony"'
-            ),
-        ),
-        (
-            [
-                "STORY=time-expedition",
-                "PACK=frame-and-testimony",
-                "PROFILE=style-profile.yml",
-            ],
-            (
-                'uv run creative-writer style-reference --story "time-expedition" '
-                '--pack "frame-and-testimony" --profile "style-profile.yml"'
-            ),
-        ),
+        [
+            "STORY=time-expedition",
+            "PACK=frame-and-testimony",
+        ],
+        [
+            "STORY=time-expedition",
+            "PACK=frame-and-testimony",
+            "PROFILE=style-profile.yml",
+        ],
     ],
 )
 def test_make_style_reference_omits_empty_profile_flag(
     variables: list[str],
-    expected: str,
 ) -> None:
     repository = Path(__file__).resolve().parents[1]
     completed = subprocess.run(
@@ -1066,4 +1076,115 @@ def test_make_style_reference_omits_empty_profile_flag(
     )
 
     assert completed.returncode == 0, completed.stderr
-    assert completed.stdout == f"{expected}\n"
+    assert completed.stdout == (
+        'case "${RAW_STORY}" in *[![:space:]]*) ;; *) '
+        "printf '%s\\n' 'STORY is required for style-reference' "
+        '>&2; exit 2 ;; esac; \\\n'
+        'case "${RAW_PACK}" in *[![:space:]]*) ;; *) '
+        "printf '%s\\n' 'PACK is required for style-reference' "
+        '>&2; exit 2 ;; esac; \\\n'
+        'set -- uv run creative-writer style-reference '
+        '"--story=${RAW_STORY}" "--pack=${RAW_PACK}"; \\\n'
+        'case "${RAW_PROFILE}" in *[![:space:]]*) '
+        'set -- "$@" "--profile=${RAW_PROFILE}" ;; esac; \\\n'
+        'exec "$@"\n'
+    )
+
+
+def test_make_style_reference_omits_blank_profile_at_runtime(
+    tmp_path: Path,
+) -> None:
+    repository = Path(__file__).resolve().parents[1]
+    environment, capture_path = _make_capture_environment(tmp_path)
+    completed = subprocess.run(
+        [
+            "make",
+            "style-reference",
+            "STORY=time-expedition",
+            "PACK=frame-and-testimony",
+            "PROFILE=   ",
+        ],
+        cwd=repository,
+        env=environment,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert json.loads(capture_path.read_text(encoding="utf-8")) == [
+        "run",
+        "creative-writer",
+        "style-reference",
+        "--story=time-expedition",
+        "--pack=frame-and-testimony",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("variables", "message"),
+    [
+        (["PACK=frame-and-testimony"], "STORY is required for style-reference"),
+        (["STORY=   ", "PACK=frame-and-testimony"], "STORY is required for style-reference"),
+        (["STORY=time-expedition"], "PACK is required for style-reference"),
+        (["STORY=time-expedition", "PACK=   "], "PACK is required for style-reference"),
+    ],
+)
+def test_make_style_reference_requires_nonblank_story_and_pack(
+    variables: list[str],
+    message: str,
+) -> None:
+    repository = Path(__file__).resolve().parents[1]
+    completed = subprocess.run(
+        ["make", "style-reference", *variables],
+        cwd=repository,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode != 0
+    assert message in completed.stderr
+    assert completed.stdout == ""
+
+
+def test_make_style_reference_forwards_adversarial_values_literally(
+    tmp_path: Path,
+) -> None:
+    repository = Path(__file__).resolve().parents[1]
+    environment, capture_path = _make_capture_environment(tmp_path)
+
+    make_expansion = tmp_path / "make-expansion"
+    backtick_expansion = tmp_path / "backtick-expansion"
+    story = "-story"
+    pack = (
+        f'-pack "quoted" `touch {backtick_expansion}` '
+        f'$(shell touch {make_expansion}) $HOME'
+    )
+    profile = "-profile-$HOME.yml"
+    completed = subprocess.run(
+        [
+            "make",
+            "style-reference",
+            f"STORY={story}",
+            f"PACK={pack}",
+            f"PROFILE={profile}",
+        ],
+        cwd=repository,
+        env=environment,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert json.loads(capture_path.read_text(encoding="utf-8")) == [
+        "run",
+        "creative-writer",
+        "style-reference",
+        f"--story={story}",
+        f"--pack={pack}",
+        f"--profile={profile}",
+    ]
+    assert not make_expansion.exists()
+    assert not backtick_expansion.exists()

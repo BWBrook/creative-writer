@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import sys
 
-from creative_writer.ai_audit import generate_ai_writing_audit
 from creative_writer.building import build_story
 from creative_writer.checks import check_story
 from creative_writer.exceptions import CreativeWriterError
@@ -22,8 +21,6 @@ from creative_writer.scaffold import create_story, list_style_cards
 from creative_writer.source_admission import check_source_admission
 from creative_writer.source_analysis import run_source_analysis
 from creative_writer.stats import generate_story_statistics
-from creative_writer.style_lint import generate_style_lint
-from creative_writer.style_references import generate_style_reference
 
 
 _SOURCE_ANALYSIS_OUTPUT_KEYS = {
@@ -283,6 +280,8 @@ def main(argv: list[str] | None = None) -> int:
             return 1
 
         if args.command == "style-lint":
+            from creative_writer.style_lint import generate_style_lint
+
             result = generate_style_lint(
                 root,
                 args.story,
@@ -296,6 +295,8 @@ def main(argv: list[str] | None = None) -> int:
             return 0
 
         if args.command == "style-reference":
+            from creative_writer.style_references import generate_style_reference
+
             result = generate_style_reference(
                 root,
                 args.story,
@@ -323,6 +324,8 @@ def main(argv: list[str] | None = None) -> int:
             return 0
 
         if args.command == "ai-audit":
+            from creative_writer.ai_audit import generate_ai_writing_audit
+
             result = generate_ai_writing_audit(root, args.story, args.genre)
             print(f"AI-writing audit report written to {result.report_path}")
             print(f"Scanned {result.chapter_count} chapter(s) with {result.script_path}.")

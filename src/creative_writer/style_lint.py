@@ -1739,7 +1739,11 @@ def generate_style_lint(
     profile_sha256 = sha256_file(context.profile_path)
     packet_manifest_sha256s = _packet_hashes(story_dir, context)
 
-    checked = check_story(resolved_root, slug)
+    checked = check_story(
+        resolved_root,
+        slug,
+        profile_override=profile_override,
+    )
     if (
         not checked.ok
         or checked.story is None

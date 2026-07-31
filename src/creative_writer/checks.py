@@ -24,9 +24,9 @@ from creative_writer.review_packs import review_pack_manifest_paths, validate_re
 from creative_writer.style_models import StyleReferencePacket
 from creative_writer.style_profiles import (
     load_style_context,
+    resolve_style_profile_path,
     validate_chapter_style_metadata,
 )
-from creative_writer.style_references import style_reference_manifest_paths
 
 MANDATORY_ARTIFACTS = [
     "story.yml",
@@ -38,6 +38,7 @@ MANDATORY_ARTIFACTS = [
     "manuscript",
 ]
 IGNORED_SCENE_CARD_FILES = {"README.md", "_template.md"}
+IGNORED_STYLE_REFERENCE_PACKET_FILES = {"_template.yml"}
 
 MARKDOWN_IMAGE_PATTERN = re.compile(r"!\[[^\]]*\]\(([^)]+)\)")
 HTML_IMAGE_PATTERN = re.compile(r'<img[^>]+src="([^"]+)"', re.IGNORECASE)
@@ -204,12 +205,41 @@ def _validate_configured_style(
     root: Path,
     story_dir: Path,
     result: CheckResult,
+    profile_override: str | None,
 ) -> None:
-    if result.contract is None or result.contract.style_lint is None:
+    configured_profile = (
+        result.contract.style_lint.profile
+        if result.contract is not None and result.contract.style_lint is not None
+        else None
+    )
+    if configured_profile is None and profile_override is None:
         return
 
-    profile_path = story_dir / result.contract.style_lint.profile
-    manifest_paths = style_reference_manifest_paths(story_dir)
+    requested_profile = (
+        profile_override if profile_override is not None else configured_profile
+    )
+    try:
+        profile_path = resolve_style_profile_path(
+            story_dir,
+            configured_profile,
+            profile_override,
+        )
+    except CreativeWriterError as exc:
+        location = story_dir / requested_profile if requested_profile else story_dir
+        _add_error(result, location, str(exc))
+        return
+
+    packet_dir = story_dir / "style-reference-packets"
+    manifest_paths = (
+        [
+            path
+            for path in sorted(packet_dir.glob("*.yml"))
+            if path.name not in IGNORED_STYLE_REFERENCE_PACKET_FILES
+            and path.is_file()
+        ]
+        if packet_dir.is_dir()
+        else []
+    )
     manifests: dict[str, Path] = {}
     invalid_manifest = False
     for manifest_path in manifest_paths:
@@ -256,7 +286,12 @@ def _validate_configured_style(
         )
 
 
-def check_story(root: Path, slug: str) -> CheckResult:
+def check_story(
+    root: Path,
+    slug: str,
+    *,
+    profile_override: str | None = None,
+) -> CheckResult:
     """Run validation and style checks for one story."""
 
     story_dir = root / "stories" / slug
@@ -492,7 +527,12 @@ def check_story(root: Path, slug: str) -> CheckResult:
         except CreativeWriterError as exc:
             _add_error(result, manifest_path, str(exc))
 
-    _validate_configured_style(root, story_dir, result)
+    _validate_configured_style(
+        root,
+        story_dir,
+        result,
+        profile_override,
+    )
 
     report_body = _render_report(
         result,

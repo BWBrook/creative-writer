@@ -550,8 +550,24 @@ def check_story(
         )
         for chapter in result.chapters
     }
-    review_pack_paths = review_pack_manifest_paths(story_dir)
-    if result.contract and result.contract.review_mode == "excerpt_pack" and not review_pack_paths:
+    review_pack_discovery_failed = False
+    try:
+        review_pack_paths = review_pack_manifest_paths(story_dir)
+    except CreativeWriterError as exc:
+        location, separator, message = str(exc).partition(": ")
+        _add_error(
+            result,
+            location if separator else story_dir / "review-packs",
+            message if separator else str(exc),
+        )
+        review_pack_paths = []
+        review_pack_discovery_failed = True
+    if (
+        result.contract
+        and result.contract.review_mode == "excerpt_pack"
+        and not review_pack_paths
+        and not review_pack_discovery_failed
+    ):
         _add_warning(
             result,
             story_dir / "review-packs",

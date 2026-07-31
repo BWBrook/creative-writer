@@ -549,6 +549,131 @@ def test_style_reference_rejects_symlinked_output_target(
     assert outside.read_text(encoding="utf-8") == "must remain unchanged\n"
 
 
+def test_style_reference_replaces_hard_link_without_mutating_alias(
+    style_packet_story: StylePacketFixture,
+) -> None:
+    alias = style_packet_story.root / "unrelated.md"
+    alias.write_text("must remain unchanged\n", encoding="utf-8")
+    output_dir = (
+        style_packet_story.root
+        / "build"
+        / "packet-story"
+        / "style"
+        / "reference-packets"
+    )
+    output_dir.mkdir(parents=True)
+    output_path = output_dir / "frame.md"
+    os.link(alias, output_path)
+
+    result = generate_style_reference(
+        style_packet_story.root,
+        "packet-story",
+        "frame",
+    )
+
+    assert alias.read_text(encoding="utf-8") == "must remain unchanged\n"
+    assert result.output_path.read_text(encoding="utf-8").startswith(
+        "# Style Reference Packet:"
+    )
+    assert alias.stat().st_ino != result.output_path.stat().st_ino
+    assert sorted(path.name for path in output_dir.iterdir()) == ["frame.md"]
+
+
+def test_style_reference_staging_failure_preserves_previous_packet(
+    style_packet_story: StylePacketFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output_dir = (
+        style_packet_story.root
+        / "build"
+        / "packet-story"
+        / "style"
+        / "reference-packets"
+    )
+    output_dir.mkdir(parents=True)
+    output_path = output_dir / "frame.md"
+    output_path.write_text("previous good packet\n", encoding="utf-8")
+
+    def fail_fsync(_file_descriptor: int) -> None:
+        raise OSError("injected staging failure")
+
+    monkeypatch.setattr(os, "fsync", fail_fsync)
+
+    with pytest.raises(CreativeWriterError, match="injected staging failure"):
+        generate_style_reference(
+            style_packet_story.root,
+            "packet-story",
+            "frame",
+        )
+
+    assert output_path.read_text(encoding="utf-8") == "previous good packet\n"
+    assert sorted(path.name for path in output_dir.iterdir()) == ["frame.md"]
+
+
+def test_style_reference_staging_collision_preserves_unrelated_file(
+    style_packet_story: StylePacketFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output_dir = (
+        style_packet_story.root
+        / "build"
+        / "packet-story"
+        / "style"
+        / "reference-packets"
+    )
+    output_dir.mkdir(parents=True)
+    staging_path = output_dir / ".frame.md.tmp-fixed-token"
+    staging_path.write_text("unrelated staging collision\n", encoding="utf-8")
+    monkeypatch.setattr(
+        style_references_module.uuid,
+        "uuid4",
+        lambda: SimpleNamespace(hex="fixed-token"),
+    )
+
+    with pytest.raises(CreativeWriterError, match="File exists"):
+        generate_style_reference(
+            style_packet_story.root,
+            "packet-story",
+            "frame",
+        )
+
+    assert staging_path.read_text(encoding="utf-8") == (
+        "unrelated staging collision\n"
+    )
+    assert not (output_dir / "frame.md").exists()
+
+
+def test_style_reference_publish_failure_preserves_previous_packet(
+    style_packet_story: StylePacketFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output_dir = (
+        style_packet_story.root
+        / "build"
+        / "packet-story"
+        / "style"
+        / "reference-packets"
+    )
+    output_dir.mkdir(parents=True)
+    output_path = output_dir / "frame.md"
+    output_path.write_text("previous good packet\n", encoding="utf-8")
+
+    def fail_replace(_source: Path, _destination: Path) -> None:
+        raise OSError("injected publish failure")
+
+    monkeypatch.setattr(os, "replace", fail_replace)
+
+    with pytest.raises(CreativeWriterError, match="injected publish failure"):
+        generate_style_reference(
+            style_packet_story.root,
+            "packet-story",
+            "frame",
+        )
+
+    assert output_path.read_text(encoding="utf-8") == "previous good packet\n"
+    assert sorted(path.name for path in output_dir.iterdir()) == ["frame.md"]
+
+
 def test_style_reference_compiles_manifest_order_and_negative_section(
     style_packet_story: StylePacketFixture,
 ) -> None:

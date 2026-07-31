@@ -709,6 +709,28 @@ def test_check_accepts_valid_style_review_and_calibration_metadata(
     assert result.ok, [error.message for error in result.errors]
 
 
+def test_check_rejects_external_style_bearing_review_pack_manifest(
+    configured_style_story: Path,
+) -> None:
+    root = configured_style_story.parent.parent
+    external_holder = root / "external-review-pack-holder"
+    external_manifest = _write_style_review_pack(
+        external_holder,
+        _valid_review_pack_style(),
+    )
+    manifest_link = configured_style_story / "review-packs" / "external.yml"
+    manifest_link.symlink_to(external_manifest)
+
+    result = check_story(root, "configured-style")
+
+    assert not result.ok
+    assert any(
+        error.location == str(manifest_link)
+        and error.message == "review-pack manifest must not be a symlink"
+        for error in result.errors
+    )
+
+
 @pytest.mark.parametrize(
     ("field", "value", "expected"),
     [

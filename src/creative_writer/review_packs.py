@@ -8,6 +8,7 @@ from pathlib import Path
 from creative_writer.exceptions import CreativeWriterError
 from creative_writer.files import ensure_directory, load_chapter_document, load_yaml_model
 from creative_writer.models import ReviewPackEntry, ReviewPackManifest, StoryConfig
+from creative_writer.source_analysis_common import safe_relative_path
 
 IGNORED_REVIEW_PACK_FILES = {"README.md", "_template.yml"}
 
@@ -40,10 +41,55 @@ def review_packs_dir(story_dir: Path) -> Path:
     return story_dir / "review-packs"
 
 
+def _contained_review_packs_dir(story_dir: Path) -> Path:
+    expected = review_packs_dir(story_dir)
+    try:
+        directory = safe_relative_path(story_dir, "review-packs")
+    except CreativeWriterError as exc:
+        raise CreativeWriterError(
+            f"{expected}: review-packs directory must be physically contained "
+            f"and must not be a symlink: {exc}"
+        ) from exc
+    if directory.exists() and (not directory.is_dir() or directory.is_symlink()):
+        raise CreativeWriterError(
+            f"{directory}: review-packs directory must be a physical directory"
+        )
+    return directory
+
+
+def _contained_review_pack_manifest(story_dir: Path, manifest_path: Path) -> Path:
+    directory = _contained_review_packs_dir(story_dir)
+    if manifest_path.suffix != ".yml":
+        raise CreativeWriterError(
+            f"{manifest_path}: review-pack manifest must end in .yml"
+        )
+    if manifest_path.is_symlink():
+        raise CreativeWriterError(
+            f"{manifest_path}: review-pack manifest must not be a symlink"
+        )
+    try:
+        resolved_directory = directory.resolve(strict=True)
+        resolved_manifest = manifest_path.resolve(strict=True)
+    except OSError as exc:
+        raise CreativeWriterError(
+            f"{manifest_path}: unable to resolve review-pack manifest: {exc}"
+        ) from exc
+    if resolved_manifest.parent != resolved_directory:
+        raise CreativeWriterError(
+            f"{manifest_path}: review-pack manifest is outside the story "
+            f"review-packs directory {directory}"
+        )
+    if not resolved_manifest.is_file():
+        raise CreativeWriterError(
+            f"{manifest_path}: review-pack manifest is not a regular file"
+        )
+    return manifest_path
+
+
 def review_pack_manifest_paths(story_dir: Path) -> list[Path]:
     """Return real review-pack manifests for a story."""
 
-    directory = review_packs_dir(story_dir)
+    directory = _contained_review_packs_dir(story_dir)
     if not directory.exists():
         return []
 
@@ -51,22 +97,37 @@ def review_pack_manifest_paths(story_dir: Path) -> list[Path]:
     for path in sorted(directory.glob("*.yml")):
         if path.name in IGNORED_REVIEW_PACK_FILES:
             continue
-        manifests.append(path)
+        manifests.append(_contained_review_pack_manifest(story_dir, path))
     return manifests
 
 
 def _resolve_pack_manifest_path(story_dir: Path, pack: str) -> Path:
+    error = (
+        "Review-pack name must be a story-local YAML filename with an optional "
+        ".yml suffix."
+    )
+    if not isinstance(pack, str):
+        raise CreativeWriterError(error)
     pack_name = pack.strip()
-    if not pack_name:
-        raise CreativeWriterError("Review-pack name must not be empty.")
-
-    if not pack_name.endswith(".yml"):
+    candidate = Path(pack_name)
+    if (
+        not pack_name
+        or "\\" in pack_name
+        or candidate.is_absolute()
+        or len(candidate.parts) != 1
+        or pack_name in {".", ".."}
+    ):
+        raise CreativeWriterError(error)
+    if candidate.suffix:
+        if candidate.suffix != ".yml":
+            raise CreativeWriterError(error)
+    elif "." in pack_name:
+        raise CreativeWriterError(error)
+    else:
         pack_name = f"{pack_name}.yml"
 
-    manifest_path = review_packs_dir(story_dir) / pack_name
-    if not manifest_path.exists():
-        raise CreativeWriterError(f"Review-pack manifest does not exist: {manifest_path}")
-    return manifest_path
+    manifest_path = _contained_review_packs_dir(story_dir) / pack_name
+    return _contained_review_pack_manifest(story_dir, manifest_path)
 
 
 def _chapter_index(story_dir: Path, story: StoryConfig) -> dict[str, tuple[str, str]]:
@@ -108,6 +169,7 @@ def validate_review_pack_manifest(
 ) -> tuple[ReviewPackManifest, list[ResolvedReviewPackEntry]]:
     """Validate a review-pack manifest and resolve all excerpts."""
 
+    manifest_path = _contained_review_pack_manifest(story_dir, manifest_path)
     manifest = load_yaml_model(manifest_path, ReviewPackManifest)
     resolved_entries: list[ResolvedReviewPackEntry] = []
     chapter_index = chapter_index or {}

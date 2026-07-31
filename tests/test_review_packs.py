@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import shutil
 import subprocess
 
 import pytest
@@ -9,12 +10,34 @@ from creative_writer.checks import check_story
 from creative_writer.exceptions import CreativeWriterError
 from creative_writer.files import load_yaml_model
 from creative_writer.models import ReviewPackManifest
-from creative_writer.review_packs import generate_review_pack, validate_review_pack_manifest
+from creative_writer.review_packs import (
+    generate_review_pack,
+    review_pack_manifest_paths,
+    validate_review_pack_manifest,
+)
 from creative_writer.scaffold import create_story
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 STYLE_FIXTURES = REPOSITORY / "tests" / "fixtures" / "style"
+
+
+def _write_valid_review_pack_manifest(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        """title: "Boundary test"
+purpose: "Exercise story-local review-pack resolution."
+entries:
+  - id: opening-beat
+    label: "Opening beat"
+    manuscript: "manuscript/01-opening.md"
+    start_line: 1
+    end_line: 1
+    kind: uncertainty
+    question: "Should this passage receive review?"
+""",
+        encoding="utf-8",
+    )
 
 
 def test_review_pack_manifest_parses_valid_yaml(tmp_path: Path) -> None:
@@ -125,6 +148,106 @@ entries:
 
     with pytest.raises(CreativeWriterError):
         validate_review_pack_manifest(story_dir, manifest_path)
+
+
+def test_review_pack_discovery_rejects_symlinked_directory(tmp_path: Path) -> None:
+    story_dir = create_story(tmp_path, "linked-pack-directory", "original")
+    external_directory = tmp_path / "external-review-packs"
+    external_directory.mkdir()
+    _write_valid_review_pack_manifest(external_directory / "external.yml")
+    review_directory = story_dir / "review-packs"
+    shutil.rmtree(review_directory)
+    review_directory.symlink_to(external_directory, target_is_directory=True)
+
+    with pytest.raises(
+        CreativeWriterError,
+        match=r"review-packs.*directory.*symlink|redirects through a symlink",
+    ):
+        review_pack_manifest_paths(story_dir)
+
+
+def test_review_pack_discovery_rejects_symlinked_manifest(tmp_path: Path) -> None:
+    story_dir = create_story(tmp_path, "linked-pack-manifest", "original")
+    external_manifest = tmp_path / "external-review-pack.yml"
+    _write_valid_review_pack_manifest(external_manifest)
+    manifest_link = story_dir / "review-packs" / "external.yml"
+    manifest_link.symlink_to(external_manifest)
+
+    with pytest.raises(
+        CreativeWriterError,
+        match=r"external\.yml.*symlink|redirects through a symlink",
+    ):
+        review_pack_manifest_paths(story_dir)
+
+
+def test_review_pack_validation_rejects_external_regular_manifest(
+    tmp_path: Path,
+) -> None:
+    story_dir = create_story(tmp_path, "external-pack-manifest", "original")
+    external_manifest = tmp_path / "external-review-pack.yml"
+    _write_valid_review_pack_manifest(external_manifest)
+
+    with pytest.raises(
+        CreativeWriterError,
+        match=r"external-review-pack\.yml.*outside.*review-packs|physically contained",
+    ):
+        validate_review_pack_manifest(story_dir, external_manifest)
+
+
+def test_review_pack_discovery_keeps_real_manifests_and_ignores_template(
+    tmp_path: Path,
+) -> None:
+    story_dir = create_story(tmp_path, "real-pack-manifest", "original")
+    manifest_path = story_dir / "review-packs" / "first-pass.yml"
+    _write_valid_review_pack_manifest(manifest_path)
+    (story_dir / "review-packs" / "_template.yml").write_text(
+        "template only\n",
+        encoding="utf-8",
+    )
+
+    assert review_pack_manifest_paths(story_dir) == [manifest_path]
+
+
+def test_generate_review_pack_rejects_absolute_manifest_name(tmp_path: Path) -> None:
+    story_dir = create_story(tmp_path, "absolute-pack-name", "original")
+    (story_dir / "manuscript" / "01-opening.md").write_text(
+        "Opening line.\n",
+        encoding="utf-8",
+    )
+    external_manifest = tmp_path / "external-review-pack.yml"
+    _write_valid_review_pack_manifest(external_manifest)
+
+    with pytest.raises(CreativeWriterError, match="story-local YAML filename"):
+        generate_review_pack(
+            tmp_path,
+            "absolute-pack-name",
+            str(external_manifest),
+        )
+
+
+@pytest.mark.parametrize(
+    ("pack_name", "manifest_relative"),
+    [
+        ("nested/pack", "review-packs/nested/pack.yml"),
+        ("../outside", "outside.yml"),
+        (r"..\outside", r"review-packs/..\outside.yml"),
+        ("outside.md", "review-packs/outside.md.yml"),
+    ],
+)
+def test_generate_review_pack_rejects_unsafe_manifest_names(
+    tmp_path: Path,
+    pack_name: str,
+    manifest_relative: str,
+) -> None:
+    story_dir = create_story(tmp_path, "unsafe-pack-name", "original")
+    (story_dir / "manuscript" / "01-opening.md").write_text(
+        "Opening line.\n",
+        encoding="utf-8",
+    )
+    _write_valid_review_pack_manifest(story_dir / manifest_relative)
+
+    with pytest.raises(CreativeWriterError, match="story-local YAML filename"):
+        generate_review_pack(tmp_path, "unsafe-pack-name", pack_name)
 
 
 def test_generate_review_pack_creates_markdown_with_chapter_context(tmp_path: Path) -> None:

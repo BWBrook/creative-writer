@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+import os
 from pathlib import Path
 import re
+import uuid
 
 from creative_writer.exceptions import CreativeWriterError
 from creative_writer.files import ensure_directory, load_yaml_model
@@ -604,6 +606,51 @@ def _render_reference(
     return "\n".join(lines) + "\n"
 
 
+def _publish_reference_packet(root: Path, output_path: Path, content: bytes) -> None:
+    """Publish complete packet bytes without writing through the final inode."""
+
+    relative = output_path.relative_to(root).as_posix()
+    staging_path = output_path.with_name(
+        f".{output_path.name}.tmp-{uuid.uuid4().hex}"
+    )
+    staging_created = False
+    try:
+        checked = safe_relative_path(root, relative)
+        if checked != output_path:
+            raise CreativeWriterError(
+                f"Style-reference output path changed before publication: {output_path}"
+            )
+        with staging_path.open("xb") as handle:
+            staging_created = True
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+
+        checked = safe_relative_path(root, relative)
+        if checked != output_path:
+            raise CreativeWriterError(
+                f"Style-reference output path changed before publication: {output_path}"
+            )
+        os.replace(staging_path, output_path)
+    except (CreativeWriterError, OSError) as exc:
+        cleanup_error: OSError | None = None
+        if staging_created:
+            try:
+                staging_path.unlink()
+            except FileNotFoundError:
+                pass
+            except OSError as cleanup_exc:
+                cleanup_error = cleanup_exc
+        detail = (
+            f"; unable to remove staging file {staging_path}: {cleanup_error}"
+            if cleanup_error is not None
+            else ""
+        )
+        raise CreativeWriterError(
+            f"Unable to publish style-reference packet {output_path}: {exc}{detail}"
+        ) from exc
+
+
 def generate_style_reference(
     root: Path,
     slug: str,
@@ -640,6 +687,12 @@ def generate_style_reference(
         indexes,
         passages,
     )
+    packet_bytes = _render_reference(
+        slug,
+        context,
+        manifest,
+        entries,
+    ).encode("utf-8")
 
     output_dir = safe_relative_path(
         resolved_root,
@@ -650,15 +703,7 @@ def generate_style_reference(
         resolved_root,
         f"build/{slug}/style/reference-packets/{pack_name}.md",
     )
-    try:
-        output_path.write_text(
-            _render_reference(slug, context, manifest, entries),
-            encoding="utf-8",
-        )
-    except OSError as exc:
-        raise CreativeWriterError(
-            f"Unable to write style-reference packet {output_path}: {exc}"
-        ) from exc
+    _publish_reference_packet(resolved_root, output_path, packet_bytes)
 
     return StyleReferenceResult(
         story_slug=slug,

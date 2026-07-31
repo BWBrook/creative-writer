@@ -97,6 +97,45 @@ Perhaps this remains too.
     }
 
 
+def test_commonmark_heading_and_image_variants_preserve_surrounding_prose() -> None:
+    text = """Before remains.
+
+Setext heading
+continues here
+-------------
+
+![Reference hidden][plate]
+
+![Balanced hidden](images/plate_(draft).png)
+
+After remains.
+
+[plate]: images/plate.png
+"""
+
+    result = analyse_manuscript(
+        text,
+        lexicons={
+            "retained": ["before", "after"],
+            "excluded": ["setext", "continues", "reference", "balanced"],
+        },
+        speech_attribution_verbs=["said"],
+    )
+
+    assert result.word_count == 4
+    assert result.paragraph_count == 2
+    assert result.sentence_count == 2
+    assert result.paragraph_lengths == [2, 2]
+    assert result.punctuation_counts["periods"] == 2
+    assert result.lexicon_hits == {
+        "retained": [
+            LocatedSignal(TextLocation(1, 1), "Before"),
+            LocatedSignal(TextLocation(11, 11), "After"),
+        ],
+        "excluded": [],
+    }
+
+
 def test_lexicon_matching_uses_unicode_nfc_and_casefolding() -> None:
     result = analyse_manuscript(
         "CAFE\u0301 evidence remained.\n",
@@ -106,6 +145,26 @@ def test_lexicon_matching_uses_unicode_nfc_and_casefolding() -> None:
 
     assert result.lexicon_hits["epistemic"] == [
         LocatedSignal(TextLocation(1, 1), "CAFÉ evidence")
+    ]
+
+
+def test_lexicon_terms_are_deduplicated_after_token_normalization() -> None:
+    result = analyse_manuscript(
+        "CAFÉ evidence remained.\n",
+        lexicons={
+            "epistemic": [
+                "café evidence",
+                "CAFE\u0301 EVIDENCE!",
+                "café",
+                "CAFÉ",
+            ]
+        },
+        speech_attribution_verbs=["said"],
+    )
+
+    assert result.lexicon_hits["epistemic"] == [
+        LocatedSignal(TextLocation(1, 1), "CAFÉ evidence"),
+        LocatedSignal(TextLocation(1, 1), "CAFÉ"),
     ]
 
 

@@ -19,8 +19,8 @@ from creative_writer.source_metrics import sentence_spans, tokenize
 
 
 _ATX_HEADING_RE = re.compile(r"^[ \t]{0,3}#{1,6}(?:[ \t]+|$)")
+_SETEXT_UNDERLINE_RE = re.compile(r"^[ \t]{0,3}(?:=+|-+)[ \t]*$")
 _FENCE_RE = re.compile(r"^[ \t]{0,3}(`{3,}|~{3,})")
-_MARKDOWN_IMAGE_RE = re.compile(r"!\[[^\]]*\]\([^)]+\)")
 _HTML_IMAGE_RE = re.compile(r"<img\b[^>]*>", re.IGNORECASE)
 _DIALOGUE_RE = re.compile(r'“([^”]*?)”|"([^"]*?)"', re.DOTALL)
 
@@ -89,12 +89,206 @@ def _strip_html_comments(line: str, in_comment: bool) -> tuple[str, bool]:
     return "".join(visible), in_comment
 
 
-def _is_image_only(line: str) -> bool:
-    if not line.strip():
+def _consume_bracketed(text: str, start: int) -> int | None:
+    if start >= len(text) or text[start] != "[":
+        return None
+    depth = 1
+    cursor = start + 1
+    while cursor < len(text):
+        character = text[cursor]
+        if character == "\\" and cursor + 1 < len(text):
+            cursor += 2
+            continue
+        if character == "[":
+            depth += 1
+        elif character == "]":
+            depth -= 1
+            if depth == 0:
+                return cursor + 1
+        cursor += 1
+    return None
+
+
+def _consume_parenthesized(text: str, start: int) -> int | None:
+    if start >= len(text) or text[start] != "(":
+        return None
+    depth = 1
+    cursor = start + 1
+    while cursor < len(text):
+        character = text[cursor]
+        if character == "\\" and cursor + 1 < len(text):
+            cursor += 2
+            continue
+        if character == "(":
+            depth += 1
+        elif character == ")":
+            depth -= 1
+            if depth == 0:
+                return cursor + 1
+        cursor += 1
+    return None
+
+
+def _normalize_reference_label(label: str) -> str:
+    return " ".join(unicodedata.normalize("NFC", label).casefold().split())
+
+
+def _consume_markdown_image(
+    text: str,
+    start: int,
+    reference_labels: set[str],
+) -> int | None:
+    if not text.startswith("![", start):
+        return None
+    alt_end = _consume_bracketed(text, start + 1)
+    if alt_end is None:
+        return None
+
+    cursor = alt_end
+    if cursor < len(text) and text[cursor] == "(":
+        return _consume_parenthesized(text, cursor)
+
+    alt = text[start + 2 : alt_end - 1]
+    if cursor < len(text) and text[cursor] == "[":
+        label_end = _consume_bracketed(text, cursor)
+        if label_end is None:
+            return None
+        label = text[cursor + 1 : label_end - 1] or alt
+        return (
+            label_end
+            if _normalize_reference_label(label) in reference_labels
+            else None
+        )
+
+    return (
+        cursor
+        if _normalize_reference_label(alt) in reference_labels
+        else None
+    )
+
+
+def _is_image_only(line: str, reference_labels: set[str]) -> bool:
+    candidate = line.strip()
+    if not candidate:
         return False
-    without_images = _MARKDOWN_IMAGE_RE.sub("", line)
-    without_images = _HTML_IMAGE_RE.sub("", without_images)
-    return not without_images.strip()
+
+    cursor = 0
+    found_image = False
+    while cursor < len(candidate):
+        if candidate[cursor].isspace():
+            cursor += 1
+            continue
+        html_image = _HTML_IMAGE_RE.match(candidate, cursor)
+        if html_image:
+            cursor = html_image.end()
+            found_image = True
+            continue
+        markdown_image_end = _consume_markdown_image(
+            candidate,
+            cursor,
+            reference_labels,
+        )
+        if markdown_image_end is None:
+            return False
+        cursor = markdown_image_end
+        found_image = True
+    return found_image
+
+
+def _consume_bare_destination(text: str, start: int) -> int | None:
+    cursor = start
+    depth = 0
+    while cursor < len(text) and not text[cursor].isspace():
+        character = text[cursor]
+        if character == "\\" and cursor + 1 < len(text):
+            cursor += 2
+            continue
+        if character == "(":
+            depth += 1
+        elif character == ")":
+            if depth == 0:
+                return None
+            depth -= 1
+        cursor += 1
+    if cursor == start or depth:
+        return None
+    return cursor
+
+
+def _reference_definition_label(line: str) -> str | None:
+    indent = len(line) - len(line.lstrip(" \t"))
+    if indent > 3:
+        return None
+    candidate = line[indent:]
+    label_end = _consume_bracketed(candidate, 0)
+    if label_end is None or label_end >= len(candidate):
+        return None
+    if candidate[label_end] != ":":
+        return None
+
+    cursor = label_end + 1
+    while cursor < len(candidate) and candidate[cursor] in " \t":
+        cursor += 1
+    if cursor >= len(candidate):
+        return None
+    if candidate[cursor] == "<":
+        destination_end = candidate.find(">", cursor + 1)
+        if destination_end < 0:
+            return None
+        cursor = destination_end + 1
+    else:
+        destination_end = _consume_bare_destination(candidate, cursor)
+        if destination_end is None:
+            return None
+        cursor = destination_end
+
+    remainder = candidate[cursor:].strip()
+    if remainder:
+        delimiters = {'"': '"', "'": "'", "(": ")"}
+        closer = delimiters.get(remainder[0])
+        if closer is None or len(remainder) < 2 or remainder[-1] != closer:
+            return None
+
+    label = candidate[1 : label_end - 1]
+    normalized = _normalize_reference_label(label)
+    return normalized or None
+
+
+def _exclude_markdown_blocks(
+    lines: list[tuple[int, str]],
+) -> list[tuple[int, str]]:
+    reference_definitions = {
+        index: label
+        for index, (_, line) in enumerate(lines)
+        if (label := _reference_definition_label(line)) is not None
+    }
+    reference_labels = set(reference_definitions.values())
+
+    filtered = list(lines)
+    for index in reference_definitions:
+        line_number, _ = filtered[index]
+        filtered[index] = (line_number, "")
+
+    for index, (line_number, line) in enumerate(filtered):
+        if _ATX_HEADING_RE.match(line) or _is_image_only(
+            line,
+            reference_labels,
+        ):
+            filtered[index] = (line_number, "")
+
+    for index, (line_number, line) in enumerate(filtered):
+        if not _SETEXT_UNDERLINE_RE.match(line):
+            continue
+        previous = index - 1
+        if previous < 0 or not filtered[previous][1].strip():
+            continue
+        filtered[index] = (line_number, "")
+        while previous >= 0 and filtered[previous][1].strip():
+            previous_line_number, _ = filtered[previous]
+            filtered[previous] = (previous_line_number, "")
+            previous -= 1
+
+    return filtered
 
 
 def _prose_lines(text: str) -> list[tuple[int, str]]:
@@ -126,11 +320,9 @@ def _prose_lines(text: str) -> list[tuple[int, str]]:
             lines.append((line_number, ""))
             continue
 
-        if _ATX_HEADING_RE.match(visible) or _is_image_only(visible):
-            visible = ""
         lines.append((line_number, visible))
 
-    return lines
+    return _exclude_markdown_blocks(lines)
 
 
 def _paragraphs(lines: Sequence[tuple[int, str]]) -> list[_Paragraph]:
@@ -204,11 +396,17 @@ def _lexicon_hits(
 ) -> dict[str, list[LocatedSignal]]:
     results: dict[str, list[LocatedSignal]] = {}
     for name, terms in lexicons.items():
-        normalized_terms = [
-            tuple(token.casefold() for token in tokenize(term))
-            for term in terms
-        ]
-        normalized_terms = [term for term in normalized_terms if term]
+        normalized_terms: list[tuple[str, ...]] = []
+        seen_terms: set[tuple[str, ...]] = set()
+        for declared_term in terms:
+            term = tuple(
+                token.casefold()
+                for token in tokenize(declared_term)
+            )
+            if not term or term in seen_terms:
+                continue
+            seen_terms.add(term)
+            normalized_terms.append(term)
         hits: list[LocatedSignal] = []
         for paragraph in paragraphs:
             tokens = paragraph.tokens

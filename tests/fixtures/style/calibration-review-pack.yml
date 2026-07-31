@@ -1,0 +1,51 @@
+title: "Synthetic style calibration"
+purpose: "Exercise the selective human escalation surface without using manuscript prose"
+entries:
+  - id: repeated-phrase
+    label: "Repeated phrase"
+    manuscript: manuscript/calibration-manuscript.md
+    start_line: 1
+    end_line: 3
+    kind: uncertainty
+    question: "Is the repeated phrase functioning as deliberate testimony structure, or should the profile continue to flag it as reusable cadence?"
+    style:
+      finding_ids: [finding-001]
+      profile_id: wells-1895-1899
+      profile_version: 1.0.0
+      claim_ids: []
+      narrative_role: reported-account
+      ai_disposition: escalate
+      ai_rationale: "The frame-and-testimony packet contains mediated repetition but does not establish when repeated phrasing is deliberate structure rather than reusable cadence."
+      decision_impact: "The answer will guide later Permian chapters and the use of diagnostic-repeated-phrases for deliberate testimony repetition."
+  - id: notebook-cadence
+    label: "Notebook cadence"
+    manuscript: manuscript/calibration-manuscript.md
+    start_line: 4
+    end_line: 6
+    kind: uncertainty
+    question: "Is the even notebook cadence an authentic documentary effect, or does it flatten the Time Traveller's reported voice?"
+    style:
+      finding_ids: [finding-002]
+      profile_id: wells-1895-1899
+      profile_version: 1.0.0
+      claim_ids: []
+      narrative_role: notebook
+      ai_disposition: escalate
+      ai_rationale: "The traveller-account packet shows authentic role-shaped syntax variation but establishes no target notebook rhythm, so revision remains uncertain."
+      decision_impact: "The answer will guide later Permian chapters and the use of diagnostic-uniform-cadence for documentary notebook rhythm."
+  - id: modern-exposition
+    label: "Modern exposition"
+    manuscript: manuscript/calibration-manuscript.md
+    start_line: 7
+    end_line: 9
+    kind: uncertainty
+    question: "Does the generic scanner identify a real modern explanatory habit here, or is it colliding with legitimate period scientific exposition?"
+    style:
+      finding_ids: [finding-003]
+      profile_id: wells-1895-1899
+      profile_version: 1.0.0
+      claim_ids: []
+      narrative_role: scientific-exposition
+      ai_disposition: escalate
+      ai_rationale: "The observation-and-exposition packet permits scientific explanation while the profile warns against modern hard-SF confidence, leaving the generic scanner collision genuinely ambiguous."
+      decision_impact: "The answer will guide later Permian chapters and the use of anti-drift-modern-hard-sf-explanation for explanatory prose."

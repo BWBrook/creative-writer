@@ -101,9 +101,13 @@ independent acceptance re-review. Its final evidence layer contains six
 validated and four qualified claims, with no rejected or strong-confidence
 claims. The compiled report is available at
 `build/time-expedition/source-study/validation/current/analysis-report.md`.
-Barry gave substantive approval on 23 July 2026. The agreed next sequence is
-Permian story ideation, then a separately designed Phase 2C, followed by the
-Permian research dossier before manuscript drafting.
+Barry gave substantive approval on 23 July 2026. Phase 2C v1 is now
+operational: its provenance-locked Wells profile, six curated packets,
+score-free advisory lint reports, and tracked calibration surfaces work end to
+end. The first substantive Permian chapter is the next style-calibration event;
+synthetic and placeholder prose will not be used for repeated threshold tuning.
+The immediate next project tranche is the dual-layer Permian research dossier,
+before detailed chapter and scene architecture or manuscript drafting.
 
 For a simple script wrapper, you can also run:
 

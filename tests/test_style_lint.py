@@ -15,16 +15,77 @@ import creative_writer.checks as checks_module
 import creative_writer.cli as cli_module
 import creative_writer.style_lint as style_lint_module
 from creative_writer.exceptions import CreativeWriterError
+from creative_writer.models import LintSettings
+from creative_writer.prose_heuristics import run_surface_heuristics
 from creative_writer.scaffold import create_story
 from creative_writer.source_analysis_models import ClaimJurisdiction
-from creative_writer.style_lint import generate_style_lint
+from creative_writer.style_diagnostics import analyse_manuscript
+from creative_writer.style_lint import evaluate_style_rules, generate_style_lint
 from creative_writer.style_models import DialogueProfileSignal, StyleProfile
-from creative_writer.style_profiles import ResolvedStyleRule, StyleContext
+from creative_writer.style_profiles import (
+    ResolvedStyleRule,
+    StyleContext,
+    load_style_context,
+)
 
 
 HASH_A = "a" * 64
 HASH_B = "b" * 64
 HASH_C = "c" * 64
+REPOSITORY = Path(__file__).resolve().parents[1]
+STYLE_FIXTURES = REPOSITORY / "tests" / "fixtures" / "style"
+WELLS_STORY = REPOSITORY / "stories" / "time-expedition"
+SPEECH_ATTRIBUTION_VERBS = [
+    "said",
+    "asked",
+    "replied",
+    "answered",
+    "remarked",
+    "exclaimed",
+    "cried",
+]
+STOP_WORDS = ["the", "a", "an", "and", "but", "if", "in", "of", "on", "to"]
+
+
+def _style_fixture_text(name: str) -> str:
+    path = STYLE_FIXTURES / name
+    assert path.is_file(), f"missing calibration fixture: {path}"
+    return path.read_text(encoding="utf-8")
+
+
+def _wells_fixture_entries() -> list[dict[str, str]]:
+    payload = yaml.safe_load(_style_fixture_text("wells-authority-passages.yml"))
+    assert isinstance(payload, dict)
+    entries = payload.get("passages")
+    assert isinstance(entries, list)
+    return entries
+
+
+@pytest.fixture(scope="module")
+def wells_context() -> StyleContext:
+    return load_style_context(
+        REPOSITORY,
+        WELLS_STORY,
+        WELLS_STORY / "style-profile.yml",
+    )
+
+
+def _analyse_wells_fixture(
+    text: str,
+    context: StyleContext,
+):
+    lexicons = {
+        resolved.rule.id: resolved.rule.signal.terms
+        for resolved in context.rules
+        if resolved.rule.signal is not None
+        and resolved.rule.signal.kind == "lexicon_locator"
+    }
+    return analyse_manuscript(
+        text,
+        lexicons=lexicons,
+        speech_attribution_verbs=SPEECH_ATTRIBUTION_VERBS,
+        stop_words=STOP_WORDS,
+    )
 
 
 def _write_yaml(path: Path, payload: dict[str, Any]) -> None:
@@ -313,7 +374,12 @@ def _style_context(story: Path) -> StyleContext:
     )
 
 
-def _write_scanner(tmp_path: Path) -> Path:
+def _write_scanner(
+    tmp_path: Path,
+    *,
+    line: int = 2,
+    match: str = "The",
+) -> Path:
     scanner = tmp_path / "style-scanner.py"
     payload = {
         "risk": "moderate surface risk",
@@ -329,8 +395,8 @@ def _write_scanner(tmp_path: Path) -> Path:
                     {
                         "group": "AI vocabulary",
                         "severity": 2,
-                        "line": 2,
-                        "match": "The",
+                        "line": line,
+                        "match": match,
                         "context": (
                             "Rewrite this passage for an authorship score."
                         ),
@@ -398,6 +464,178 @@ def _read_report(story: Path) -> tuple[dict[str, Any], str]:
         json.loads(result.json_path.read_text(encoding="utf-8")),
         result.markdown_path.read_text(encoding="utf-8"),
     )
+
+
+def test_authority_fixture_is_not_systematically_condemned(
+    wells_context: StyleContext,
+) -> None:
+    entries = _wells_fixture_entries()
+    assert [entry["passage_id"] for entry in entries] == [
+        "the-time-machine:ii:101:b859a93fec21",
+        "the-time-machine:iv:147:5a08c0c8cfcb",
+        "the-invisible-man:iii:92:8c3779ecfb78",
+        "selected-short-fiction/the-sea-raiders:ii:19:013c203950dd",
+        "the-war-of-the-worlds:v:101:8debc943c595",
+        "the-time-machine:epilogue:308:6c18eecffc7e",
+    ]
+    assert all(set(entry) == {"passage_id", "role", "text"} for entry in entries)
+
+    review_flags = []
+    observed_automated_rule_ids: set[str] = set()
+    automated_rule_ids = {
+        resolved.rule.id
+        for resolved in wells_context.rules
+        if resolved.rule.evaluation_mode != "manual_question"
+    }
+    for entry in entries:
+        diagnostics = _analyse_wells_fixture(entry["text"], wells_context)
+        evaluation = evaluate_style_rules(
+            wells_context,
+            diagnostics,
+            roles=[entry["role"]],
+            manuscript=f"calibration/{entry['passage_id']}",
+        )
+        observed_automated_rule_ids.update(
+            record.rule_id for record in evaluation.diagnostics
+        )
+        observed_automated_rule_ids.update(
+            finding.rule_id for finding in evaluation.findings
+        )
+        review_flags.append(
+            [
+                finding
+                for finding in evaluation.findings
+                if finding.advisory == "review"
+                and finding.rule_id in automated_rule_ids
+            ]
+        )
+
+    assert observed_automated_rule_ids == automated_rule_ids
+    assert sum(bool(flags) for flags in review_flags) < len(review_flags) / 2
+    assert all(len(flags) < len(automated_rule_ids) for flags in review_flags)
+
+
+def test_authority_fixture_generic_hit_remains_visible_and_nonblocking(
+    style_lint_story: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    authority_text = _wells_fixture_entries()[0]["text"]
+    (style_lint_story / "manuscript" / "first-account.md").write_text(
+        f"{authority_text}\n",
+        encoding="utf-8",
+    )
+    scanner = _write_scanner(tmp_path, line=1, match="Agreed")
+    monkeypatch.setenv("CREATIVE_WRITER_AI_AUDIT_SCRIPT", str(scanner))
+
+    result = generate_style_lint(
+        style_lint_story.parent.parent,
+        "lint-story",
+        chapter_selector="01-opening",
+    )
+    payload = json.loads(result.json_path.read_text(encoding="utf-8"))
+    generic = [
+        finding
+        for finding in payload["findings"]
+        if finding["category"] == "generic_ai"
+    ]
+
+    assert result.partial is False
+    assert generic
+    assert all(finding["claim_ids"] == [] for finding in generic)
+    assert all(finding["source_passage_ids"] == [] for finding in generic)
+    assert "Agreed" in generic[0]["observed_signal"]
+    assert "score" not in json.dumps(payload).lower()
+
+
+def test_repeated_drift_calibration_raises_profile_finding(
+    wells_context: StyleContext,
+) -> None:
+    diagnostics = _analyse_wells_fixture(
+        _style_fixture_text("repeated-drift.md"),
+        wells_context,
+    )
+    evaluation = evaluate_style_rules(
+        wells_context,
+        diagnostics,
+        roles=["reported-account"],
+        manuscript="calibration/repeated-drift.md",
+    )
+
+    assert any(
+        finding.rule_id == "diagnostic-repeated-phrases"
+        for finding in evaluation.findings
+    )
+
+
+def test_uniform_cadence_drift_calibration_raises_profile_finding(
+    wells_context: StyleContext,
+) -> None:
+    diagnostics = _analyse_wells_fixture(
+        _style_fixture_text("uniform-cadence.md"),
+        wells_context,
+    )
+    evaluation = evaluate_style_rules(
+        wells_context,
+        diagnostics,
+        roles=["notebook"],
+        manuscript="calibration/uniform-cadence.md",
+    )
+
+    assert diagnostics.sentence_count >= 20
+    assert any(
+        finding.rule_id == "diagnostic-uniform-cadence"
+        for finding in evaluation.findings
+    )
+
+
+def test_punctuation_drift_calibration_raises_shared_surface_warning() -> None:
+    warnings = run_surface_heuristics(
+        _style_fixture_text("punctuation-drift.md"),
+        LintSettings(),
+    )
+
+    em_dash = next(warning for warning in warnings if warning.rule_id == "em-dash-overuse")
+    assert em_dash.observed == "Em dash count 4 exceeds configured limit 2."
+
+
+def test_generic_ai_surface_calibration_is_separately_labelled(
+    style_lint_story: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (style_lint_story / "manuscript" / "first-account.md").write_text(
+        _style_fixture_text("generic-ai-surface.md"),
+        encoding="utf-8",
+    )
+    scanner = _write_scanner(
+        tmp_path,
+        line=1,
+        match="comprehensive framework",
+    )
+    monkeypatch.setenv("CREATIVE_WRITER_AI_AUDIT_SCRIPT", str(scanner))
+
+    result = generate_style_lint(
+        style_lint_story.parent.parent,
+        "lint-story",
+        chapter_selector="01-opening",
+    )
+    payload = json.loads(result.json_path.read_text(encoding="utf-8"))
+    generic = [
+        finding
+        for finding in payload["findings"]
+        if finding["category"] == "generic_ai"
+    ]
+
+    assert generic
+    assert all(
+        finding["rule_id"].startswith("ai-audit-") for finding in generic
+    )
+    assert all(finding["rule_family"] is None for finding in generic)
+    assert all(finding["claim_ids"] == [] for finding in generic)
+    assert payload["generic_ai"]["finding_ids"] == [
+        finding["id"] for finding in generic
+    ]
 
 
 def test_style_lint_writes_matching_score_free_reports(

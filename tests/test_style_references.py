@@ -578,6 +578,44 @@ def test_style_reference_compiles_manifest_order_and_negative_section(
     assert rendered_entry_ids == ["positive", "variation", "control"]
 
 
+def test_tier_four_calibration_entries_are_never_positive_guidance(
+    style_packet_story: StylePacketFixture,
+) -> None:
+    result = generate_style_reference(
+        style_packet_story.root,
+        "packet-story",
+        "frame",
+    )
+    body = result.output_path.read_text(encoding="utf-8")
+    positive_section, negative_section = body.split(
+        "## Negative comparisons",
+        maxsplit=1,
+    )
+    packet = style_packet_story.context.packets["frame"]
+    tier_four_ids = {
+        entry.passage_id
+        for entry in packet.entries
+        if entry.authority_tier == 4
+    }
+    control_texts = {
+        record.original_text
+        for record in parse_passage_partition(
+            style_packet_story.index_bytes["tier4_controls"]
+        )
+        if record.passage_id in tier_four_ids
+    }
+
+    assert tier_four_ids
+    assert all(
+        entry.kind == "negative_control"
+        for entry in packet.entries
+        if entry.authority_tier == 4
+    )
+    assert all(text not in positive_section for text in control_texts)
+    assert all(text in negative_section for text in control_texts)
+    assert "never a positive Wells model" in negative_section
+
+
 @pytest.mark.parametrize(
     "entry_ids",
     [

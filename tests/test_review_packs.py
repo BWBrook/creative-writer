@@ -13,6 +13,10 @@ from creative_writer.review_packs import generate_review_pack, validate_review_p
 from creative_writer.scaffold import create_story
 
 
+REPOSITORY = Path(__file__).resolve().parents[1]
+STYLE_FIXTURES = REPOSITORY / "tests" / "fixtures" / "style"
+
+
 def test_review_pack_manifest_parses_valid_yaml(tmp_path: Path) -> None:
     manifest_path = tmp_path / "sample.yml"
     manifest_path.write_text(
@@ -263,6 +267,91 @@ entries:
         in output
     )
     assert output.index(style_block) < output.index("### Excerpt")
+
+
+def test_synthetic_style_calibration_review_pack_compiles(
+    tmp_path: Path,
+) -> None:
+    manuscript_fixture = STYLE_FIXTURES / "calibration-manuscript.md"
+    manifest_fixture = STYLE_FIXTURES / "calibration-review-pack.yml"
+    assert manuscript_fixture.is_file(), (
+        f"missing calibration fixture: {manuscript_fixture}"
+    )
+    assert manifest_fixture.is_file(), (
+        f"missing calibration fixture: {manifest_fixture}"
+    )
+    manuscript_text = manuscript_fixture.read_text(encoding="utf-8")
+    manuscript_lines = manuscript_text.splitlines()
+    assert len(manuscript_lines) == 9
+    assert all(line.strip() for line in manuscript_lines)
+
+    story_dir = create_story(tmp_path, "synthetic-calibration", "original")
+    (story_dir / "manuscript" / "calibration-manuscript.md").write_text(
+        manuscript_text,
+        encoding="utf-8",
+    )
+    target_manifest = story_dir / "review-packs" / "calibration.yml"
+    target_manifest.write_bytes(manifest_fixture.read_bytes())
+
+    manifest = load_yaml_model(target_manifest, ReviewPackManifest)
+    result = generate_review_pack(
+        tmp_path,
+        "synthetic-calibration",
+        "calibration",
+    )
+    output = result.output_path.read_text(encoding="utf-8")
+    expected_questions = [
+        "Is the repeated phrase functioning as deliberate testimony structure, or should the profile continue to flag it as reusable cadence?",
+        "Is the even notebook cadence an authentic documentary effect, or does it flatten the Time Traveller's reported voice?",
+        "Does the generic scanner identify a real modern explanatory habit here, or is it colliding with legitimate period scientific exposition?",
+    ]
+    expected_roles = [
+        "reported-account",
+        "notebook",
+        "scientific-exposition",
+    ]
+    expected_rule_ids = [
+        "diagnostic-repeated-phrases",
+        "diagnostic-uniform-cadence",
+        "anti-drift-modern-hard-sf-explanation",
+    ]
+
+    assert result.entry_count == 3
+    assert manifest.title == "Synthetic style calibration"
+    assert manifest.purpose == (
+        "Exercise the selective human escalation surface without using "
+        "manuscript prose"
+    )
+    assert [entry.kind for entry in manifest.entries] == ["uncertainty"] * 3
+    assert [entry.id for entry in manifest.entries] == [
+        "repeated-phrase",
+        "notebook-cadence",
+        "modern-exposition",
+    ]
+    assert [
+        (entry.start_line, entry.end_line) for entry in manifest.entries
+    ] == [(1, 3), (4, 6), (7, 9)]
+    assert [entry.question for entry in manifest.entries] == expected_questions
+    assert all(entry.style is not None for entry in manifest.entries)
+    styles = [entry.style for entry in manifest.entries if entry.style is not None]
+    assert [style.finding_ids for style in styles] == [
+        ["finding-001"],
+        ["finding-002"],
+        ["finding-003"],
+    ]
+    assert [style.narrative_role for style in styles] == expected_roles
+    assert all(style.profile_id == "wells-1895-1899" for style in styles)
+    assert all(style.profile_version == "1.0.0" for style in styles)
+    assert all(style.ai_disposition == "escalate" for style in styles)
+    assert all("packet" in style.ai_rationale.lower() for style in styles)
+    assert all(
+        "later Permian chapters" in style.decision_impact
+        and rule_id in style.decision_impact
+        for style, rule_id in zip(styles, expected_rule_ids, strict=True)
+    )
+    assert output.count("### Style calibration context") == 3
+    assert output.count("- Reviewer question:") == 3
+    assert all(question in output for question in expected_questions)
 
 
 def test_check_warns_when_excerpt_pack_mode_has_no_real_manifests(tmp_path: Path) -> None:

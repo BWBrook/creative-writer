@@ -22,6 +22,8 @@ from creative_writer.scaffold import create_story, list_style_cards
 from creative_writer.source_admission import check_source_admission
 from creative_writer.source_analysis import run_source_analysis
 from creative_writer.stats import generate_story_statistics
+from creative_writer.style_lint import generate_style_lint
+from creative_writer.style_references import generate_style_reference
 
 
 _SOURCE_ANALYSIS_OUTPUT_KEYS = {
@@ -103,6 +105,35 @@ def build_parser() -> argparse.ArgumentParser:
 
     check = subparsers.add_parser("check", help="Run coherence and style checks.")
     check.add_argument("--story", required=True, help="Story slug.")
+
+    style_lint = subparsers.add_parser(
+        "style-lint",
+        help="Generate an evidence-linked advisory style report.",
+    )
+    style_lint.add_argument("--story", required=True, help="Story slug.")
+    style_lint.add_argument(
+        "--profile",
+        help="Optional story-local style-profile path override.",
+    )
+    style_lint.add_argument(
+        "--chapter",
+        help="Optional chapter stub, manuscript, or exact stem selector.",
+    )
+
+    style_reference = subparsers.add_parser(
+        "style-reference",
+        help="Compile one curated style-reference packet.",
+    )
+    style_reference.add_argument("--story", required=True, help="Story slug.")
+    style_reference.add_argument(
+        "--pack",
+        required=True,
+        help="Style-reference packet name (with or without .yml).",
+    )
+    style_reference.add_argument(
+        "--profile",
+        help="Optional story-local style-profile path override.",
+    )
 
     epub = subparsers.add_parser("epub", help="Build an EPUB for a story.")
     epub.add_argument("--story", required=True, help="Story slug.")
@@ -250,6 +281,32 @@ def main(argv: list[str] | None = None) -> int:
                 return 0
             print(f"Check failed with {len(result.errors)} blocking issue(s).", file=sys.stderr)
             return 1
+
+        if args.command == "style-lint":
+            result = generate_style_lint(
+                root,
+                args.story,
+                profile_override=args.profile,
+                chapter_selector=args.chapter,
+            )
+            print(f"Style lint Markdown report written to {result.markdown_path}")
+            print(f"Style lint JSON report written to {result.json_path}")
+            print(f"Findings: {result.finding_count}")
+            print(f"Result status: {'partial' if result.partial else 'complete'}")
+            return 0
+
+        if args.command == "style-reference":
+            result = generate_style_reference(
+                root,
+                args.story,
+                args.pack,
+                profile_override=args.profile,
+            )
+            print(f"Style reference packet written to {result.output_path}")
+            print(f"Entries: {result.entry_count}")
+            prepared = "yes" if result.source_indexes_prepared else "no"
+            print(f"Source indexes prepared: {prepared}")
+            return 0
 
         if args.command in {"epub", "pdf"}:
             output_path = build_story(root, args.story, args.command)

@@ -66,6 +66,9 @@ make pdf STORY=mars-2044-cave
 make stats STORY=mars-2044-cave
 make ai-audit STORY=mars-2044-cave
 make review-pack STORY=mars-2044-cave PACK=first-human-pass
+make style-lint STORY=time-expedition
+make style-lint STORY=time-expedition CHAPTER=01-last-week-of-the-permian
+make style-reference STORY=time-expedition PACK=frame-and-testimony
 make source-analysis STORY=time-expedition STAGE=prepare
 make test
 ```
@@ -143,6 +146,78 @@ than the default Codex skill path.
 - per-chapter counts for clues, plot devices, and real scene cards,
 - a scene-card section that ignores `README.md` and `_template.md`,
 - a plot-device section summarizing the tracked structural machinery of the story.
+
+## Evidence-linked style workflow
+
+A story can opt into evidence-linked style work through `contract.yml`:
+
+```yaml
+style_lint:
+  profile: style-profile.yml
+  generic_ai_audit: true
+```
+
+The profile path in `contract.yml` is story-relative. Stories without this
+section retain the existing check, build, audit, and review-pack behaviour.
+Either public style command can instead use `--profile`/`PROFILE` as a
+story-local override:
+
+```bash
+creative-writer style-lint --story <slug>
+creative-writer style-lint --story <slug> --profile <path> --chapter <chapter>
+creative-writer style-reference --story <slug> --pack <name>
+creative-writer style-reference --story <slug> --pack <name> --profile <path>
+
+make style-lint STORY=<slug>
+make style-lint STORY=<slug> PROFILE=<path> CHAPTER=<chapter>
+make style-reference STORY=<slug> PACK=<name>
+make style-reference STORY=<slug> PACK=<name> PROFILE=<path>
+```
+
+`style-lint` requires a configured profile or an override. Its default
+whole-story run writes matching advisory reports to
+`build/<slug>/style/lint-report.md` and
+`build/<slug>/style/lint-report.json`. A chapter selector writes a distinct
+pair to `build/<slug>/style/chapters/<chapter>-lint-report.md` and
+`build/<slug>/style/chapters/<chapter>-lint-report.json`. Selectors accept an
+exact configured stub path, manuscript path, filename, or unambiguous stem.
+
+The report keeps six reader-facing surfaces separate:
+
+1. Run scope plus the declared chapter role and packet inventory.
+2. Evidence-backed Wells practice questions and findings.
+3. Contextual diagnostics, including story-level repetition and cadence observations.
+4. Negative or comparative anti-drift observations and unresolved manual questions.
+5. Existing em-dash and contrastive-parallelism surface warnings.
+6. Generic AI-writing signals from the optional external scanner.
+
+These are advisory review prompts, never an authenticity score, authorship
+verdict, or automatic rewrite. A finding does not make the command fail.
+Malformed configuration, missing or stale provenance, invalid claims or
+source references, unknown chapter role or packet IDs, unreadable inputs, and
+report execution failures are blocking errors. If the optional scanner is
+unavailable, the other five surfaces still run and the successful report is
+marked `partial`. A present scanner that fails or returns malformed data is an
+execution error. Set `generic_ai_audit: false` to record that surface as
+disabled instead of partial.
+
+`style-reference` compiles one curated manifest to
+`build/<slug>/style/reference-packets/<pack>.md`. This explicit command may
+prepare missing, hash-pinned Phase 2B passage indexes; it reports whether it
+did so. Compiled packets preserve profile, claim, passage, source, authority,
+and selection provenance. Tier 4 material is confined to negative comparison.
+Reference text is for studying narrative method, evidentiary sequence, role,
+and cadence: do not borrow distinctive phrases, sentence skeletons, images,
+or local wording.
+
+When style lint is configured, `make check` validates the profile and its
+tracked Phase 2B provenance, every real
+`style-reference-packets/*.yml` manifest (excluding `_template.yml` and
+`README.md`), and explicit chapter role/packet metadata. It neither requires
+nor prepares generated passage indexes, and it never runs the Phase 2C
+manuscript style engine or external scanner. The older contract-configured
+em-dash and contrastive-parallelism warnings remain unchanged; run
+`style-lint` explicitly for the six-surface manuscript report.
 
 `make review-pack` reads a manifest from `stories/<slug>/review-packs/<pack>.yml`
 and writes a readable Markdown packet to `build/<slug>/reviews/<pack>.md`. Each

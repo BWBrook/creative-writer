@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import subprocess
 
 import pytest
 
@@ -230,3 +231,28 @@ entries:
 
     assert result.ok
     assert not result.warnings
+
+
+def test_make_review_pack_remains_unchanged_by_style_options() -> None:
+    repository = Path(__file__).resolve().parents[1]
+    completed = subprocess.run(
+        [
+            "make",
+            "-n",
+            "review-pack",
+            "STORY=time-expedition",
+            "PACK=first-human-pass",
+            "PROFILE=style-profile.yml",
+            "CHAPTER=01-last-week-of-the-permian",
+        ],
+        cwd=repository,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert completed.stdout.strip() == (
+        'uv run creative-writer review-pack --story "time-expedition" '
+        '--pack "first-human-pass"'
+    )

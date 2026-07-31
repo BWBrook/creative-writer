@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
@@ -10,6 +11,7 @@ from typing import Any
 import pytest
 import yaml
 
+import creative_writer.cli as cli_module
 import creative_writer.style_lint as style_lint_module
 from creative_writer.exceptions import CreativeWriterError
 from creative_writer.scaffold import create_story
@@ -378,6 +380,10 @@ def style_lint_story(tmp_path: Path, monkeypatch) -> Path:
     monkeypatch.setattr(
         style_lint_module,
         "load_style_context",
+        lambda root, story_dir, profile_path: context,
+    )
+    monkeypatch.setattr(
+        "creative_writer.checks.load_style_context",
         lambda root, story_dir, profile_path: context,
     )
     scanner = _write_scanner(tmp_path)
@@ -1052,3 +1058,120 @@ def test_style_lint_rejects_malformed_profile(tmp_path: Path) -> None:
     assert not (
         tmp_path / "build/malformed-style/reports/coherence-report.md"
     ).exists()
+
+
+def test_style_lint_parser_accepts_optional_profile_and_chapter() -> None:
+    args = cli_module.build_parser().parse_args(
+        [
+            "style-lint",
+            "--story",
+            "time-expedition",
+            "--profile",
+            "style-profile.yml",
+            "--chapter",
+            "01-last-week-of-the-permian",
+        ]
+    )
+
+    assert vars(args) == {
+        "command": "style-lint",
+        "story": "time-expedition",
+        "profile": "style-profile.yml",
+        "chapter": "01-last-week-of-the-permian",
+    }
+
+
+def test_style_lint_parser_defaults_optional_arguments_to_none() -> None:
+    args = cli_module.build_parser().parse_args(
+        ["style-lint", "--story", "time-expedition"]
+    )
+
+    assert args.profile is None
+    assert args.chapter is None
+
+
+def test_style_lint_cli_reports_both_generated_paths(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    markdown_path = tmp_path / "build/story/style/lint-report.md"
+    json_path = tmp_path / "build/story/style/lint-report.json"
+    calls: list[tuple[Path, str, str | None, str | None]] = []
+
+    def generate(
+        root: Path,
+        slug: str,
+        *,
+        profile_override: str | None,
+        chapter_selector: str | None,
+    ) -> SimpleNamespace:
+        calls.append((root, slug, profile_override, chapter_selector))
+        return SimpleNamespace(
+            markdown_path=markdown_path,
+            json_path=json_path,
+            finding_count=3,
+            partial=False,
+        )
+
+    monkeypatch.setattr(cli_module, "repo_root", lambda: tmp_path)
+    monkeypatch.setattr(cli_module, "generate_style_lint", generate, raising=False)
+
+    status = cli_module.main(
+        [
+            "style-lint",
+            "--story",
+            "story",
+            "--profile",
+            "profiles/wells.yml",
+            "--chapter",
+            "01-opening",
+        ]
+    )
+
+    assert status == 0
+    assert calls == [(tmp_path, "story", "profiles/wells.yml", "01-opening")]
+    assert capsys.readouterr().out.splitlines() == [
+        f"Style lint Markdown report written to {markdown_path}",
+        f"Style lint JSON report written to {json_path}",
+        "Findings: 3",
+        "Result status: complete",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("variables", "expected"),
+    [
+        (
+            ["STORY=time-expedition"],
+            'uv run creative-writer style-lint --story "time-expedition"',
+        ),
+        (
+            [
+                "STORY=time-expedition",
+                "PROFILE=style-profile.yml",
+                "CHAPTER=01-last-week-of-the-permian",
+            ],
+            (
+                'uv run creative-writer style-lint --story "time-expedition" '
+                '--profile "style-profile.yml" '
+                '--chapter "01-last-week-of-the-permian"'
+            ),
+        ),
+    ],
+)
+def test_make_style_lint_omits_empty_optional_flags(
+    variables: list[str],
+    expected: str,
+) -> None:
+    repository = Path(__file__).resolve().parents[1]
+    completed = subprocess.run(
+        ["make", "-n", "style-lint", *variables],
+        cwd=repository,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert completed.stdout == f"{expected}\n"

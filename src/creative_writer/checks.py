@@ -21,6 +21,12 @@ from creative_writer.models import (
 )
 from creative_writer.prose_heuristics import run_surface_heuristics
 from creative_writer.review_packs import review_pack_manifest_paths, validate_review_pack_manifest
+from creative_writer.style_models import StyleReferencePacket
+from creative_writer.style_profiles import (
+    load_style_context,
+    validate_chapter_style_metadata,
+)
+from creative_writer.style_references import style_reference_manifest_paths
 
 MANDATORY_ARTIFACTS = [
     "story.yml",
@@ -192,6 +198,62 @@ def _extract_image_paths(markdown: str) -> set[str]:
     paths = set(MARKDOWN_IMAGE_PATTERN.findall(markdown))
     paths.update(HTML_IMAGE_PATTERN.findall(markdown))
     return {path for path in paths if path and not path.startswith("http")}
+
+
+def _validate_configured_style(
+    root: Path,
+    story_dir: Path,
+    result: CheckResult,
+) -> None:
+    if result.contract is None or result.contract.style_lint is None:
+        return
+
+    profile_path = story_dir / result.contract.style_lint.profile
+    manifest_paths = style_reference_manifest_paths(story_dir)
+    manifests: dict[str, Path] = {}
+    invalid_manifest = False
+    for manifest_path in manifest_paths:
+        try:
+            manifest = load_yaml_model(manifest_path, StyleReferencePacket)
+        except CreativeWriterError as exc:
+            _add_error(result, manifest_path, str(exc))
+            invalid_manifest = True
+            continue
+        if manifest.id != manifest_path.stem:
+            _add_error(
+                result,
+                manifest_path,
+                f"Packet file declares ID {manifest.id}, expected {manifest_path.stem}",
+            )
+            invalid_manifest = True
+            continue
+        manifests[manifest.id] = manifest_path
+
+    if invalid_manifest:
+        return
+
+    try:
+        context = load_style_context(root, story_dir, profile_path)
+    except CreativeWriterError as exc:
+        _add_error(result, profile_path, str(exc))
+        return
+
+    for packet_id, manifest_path in manifests.items():
+        if packet_id not in context.packets:
+            _add_error(
+                result,
+                manifest_path,
+                f"Style-reference packet {packet_id} is not declared by "
+                "the configured profile.",
+            )
+
+    for metadata_error in validate_chapter_style_metadata(context, result.chapters):
+        location, separator, message = metadata_error.partition(": ")
+        _add_error(
+            result,
+            location if separator else profile_path,
+            message if separator else metadata_error,
+        )
 
 
 def check_story(root: Path, slug: str) -> CheckResult:
@@ -430,18 +492,20 @@ def check_story(root: Path, slug: str) -> CheckResult:
         except CreativeWriterError as exc:
             _add_error(result, manifest_path, str(exc))
 
+    _validate_configured_style(root, story_dir, result)
+
     report_body = _render_report(
         result,
-            story_dir,
-            {
-                "characters": len(registry_ids["characters"]),
-                "clues": len(registry_ids["clues"]),
-                "locations": len(registry_ids["locations"]),
-                "timeline": len(registry_ids["timeline"]),
-                "plot_devices": len(registry_ids["plot_devices"]),
-            },
-            scene_cards_by_chapter,
-            plot_devices,
-        )
+        story_dir,
+        {
+            "characters": len(registry_ids["characters"]),
+            "clues": len(registry_ids["clues"]),
+            "locations": len(registry_ids["locations"]),
+            "timeline": len(registry_ids["timeline"]),
+            "plot_devices": len(registry_ids["plot_devices"]),
+        },
+        scene_cards_by_chapter,
+        plot_devices,
+    )
     result.report_path.write_text(report_body, encoding="utf-8")
     return result

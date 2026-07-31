@@ -1,4 +1,4 @@
-.PHONY: init-story new-story style-cards check epub pdf stats ai-audit review-pack source-admission source-analysis novellas-path import-novella export-novella clear-ingested kindle-preflight kindle kindle-store-password test
+.PHONY: init-story new-story style-cards check style-lint style-reference epub pdf stats ai-audit review-pack source-admission source-analysis novellas-path import-novella export-novella clear-ingested kindle-preflight kindle kindle-store-password test
 
 KIND ?= original
 STYLE_CARD_ARG :=
@@ -15,6 +15,16 @@ else
 EXPORT_OUTPUT_ARG := --output-name "$(OUTPUT)"
 endif
 
+STYLE_PROFILE_ARG :=
+ifneq ($(strip $(PROFILE)),)
+STYLE_PROFILE_ARG := --profile "$(PROFILE)"
+endif
+
+STYLE_CHAPTER_ARG :=
+ifneq ($(strip $(CHAPTER)),)
+STYLE_CHAPTER_ARG := --chapter "$(CHAPTER)"
+endif
+
 init-story:
 	uv run creative-writer init-story --story "$(STORY)" --kind "$(KIND)" $(STYLE_CARD_ARG)
 
@@ -25,6 +35,12 @@ style-cards:
 
 check:
 	uv run creative-writer check --story "$(STORY)"
+
+style-lint:
+	uv run creative-writer style-lint --story "$(STORY)"$(if $(STYLE_PROFILE_ARG), $(STYLE_PROFILE_ARG))$(if $(STYLE_CHAPTER_ARG), $(STYLE_CHAPTER_ARG))
+
+style-reference:
+	uv run creative-writer style-reference --story "$(STORY)" --pack "$(PACK)"$(if $(STYLE_PROFILE_ARG), $(STYLE_PROFILE_ARG))
 
 epub:
 	uv run creative-writer epub --story "$(STORY)"

@@ -4,12 +4,14 @@ from dataclasses import dataclass
 import hashlib
 from pathlib import Path
 import re
+import subprocess
 from types import SimpleNamespace
 from typing import Any
 
 import pytest
 import yaml
 
+import creative_writer.cli as cli_module
 from creative_writer.exceptions import CreativeWriterError
 from creative_writer.source_analysis_common import sha256_file
 from creative_writer.source_analysis_models import PassageRecord
@@ -932,3 +934,136 @@ def test_style_reference_requires_configured_profile_or_override(
             "packet-story",
             "frame",
         )
+
+
+def test_style_reference_parser_accepts_optional_profile() -> None:
+    args = cli_module.build_parser().parse_args(
+        [
+            "style-reference",
+            "--story",
+            "time-expedition",
+            "--pack",
+            "frame-and-testimony",
+            "--profile",
+            "style-profile.yml",
+        ]
+    )
+
+    assert vars(args) == {
+        "command": "style-reference",
+        "story": "time-expedition",
+        "pack": "frame-and-testimony",
+        "profile": "style-profile.yml",
+    }
+
+
+def test_style_reference_parser_defaults_profile_to_none() -> None:
+    args = cli_module.build_parser().parse_args(
+        [
+            "style-reference",
+            "--story",
+            "time-expedition",
+            "--pack",
+            "frame-and-testimony",
+        ]
+    )
+
+    assert args.profile is None
+
+
+def test_style_reference_cli_reports_output_entries_and_index_preparation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    output_path = (
+        tmp_path
+        / "build/story/style/reference-packets/frame-and-testimony.md"
+    )
+    calls: list[tuple[Path, str, str, str | None]] = []
+
+    def generate(
+        root: Path,
+        slug: str,
+        pack: str,
+        profile_override: str | None = None,
+    ) -> SimpleNamespace:
+        calls.append((root, slug, pack, profile_override))
+        return SimpleNamespace(
+            output_path=output_path,
+            entry_count=4,
+            source_indexes_prepared=True,
+        )
+
+    monkeypatch.setattr(cli_module, "repo_root", lambda: tmp_path)
+    monkeypatch.setattr(
+        cli_module,
+        "generate_style_reference",
+        generate,
+        raising=False,
+    )
+
+    status = cli_module.main(
+        [
+            "style-reference",
+            "--story",
+            "story",
+            "--pack",
+            "frame-and-testimony",
+            "--profile",
+            "profiles/wells.yml",
+        ]
+    )
+
+    assert status == 0
+    assert calls == [
+        (tmp_path, "story", "frame-and-testimony", "profiles/wells.yml")
+    ]
+    assert capsys.readouterr().out.splitlines() == [
+        f"Style reference packet written to {output_path}",
+        "Entries: 4",
+        "Source indexes prepared: yes",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("variables", "expected"),
+    [
+        (
+            [
+                "STORY=time-expedition",
+                "PACK=frame-and-testimony",
+            ],
+            (
+                'uv run creative-writer style-reference --story "time-expedition" '
+                '--pack "frame-and-testimony"'
+            ),
+        ),
+        (
+            [
+                "STORY=time-expedition",
+                "PACK=frame-and-testimony",
+                "PROFILE=style-profile.yml",
+            ],
+            (
+                'uv run creative-writer style-reference --story "time-expedition" '
+                '--pack "frame-and-testimony" --profile "style-profile.yml"'
+            ),
+        ),
+    ],
+)
+def test_make_style_reference_omits_empty_profile_flag(
+    variables: list[str],
+    expected: str,
+) -> None:
+    repository = Path(__file__).resolve().parents[1]
+    completed = subprocess.run(
+        ["make", "-n", "style-reference", *variables],
+        cwd=repository,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert completed.stdout == f"{expected}\n"

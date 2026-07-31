@@ -136,6 +136,34 @@ After remains.
     }
 
 
+def test_malformed_inline_image_syntax_remains_located_prose() -> None:
+    text = """Prelude remains.
+
+![Alt](url with space)
+
+![Alt](url trailing junk)
+
+![Alt](url "unterminated)
+
+After remains.
+"""
+
+    result = analyse_manuscript(
+        text,
+        lexicons={"malformed": ["alt"]},
+        speech_attribution_verbs=["said"],
+    )
+
+    assert result.word_count == 15
+    assert result.paragraph_count == 5
+    assert result.paragraph_lengths == [2, 4, 4, 3, 2]
+    assert result.lexicon_hits["malformed"] == [
+        LocatedSignal(TextLocation(3, 3), "Alt"),
+        LocatedSignal(TextLocation(5, 5), "Alt"),
+        LocatedSignal(TextLocation(7, 7), "Alt"),
+    ]
+
+
 def test_lexicon_matching_uses_unicode_nfc_and_casefolding() -> None:
     result = analyse_manuscript(
         "CAFE\u0301 evidence remained.\n",

@@ -109,24 +109,98 @@ def _consume_bracketed(text: str, start: int) -> int | None:
     return None
 
 
-def _consume_parenthesized(text: str, start: int) -> int | None:
-    if start >= len(text) or text[start] != "(":
+def _consume_angle_destination(text: str, start: int) -> int | None:
+    if start >= len(text) or text[start] != "<":
         return None
-    depth = 1
     cursor = start + 1
     while cursor < len(text):
         character = text[cursor]
         if character == "\\" and cursor + 1 < len(text):
             cursor += 2
             continue
+        if character == ">":
+            return cursor + 1
+        if character == "<":
+            return None
+        cursor += 1
+    return None
+
+
+def _consume_inline_bare_destination(text: str, start: int) -> int | None:
+    depth = 0
+    cursor = start
+    while cursor < len(text):
+        character = text[cursor]
+        if character == "\\" and cursor + 1 < len(text):
+            cursor += 2
+            continue
+        if character.isspace():
+            return cursor if depth == 0 else None
+        if ord(character) < 32 or character == "\x7f":
+            return None
         if character == "(":
             depth += 1
         elif character == ")":
-            depth -= 1
             if depth == 0:
-                return cursor + 1
+                return cursor
+            depth -= 1
         cursor += 1
     return None
+
+
+def _consume_inline_title(text: str, start: int) -> int | None:
+    delimiters = {'"': '"', "'": "'", "(": ")"}
+    closer = delimiters.get(text[start]) if start < len(text) else None
+    if closer is None:
+        return None
+    opener = text[start]
+    cursor = start + 1
+    while cursor < len(text):
+        character = text[cursor]
+        if character == "\\" and cursor + 1 < len(text):
+            cursor += 2
+            continue
+        if character == closer:
+            return cursor + 1
+        if opener == "(" and character == "(":
+            return None
+        cursor += 1
+    return None
+
+
+def _consume_parenthesized(text: str, start: int) -> int | None:
+    if start >= len(text) or text[start] != "(":
+        return None
+    cursor = start + 1
+    while cursor < len(text) and text[cursor].isspace():
+        cursor += 1
+    if cursor >= len(text):
+        return None
+
+    if text[cursor] == "<":
+        destination_end = _consume_angle_destination(text, cursor)
+    else:
+        destination_end = _consume_inline_bare_destination(text, cursor)
+    if destination_end is None:
+        return None
+    cursor = destination_end
+
+    if cursor < len(text) and text[cursor] == ")":
+        return cursor + 1
+    if cursor >= len(text) or not text[cursor].isspace():
+        return None
+    while cursor < len(text) and text[cursor].isspace():
+        cursor += 1
+    if cursor < len(text) and text[cursor] == ")":
+        return cursor + 1
+
+    title_end = _consume_inline_title(text, cursor)
+    if title_end is None:
+        return None
+    cursor = title_end
+    while cursor < len(text) and text[cursor].isspace():
+        cursor += 1
+    return cursor + 1 if cursor < len(text) and text[cursor] == ")" else None
 
 
 def _normalize_reference_label(label: str) -> str:

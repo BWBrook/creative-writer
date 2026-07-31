@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 from pathlib import Path
 import shutil
 import subprocess
@@ -51,6 +52,89 @@ def _set_chapter_style_metadata(
     payload["style_packets"] = packets
     rendered = yaml.safe_dump(payload, sort_keys=False, allow_unicode=True)
     path.write_text(f"---\n{rendered}---{body}", encoding="utf-8")
+
+
+def _valid_review_pack_style() -> dict[str, Any]:
+    return {
+        "finding_ids": ["finding-003"],
+        "profile_id": "configured-style-profile",
+        "profile_version": "1.0.0",
+        "claim_ids": ["mediated-testimony-frame"],
+        "narrative_role": "frame",
+        "ai_disposition": "escalate",
+        "ai_rationale": (
+            "The signal is real, but authentic variation makes revision uncertain."
+        ),
+        "decision_impact": "The decision will guide later frame passages.",
+    }
+
+
+def _write_style_review_pack(
+    story_dir: Path,
+    style: dict[str, Any],
+    *,
+    manuscript: str = "manuscript/01-opening.md",
+) -> Path:
+    manifest_path = story_dir / "review-packs" / "style-calibration.yml"
+    _write_yaml(
+        manifest_path,
+        {
+            "title": "Style calibration",
+            "purpose": "Ask for a bounded human authenticity decision.",
+            "entries": [
+                {
+                    "id": "opening-calibration",
+                    "label": "Opening calibration",
+                    "manuscript": manuscript,
+                    "start_line": 1,
+                    "end_line": 1,
+                    "kind": "uncertainty",
+                    "question": "Should this stylistic choice be retained?",
+                    "style": style,
+                }
+            ],
+        },
+    )
+    return manifest_path
+
+
+def _write_style_review(
+    story_dir: Path,
+    *,
+    mutation: dict[str, Any] | None = None,
+) -> Path:
+    payload: dict[str, Any] = {
+        "review_id": "opening-first-pass",
+        "date": datetime.date(2026, 7, 31),
+        "scope": "chapter",
+        "manuscripts": ["manuscript/01-opening.md"],
+        "profile_id": "configured-style-profile",
+        "profile_version": "1.0.0",
+        "lint_report": {
+            "path": (
+                "build/configured-style/style/chapters/"
+                "01-opening-lint-report.json"
+            ),
+            "sha256": "a" * 64,
+        },
+        "reference_packets": ["frame"],
+        "reviewer_id": "codex",
+        "reviewer_role": "ai",
+        "outcome": "qualified",
+    }
+    payload.update(mutation or {})
+    path = story_dir / "style-reviews" / "opening-first-pass.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    front_matter = yaml.safe_dump(
+        payload,
+        sort_keys=False,
+        allow_unicode=True,
+    )
+    path.write_text(
+        f"---\n{front_matter}---\n\n# Decision\n\nRetain for human review.\n",
+        encoding="utf-8",
+    )
+    return path
 
 
 @pytest.fixture
@@ -605,6 +689,120 @@ def test_check_accepts_mixed_style_roles_without_warning(
 
     assert result.ok, [error.message for error in result.errors]
     assert not result.warnings
+
+
+def test_check_accepts_valid_style_review_and_calibration_metadata(
+    configured_style_story: Path,
+) -> None:
+    _write_style_review(configured_style_story)
+    _write_style_review_pack(
+        configured_style_story,
+        _valid_review_pack_style(),
+    )
+
+    result = check_story(
+        configured_style_story.parent.parent,
+        "configured-style",
+    )
+
+    assert result.ok, [error.message for error in result.errors]
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "expected"),
+    [
+        ("profile_id", "unknown-profile", "profile ID"),
+        ("profile_version", "2.0.0", "profile version"),
+        ("narrative_role", "unknown-role", "unknown style role"),
+        ("claim_ids", ["unknown-claim"], "unknown Phase 2B claim"),
+    ],
+)
+def test_check_rejects_unknown_review_pack_style_references(
+    configured_style_story: Path,
+    field: str,
+    value: Any,
+    expected: str,
+) -> None:
+    style = _valid_review_pack_style()
+    style[field] = value
+    manifest_path = _write_style_review_pack(configured_style_story, style)
+
+    result = check_story(
+        configured_style_story.parent.parent,
+        "configured-style",
+    )
+
+    assert not result.ok
+    assert any(
+        error.location == str(manifest_path) and expected in error.message
+        for error in result.errors
+    )
+
+
+def test_check_rejects_style_calibration_for_unconfigured_manuscript(
+    configured_style_story: Path,
+) -> None:
+    manuscript = "manuscript/unconfigured.md"
+    (configured_style_story / manuscript).write_text(
+        "A real but unconfigured manuscript.\n",
+        encoding="utf-8",
+    )
+    manifest_path = _write_style_review_pack(
+        configured_style_story,
+        _valid_review_pack_style(),
+        manuscript=manuscript,
+    )
+
+    result = check_story(
+        configured_style_story.parent.parent,
+        "configured-style",
+    )
+
+    assert not result.ok
+    assert any(
+        error.location == str(manifest_path)
+        and "unknown configured manuscript" in error.message
+        for error in result.errors
+    )
+
+
+def test_check_rejects_style_calibration_without_active_profile(
+    tmp_path: Path,
+) -> None:
+    story_dir = create_story(tmp_path, "unconfigured-calibration", "original")
+    style = _valid_review_pack_style()
+    style["profile_id"] = "inactive-profile"
+    manifest_path = _write_style_review_pack(story_dir, style)
+
+    result = check_story(tmp_path, "unconfigured-calibration")
+
+    assert not result.ok
+    assert any(
+        error.location == str(manifest_path)
+        and "no active style profile" in error.message
+        for error in result.errors
+    )
+
+
+def test_check_reports_invalid_tracked_style_review(
+    configured_style_story: Path,
+) -> None:
+    review_path = _write_style_review(
+        configured_style_story,
+        mutation={"reference_packets": ["unknown-packet"]},
+    )
+
+    result = check_story(
+        configured_style_story.parent.parent,
+        "configured-style",
+    )
+
+    assert not result.ok
+    assert any(
+        error.location == str(review_path)
+        and "unknown style packet" in error.message
+        for error in result.errors
+    )
 
 
 def test_importing_cli_does_not_load_explicit_analysis_modules() -> None:

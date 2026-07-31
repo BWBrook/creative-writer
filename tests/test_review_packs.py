@@ -158,6 +158,113 @@ entries:
     assert "First line.\nSecond line.\nThird line." in output
 
 
+def test_review_pack_without_style_metadata_retains_exact_legacy_output(
+    tmp_path: Path,
+) -> None:
+    story_dir = create_story(tmp_path, "legacy-pack", "original")
+    (story_dir / "manuscript" / "01-opening.md").write_text(
+        "First line.\nSecond line.\nThird line.\n",
+        encoding="utf-8",
+    )
+    (story_dir / "review-packs" / "legacy.yml").write_text(
+        """title: "Legacy pass"
+purpose: "Preserve the existing review surface."
+entries:
+  - id: opening-beat
+    label: "Opening beat"
+    manuscript: "manuscript/01-opening.md"
+    start_line: 1
+    end_line: 2
+    kind: confidence
+    question: "Is this working?"
+    context: "Opening scene."
+""",
+        encoding="utf-8",
+    )
+
+    result = generate_review_pack(tmp_path, "legacy-pack", "legacy")
+
+    assert result.output_path.read_text(encoding="utf-8") == (
+        "# Review Pack: Legacy pass\n"
+        "\n"
+        "- Story: `Legacy Pack`\n"
+        "- Story slug: `legacy-pack`\n"
+        "- Pack: `legacy`\n"
+        "- Purpose: Preserve the existing review surface.\n"
+        "- Entries: 1\n"
+        "\n"
+        "## 1. Opening beat\n"
+        "\n"
+        "- Kind: `confidence`\n"
+        "- Source: `manuscript/01-opening.md:1-2`\n"
+        "- Chapter: `Opening`\n"
+        "- Chapter summary: Set up the story situation and introduce the first turn.\n"
+        "- Context: Opening scene.\n"
+        "- Reviewer question: Is this working?\n"
+        "\n"
+        "### Excerpt\n"
+        "\n"
+        "```text\n"
+        "First line.\n"
+        "Second line.\n"
+        "```\n"
+    )
+
+
+def test_review_pack_renders_precise_style_calibration_before_excerpt(
+    tmp_path: Path,
+) -> None:
+    story_dir = create_story(tmp_path, "style-pack", "original")
+    (story_dir / "manuscript" / "01-opening.md").write_text(
+        "First line.\nSecond line.\n",
+        encoding="utf-8",
+    )
+    (story_dir / "review-packs" / "calibration.yml").write_text(
+        """title: "Calibration pass"
+purpose: "Ask for a bounded authenticity decision."
+entries:
+  - id: reported-distance
+    label: "Reported distance"
+    manuscript: "manuscript/01-opening.md"
+    start_line: 1
+    end_line: 2
+    kind: uncertainty
+    question: "Should this reported distance be retained?"
+    style:
+      finding_ids: [finding-003]
+      profile_id: wells-1895-1899
+      profile_version: 1.0.0
+      claim_ids: [role-shaped-narrator-distance]
+      narrative_role: reported-account
+      ai_disposition: escalate
+      ai_rationale: "The profile signal is mechanically true, but the source packet contains authentic role-specific variation that makes direct revision uncertain."
+      decision_impact: "The ruling will guide narrator-distance choices across all reported-account chapters."
+""",
+        encoding="utf-8",
+    )
+
+    result = generate_review_pack(tmp_path, "style-pack", "calibration")
+    output = result.output_path.read_text(encoding="utf-8")
+    style_block = (
+        "### Style calibration context\n"
+        "\n"
+        "- Profile: `wells-1895-1899` version `1.0.0`\n"
+        "- Intended role: `reported-account`\n"
+        "- Style findings: `finding-003`\n"
+        "- Phase 2B claims: `role-shaped-narrator-distance`\n"
+        "- AI disposition: `escalate`\n"
+        "- AI rationale: The profile signal is mechanically true, but the source packet contains authentic role-specific variation that makes direct revision uncertain.\n"
+        "- Decision impact: The ruling will guide narrator-distance choices across all reported-account chapters.\n"
+    )
+
+    assert style_block in output
+    assert (
+        "- Reviewer question: Should this reported distance be retained?"
+        in output
+    )
+    assert output.index(style_block) < output.index("### Excerpt")
+
+
 def test_check_warns_when_excerpt_pack_mode_has_no_real_manifests(tmp_path: Path) -> None:
     story_dir = create_story(tmp_path, "excerpt-mode", "original")
     (story_dir / "contract.yml").write_text(

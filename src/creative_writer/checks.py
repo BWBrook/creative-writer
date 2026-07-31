@@ -16,6 +16,7 @@ from creative_writer.models import (
     LocationsRegistry,
     PlotDeviceRecord,
     PlotDevicesRegistry,
+    ReviewPackEntry,
     StoryConfig,
     TimelineRegistry,
 )
@@ -26,6 +27,10 @@ from creative_writer.style_profiles import (
     load_style_context,
     resolve_style_profile_path,
     validate_chapter_style_metadata,
+)
+from creative_writer.style_reviews import (
+    validate_review_pack_style_context,
+    validate_style_reviews,
 )
 
 MANDATORY_ARTIFACTS = [
@@ -206,6 +211,7 @@ def _validate_configured_style(
     story_dir: Path,
     result: CheckResult,
     profile_override: str | None,
+    review_pack_style_entries: list[tuple[Path, ReviewPackEntry]],
 ) -> None:
     configured_profile = (
         result.contract.style_lint.profile
@@ -213,6 +219,13 @@ def _validate_configured_style(
         else None
     )
     if configured_profile is None and profile_override is None:
+        for manifest_path, entry in review_pack_style_entries:
+            _add_error(
+                result,
+                manifest_path,
+                f"Review-pack entry `{entry.id}` has style calibration "
+                "metadata but no active style profile.",
+            )
         return
 
     requested_profile = (
@@ -278,6 +291,29 @@ def _validate_configured_style(
             )
 
     for metadata_error in validate_chapter_style_metadata(context, result.chapters):
+        location, separator, message = metadata_error.partition(": ")
+        _add_error(
+            result,
+            location if separator else profile_path,
+            message if separator else metadata_error,
+        )
+
+    manuscript_paths = {
+        chapter.front_matter.manuscript for chapter in result.chapters
+    }
+    for manifest_path, entry in review_pack_style_entries:
+        for metadata_error in validate_review_pack_style_context(
+            entry,
+            context,
+            manuscript_paths,
+        ):
+            _add_error(result, manifest_path, metadata_error)
+
+    for metadata_error in validate_style_reviews(
+        story_dir,
+        context,
+        manuscript_paths,
+    ):
         location, separator, message = metadata_error.partition(": ")
         _add_error(
             result,
@@ -521,17 +557,29 @@ def check_story(
             story_dir / "review-packs",
             "review_mode is excerpt_pack but no review-pack manifests were found.",
         )
+    review_pack_style_entries: list[tuple[Path, ReviewPackEntry]] = []
     for manifest_path in review_pack_paths:
         try:
-            validate_review_pack_manifest(story_dir, manifest_path, chapter_index)
+            _manifest, resolved_entries = validate_review_pack_manifest(
+                story_dir,
+                manifest_path,
+                chapter_index,
+            )
         except CreativeWriterError as exc:
             _add_error(result, manifest_path, str(exc))
+            continue
+        review_pack_style_entries.extend(
+            (manifest_path, resolved.entry)
+            for resolved in resolved_entries
+            if resolved.entry.style is not None
+        )
 
     _validate_configured_style(
         root,
         story_dir,
         result,
         profile_override,
+        review_pack_style_entries,
     )
 
     report_body = _render_report(

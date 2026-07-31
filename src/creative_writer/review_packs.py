@@ -170,9 +170,34 @@ def _render_review_pack(
             lines.append(f"- Chapter summary: {resolved.chapter_summary}")
         if entry.context:
             lines.append(f"- Context: {entry.context}")
+        lines.append(f"- Reviewer question: {entry.question}")
+        if entry.style is not None:
+            style = entry.style
+            finding_ids = ", ".join(
+                f"`{finding_id}`" for finding_id in style.finding_ids
+            )
+            claim_ids = ", ".join(
+                f"`{claim_id}`" for claim_id in style.claim_ids
+            )
+            lines.extend(
+                [
+                    "",
+                    "### Style calibration context",
+                    "",
+                    (
+                        f"- Profile: `{style.profile_id}` version "
+                        f"`{style.profile_version}`"
+                    ),
+                    f"- Intended role: `{style.narrative_role}`",
+                    f"- Style findings: {finding_ids or 'None recorded.'}",
+                    f"- Phase 2B claims: {claim_ids or 'None recorded.'}",
+                    f"- AI disposition: `{style.ai_disposition}`",
+                    f"- AI rationale: {style.ai_rationale}",
+                    f"- Decision impact: {style.decision_impact}",
+                ]
+            )
         lines.extend(
             [
-                f"- Reviewer question: {entry.question}",
                 "",
                 "### Excerpt",
                 "",

@@ -87,6 +87,41 @@ class _WitnessAuthority:
     analytical_roles: tuple[str, ...]
 
 
+def _contained_profile_path(
+    story_dir: Path,
+    profile_path: Path,
+    *,
+    root: Path | None = None,
+) -> Path:
+    resolved_story = story_dir.resolve(strict=False)
+    candidate = (
+        profile_path
+        if profile_path.is_absolute()
+        else safe_relative_path(resolved_story, profile_path.as_posix())
+    )
+    resolved_candidate = candidate.resolve(strict=False)
+    if resolved_candidate != candidate:
+        raise CreativeWriterError(
+            "Style profile path redirects through a symlink or is not canonical: "
+            f"{profile_path} -> {resolved_candidate}"
+        )
+    if root is not None:
+        resolved_root = root.resolve(strict=False)
+        try:
+            resolved_candidate.relative_to(resolved_root)
+        except ValueError as exc:
+            raise CreativeWriterError(
+                f"Style profile path escapes repository root: {profile_path}"
+            ) from exc
+    try:
+        resolved_candidate.relative_to(resolved_story)
+    except ValueError as exc:
+        raise CreativeWriterError(
+            f"Style profile path escapes story directory: {profile_path}"
+        ) from exc
+    return resolved_candidate
+
+
 def resolve_style_profile_path(
     story_dir: Path,
     configured_path: str | None,
@@ -98,9 +133,7 @@ def resolve_style_profile_path(
         if not override.strip():
             raise CreativeWriterError("Style profile override must not be empty")
         candidate = Path(override)
-        if candidate.is_absolute():
-            return candidate
-        return safe_relative_path(story_dir, override)
+        return _contained_profile_path(story_dir, candidate)
 
     if configured_path is None:
         raise CreativeWriterError(
@@ -111,7 +144,7 @@ def resolve_style_profile_path(
             "configured style profile path must remain story-relative"
         )
     try:
-        return safe_relative_path(story_dir, configured_path)
+        return _contained_profile_path(story_dir, Path(configured_path))
     except CreativeWriterError as exc:
         raise CreativeWriterError(
             "configured style profile path must remain story-relative: "
@@ -169,8 +202,10 @@ def _validate_study_lifecycle(
         raise CreativeWriterError(
             "Style profile provenance artifacts have mismatched study IDs"
         )
-    if analysis.study_status != "validated":
-        raise CreativeWriterError("Style profile analysis is not validated")
+    if analysis.study_status not in {"candidate_frozen", "validated"}:
+        raise CreativeWriterError(
+            "Style profile analysis is not candidate-frozen or validated"
+        )
     if ledger.stage != "validated":
         raise CreativeWriterError("Style profile evidence ledger is not validated")
     if validation.stage != "validated" or validation.validation_step != "complete":
@@ -319,16 +354,48 @@ def _validate_reference_authority(
 
 def _passage_memberships(
     holdout: HoldoutManifest,
-) -> tuple[set[str], dict[str, set[str]]]:
-    development: set[str] = set()
+) -> tuple[dict[str, set[str]], dict[str, set[str]]]:
+    development_by_witness: dict[str, set[str]] = {}
     heldout_by_witness: dict[str, set[str]] = {}
+    assignments: dict[str, list[tuple[str, str]]] = {}
     for witness in holdout.witnesses:
+        development = development_by_witness.setdefault(witness.witness_id, set())
         for window in witness.development_windows:
             development.update(window.passage_ids)
+            for passage_id in window.passage_ids:
+                assignments.setdefault(passage_id, []).append(
+                    ("development", witness.witness_id)
+                )
         heldout_passages = heldout_by_witness.setdefault(witness.witness_id, set())
         for window in witness.holdout_windows:
             heldout_passages.update(window.passage_ids)
-    return development, heldout_by_witness
+            for passage_id in window.passage_ids:
+                assignments.setdefault(passage_id, []).append(
+                    ("held-out", witness.witness_id)
+                )
+
+    for passage_id, passage_assignments in assignments.items():
+        partitions = {partition for partition, _witness in passage_assignments}
+        witnesses = {witness for _partition, witness in passage_assignments}
+        if len(partitions) > 1:
+            raise CreativeWriterError(
+                f"Passage {passage_id} is assigned to both development and "
+                "held-out partitions"
+            )
+        if len(witnesses) > 1:
+            raise CreativeWriterError(
+                f"Passage {passage_id} is assigned to multiple witnesses"
+            )
+        if len(passage_assignments) > 1:
+            raise CreativeWriterError(
+                f"Passage {passage_id} is assigned more than once"
+            )
+        witness_id = passage_assignments[0][1]
+        if not passage_id.startswith(f"{witness_id}:"):
+            raise CreativeWriterError(
+                f"Passage {passage_id} does not belong to witness {witness_id}"
+            )
+    return development_by_witness, heldout_by_witness
 
 
 def _add_evidence(
@@ -462,10 +529,16 @@ def _build_evidence_catalog(
     validation: ValidationRecord,
     holdout: HoldoutManifest,
     sources: SourcesRegistry,
+    eligible_claim_statuses: Sequence[str],
 ) -> dict[str, EvidencePassage]:
     claims_by_id = {claim.id: claim for claim in ledger.claims}
+    eligible_claim_ids = {
+        claim.id
+        for claim in ledger.claims
+        if claim.status in eligible_claim_statuses
+    }
     sources_by_id = _source_map(sources)
-    development_passages, heldout_by_witness = _passage_memberships(holdout)
+    development_by_witness, heldout_by_witness = _passage_memberships(holdout)
     catalog: dict[str, _EvidenceAccumulator] = {}
 
     for claim in ledger.claims:
@@ -479,36 +552,44 @@ def _build_evidence_catalog(
                 raise CreativeWriterError(
                     f"Tier 4 passage {reference.passage_id} cannot support a claim"
                 )
-            if reference.passage_id not in development_passages:
+            if reference.passage_id not in development_by_witness.get(
+                reference.witness_id,
+                set(),
+            ):
                 raise CreativeWriterError(
                     f"Ledger passage {reference.passage_id} is outside the "
-                    "development partition"
+                    f"development partition for witness {reference.witness_id}"
                 )
-            _add_evidence(
-                catalog,
-                passage_id=reference.passage_id,
-                authority=authority,
-                claim_id=claim.id,
-                evidence_kind=reference.evidence_role,
-            )
+            if claim.id in eligible_claim_ids:
+                _add_evidence(
+                    catalog,
+                    passage_id=reference.passage_id,
+                    authority=authority,
+                    claim_id=claim.id,
+                    evidence_kind=reference.evidence_role,
+                )
         for reference in claim.counterexample_passages:
             authority = _validate_reference_authority(
                 claim,
                 reference,
                 sources_by_id,
             )
-            if reference.passage_id not in development_passages:
+            if reference.passage_id not in development_by_witness.get(
+                reference.witness_id,
+                set(),
+            ):
                 raise CreativeWriterError(
                     f"Ledger passage {reference.passage_id} is outside the "
-                    "development partition"
+                    f"development partition for witness {reference.witness_id}"
                 )
-            _add_evidence(
-                catalog,
-                passage_id=reference.passage_id,
-                authority=authority,
-                claim_id=claim.id,
-                evidence_kind=reference.evidence_role,
-            )
+            if claim.id in eligible_claim_ids:
+                _add_evidence(
+                    catalog,
+                    passage_id=reference.passage_id,
+                    authority=authority,
+                    claim_id=claim.id,
+                    evidence_kind=reference.evidence_role,
+                )
 
     heldout_witnesses = set(holdout.heldout_wells_passage_index.witness_ids)
     for result in validation.heldout_claim_results:
@@ -552,13 +633,14 @@ def _build_evidence_catalog(
                     f"Held-out result {result.id} references passage "
                     f"{passage_id} outside its holdout windows"
                 )
-            _add_evidence(
-                catalog,
-                passage_id=passage_id,
-                authority=authority,
-                claim_id=claim.id,
-                evidence_kind="validation",
-            )
+            if claim.id in eligible_claim_ids:
+                _add_evidence(
+                    catalog,
+                    passage_id=passage_id,
+                    authority=authority,
+                    claim_id=claim.id,
+                    evidence_kind="validation",
+                )
 
     control_witnesses = set(holdout.tier4_control_passage_index.witness_ids)
     for comparison in validation.control_comparisons:
@@ -591,13 +673,14 @@ def _build_evidence_catalog(
                 "tier4_controls partition"
             )
         for passage_id in comparison.passage_ids:
-            _add_evidence(
-                catalog,
-                passage_id=passage_id,
-                authority=authority,
-                claim_id=claim.id,
-                evidence_kind="control",
-            )
+            if claim.id in eligible_claim_ids:
+                _add_evidence(
+                    catalog,
+                    passage_id=passage_id,
+                    authority=authority,
+                    claim_id=claim.id,
+                    evidence_kind="control",
+                )
 
     _validate_target_coverage(ledger, validation)
     return {
@@ -850,10 +933,10 @@ def load_style_context(
     """Load one profile after validating its complete Phase 2B provenance."""
 
     resolved_root, resolved_story = _validated_root_and_story(root, story_dir)
-    resolved_profile = (
-        profile_path
-        if profile_path.is_absolute()
-        else safe_relative_path(resolved_story, profile_path.as_posix())
+    resolved_profile = _contained_profile_path(
+        resolved_story,
+        profile_path,
+        root=resolved_root,
     )
     profile = load_yaml_model(resolved_profile, StyleProfile)
     provenance = profile.provenance
@@ -911,6 +994,7 @@ def load_style_context(
         validation,
         holdout,
         sources,
+        profile.eligible_claim_statuses,
     )
     _validate_rule_evidence(rules, evidence_catalog)
     packets = _load_packets(

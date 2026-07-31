@@ -4,6 +4,7 @@ from collections.abc import Callable
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
+import shutil
 from typing import Any
 
 import pytest
@@ -27,6 +28,7 @@ HASH_B = "b" * 64
 HASH_C = "c" * 64
 SUPPORT_PASSAGE = "selected-wells/story-a:chapter-one:1:aaaaaaaaaaaa"
 HELDOUT_PASSAGE = "heldout-wells:chapter-two:2:bbbbbbbbbbbb"
+HELDOUT_EXTRA_PASSAGE = "heldout-wells:chapter-five:5:eeeeeeeeeeee"
 CONTROL_PASSAGE = "control-author:chapter-three:3:cccccccccccc"
 
 
@@ -325,7 +327,7 @@ def _holdout_payload(source_hash: str) -> dict[str, Any]:
                         "id": "heldout-whole-work",
                         "passage_ids": [
                             HELDOUT_PASSAGE,
-                            "heldout-wells:chapter-five:5:eeeeeeeeeeee",
+                            HELDOUT_EXTRA_PASSAGE,
                         ],
                     }
                 ],
@@ -747,6 +749,135 @@ def style_story(tmp_path: Path) -> Path:
     return story
 
 
+@pytest.fixture
+def approved_phase_2b_story(tmp_path: Path) -> Path:
+    repository = Path(__file__).resolve().parents[1]
+    source_story = repository / "stories" / "time-expedition"
+    story = tmp_path / "stories" / "time-expedition"
+    artifact_paths = [
+        "source-study/analysis.yml",
+        "original/sources.yml",
+        "source-study/holdouts.yml",
+        "source-study/evidence-ledger.yml",
+        "source-study/validation.md",
+    ]
+    for relative in artifact_paths:
+        destination = story / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_story / relative, destination)
+
+    story_prefix = "stories/time-expedition"
+    holdout = _read_yaml(story / "source-study" / "holdouts.yml")
+    profile = {
+        "schema_version": 1,
+        "profile_id": "real-phase-2b-probe",
+        "version": "1.0.0",
+        "title": "Real approved Phase 2B compatibility probe",
+        "provenance": {
+            "study_id": "time-expedition-wells-phase-2b",
+            "analysis": _artifact(
+                f"{story_prefix}/source-study/analysis.yml",
+                sha256_file(story / "source-study" / "analysis.yml"),
+            ),
+            "source_registry": _artifact(
+                f"{story_prefix}/original/sources.yml",
+                sha256_file(story / "original" / "sources.yml"),
+            ),
+            "holdout_manifest": _artifact(
+                f"{story_prefix}/source-study/holdouts.yml",
+                sha256_file(story / "source-study" / "holdouts.yml"),
+            ),
+            "evidence_ledger": _artifact(
+                f"{story_prefix}/source-study/evidence-ledger.yml",
+                sha256_file(story / "source-study" / "evidence-ledger.yml"),
+            ),
+            "validation_record": _artifact(
+                f"{story_prefix}/source-study/validation.md",
+                sha256_file(story / "source-study" / "validation.md"),
+            ),
+            "passage_indexes": {
+                "development": _artifact(
+                    holdout["development_passage_index"]["path"],
+                    holdout["development_passage_index"]["sha256"],
+                ),
+                "heldout_wells": _artifact(
+                    holdout["heldout_wells_passage_index"]["path"],
+                    holdout["heldout_wells_passage_index"]["sha256"],
+                ),
+                "tier4_controls": _artifact(
+                    holdout["tier4_control_passage_index"]["path"],
+                    holdout["tier4_control_passage_index"]["sha256"],
+                ),
+            },
+            "approved_review_run_id": "final-audit-rereview",
+        },
+        "eligible_claim_statuses": ["validated", "qualified"],
+        "default_packet_ids": ["real-probe"],
+        "change_basis": "Exercise the approved real Phase 2B lifecycle.",
+        "profile_review_refs": [
+            "source-study/validation.md#final-audit-rereview"
+        ],
+        "roles": [
+            {
+                "id": "frame",
+                "label": "Frame",
+                "description": "Visible testimony and evidentiary framing.",
+                "phase_2b_roles": ["frame architecture", "testimony"],
+            }
+        ],
+        "rules": [
+            {
+                "id": "practice-mediated-testimony",
+                "name": "Mediated testimony",
+                "family": "practice",
+                "advisory": "review",
+                "claim_ids": ["mediated-testimony-frame"],
+                "roles": ["frame"],
+                "scope": "story",
+                "evaluation_mode": "manual_question",
+                "review_question": "Is extraordinary testimony visibly mediated?",
+                "source_passage_ids": [
+                    "the-time-machine:ii:101:b859a93fec21"
+                ],
+                "variation_passage_ids": [],
+                "control_passage_ids": [],
+                "packet_ids": ["real-probe"],
+                "interpretation_limits": "The approved claim remains bounded.",
+            }
+        ],
+    }
+    packet = {
+        "schema_version": 1,
+        "id": "real-probe",
+        "title": "Real Phase 2B probe",
+        "purpose": "Exercise one approved source relationship.",
+        "profile_id": "real-phase-2b-probe",
+        "profile_version": "1.0.0",
+        "roles": ["frame"],
+        "claim_ids": ["mediated-testimony-frame"],
+        "context_radius": 1,
+        "entries": [
+            {
+                "id": "time-machine-frame",
+                "passage_id": "the-time-machine:ii:101:b859a93fec21",
+                "kind": "positive_example",
+                "claim_ids": ["mediated-testimony-frame"],
+                "authority_tier": 1,
+                "permitted_use": "Study evidentiary mediation.",
+                "selection_note": "Approved ledger support.",
+            }
+        ],
+        "prohibited_uses": ["Do not copy local wording."],
+        "anti_copying_guidance": "Study method without borrowing phrases.",
+    }
+    _write_yaml(story / "style-profile.yml", profile)
+    _write_yaml(
+        story / "style-reference-packets" / "real-probe.yml",
+        packet,
+    )
+    return story
+
+
 def _mutate_yaml(path: Path, mutation: Callable[[dict[str, Any]], None]) -> None:
     payload = _read_yaml(path)
     mutation(payload)
@@ -789,6 +920,30 @@ def _mutate_validation(
     mutation(payload)
     _write_validation(path, payload)
     _reseal_validation(story)
+
+
+def _mutate_holdout_and_reseal(
+    story: Path,
+    mutation: Callable[[dict[str, Any]], None],
+) -> None:
+    holdout_path = story / "source-study" / "holdouts.yml"
+    validation_path = story / "source-study" / "validation.md"
+    profile_path = story / "style-profile.yml"
+    holdout = _read_yaml(holdout_path)
+    mutation(holdout)
+    _write_yaml(holdout_path, holdout)
+    holdout_hash = sha256_file(holdout_path)
+
+    validation = _read_validation(validation_path)
+    validation["candidate_manifest_sha256"] = holdout_hash
+    _write_validation(validation_path, validation)
+
+    profile = _read_yaml(profile_path)
+    profile["provenance"]["holdout_manifest"]["sha256"] = holdout_hash
+    profile["provenance"]["validation_record"]["sha256"] = sha256_file(
+        validation_path
+    )
+    _write_yaml(profile_path, profile)
 
 
 def _mutate_ledger_and_reseal(
@@ -888,6 +1043,62 @@ def test_relative_profile_override_cannot_escape_story(style_story: Path) -> Non
         )
 
 
+def test_absolute_profile_override_rejects_outside_story(
+    style_story: Path,
+) -> None:
+    outside_profile = style_story.parent / "outside-style-profile.yml"
+    shutil.copy2(style_story / "style-profile.yml", outside_profile)
+
+    with pytest.raises(CreativeWriterError, match="story directory"):
+        resolve_style_profile_path(
+            style_story,
+            configured_path=None,
+            override=str(outside_profile),
+        )
+
+
+def test_absolute_profile_path_rejects_outside_repository(
+    style_story: Path,
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    outside_profile = (
+        tmp_path_factory.mktemp("outside-repository") / "style-profile.yml"
+    )
+    shutil.copy2(style_story / "style-profile.yml", outside_profile)
+
+    with pytest.raises(CreativeWriterError, match="repository root"):
+        load_style_context(
+            style_story.parent.parent,
+            style_story,
+            outside_profile,
+        )
+
+
+@pytest.mark.parametrize("entrypoint", ["resolver", "loader"])
+def test_absolute_profile_symlink_escape_is_rejected(
+    style_story: Path,
+    entrypoint: str,
+) -> None:
+    outside_profile = style_story.parent / "outside-style-profile.yml"
+    shutil.copy2(style_story / "style-profile.yml", outside_profile)
+    linked_profile = style_story / "linked-style-profile.yml"
+    linked_profile.symlink_to(outside_profile)
+
+    with pytest.raises(CreativeWriterError, match="symlink|redirects"):
+        if entrypoint == "resolver":
+            resolve_style_profile_path(
+                style_story,
+                configured_path=None,
+                override=str(linked_profile),
+            )
+        else:
+            load_style_context(
+                style_story.parent.parent,
+                style_story,
+                linked_profile,
+            )
+
+
 def test_profile_resolution_requires_configuration_or_override(
     style_story: Path,
 ) -> None:
@@ -918,6 +1129,22 @@ def test_profile_loads_and_inherits_claim_state(style_story: Path) -> None:
         CONTROL_PASSAGE,
     }
     assert set(context.packets) == {"test-packet"}
+
+
+def test_public_loader_accepts_real_approved_phase_2b_lifecycle(
+    approved_phase_2b_story: Path,
+) -> None:
+    context = load_style_context(
+        approved_phase_2b_story.parent.parent,
+        approved_phase_2b_story,
+        approved_phase_2b_story / "style-profile.yml",
+    )
+
+    assert context.analysis.study_status == "candidate_frozen"
+    assert context.ledger.stage == "validated"
+    assert context.validation.stage == "validated"
+    assert context.validation.validation_step == "complete"
+    assert context.rules[0].claims[0].status == "validated"
 
 
 def test_profile_load_does_not_require_generated_passage_indexes(
@@ -1009,6 +1236,29 @@ def test_profile_rejects_qualified_claim_when_only_validated_is_eligible(
         _load(style_story)
 
 
+def test_catalog_excludes_unreferenced_ineligible_claim_relationship(
+    style_story: Path,
+) -> None:
+    def mutate(payload: dict[str, Any]) -> None:
+        rejected_claim = deepcopy(payload["claims"][0])
+        rejected_claim["id"] = "rejected-history"
+        rejected_claim["status"] = "rejected"
+        rejected_claim["confidence"] = "tentative"
+        payload["claims"].append(rejected_claim)
+
+    _mutate_ledger_and_reseal(style_story, mutate)
+
+    context = _load(style_story)
+
+    assert {claim.id for claim in context.ledger.claims} == {
+        "validated-claim",
+        "rejected-history",
+    }
+    assert context.evidence_catalog[SUPPORT_PASSAGE].claim_ids == (
+        "validated-claim",
+    )
+
+
 def test_profile_rejects_heldout_role_outside_claim_jurisdiction(
     style_story: Path,
 ) -> None:
@@ -1059,6 +1309,59 @@ def test_profile_rejects_changed_source_tier(style_story: Path) -> None:
     _mutate_ledger_and_reseal(style_story, mutate)
 
     with pytest.raises(CreativeWriterError, match="authority tier.*selected-wells"):
+        _load(style_story)
+
+
+@pytest.mark.parametrize(
+    ("retain_heldout_assignment", "expected"),
+    [
+        (False, "Passage.*witness"),
+        (True, "development.*held-out|held-out.*development"),
+    ],
+)
+def test_profile_rejects_incompatible_development_passage_assignment(
+    style_story: Path,
+    retain_heldout_assignment: bool,
+    expected: str,
+) -> None:
+    def mutate_holdout(payload: dict[str, Any]) -> None:
+        selected = next(
+            witness
+            for witness in payload["witnesses"]
+            if witness["witness_id"] == "selected-wells/story-a"
+        )
+        selected["development_windows"][0]["passage_ids"].append(
+            HELDOUT_EXTRA_PASSAGE
+        )
+        if not retain_heldout_assignment:
+            heldout = next(
+                witness
+                for witness in payload["witnesses"]
+                if witness["witness_id"] == "heldout-wells"
+            )
+            heldout["holdout_windows"][0]["passage_ids"].remove(
+                HELDOUT_EXTRA_PASSAGE
+            )
+
+    def mutate_ledger(payload: dict[str, Any]) -> None:
+        payload["claims"][0]["supporting_passages"][0]["passage_id"] = (
+            HELDOUT_EXTRA_PASSAGE
+        )
+
+    def mutate_profile(payload: dict[str, Any]) -> None:
+        payload["rules"][0]["source_passage_ids"] = [
+            HELDOUT_EXTRA_PASSAGE
+        ]
+
+    def mutate_packet(payload: dict[str, Any]) -> None:
+        payload["entries"][0]["passage_id"] = HELDOUT_EXTRA_PASSAGE
+
+    _mutate_holdout_and_reseal(style_story, mutate_holdout)
+    _mutate_ledger_and_reseal(style_story, mutate_ledger)
+    _mutate_profile(style_story, mutate_profile)
+    _mutate_packet(style_story, mutate_packet)
+
+    with pytest.raises(CreativeWriterError, match=expected):
         _load(style_story)
 
 

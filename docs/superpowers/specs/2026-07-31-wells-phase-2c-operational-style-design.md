@@ -1,7 +1,7 @@
 # Wells Phase 2C Operational Style Design
 
 Date: 2026-07-31
-Status: approved conversational design, awaiting written-specification review
+Status: approved
 
 ## Purpose
 

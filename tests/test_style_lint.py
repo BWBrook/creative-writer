@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import os
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -13,7 +15,7 @@ from creative_writer.exceptions import CreativeWriterError
 from creative_writer.scaffold import create_story
 from creative_writer.source_analysis_models import ClaimJurisdiction
 from creative_writer.style_lint import generate_style_lint
-from creative_writer.style_models import StyleProfile
+from creative_writer.style_models import DialogueProfileSignal, StyleProfile
 from creative_writer.style_profiles import ResolvedStyleRule, StyleContext
 
 
@@ -72,6 +74,13 @@ def _write_stub(
         "Exercise the deterministic style report.\n",
         encoding="utf-8",
     )
+
+
+def _append_story_chapter(story: Path, chapter: str) -> None:
+    path = story / "story.yml"
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    payload["chapters"].append(chapter)
+    _write_yaml(path, payload)
 
 
 def _profile_payload() -> dict[str, Any]:
@@ -318,8 +327,8 @@ def _write_scanner(tmp_path: Path) -> Path:
                         "group": "AI vocabulary",
                         "severity": 2,
                         "line": 2,
-                        "match": "shaped",
-                        "context": "answer-shaped",
+                        "match": "`shaped`",
+                        "context": "answer-shaped [label](target) # fragment",
                     }
                 ],
             }
@@ -503,13 +512,37 @@ def test_style_lint_keeps_report_languages_separate(
     ]
     assert generic
     assert all(finding["claim_ids"] == [] for finding in generic)
+    assert all(finding["claim_statuses"] == {} for finding in generic)
     assert all(finding["claim_jurisdictions"] == [] for finding in generic)
     assert all(finding["source_passage_ids"] == [] for finding in generic)
+    question = next(
+        question
+        for question in payload["practice_questions"]
+        if question["claim_ids"]
+    )
+    assert list(question["claim_statuses"]) == question["claim_ids"]
+    assert question["claim_statuses"] == {"validated-claim": "validated"}
+    assert question["claim_jurisdictions"][0]["scope"] == "role_specific"
+    evidence_finding = next(
+        finding for finding in payload["findings"] if finding["claim_ids"]
+    )
+    assert list(evidence_finding["claim_statuses"]) == evidence_finding["claim_ids"]
+    assert evidence_finding["claim_statuses"] == {
+        "validated-claim": "validated"
+    }
+    assert evidence_finding["claim_jurisdictions"][0]["scope"] == "role_specific"
     assert payload["generic_ai"]["group_names"] == ["AI vocabulary"]
     assert "moderate surface risk" not in json.dumps(payload)
     assert "two groups" not in json.dumps(payload)
     assert "AI vocabulary" in markdown
     assert "wells:inference:1" in markdown
+    assert "Claim statuses: `validated-claim`: `validated`" in markdown
+    assert "Claim jurisdictions: `role_specific`" in markdown
+    assert '"`shaped`"' in generic[0]["observed_signal"]
+    assert '"answer-shaped [label](target) # fragment"' in (
+        generic[0]["observed_signal"]
+    )
+    assert "[label](target)" not in markdown
 
 
 def test_style_lint_reports_context_and_story_level_repetition(
@@ -556,6 +589,243 @@ def test_style_lint_records_mixed_role_caveat(
         "frame",
         "scientific-inference",
     ]
+
+
+@pytest.mark.parametrize("escape_kind", ["build", "manuscript"])
+def test_style_lint_preflights_paths_before_any_public_side_effect(
+    style_lint_story: Path,
+    monkeypatch,
+    escape_kind: str,
+) -> None:
+    root = style_lint_story.parent.parent
+    outside = root.parent / f"{root.name}-{escape_kind}-escape"
+    outside.mkdir(exist_ok=True)
+    scanner_called = False
+
+    def unexpected_scan(*args, **kwargs):
+        nonlocal scanner_called
+        scanner_called = True
+        raise AssertionError("scanner ran before path preflight completed")
+
+    monkeypatch.setattr(
+        style_lint_module,
+        "scan_ai_writing_json",
+        unexpected_scan,
+    )
+    if escape_kind == "build":
+        (root / "build").mkdir(exist_ok=True)
+        (root / "build" / "lint-story").symlink_to(
+            outside,
+            target_is_directory=True,
+        )
+    else:
+        manuscript = style_lint_story / "manuscript" / "first-account.md"
+        manuscript.unlink()
+        escaped_manuscript = outside / "escaped-manuscript.md"
+        escaped_manuscript.write_text("External prose.\n", encoding="utf-8")
+        manuscript.symlink_to(escaped_manuscript)
+
+    with pytest.raises(CreativeWriterError, match="path|resolve|symlink"):
+        generate_style_lint(root, "lint-story")
+
+    assert scanner_called is False
+    assert not (outside / "reports" / "coherence-report.md").exists()
+    assert not (
+        root / "build" / "lint-story" / "reports" / "coherence-report.md"
+    ).exists()
+
+
+def test_story_rules_aggregate_only_role_applicable_chapters(
+    style_lint_story: Path,
+) -> None:
+    _configure_contract(style_lint_story, generic_ai_audit=False)
+    _write_stub(
+        style_lint_story / "chapter-stubs" / "01-opening.md",
+        title="Opening",
+        manuscript="manuscript/first-account.md",
+        roles=["scientific-inference"],
+    )
+    (style_lint_story / "manuscript" / "first-account.md").write_text(
+        "Foreign words recur here.\n"
+        "Foreign words recur here.\n"
+        "Foreign words recur here.\n",
+        encoding="utf-8",
+    )
+    (style_lint_story / "manuscript" / "second-account.md").write_text(
+        "The witness waited.\n",
+        encoding="utf-8",
+    )
+
+    payload, _markdown = _read_report(style_lint_story)
+
+    record = next(
+        record
+        for record in payload["diagnostics"]
+        if record["rule_id"] == "diagnostic-repeated-phrases"
+    )
+    assert record["manuscript"].endswith("manuscript/second-account.md")
+    assert record["roles"] == ["frame"]
+    assert record["measurements"]["word_count"] == 3
+    assert record["triggered"] is False
+    assert all(
+        finding["rule_id"] != "diagnostic-repeated-phrases"
+        for finding in payload["findings"]
+    )
+
+
+@pytest.mark.parametrize(
+    ("duplicate_kind", "message"),
+    [
+        ("stub", "duplicate resolved stub"),
+        ("manuscript", "duplicate resolved manuscript"),
+        ("stem", "duplicate stub stem"),
+    ],
+)
+def test_style_lint_rejects_duplicate_chapter_identities_and_outputs(
+    style_lint_story: Path,
+    duplicate_kind: str,
+    message: str,
+) -> None:
+    if duplicate_kind == "stub":
+        _append_story_chapter(
+            style_lint_story,
+            "chapter-stubs/01-opening.md",
+        )
+    else:
+        nested = style_lint_story / "chapter-stubs" / "nested"
+        nested.mkdir()
+        stub_name = (
+            "01-opening.md" if duplicate_kind == "stem" else "03-copy.md"
+        )
+        manuscript = (
+            "manuscript/third-account.md"
+            if duplicate_kind == "stem"
+            else "manuscript/first-account.md"
+        )
+        _write_stub(
+            nested / stub_name,
+            title="Duplicate boundary",
+            manuscript=manuscript,
+            roles=["frame"],
+        )
+        if duplicate_kind == "stem":
+            (style_lint_story / manuscript).write_text(
+                "A distinct third account.\n",
+                encoding="utf-8",
+            )
+        _append_story_chapter(
+            style_lint_story,
+            f"chapter-stubs/nested/{stub_name}",
+        )
+
+    with pytest.raises(CreativeWriterError, match=message):
+        generate_style_lint(
+            style_lint_story.parent.parent,
+            "lint-story",
+        )
+
+
+def test_repeated_signal_review_thresholds_are_evaluated_per_rule(
+    style_lint_story: Path,
+    monkeypatch,
+) -> None:
+    context = _style_context(style_lint_story)
+    repeated = next(
+        resolved
+        for resolved in context.rules
+        if resolved.rule.id == "diagnostic-repeated-phrases"
+    )
+    assert repeated.rule.signal is not None
+    high_floor_signal = repeated.rule.signal.model_copy(
+        update={"minimum_words": 1000}
+    )
+    high_floor_rule = repeated.rule.model_copy(
+        update={
+            "id": "diagnostic-repeated-phrases-high-floor",
+            "signal": high_floor_signal,
+        }
+    )
+    context = replace(
+        context,
+        rules=(
+            *context.rules,
+            ResolvedStyleRule(rule=high_floor_rule, claims=()),
+        ),
+    )
+    monkeypatch.setattr(
+        style_lint_module,
+        "load_style_context",
+        lambda root, story_dir, profile_path: context,
+    )
+
+    payload, _markdown = _read_report(style_lint_story)
+
+    records = {
+        record["rule_id"]: record for record in payload["diagnostics"]
+    }
+    assert records["diagnostic-repeated-phrases"]["triggered"] is True
+    assert (
+        records["diagnostic-repeated-phrases-high-floor"]["triggered"]
+        is False
+    )
+
+
+def test_style_lint_rejects_unmeasurable_signal_tolerance_pair(
+    style_lint_story: Path,
+    monkeypatch,
+) -> None:
+    context = _style_context(style_lint_story)
+    cadence = next(
+        resolved
+        for resolved in context.rules
+        if resolved.rule.id == "diagnostic-uniform-cadence"
+    )
+    invalid_rule = cadence.rule.model_copy(
+        update={
+            "signal": DialogueProfileSignal(
+                kind="dialogue_profile",
+                minimum_words=1,
+            )
+        }
+    )
+    invalid_resolved = ResolvedStyleRule(
+        rule=invalid_rule,
+        claims=cadence.claims,
+    )
+    context = replace(
+        context,
+        rules=tuple(
+            invalid_resolved
+            if resolved.rule.id == invalid_rule.id
+            else resolved
+            for resolved in context.rules
+        ),
+    )
+    monkeypatch.setattr(
+        style_lint_module,
+        "load_style_context",
+        lambda root, story_dir, profile_path: context,
+    )
+    scanner_called = False
+
+    def unexpected_scan(*args, **kwargs):
+        nonlocal scanner_called
+        scanner_called = True
+        raise AssertionError("scanner ran for an invalid rule configuration")
+
+    monkeypatch.setattr(
+        style_lint_module,
+        "scan_ai_writing_json",
+        unexpected_scan,
+    )
+
+    with pytest.raises(CreativeWriterError, match="cannot produce"):
+        generate_style_lint(
+            style_lint_story.parent.parent,
+            "lint-story",
+        )
+
+    assert scanner_called is False
 
 
 def test_style_lint_marks_missing_generic_scanner_partial(
@@ -612,6 +882,52 @@ def test_style_lint_is_byte_stable_across_identical_runs(
 
     assert second.markdown_path.read_bytes() == first_markdown
     assert second.json_path.read_bytes() == first_json
+
+
+def test_style_lint_rolls_back_both_reports_when_pair_publication_fails(
+    style_lint_story: Path,
+    monkeypatch,
+) -> None:
+    first = generate_style_lint(
+        style_lint_story.parent.parent,
+        "lint-story",
+    )
+    old_markdown = first.markdown_path.read_bytes()
+    old_json = first.json_path.read_bytes()
+    (style_lint_story / "manuscript" / "first-account.md").write_text(
+        "Perhaps the lamp failed.\n"
+        "A changed account now occupies this chapter.\n",
+        encoding="utf-8",
+    )
+    real_replace = os.replace
+    failed = False
+
+    def fail_json_publish(source, destination):
+        nonlocal failed
+        if not failed and Path(destination) == first.json_path:
+            failed = True
+            raise OSError("simulated JSON publication failure")
+        return real_replace(source, destination)
+
+    monkeypatch.setattr(os, "replace", fail_json_publish)
+
+    with pytest.raises(
+        CreativeWriterError,
+        match="Unable to publish style-lint report",
+    ):
+        generate_style_lint(
+            style_lint_story.parent.parent,
+            "lint-story",
+        )
+
+    assert failed is True
+    assert first.markdown_path.read_bytes() == old_markdown
+    assert first.json_path.read_bytes() == old_json
+    assert not [
+        path
+        for path in first.markdown_path.parent.iterdir()
+        if ".tmp-" in path.name or ".backup-" in path.name
+    ]
 
 
 def test_style_lint_rejects_malformed_profile(tmp_path: Path) -> None:

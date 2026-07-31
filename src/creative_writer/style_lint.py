@@ -4,19 +4,31 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import re
 import statistics
 import unicodedata
+import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
+from pydantic import ValidationError
+
 from creative_writer.ai_audit import scan_ai_writing_json
 from creative_writer.checks import check_story
 from creative_writer.exceptions import CreativeWriterError
-from creative_writer.files import ensure_directory
-from creative_writer.models import ChapterDocument
+from creative_writer.files import (
+    ensure_directory,
+    load_yaml_model,
+    split_front_matter,
+)
+from creative_writer.models import (
+    ChapterDocument,
+    ChapterFrontMatter,
+    StoryConfig,
+)
 from creative_writer.prose_heuristics import run_surface_heuristics
 from creative_writer.source_analysis_common import safe_relative_path, sha256_file
 from creative_writer.style_diagnostics import (
@@ -104,6 +116,40 @@ class _StoryText:
     segments: tuple[_StorySegment, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class _PreflightChapter:
+    stub_path: Path
+    manuscript_path: Path
+    stub_stem: str
+
+
+@dataclass(frozen=True, slots=True)
+class _ReportTarget:
+    output_dir: Path
+    markdown_path: Path
+    json_path: Path
+
+
+@dataclass(frozen=True, slots=True)
+class _PreflightLayout:
+    story_dir: Path
+    chapters: tuple[_PreflightChapter, ...]
+    story_target: _ReportTarget
+    chapter_targets: dict[str, _ReportTarget]
+
+
+@dataclass(slots=True)
+class _PublicationEntry:
+    final_path: Path
+    content: bytes
+    temporary_path: Path
+    backup_path: Path
+    had_original: bool
+    staged: bool = False
+    backed_up: bool = False
+    published: bool = False
+
+
 def _unique(values: Sequence[str]) -> list[str]:
     seen: set[str] = set()
     result: list[str] = []
@@ -112,6 +158,244 @@ def _unique(values: Sequence[str]) -> list[str]:
             seen.add(value)
             result.append(value)
     return result
+
+
+def _contained_path(root: Path, relative: str, label: str) -> Path:
+    try:
+        return safe_relative_path(root, relative)
+    except CreativeWriterError as exc:
+        raise CreativeWriterError(
+            f"{label} path is not physically contained: {exc}"
+        ) from exc
+
+
+def _require_directory(path: Path, label: str) -> None:
+    if not path.is_dir() or path.is_symlink():
+        raise CreativeWriterError(f"{label} path is not a physical directory: {path}")
+
+
+def _require_file(path: Path, label: str) -> None:
+    if not path.is_file() or path.is_symlink():
+        raise CreativeWriterError(f"{label} path is not a physical file: {path}")
+
+
+def _preflight_directory(path: Path, label: str) -> None:
+    if path.exists() and (not path.is_dir() or path.is_symlink()):
+        raise CreativeWriterError(
+            f"{label} path cannot be used as a physical directory: {path}"
+        )
+
+
+def _preflight_file_target(path: Path, label: str) -> None:
+    if path.exists() and (not path.is_file() or path.is_symlink()):
+        raise CreativeWriterError(
+            f"{label} path cannot be used as a report file: {path}"
+        )
+
+
+def _report_target(
+    root: Path,
+    *,
+    output_relative: str,
+    markdown_relative: str,
+    json_relative: str,
+    label: str,
+) -> _ReportTarget:
+    output_dir = _contained_path(root, output_relative, f"{label} directory")
+    markdown_path = _contained_path(
+        root,
+        markdown_relative,
+        f"{label} Markdown target",
+    )
+    json_path = _contained_path(
+        root,
+        json_relative,
+        f"{label} JSON target",
+    )
+    _preflight_directory(output_dir, f"{label} directory")
+    _preflight_file_target(markdown_path, f"{label} Markdown target")
+    _preflight_file_target(json_path, f"{label} JSON target")
+    return _ReportTarget(
+        output_dir=output_dir,
+        markdown_path=markdown_path,
+        json_path=json_path,
+    )
+
+
+def _physical_file_identity(path: Path) -> tuple[int, int]:
+    stat = path.stat()
+    return stat.st_dev, stat.st_ino
+
+
+def _collision_key(value: str) -> str:
+    return unicodedata.normalize("NFC", value).casefold()
+
+
+def _preflight_layout(root: Path, slug: str) -> _PreflightLayout:
+    story_dir = _contained_path(root, f"stories/{slug}", "story")
+    _require_directory(story_dir, "story")
+
+    story_path = _contained_path(root, f"stories/{slug}/story.yml", "story config")
+    contract_path = _contained_path(
+        root,
+        f"stories/{slug}/contract.yml",
+        "story contract",
+    )
+    _require_file(story_path, "story config")
+    _require_file(contract_path, "story contract")
+    try:
+        story = load_yaml_model(story_path, StoryConfig)
+    except CreativeWriterError as exc:
+        if "chapters must be unique" in str(exc):
+            raise CreativeWriterError(
+                f"Story {slug} has duplicate resolved stub identity"
+            ) from exc
+        raise
+    if story.style_card is not None:
+        style_card = _contained_path(story_dir, story.style_card, "style card")
+        _require_file(style_card, "style card")
+
+    chapters: list[_PreflightChapter] = []
+    stub_identities: set[tuple[int, int]] = set()
+    manuscript_identities: set[tuple[int, int]] = set()
+    stem_keys: set[str] = set()
+    for configured_stub in story.chapters:
+        stub_path = _contained_path(
+            story_dir,
+            configured_stub,
+            "chapter stub",
+        )
+        _require_file(stub_path, "chapter stub")
+        stub_identity = _physical_file_identity(stub_path)
+        if stub_identity in stub_identities:
+            raise CreativeWriterError(
+                f"Story {slug} has duplicate resolved stub identity: {stub_path}"
+            )
+        stub_identities.add(stub_identity)
+
+        try:
+            metadata, _body = split_front_matter(
+                stub_path.read_text(encoding="utf-8"),
+                stub_path,
+            )
+            front_matter = ChapterFrontMatter.model_validate(metadata)
+        except UnicodeDecodeError as exc:
+            raise CreativeWriterError(
+                f"Chapter stub is not valid UTF-8: {stub_path}"
+            ) from exc
+        except OSError as exc:
+            raise CreativeWriterError(
+                f"Unable to read chapter stub {stub_path}: {exc}"
+            ) from exc
+        except ValidationError as exc:
+            raise CreativeWriterError(
+                f"Schema validation failed for {stub_path}: {exc}"
+            ) from exc
+
+        manuscript_path = _contained_path(
+            story_dir,
+            front_matter.manuscript,
+            "chapter manuscript",
+        )
+        _require_file(manuscript_path, "chapter manuscript")
+        manuscript_identity = _physical_file_identity(manuscript_path)
+        if manuscript_identity in manuscript_identities:
+            raise CreativeWriterError(
+                "Story "
+                f"{slug} has duplicate resolved manuscript identity: "
+                f"{manuscript_path}"
+            )
+        manuscript_identities.add(manuscript_identity)
+
+        stem_key = _collision_key(stub_path.stem)
+        if stem_key in stem_keys:
+            raise CreativeWriterError(
+                f"Story {slug} has duplicate stub stem/output collision: "
+                f"{stub_path.stem}"
+            )
+        stem_keys.add(stem_key)
+        chapters.append(
+            _PreflightChapter(
+                stub_path=stub_path,
+                manuscript_path=manuscript_path,
+                stub_stem=stub_path.stem,
+            )
+        )
+
+    build_dir = _contained_path(root, "build", "build directory")
+    story_build_dir = _contained_path(
+        root,
+        f"build/{slug}",
+        "story build directory",
+    )
+    reports_dir = _contained_path(
+        root,
+        f"build/{slug}/reports",
+        "story reports directory",
+    )
+    coherence_path = _contained_path(
+        root,
+        f"build/{slug}/reports/coherence-report.md",
+        "coherence report target",
+    )
+    style_dir = _contained_path(
+        root,
+        f"build/{slug}/style",
+        "style report directory",
+    )
+    chapter_style_dir = _contained_path(
+        root,
+        f"build/{slug}/style/chapters",
+        "chapter style report directory",
+    )
+    for path, label in (
+        (build_dir, "build directory"),
+        (story_build_dir, "story build directory"),
+        (reports_dir, "story reports directory"),
+        (style_dir, "style report directory"),
+        (chapter_style_dir, "chapter style report directory"),
+    ):
+        _preflight_directory(path, label)
+    _preflight_file_target(coherence_path, "coherence report target")
+
+    story_target = _report_target(
+        root,
+        output_relative=f"build/{slug}/style",
+        markdown_relative=f"build/{slug}/style/lint-report.md",
+        json_relative=f"build/{slug}/style/lint-report.json",
+        label="story style report",
+    )
+    chapter_targets: dict[str, _ReportTarget] = {}
+    output_keys: set[str] = set()
+    for chapter in chapters:
+        target = _report_target(
+            root,
+            output_relative=f"build/{slug}/style/chapters",
+            markdown_relative=(
+                f"build/{slug}/style/chapters/"
+                f"{chapter.stub_stem}-lint-report.md"
+            ),
+            json_relative=(
+                f"build/{slug}/style/chapters/"
+                f"{chapter.stub_stem}-lint-report.json"
+            ),
+            label=f"chapter {chapter.stub_stem} style report",
+        )
+        for path in (target.markdown_path, target.json_path):
+            key = _collision_key(path.as_posix())
+            if key in output_keys:
+                raise CreativeWriterError(
+                    f"Story {slug} has a chapter report output collision: {path}"
+                )
+            output_keys.add(key)
+        chapter_targets[chapter.stub_stem] = target
+
+    return _PreflightLayout(
+        story_dir=story_dir,
+        chapters=tuple(chapters),
+        story_target=story_target,
+        chapter_targets=chapter_targets,
+    )
 
 
 def _matching_roles(rule: ResolvedStyleRule, roles: Sequence[str]) -> list[str]:
@@ -149,12 +433,60 @@ def _single_signal_configuration(
     ]
     if not signals:
         return None
-    signatures = {repr(signal.model_dump(mode="json")) for signal in signals}
+    if kind == "repeated_ngram":
+        signatures = {
+            (
+                signal.ngram_size,
+                signal.minimum_occurrences,
+                tuple(sorted(word.casefold() for word in signal.stop_words)),
+            )
+            for signal in signals
+        }
+    elif kind == "paragraph_opening":
+        signatures = {
+            (
+                signal.prefix_words,
+                signal.minimum_occurrences,
+            )
+            for signal in signals
+        }
+    else:
+        signatures = {
+            repr(signal.model_dump(mode="json")) for signal in signals
+        }
     if len(signatures) > 1:
         raise CreativeWriterError(
             f"Applicable {kind} rules require incompatible one-pass settings"
         )
     return signals[0]
+
+
+def _validate_measurement_contract(
+    rules: Sequence[ResolvedStyleRule],
+) -> None:
+    metrics_by_signal = {
+        "sentence_profile": {
+            "sentence_length_median",
+            "sentence_length_p90",
+            "sentence_length_cv",
+            "paragraph_length_median",
+        },
+        "dialogue_profile": {"dialogue_proportion"},
+    }
+    for resolved in rules:
+        rule = resolved.rule
+        if rule.tolerance is None:
+            continue
+        if rule.signal is None:
+            raise CreativeWriterError(
+                f"Style rule {rule.id} has a tolerance but no signal"
+            )
+        available = metrics_by_signal.get(rule.signal.kind, set())
+        if rule.tolerance.metric not in available:
+            raise CreativeWriterError(
+                f"Style rule {rule.id} signal {rule.signal.kind} cannot produce "
+                f"configured measurement {rule.tolerance.metric}"
+            )
 
 
 def _analyse_for_rules(
@@ -318,11 +650,14 @@ def _practice_question(
     resolved: ResolvedStyleRule,
     roles: Sequence[str],
 ) -> StylePracticeQuestion:
+    claims = list(resolved.claims)
     return StylePracticeQuestion(
         rule_id=resolved.rule.id,
         advisory=resolved.rule.advisory,
         roles=_matching_roles(resolved, roles),
-        claim_ids=[claim.id for claim in resolved.claims],
+        claim_ids=[claim.id for claim in claims],
+        claim_statuses={claim.id: claim.status for claim in claims},
+        claim_jurisdictions=[claim.jurisdiction for claim in claims],
         question=resolved.rule.review_question,
         source_passage_ids=_rule_passages(resolved),
         interpretation_limits=resolved.rule.interpretation_limits,
@@ -340,6 +675,7 @@ def _style_finding(
     advisory: Literal["notice", "review"] | None = None,
     limitations: str | None = None,
 ) -> StyleFinding:
+    claims = list(resolved.claims)
     return StyleFinding(
         id="pending",
         category=_finding_category(resolved),
@@ -352,10 +688,9 @@ def _style_finding(
         advisory=advisory or resolved.rule.advisory,
         roles=_matching_roles(resolved, roles),
         scope=resolved.rule.scope,
-        claim_ids=[claim.id for claim in resolved.claims],
-        claim_jurisdictions=[
-            claim.jurisdiction for claim in resolved.claims
-        ],
+        claim_ids=[claim.id for claim in claims],
+        claim_statuses={claim.id: claim.status for claim in claims},
+        claim_jurisdictions=[claim.jurisdiction for claim in claims],
         source_passage_ids=_rule_passages(resolved),
         editorial_question=resolved.rule.review_question,
         limitations=limitations or resolved.rule.interpretation_limits,
@@ -686,6 +1021,7 @@ def _surface_finding(
         roles=list(roles),
         scope="chapter",
         claim_ids=[],
+        claim_statuses={},
         claim_jurisdictions=[],
         source_passage_ids=[],
         editorial_question=questions[warning.rule_id],
@@ -720,7 +1056,9 @@ def _generic_finding(
         line_start=hit.line,
         line_end=hit.line,
         observed_signal=(
-            f"{hit.group}: {hit.match} in context {hit.context}"
+            f"{hit.group} match "
+            f"{json.dumps(hit.match, ensure_ascii=False)} in context "
+            f"{json.dumps(hit.context, ensure_ascii=False)}"
         ),
         rule_id=f"ai-audit-{_slugify_group(group_name)}",
         rule_family=None,
@@ -732,6 +1070,7 @@ def _generic_finding(
         roles=list(roles),
         scope="passage",
         claim_ids=[],
+        claim_statuses={},
         claim_jurisdictions=[],
         source_passage_ids=[],
         editorial_question=(
@@ -788,8 +1127,53 @@ def _assign_finding_ids(
     ]
 
 
+def _markdown_safe(value: str) -> str:
+    return re.sub(r"([\\`*_\[\]{}<>#|])", r"\\\1", value)
+
+
+def _render_claim_statuses(
+    claim_ids: Sequence[str],
+    claim_statuses: dict[str, str],
+) -> str:
+    return (
+        ", ".join(
+            f"`{claim_id}`: `{claim_statuses[claim_id]}`"
+            for claim_id in claim_ids
+        )
+        or "None"
+    )
+
+
+def _render_claim_jurisdictions(jurisdictions: Sequence[object]) -> str:
+    rendered: list[str] = []
+    for jurisdiction in jurisdictions:
+        roles = (
+            ", ".join(f"`{role}`" for role in jurisdiction.roles)
+            or "None"
+        )
+        witnesses = (
+            ", ".join(
+                f"`{witness}`"
+                for witness in jurisdiction.eligible_witness_ids
+            )
+            or "None"
+        )
+        rendered.append(
+            f"`{jurisdiction.scope}` (roles: {roles}; "
+            f"eligible witnesses: {witnesses})"
+        )
+    return "; ".join(rendered) or "None"
+
+
 def _render_question(question: StylePracticeQuestion) -> list[str]:
     claims = ", ".join(f"`{claim}`" for claim in question.claim_ids) or "None"
+    statuses = _render_claim_statuses(
+        question.claim_ids,
+        question.claim_statuses,
+    )
+    jurisdictions = _render_claim_jurisdictions(
+        question.claim_jurisdictions
+    )
     sources = (
         ", ".join(f"`{source}`" for source in question.source_passage_ids)
         or "None"
@@ -801,9 +1185,11 @@ def _render_question(question: StylePracticeQuestion) -> list[str]:
         f"- Advisory: `{question.advisory}`",
         f"- Roles: {roles}",
         f"- Phase 2B claims: {claims}",
+        f"- Claim statuses: {statuses}",
+        f"- Claim jurisdictions: {jurisdictions}",
         f"- Source passages: {sources}",
-        f"- Question: {question.question}",
-        f"- Limits: {question.interpretation_limits}",
+        f"- Question: {_markdown_safe(question.question)}",
+        f"- Limits: {_markdown_safe(question.interpretation_limits)}",
         "",
     ]
 
@@ -811,6 +1197,13 @@ def _render_question(question: StylePracticeQuestion) -> list[str]:
 def _render_finding(finding: StyleFinding) -> list[str]:
     roles = ", ".join(f"`{role}`" for role in finding.roles) or "None"
     claims = ", ".join(f"`{claim}`" for claim in finding.claim_ids) or "None"
+    statuses = _render_claim_statuses(
+        finding.claim_ids,
+        finding.claim_statuses,
+    )
+    jurisdictions = _render_claim_jurisdictions(
+        finding.claim_jurisdictions
+    )
     sources = (
         ", ".join(f"`{source}`" for source in finding.source_passage_ids)
         or "None"
@@ -829,10 +1222,12 @@ def _render_finding(finding: StyleFinding) -> list[str]:
         f"- Advisory: `{finding.advisory}`",
         f"- Roles: {roles}",
         f"- Phase 2B claims: {claims}",
+        f"- Claim statuses: {statuses}",
+        f"- Claim jurisdictions: {jurisdictions}",
         f"- Source passages: {sources}",
-        f"- Observed: {finding.observed_signal}",
-        f"- Editorial question: {finding.editorial_question}",
-        f"- Limits: {finding.limitations}",
+        f"- Observed: {_markdown_safe(finding.observed_signal)}",
+        f"- Editorial question: {_markdown_safe(finding.editorial_question)}",
+        f"- Limits: {_markdown_safe(finding.limitations)}",
         "",
     ]
 
@@ -849,7 +1244,8 @@ def _render_findings(
             *[
                 f"- `{finding.id}` | `{finding.category}` | "
                 f"`{finding.manuscript}:{finding.line_start}` | "
-                f"`{finding.rule_id}` | {finding.observed_signal}"
+                f"`{finding.rule_id}` | "
+                f"{_markdown_safe(finding.observed_signal)}"
                 for finding in findings
             ],
             "",
@@ -1052,6 +1448,165 @@ def _packet_hashes(
     }
 
 
+def _recheck_report_target(root: Path, target: _ReportTarget) -> None:
+    for path, label in (
+        (target.output_dir, "style report directory"),
+        (target.markdown_path, "style report Markdown target"),
+        (target.json_path, "style report JSON target"),
+    ):
+        relative = path.relative_to(root).as_posix()
+        checked = _contained_path(root, relative, label)
+        if checked != path:
+            raise CreativeWriterError(
+                f"{label} path changed after preflight: {path}"
+            )
+    _preflight_directory(target.output_dir, "style report directory")
+    _preflight_file_target(
+        target.markdown_path,
+        "style report Markdown target",
+    )
+    _preflight_file_target(
+        target.json_path,
+        "style report JSON target",
+    )
+
+
+def _stage_report_entry(entry: _PublicationEntry) -> None:
+    with entry.temporary_path.open("xb") as handle:
+        entry.staged = True
+        handle.write(entry.content)
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def _remove_if_present(path: Path) -> None:
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        pass
+
+
+def _rollback_report_entries(
+    entries: Sequence[_PublicationEntry],
+) -> list[str]:
+    errors: list[str] = []
+    for entry in reversed(entries):
+        try:
+            if entry.published:
+                _remove_if_present(entry.final_path)
+            if entry.backed_up and entry.backup_path.exists():
+                os.replace(entry.backup_path, entry.final_path)
+            elif not entry.had_original:
+                _remove_if_present(entry.final_path)
+        except OSError as exc:
+            errors.append(f"{entry.final_path}: {exc}")
+    return errors
+
+
+def _cleanup_staged_temporaries(
+    entries: Sequence[_PublicationEntry],
+) -> list[str]:
+    errors: list[str] = []
+    for entry in entries:
+        if not entry.staged:
+            continue
+        try:
+            _remove_if_present(entry.temporary_path)
+        except OSError as exc:
+            errors.append(f"{entry.temporary_path}: {exc}")
+    return errors
+
+
+def _publish_report_pair(
+    target: _ReportTarget,
+    *,
+    markdown_bytes: bytes,
+    json_bytes: bytes,
+) -> None:
+    markdown_exists = target.markdown_path.exists()
+    json_exists = target.json_path.exists()
+    if markdown_exists != json_exists:
+        raise CreativeWriterError(
+            "Cannot publish style-lint report over an incomplete existing "
+            "Markdown/JSON pair"
+        )
+
+    token = uuid.uuid4().hex
+    entries = [
+        _PublicationEntry(
+            final_path=target.markdown_path,
+            content=markdown_bytes,
+            temporary_path=target.markdown_path.with_name(
+                f".{target.markdown_path.name}.tmp-{token}"
+            ),
+            backup_path=target.markdown_path.with_name(
+                f".{target.markdown_path.name}.backup-{token}"
+            ),
+            had_original=markdown_exists,
+        ),
+        _PublicationEntry(
+            final_path=target.json_path,
+            content=json_bytes,
+            temporary_path=target.json_path.with_name(
+                f".{target.json_path.name}.tmp-{token}"
+            ),
+            backup_path=target.json_path.with_name(
+                f".{target.json_path.name}.backup-{token}"
+            ),
+            had_original=json_exists,
+        ),
+    ]
+    for entry in entries:
+        if entry.temporary_path.exists() or entry.backup_path.exists():
+            raise CreativeWriterError(
+                "Cannot publish style-lint report because a staging path "
+                f"already exists: {entry.temporary_path}"
+            )
+    try:
+        for entry in entries:
+            _stage_report_entry(entry)
+        if markdown_exists:
+            for entry in entries:
+                os.replace(entry.final_path, entry.backup_path)
+                entry.backed_up = True
+        for entry in entries:
+            os.replace(entry.temporary_path, entry.final_path)
+            entry.published = True
+    except OSError as exc:
+        rollback_errors = _rollback_report_entries(entries)
+        cleanup_errors = _cleanup_staged_temporaries(entries)
+        details = [
+            (
+                f"rollback errors: {'; '.join(rollback_errors)}"
+                if rollback_errors
+                else ""
+            ),
+            (
+                f"temporary cleanup errors: {'; '.join(cleanup_errors)}"
+                if cleanup_errors
+                else ""
+            ),
+        ]
+        detail = "; " + "; ".join(item for item in details if item) if any(
+            details
+        ) else ""
+        raise CreativeWriterError(
+            f"Unable to publish style-lint report pair: {exc}{detail}"
+        ) from exc
+
+    cleanup_errors = _cleanup_staged_temporaries(entries)
+    for entry in entries:
+        try:
+            _remove_if_present(entry.backup_path)
+        except OSError as exc:
+            cleanup_errors.append(f"{entry.backup_path}: {exc}")
+    if cleanup_errors:
+        raise CreativeWriterError(
+            "Style-lint report pair was published, but backup cleanup failed: "
+            + "; ".join(cleanup_errors)
+        )
+
+
 def generate_style_lint(
     root: Path,
     slug: str,
@@ -1064,7 +1619,8 @@ def generate_style_lint(
     if not isinstance(slug, str) or _SLUG.fullmatch(slug) is None:
         raise CreativeWriterError("Story slug must be a canonical lowercase slug")
     resolved_root = root.resolve(strict=False)
-    story_dir = safe_relative_path(resolved_root, f"stories/{slug}")
+    layout = _preflight_layout(resolved_root, slug)
+    story_dir = layout.story_dir
     checked = check_story(resolved_root, slug)
     if (
         not checked.ok
@@ -1076,6 +1632,26 @@ def generate_style_lint(
             f"Cannot style-lint {slug}. Fix blocking issues first. "
             f"See {checked.report_path}."
         )
+    if len(checked.chapters) != len(layout.chapters):
+        raise CreativeWriterError(
+            "Configured chapter inventory changed after path preflight"
+        )
+    for chapter, preflight_chapter in zip(
+        checked.chapters,
+        layout.chapters,
+        strict=True,
+    ):
+        _require_file(chapter.stub_path, "chapter stub")
+        _require_file(chapter.manuscript_path, "chapter manuscript")
+        if (
+            _physical_file_identity(chapter.stub_path)
+            != _physical_file_identity(preflight_chapter.stub_path)
+            or _physical_file_identity(chapter.manuscript_path)
+            != _physical_file_identity(preflight_chapter.manuscript_path)
+        ):
+            raise CreativeWriterError(
+                "Configured chapter paths changed after path preflight"
+            )
 
     configured_profile = (
         checked.contract.style_lint.profile
@@ -1096,6 +1672,7 @@ def generate_style_lint(
         raise CreativeWriterError(
             "Invalid chapter style metadata:\n" + "\n".join(metadata_errors)
         )
+    _validate_measurement_contract(context.rules)
 
     chapters = _select_chapters(
         story_dir,
@@ -1208,22 +1785,46 @@ def generate_style_lint(
             )
         )
 
-    union_roles = _unique(
-        [
-            role
-            for chapter in chapters
-            for role in chapter.front_matter.style_roles
+    story_rule_groups: dict[
+        tuple[int, ...],
+        list[ResolvedStyleRule],
+    ] = {}
+    for resolved in context.rules:
+        if resolved.rule.scope != "story":
+            continue
+        applicable_indexes = tuple(
+            index
+            for index, chapter in enumerate(chapters)
+            if _applies(resolved, chapter.front_matter.style_roles)
+        )
+        if applicable_indexes:
+            story_rule_groups.setdefault(applicable_indexes, []).append(
+                resolved
+            )
+
+    for applicable_indexes, story_rules in story_rule_groups.items():
+        applicable_chapters = [
+            chapters[index] for index in applicable_indexes
         ]
-    )
-    story_rules = _applicable_rules(context, union_roles, {"story"})
-    if story_rules:
-        combined = _story_text(chapters, manuscripts)
-        story_diagnostics = _analyse_for_rules(combined.text, story_rules)
+        applicable_roles = _unique(
+            [
+                role
+                for chapter in applicable_chapters
+                for role in chapter.front_matter.style_roles
+            ]
+        )
+        combined = _story_text(applicable_chapters, manuscripts)
+        story_diagnostics = _analyse_for_rules(
+            combined.text,
+            story_rules,
+        )
         story_evaluation = _evaluate_rules(
             story_rules,
             story_diagnostics,
-            roles=union_roles,
-            manuscript=manuscripts[chapters[0].manuscript_path],
+            roles=applicable_roles,
+            manuscript=manuscripts[
+                applicable_chapters[0].manuscript_path
+            ],
         )
         story_evaluation = _map_story_findings(
             story_evaluation,
@@ -1307,57 +1908,39 @@ def generate_style_lint(
         partial=generic_status == "unavailable",
     )
 
-    if scope == "story":
-        output_dir = safe_relative_path(
-            resolved_root,
-            f"build/{slug}/style",
-        )
-        markdown_path = safe_relative_path(
-            resolved_root,
-            f"build/{slug}/style/lint-report.md",
-        )
-        json_path = safe_relative_path(
-            resolved_root,
-            f"build/{slug}/style/lint-report.json",
-        )
-    else:
-        stem = chapters[0].stub_path.stem
-        output_dir = safe_relative_path(
-            resolved_root,
-            f"build/{slug}/style/chapters",
-        )
-        markdown_path = safe_relative_path(
-            resolved_root,
-            f"build/{slug}/style/chapters/{stem}-lint-report.md",
-        )
-        json_path = safe_relative_path(
-            resolved_root,
-            f"build/{slug}/style/chapters/{stem}-lint-report.json",
-        )
+    target = (
+        layout.story_target
+        if scope == "story"
+        else layout.chapter_targets[chapters[0].stub_path.stem]
+    )
+    markdown_bytes = _render_markdown(report).encode("utf-8")
+    json_bytes = json.dumps(
+        report.model_dump(mode="json"),
+        ensure_ascii=False,
+        sort_keys=True,
+        indent=2,
+    ).encode("utf-8")
+    _recheck_report_target(resolved_root, target)
     try:
-        ensure_directory(output_dir)
-        markdown_path.write_text(_render_markdown(report), encoding="utf-8")
-        json_path.write_text(
-            json.dumps(
-                report.model_dump(mode="json"),
-                ensure_ascii=False,
-                sort_keys=True,
-                indent=2,
-            ),
-            encoding="utf-8",
-        )
+        ensure_directory(target.output_dir)
     except OSError as exc:
         raise CreativeWriterError(
-            f"Unable to write style-lint report for {slug}: {exc}"
+            f"Unable to prepare style-lint report directory for {slug}: {exc}"
         ) from exc
+    _recheck_report_target(resolved_root, target)
+    _publish_report_pair(
+        target,
+        markdown_bytes=markdown_bytes,
+        json_bytes=json_bytes,
+    )
 
     return StyleLintResult(
         story_slug=slug,
         scope=scope,
         profile_id=context.profile.profile_id,
         profile_version=context.profile.version,
-        markdown_path=markdown_path,
-        json_path=json_path,
+        markdown_path=target.markdown_path,
+        json_path=target.json_path,
         finding_count=len(findings),
         partial=report.partial,
     )

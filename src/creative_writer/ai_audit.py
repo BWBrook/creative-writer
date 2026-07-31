@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import os
+import re
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -10,7 +12,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictInt,
+    StrictStr,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 from creative_writer.checks import check_story
 from creative_writer.exceptions import CreativeWriterError
@@ -20,6 +31,36 @@ AI_AUDIT_SCRIPT_ENV = "CREATIVE_WRITER_AI_AUDIT_SCRIPT"
 DEFAULT_AI_AUDIT_SCRIPT = (
     Path.home() / ".codex" / "skills" / "audit-ai-writing" / "scripts" / "audit_ai_writing.py"
 )
+_FORBIDDEN_EDITORIAL_CLAIM = re.compile(
+    r"\b(?:"
+    r"scores?|scoring|scorecards?|"
+    r"authorship|authenticity|authored|"
+    r"rewrites?|rewriting|rewritten"
+    r")\b",
+    re.IGNORECASE,
+)
+_MARKDOWN_STRUCTURE = re.compile(
+    r"(?:^|\s)(?:#{1,6}\s|[-+*]\s|>\s|\d+\.\s)|[`<>\[\]]|\*\*|__"
+)
+
+
+def _safe_external_text(value: str, label: str) -> str:
+    if not value or value != value.strip():
+        raise ValueError(f"{label} must be non-empty without surrounding space")
+    if "\n" in value or "\r" in value or not all(
+        character.isprintable() for character in value
+    ):
+        raise ValueError(f"{label} must be single-line printable text")
+    return value
+
+
+def _safe_external_editorial_text(value: str, label: str) -> str:
+    value = _safe_external_text(value, label)
+    if _FORBIDDEN_EDITORIAL_CLAIM.search(value):
+        raise ValueError(f"{label} contains a prohibited editorial claim")
+    if _MARKDOWN_STRUCTURE.search(value):
+        raise ValueError(f"{label} contains Markdown structure")
+    return value
 
 
 @dataclass(slots=True)
@@ -37,31 +78,60 @@ class AIWritingAuditResult:
 class AIWritingHit(BaseModel):
     """One location-aware hit from the external surface scanner."""
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", strict=True)
 
-    group: str
-    severity: int
-    line: int = Field(ge=1)
-    match: str
-    context: str
+    group: StrictStr
+    severity: StrictInt = Field(ge=0)
+    line: StrictInt = Field(ge=1)
+    match: StrictStr
+    context: StrictStr
+
+    @field_validator("group", "match", "context")
+    @classmethod
+    def safe_text(cls, value: str, info) -> str:
+        return _safe_external_text(value, f"scanner hit {info.field_name}")
 
 
 class AIWritingGroup(BaseModel):
     """One scanner group, retaining its original identity and advice."""
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", strict=True)
 
-    count: int = Field(ge=0)
-    severity: int = Field(ge=0)
-    advice: str
+    count: StrictInt = Field(ge=0)
+    severity: StrictInt = Field(ge=0)
+    advice: StrictStr
     hits: list[AIWritingHit] = Field(default_factory=list)
+
+    @field_validator("advice")
+    @classmethod
+    def safe_advice(cls, value: str) -> str:
+        return _safe_external_editorial_text(value, "scanner group advice")
 
 
 class _AIWritingPayload(BaseModel):
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", strict=True)
 
     groups: dict[str, AIWritingGroup]
-    caution: str
+    caution: StrictStr
+
+    @field_validator("caution")
+    @classmethod
+    def safe_caution(cls, value: str) -> str:
+        return _safe_external_text(value, "scanner caution")
+
+    @model_validator(mode="after")
+    def validate_group_contract(self) -> "_AIWritingPayload":
+        for group_name, group in self.groups.items():
+            _safe_external_editorial_text(group_name, "scanner group name")
+            if group.count != len(group.hits):
+                raise ValueError(
+                    f"scanner group {group_name!r} count does not match hits"
+                )
+            if any(hit.group != group_name for hit in group.hits):
+                raise ValueError(
+                    f"scanner group {group_name!r} contains a mismatched hit group"
+                )
+        return self
 
 
 @dataclass(slots=True)
@@ -95,6 +165,28 @@ def _resolve_script_path() -> Path:
     return script_path
 
 
+def _decode_scanner_output(
+    output: bytes | str | None,
+    *,
+    path: Path,
+    stream: str,
+) -> str:
+    if output is None:
+        return ""
+    if isinstance(output, str):
+        return output
+    try:
+        return output.decode("utf-8", errors="strict")
+    except UnicodeDecodeError as exc:
+        raise CreativeWriterError(
+            f"AI-writing JSON scan returned invalid UTF-8 on {stream} for {path}"
+        ) from exc
+
+
+def _reject_nonstandard_json_constant(value: str) -> None:
+    raise ValueError(f"non-standard JSON constant {value}")
+
+
 def scan_ai_writing_json(
     path: Path,
     genre: str = "narrative",
@@ -117,6 +209,17 @@ def scan_ai_writing_json(
             notice=f"Generic AI-writing scanner unavailable: {missing_path}",
         )
 
+    try:
+        manuscript_text = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as exc:
+        raise CreativeWriterError(
+            f"Scanned manuscript is not valid UTF-8: {path}"
+        ) from exc
+    except OSError as exc:
+        raise CreativeWriterError(
+            f"Unable to read scanned manuscript {path}: {exc}"
+        ) from exc
+
     command = [
         sys.executable,
         str(script_path),
@@ -130,10 +233,22 @@ def scan_ai_writing_json(
             command,
             check=True,
             capture_output=True,
-            text=True,
+            text=False,
         )
     except subprocess.CalledProcessError as exc:
-        stderr = exc.stderr.strip() or exc.stdout.strip() or "unknown audit error"
+        stderr = (
+            _decode_scanner_output(
+                exc.stderr,
+                path=path,
+                stream="stderr",
+            ).strip()
+            or _decode_scanner_output(
+                exc.stdout,
+                path=path,
+                stream="stdout",
+            ).strip()
+            or "unknown audit error"
+        )
         raise CreativeWriterError(
             f"AI-writing JSON scan failed for {path}: {stderr}"
         ) from exc
@@ -142,9 +257,25 @@ def scan_ai_writing_json(
             f"Unable to execute AI-writing JSON scan for {path}: {exc}"
         ) from exc
 
+    stdout = _decode_scanner_output(
+        completed.stdout,
+        path=path,
+        stream="stdout",
+    )
     try:
-        payload = _AIWritingPayload.model_validate_json(completed.stdout)
-    except ValidationError as exc:
+        decoded = json.loads(
+            stdout,
+            parse_constant=_reject_nonstandard_json_constant,
+        )
+        payload = _AIWritingPayload.model_validate(decoded)
+        line_count = len(manuscript_text.splitlines())
+        for group in payload.groups.values():
+            for hit in group.hits:
+                if hit.line > line_count:
+                    raise ValueError(
+                        f"scanner hit line {hit.line} exceeds {line_count} lines"
+                    )
+    except (json.JSONDecodeError, ValidationError, ValueError) as exc:
         raise CreativeWriterError(
             f"AI-writing JSON scan returned malformed JSON for {path}: {exc}"
         ) from exc

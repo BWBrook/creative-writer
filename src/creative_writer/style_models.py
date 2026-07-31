@@ -347,6 +347,7 @@ class StyleFinding(StrictModel):
     roles: list[Slug]
     scope: StyleScope
     claim_ids: list[Slug]
+    claim_statuses: dict[Slug, Literal["validated", "qualified"]]
     claim_jurisdictions: list[ClaimJurisdiction]
     source_passage_ids: list[NonEmptyText]
     editorial_question: NonEmptyText
@@ -367,10 +368,14 @@ class StyleFinding(StrictModel):
         return _validate_unique(value, labels[info.field_name])
 
     @model_validator(mode="after")
-    def validate_line_range(self) -> "StyleFinding":
+    def validate_finding_contract(self) -> "StyleFinding":
         if self.line_end < self.line_start:
             raise ValueError(
                 "line_end must be greater than or equal to line_start"
+            )
+        if set(self.claim_statuses) != set(self.claim_ids):
+            raise ValueError(
+                "finding claim status keys must exactly match claim IDs"
             )
         return self
 
@@ -400,6 +405,8 @@ class StylePracticeQuestion(StrictModel):
     advisory: StyleAdvisoryLevel
     roles: list[Slug]
     claim_ids: list[Slug]
+    claim_statuses: dict[Slug, Literal["validated", "qualified"]]
+    claim_jurisdictions: list[ClaimJurisdiction]
     question: NonEmptyText
     source_passage_ids: list[NonEmptyText]
     interpretation_limits: NonEmptyText
@@ -413,6 +420,14 @@ class StylePracticeQuestion(StrictModel):
             "source_passage_ids": "practice-question source passage IDs",
         }
         return _validate_unique(value, labels[info.field_name])
+
+    @model_validator(mode="after")
+    def validate_claim_statuses(self) -> "StylePracticeQuestion":
+        if set(self.claim_statuses) != set(self.claim_ids):
+            raise ValueError(
+                "practice-question claim status keys must exactly match claim IDs"
+            )
+        return self
 
 
 class StyleDiagnosticRecord(StrictModel):

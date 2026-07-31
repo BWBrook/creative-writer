@@ -11,6 +11,39 @@ from creative_writer.exceptions import CreativeWriterError
 from creative_writer.scaffold import create_story
 
 
+def _scanner_payload(
+    *,
+    group_name: str = "AI vocabulary",
+    count: object = 1,
+    group_severity: object = 2,
+    advice: str = "Replace the stock abstraction with concrete observation.",
+    hit_group: str = "AI vocabulary",
+    hit_severity: object = 2,
+    line: object = 1,
+    match: str = "chapter",
+    context: str = "A chapter.",
+) -> dict[str, object]:
+    return {
+        "groups": {
+            group_name: {
+                "count": count,
+                "severity": group_severity,
+                "advice": advice,
+                "hits": [
+                    {
+                        "group": hit_group,
+                        "severity": hit_severity,
+                        "line": line,
+                        "match": match,
+                        "context": context,
+                    }
+                ],
+            }
+        },
+        "caution": "Surface scan only; not proof of AI authorship.",
+    }
+
+
 def test_generate_ai_writing_audit_uses_configured_scanner(
     tmp_path: Path,
     monkeypatch,
@@ -162,4 +195,72 @@ def test_scan_ai_writing_json_rejects_malformed_json(
     monkeypatch.setenv("CREATIVE_WRITER_AI_AUDIT_SCRIPT", str(scanner))
 
     with pytest.raises(CreativeWriterError, match="malformed JSON"):
+        scan_ai_writing_json(manuscript, unavailable_is_error=False)
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        _scanner_payload(count="1"),
+        _scanner_payload(hit_severity=True),
+        {
+            **_scanner_payload(),
+            "scanner_extension": float("nan"),
+        },
+        _scanner_payload(group_name="## Wells practice", hit_group="## Wells practice"),
+        _scanner_payload(
+            advice="Report an authorship score and rewrite this passage."
+        ),
+        _scanner_payload(match="chapter\n## Injected section"),
+        _scanner_payload(hit_group="Another group"),
+        _scanner_payload(line=2),
+        _scanner_payload(count=2),
+    ],
+    ids=[
+        "numeric-string",
+        "boolean-integer",
+        "non-standard-nan",
+        "markdown-group",
+        "forbidden-advice",
+        "multiline-hit",
+        "mismatched-hit-group",
+        "line-outside-manuscript",
+        "incoherent-count",
+    ],
+)
+def test_scan_ai_writing_json_rejects_unsafe_external_payloads(
+    tmp_path: Path,
+    monkeypatch,
+    payload: dict[str, object],
+) -> None:
+    manuscript = tmp_path / "chapter.md"
+    manuscript.write_text("A chapter.\n", encoding="utf-8")
+    scanner = tmp_path / "scanner.py"
+    scanner.write_text(
+        "import json\n"
+        "nan = float('nan')\n"
+        f"payload = {payload!r}\n"
+        "print(json.dumps(payload, allow_nan=True))\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("CREATIVE_WRITER_AI_AUDIT_SCRIPT", str(scanner))
+
+    with pytest.raises(CreativeWriterError, match="malformed JSON"):
+        scan_ai_writing_json(manuscript, unavailable_is_error=False)
+
+
+def test_scan_ai_writing_json_wraps_invalid_utf8(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    manuscript = tmp_path / "chapter.md"
+    manuscript.write_text("A chapter.\n", encoding="utf-8")
+    scanner = tmp_path / "scanner.py"
+    scanner.write_text(
+        "import sys\nsys.stdout.buffer.write(b'\\xff')\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("CREATIVE_WRITER_AI_AUDIT_SCRIPT", str(scanner))
+
+    with pytest.raises(CreativeWriterError, match="invalid UTF-8"):
         scan_ai_writing_json(manuscript, unavailable_is_error=False)

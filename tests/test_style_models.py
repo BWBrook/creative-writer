@@ -238,6 +238,9 @@ def valid_style_lint_report_payload() -> dict[str, Any]:
                 "roles": ["scientific-inference"],
                 "scope": "passage",
                 "claim_ids": ["qualified-speculative-inference"],
+                "claim_statuses": {
+                    "qualified-speculative-inference": "qualified",
+                },
                 "claim_jurisdictions": [
                     {
                         "scope": "role_specific",
@@ -258,6 +261,16 @@ def valid_style_lint_report_payload() -> dict[str, Any]:
                 "advisory": "review",
                 "roles": ["scientific-inference"],
                 "claim_ids": ["qualified-speculative-inference"],
+                "claim_statuses": {
+                    "qualified-speculative-inference": "qualified",
+                },
+                "claim_jurisdictions": [
+                    {
+                        "scope": "role_specific",
+                        "roles": ["speculative method"],
+                        "eligible_witness_ids": ["the-time-machine"],
+                    }
+                ],
                 "question": "Does inference proceed from observed particulars?",
                 "source_passage_ids": [
                     "the-time-machine:iv:147:5a08c0c8cfcb"
@@ -315,8 +328,34 @@ def test_style_lint_report_preserves_advisory_contract_without_score() -> None:
     report = StyleLintReport.model_validate(valid_style_lint_report_payload())
 
     assert report.findings[0].advisory == "review"
+    assert report.findings[0].claim_statuses == {
+        "qualified-speculative-inference": "qualified"
+    }
+    assert report.practice_questions[0].claim_statuses == {
+        "qualified-speculative-inference": "qualified"
+    }
     assert report.generic_ai.status == "complete"
     assert "score" not in report.model_dump()
+
+
+@pytest.mark.parametrize("section", ["findings", "practice_questions"])
+@pytest.mark.parametrize("mutation", ["missing", "additional"])
+def test_style_report_claim_status_keys_exactly_match_claim_ids(
+    section: str,
+    mutation: str,
+) -> None:
+    payload = valid_style_lint_report_payload()
+    claim_statuses = payload[section][0]["claim_statuses"]
+    if mutation == "missing":
+        claim_statuses.clear()
+    else:
+        claim_statuses["unrelated-claim"] = "validated"
+
+    with pytest.raises(
+        ValidationError,
+        match="claim status keys must exactly match claim IDs",
+    ):
+        StyleLintReport.model_validate(payload)
 
 
 @pytest.mark.parametrize(

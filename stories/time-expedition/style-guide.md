@@ -255,7 +255,7 @@ Run the whole story by default or target one chapter during a drafting pass:
 
 ```bash
 make style-lint STORY=time-expedition
-make style-lint STORY=time-expedition CHAPTER=01-last-week-of-the-permian
+make style-lint STORY=time-expedition CHAPTER=01-the-obstruction
 ```
 
 The AI reviews every finding in manuscript context and assigns one provisional

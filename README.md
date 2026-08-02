@@ -67,7 +67,7 @@ make stats STORY=mars-2044-cave
 make ai-audit STORY=mars-2044-cave
 make review-pack STORY=mars-2044-cave PACK=first-human-pass
 make style-lint STORY=time-expedition
-make style-lint STORY=time-expedition CHAPTER=01-last-week-of-the-permian
+make style-lint STORY=time-expedition CHAPTER=01-the-obstruction
 make style-reference STORY=time-expedition PACK=frame-and-testimony
 make source-analysis STORY=time-expedition STAGE=prepare
 make test

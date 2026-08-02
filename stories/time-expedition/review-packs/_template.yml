@@ -3,7 +3,7 @@ purpose: "Select a few passages for targeted human feedback after prose drafting
 entries:
   - id: expedition-opening-example
     label: "Expedition opening"
-    manuscript: "manuscript/01-last-week-of-the-permian.md"
+    manuscript: "manuscript/01-the-obstruction.md"
     start_line: 1
     end_line: 1
     kind: confidence

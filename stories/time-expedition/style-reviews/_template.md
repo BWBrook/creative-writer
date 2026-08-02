@@ -3,11 +3,11 @@ review_id: chapter-one-first-pass
 date: 2026-07-31
 scope: chapter
 manuscripts:
-  - manuscript/01-last-week-of-the-permian.md
+  - manuscript/01-the-obstruction.md
 profile_id: wells-1895-1899
 profile_version: 1.0.0
 lint_report:
-  path: build/time-expedition/style/chapters/01-last-week-of-the-permian-lint-report.json
+  path: build/time-expedition/style/chapters/01-the-obstruction-lint-report.json
   sha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 reference_packets:
   - traveller-account

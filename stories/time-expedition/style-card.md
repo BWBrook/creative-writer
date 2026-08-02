@@ -69,7 +69,7 @@ when their narrative function is sound.
 
 ```bash
 make style-reference STORY=time-expedition PACK=<packet-id>
-make style-lint STORY=time-expedition [CHAPTER=01-last-week-of-the-permian]
+make style-lint STORY=time-expedition [CHAPTER=01-the-obstruction]
 ```
 
 Study packet method, role, evidentiary sequence, and cadence. Never borrow

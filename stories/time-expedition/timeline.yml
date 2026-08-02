@@ -1,2 +1,41 @@
-# Optional registry: track events that matter for chronology.
-events: []
+events:
+  - id: delayed-return
+    label: "The Traveller completes his delayed return"
+    when: "Late 1890s, after the second departure recorded in The Time Machine"
+    description: "A temporal obstruction prevents the intended earlier arrival and leaves the source-canon epilogue intact."
+  - id: permian-departure
+    label: "Departure for the late Permian"
+    when: "Soon after the opening study conversation"
+    description: "The Traveller aims coarsely backwards with a compact field expedition."
+  - id: permian-baseline
+    label: "Station I: baseline"
+    when: "Backstage near 251.9 Ma; absolute date unavailable to the Traveller"
+    description: "Arrival, refuge establishment, surveys, fish collection, and the indifferent predator."
+  - id: permian-first-interval
+    label: "Station II: first forward interval"
+    when: "Approximately thirteen months after baseline by machine calibration"
+    description: "Persistent haze, heat, and changing water margins begin the directional sequence."
+  - id: permian-second-interval
+    label: "Station III: second forward interval"
+    when: "Approximately twenty-three months after baseline"
+    description: "Biological distress, faunal movement, and renewed predator evidence converge."
+  - id: permian-final-interval
+    label: "Station IV: final occupied interval"
+    when: "Approximately thirty months after baseline, occupied for about three days"
+    description: "The Traveller observes continuous deterioration, hydrological reversal, and refuge failure."
+  - id: permian-escape
+    label: "Escape from the refuge"
+    when: "At the end of the final occupied interval"
+    description: "The Traveller abandons most evidence, frees the machine, and returns to Richmond."
+  - id: convalescence
+    label: "The Traveller convalesces"
+    when: "For more than a week after the Permian return"
+    description: "Filby begins reading the recovered notebook before the Traveller can give a full account."
+  - id: royal-society-meeting
+    label: "Special Royal Society meeting"
+    when: "A Thursday afternoon shortly after the Traveller's recovery"
+    description: "The Traveller delivers his address and submits to expert examination at Burlington House."
+  - id: study-epilogue
+    label: "Smoking bishop in the Richmond study"
+    when: "After the special meeting"
+    description: "Filby finds the Traveller chastened, unresolved, and quietly preparing further calculations."

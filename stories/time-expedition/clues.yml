@@ -1,2 +1,45 @@
-# Optional registry: track clues, reveals, and mystery elements here.
-clues: []
+clues:
+  - id: temporal-obstruction
+    name: "The temporal obstruction"
+    description: "An effect near the Traveller's early experiments prevents his intended return and remains unexplained."
+    status: introduced
+  - id: permian-termination
+    name: "The Permian termination"
+    description: "A disputed faunal break supplies the expedition's target and the story's scientific mystery."
+    status: introduced
+  - id: haze-and-heat
+    name: "Persistent haze and heat"
+    description: "Successive stations show atmospheric discoloration and abnormal warmth beyond ordinary local variation."
+    status: resolved
+  - id: receding-waters
+    name: "The diminishing waters"
+    description: "Measured river and lake margins retreat before the later hydrological reversal."
+    status: resolved
+  - id: biotic-distress
+    name: "Convergent biological distress"
+    description: "Aquatic distress, vegetation failure, and faunal displacement accumulate across the sampled intervals."
+    status: resolved
+  - id: scarred-predator-return
+    name: "The scarred predator's return"
+    description: "A shoulder scar supports, without proving, the Traveller's claim that one predator recurs across stations."
+    status: introduced
+  - id: directional-collapse
+    name: "Directional local collapse"
+    description: "Repeated measures establish a deteriorating sequence rather than one season or isolated disturbance."
+    status: resolved
+  - id: distant-volcanic-action
+    name: "Distant volcanic action"
+    description: "The Traveller's strongest causal hypothesis remains indirect, geographically unlocated, and contestable."
+    status: introduced
+  - id: refuge-instability
+    name: "Refuge instability"
+    description: "Seepage, undercutting, debris movement, and roof sounds foreshadow the loss of the fissure shelter."
+    status: resolved
+  - id: terrestrial-anchoring
+    name: "Terrestrial anchoring"
+    description: "The machine follows Earth's moving surface through time by a mechanism the Traveller cannot explain."
+    status: introduced
+  - id: renewed-preparations
+    name: "Renewed preparations"
+    description: "Altered calculations or settings imply another expedition without identifying it."
+    status: introduced

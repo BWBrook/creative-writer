@@ -1,7 +1,7 @@
 # The Last Week of the Permian Story Design
 
 Date: 2026-07-26
-Status: approved written design; detailed architecture awaits Phase 2C and Permian research
+Status: approved written design; detailed architecture approved 2026-08-02; ready for staged drafting
 
 ## Purpose
 

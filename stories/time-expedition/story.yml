@@ -7,4 +7,10 @@ target_outputs:
   - epub
   - pdf
 chapters:
-  - chapter-stubs/01-last-week-of-the-permian.md
+  - chapter-stubs/01-the-obstruction.md
+  - chapter-stubs/02-the-notebook.md
+  - chapter-stubs/03-the-first-intervals.md
+  - chapter-stubs/04-the-diminishing-waters.md
+  - chapter-stubs/05-the-refuge.md
+  - chapter-stubs/06-the-examination.md
+  - chapter-stubs/07-epilogue.md

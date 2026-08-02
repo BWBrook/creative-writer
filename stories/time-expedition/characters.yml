@@ -1,9 +1,41 @@
 characters:
   - id: time-traveller
     name: "The Time Traveller"
-    role: "Inventor of the Time Machine and principal witness of the expeditions."
-    motivation: "To investigate time directly and test speculative reasoning against observation."
+    role: "Inventor, expedition witness, and principal lecturer."
+    motivation: "To test the machine's backward range, investigate the Permian mystery, vindicate his reasoning, and recover the sensation of discovery."
   - id: frame-narrator
     name: "The unnamed frame narrator"
-    role: "Member of the Time Traveller's circle who records and mediates his account."
-    motivation: "To preserve the account while retaining a thoughtful measure of uncertainty."
+    role: "Social witness who records the study scenes, mediated notebook, public address, and epilogue."
+    motivation: "To preserve an extraordinary account while retaining a thoughtful measure of uncertainty."
+  - id: filby
+    name: "Filby"
+    role: "Provocateur, practical ally, notebook reader, and organiser of the special meeting."
+    motivation: "To draw a complete account from his friend and test the claims without surrendering loyalty or curiosity."
+  - id: meeting-chair
+    name: "The meeting chair"
+    role: "Occupationally identified Fellow who keeps the special Royal Society meeting orderly."
+    motivation: "To let a remarkable claim receive serious examination without allowing spectacle to replace inquiry."
+  - id: society-gadfly
+    name: "The gadfly"
+    role: "Minor sceptic who disputes the premise before the expert examination begins."
+    motivation: "To expose what he takes to be performance, credulity, or misuse of the Society's authority."
+  - id: geologist
+    name: "The Geologist"
+    role: "Principal intellectual antagonist on dating, locality, sequence, and local-to-global inference."
+    motivation: "To separate an extraordinary local observation from an unsupported theory of planetary change."
+  - id: chemist
+    name: "The Chemist"
+    role: "Examiner of air, water, deposits, contamination, and the volcanic hypothesis."
+    motivation: "To determine which chemical claims survive imperfect collection and provenance."
+  - id: comparative-anatomist
+    name: "The Comparative Anatomist"
+    role: "Examiner of the preserved fish and the Traveller's zoological comparisons."
+    motivation: "To classify the specimen as far as evidence permits and resist confidence beyond anatomy."
+  - id: astronomer
+    name: "The Astronomer"
+    role: "Questioner who exposes the unresolved terrestrial anchoring of the machine."
+    motivation: "To reconcile temporal displacement with the motion of Earth through space."
+  - id: scarred-predator
+    name: "The scarred predator"
+    role: "Unnamed theriodont-like carnivore observed at successive temporal stations."
+    motivation: "To conserve energy under ordinary conditions and accept greater risks as prey, water, and refuge disappear."

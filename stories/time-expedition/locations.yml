@@ -1,2 +1,22 @@
-# Optional registry: track recurring or mission-critical places here.
-locations: []
+locations:
+  - id: richmond-study
+    name: "The Richmond study and laboratory"
+    description: "The Traveller's domestic, intellectual, and mechanical centre; location of the opening, return, and epilogue."
+  - id: burlington-house
+    name: "A Royal Society meeting room at Burlington House"
+    description: "Venue for a special Thursday-afternoon address and expert examination."
+  - id: ancient-ridge
+    name: "The ancient Richmond ridge"
+    description: "An exposed rocky scarp on the low-latitude London-Brabant high, anchored to the future Richmond site."
+  - id: fissure-refuge
+    name: "The fissure refuge"
+    description: "A shallow rock shelter beneath resistant stone used as base camp, store, laboratory, and temporal station."
+  - id: alluvial-plain
+    name: "The alluvial plain"
+    description: "Open ground below the ridge across which vegetation, prey movement, and later floodwater can be compared."
+  - id: seasonal-river
+    name: "The seasonal river"
+    description: "A substantial channel whose recession and later course change reveal hydrological instability."
+  - id: saline-lake
+    name: "The terminal saline lake"
+    description: "A shallow lake or playa whose margins, water, fish, and deposits provide repeated evidence."

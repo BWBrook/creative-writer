@@ -1,2 +1,56 @@
-# Optional registry: track recurring plot machinery and structural devices here.
-plot_devices: []
+plot_devices:
+  - id: temporal-obstruction-thread
+    name: "Temporal obstruction thread"
+    narrative_role: "Reconciles the delayed return and supplies a restrained anthology mystery."
+    description: "The Traveller can report the obstruction's effects but cannot explain or resolve it in this expedition."
+    status: active
+  - id: lecture-provocation
+    name: "Filby's lecture provocation"
+    narrative_role: "Turns a geological uncertainty into a motive for backward travel."
+    description: "Filby's account of a recent scientific lecture joins curiosity, rivalry, and appetite for adventure."
+    status: resolved
+  - id: concentric-testimony
+    name: "Concentric testimony"
+    narrative_role: "Mediates the expedition through narrator, notebook, lecture, examination, and coda."
+    description: "Each successive frame changes the authority and immediacy of the same body of evidence."
+    status: resolved
+  - id: expedition-notebook
+    name: "The expedition notebook"
+    narrative_role: "Provides procedural immediacy and an incomplete bridge into the principal account."
+    description: "Entries shorten under fatigue and stop before the crisis, preventing duplication of the lecture."
+    status: resolved
+  - id: forward-sampling
+    name: "Forward temporal sampling"
+    narrative_role: "Converts scattered anomalies into a directional sequence."
+    description: "Four occupied stations span roughly thirty months while costing strength, certainty, and retreat margin."
+    status: resolved
+  - id: scarred-predator-continuity
+    name: "The scarred predator"
+    narrative_role: "Makes ecological deterioration physically personal without creating a villain."
+    description: "A shoulder scar suggests one animal shifting from indifference to desperate risk-taking."
+    status: resolved
+  - id: proof-satchel
+    name: "The proof satchel"
+    narrative_role: "Preserves a compact evidentiary case while allowing most of the archive to be lost."
+    description: "The Traveller secures baseline and Station III comparison samples to the machine before the final observations."
+    status: resolved
+  - id: limited-firearm
+    name: "The limited firearm"
+    narrative_role: "Honours the Traveller's earlier regret about going unarmed without simplifying the climax."
+    description: "A period revolver buys time, but confinement, ammunition, scale, and the machine's position limit its use."
+    status: resolved
+  - id: refuge-failure
+    name: "Failure of the refuge"
+    narrative_role: "Joins scientific evidence, predator pressure, and access to the machine in one climax."
+    description: "Flood-assisted undercutting and roof fall turn the stable observatory into the final hazard."
+    status: resolved
+  - id: expert-examination
+    name: "Expert examination"
+    narrative_role: "Tests the Traveller's credibility and separates direct evidence from broad explanation."
+    description: "Four disciplines add information, expose limits, and leave acceptance substantial but divided."
+    status: resolved
+  - id: oblique-coda
+    name: "Oblique renewed purpose"
+    narrative_role: "Ends the expedition while leaving the anthology open."
+    description: "A small sign of recalculation suggests future travel without announcing a destination."
+    status: active

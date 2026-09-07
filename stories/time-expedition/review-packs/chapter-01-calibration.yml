@@ -5,31 +5,39 @@ entries:
     label: "The narrator corrects the record"
     manuscript: "manuscript/01-the-obstruction.md"
     start_line: 1
-    end_line: 29
+    end_line: 41
     kind: confidence
-    question: "Does this feel like a credible continuation of the original anonymous frame, rather than a modern sequel announcing itself?"
-    context: "The opening must preserve the original epilogue's apparent finality while making the Traveller's delayed return immediately legible."
+    question: "Does this feel like a credible continuation of the original anonymous frame, rather than a modern sequel announcing itself? Does the shut-up house under a solicitor, with Mrs. Watchett kept on alone, account plausibly for three years of absence?"
+    context: "The opening must preserve the original epilogue's apparent finality while making the Traveller's delayed return immediately legible. The Medical Man now joins Filby as a witness in the study."
   - id: temporal-obstruction
     label: "The failed return"
     manuscript: "manuscript/01-the-obstruction.md"
-    start_line: 65
-    end_line: 124
+    start_line: 74
+    end_line: 142
     kind: uncertainty
-    question: "Is the obstruction concrete, strange, and period-plausible, or does its explanation become too elaborate for Wells's method?"
-    context: "This is the anthology-spine mystery. It should be established by observed effects and remain unresolved."
+    question: "Is the obstruction concrete, strange, and period-plausible, or does its explanation become too elaborate for Wells's method? Does the trebled margin now account for the three-year overshoot without over-explaining?"
+    context: "This is the anthology-spine mystery. It should be established by observed effects and remain unresolved. The reversed-dust image replaces the earlier Mrs. Watchett echo from the canonical return."
+  - id: medical-man-added
+    label: "The Medical Man breaks the argument"
+    manuscript: "manuscript/01-the-obstruction.md"
+    start_line: 144
+    end_line: 168
+    kind: uncertainty
+    question: "Does a second canonical witness restore plural scepticism to the frame, or does he crowd Filby and dilute the two-man friction of the earlier draft?"
+    context: "The Medical Man was added so the study is not carried by Filby alone, to give Chapter II's convalescence a professional witness, and to seed the Society examination. Here he cuts off a stichomythic exchange that had begun to sound epigrammatic."
   - id: adventure-admitted
     label: "Filby names the motive"
     manuscript: "manuscript/01-the-obstruction.md"
-    start_line: 208
-    end_line: 241
+    start_line: 243
+    end_line: 280
     kind: confidence
-    question: "Do Filby and the Traveller sound socially distinct here, and does the admission of adventure emerge without turning into a modern statement of theme?"
-    context: "The expedition needs mixed motives: scientific inquiry, vanity, and a real appetite for dangerous discovery."
+    question: "Do Filby, the Medical Man, and the Traveller sound socially distinct here, and does the admission of adventure emerge without turning into a modern statement of theme?"
+    context: "The expedition needs mixed motives: scientific inquiry, vanity, and a real appetite for dangerous discovery. The medical objection now sits beside Filby's practical one."
   - id: witnessed-departure
     label: "The backward departure"
     manuscript: "manuscript/01-the-obstruction.md"
-    start_line: 329
-    end_line: 357
+    start_line: 383
+    end_line: 407
     kind: uncertainty
     question: "Does this departure echo the canonical machine effects while remaining sufficiently independent in phrasing and ending on the right material residue?"
-    context: "The revision deliberately avoids copying the original disappearance's transparent-figure image and leaves Filby with the damaged screw."
+    context: "The revision avoids the original disappearance's transparent-figure image, folds the lever-press into the paragraph rather than isolating it as a suspense beat, drops the personified clock, and leaves Filby with the damaged screw after the Medical Man notes the time on the programme."

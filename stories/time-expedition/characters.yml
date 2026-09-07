@@ -11,6 +11,10 @@ characters:
     name: "Filby"
     role: "Provocateur, practical ally, notebook reader, and organiser of the special meeting."
     motivation: "To draw a complete account from his friend and test the claims without surrendering loyalty or curiosity."
+  - id: medical-man
+    name: "The Medical Man"
+    role: "Physician and original witness who attends the Traveller's return and opposes the expedition on medical grounds."
+    motivation: "To keep his patient alive and his own judgement independent of what he cannot diagnose."
   - id: meeting-chair
     name: "The meeting chair"
     role: "Occupationally identified Fellow who keeps the special Royal Society meeting orderly."

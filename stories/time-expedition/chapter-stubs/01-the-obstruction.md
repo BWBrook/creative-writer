@@ -7,6 +7,7 @@ characters:
   - time-traveller
   - frame-narrator
   - filby
+  - medical-man
 locations:
   - richmond-study
 clues_introduced:

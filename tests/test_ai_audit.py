@@ -209,7 +209,6 @@ def test_scan_ai_writing_json_rejects_malformed_json(
             **_scanner_payload(),
             "scanner_extension": float("nan"),
         },
-        _scanner_payload(group_name="## Wells practice", hit_group="## Wells practice"),
         _scanner_payload(
             advice="Report an authorship score and rewrite this passage."
         ),
@@ -226,7 +225,6 @@ def test_scan_ai_writing_json_rejects_malformed_json(
         "numeric-string",
         "boolean-integer",
         "non-standard-nan",
-        "markdown-group",
         "forbidden-advice",
         "multiline-hit",
         "unverifiable-forbidden-hit",
@@ -271,3 +269,25 @@ def test_scan_ai_writing_json_wraps_invalid_utf8(
 
     with pytest.raises(CreativeWriterError, match="invalid UTF-8"):
         scan_ai_writing_json(manuscript, unavailable_is_error=False)
+
+
+def test_scan_ai_writing_json_flattens_markdown_in_scanner_text(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    manuscript = tmp_path / "chapter.md"
+    manuscript.write_text("A chapter.\n", encoding="utf-8")
+    payload = _scanner_payload(advice="Try plain `is` or `are` where **the verb** adds nothing.")
+    scanner = tmp_path / "scanner.py"
+    scanner.write_text(
+        "import json\n"
+        f"payload = {payload!r}\n"
+        "print(json.dumps(payload))\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("CREATIVE_WRITER_AI_AUDIT_SCRIPT", str(scanner))
+
+    scan = scan_ai_writing_json(manuscript, unavailable_is_error=False)
+
+    advice = next(iter(scan.groups.values())).advice
+    assert advice == "Try plain 'is' or 'are' where the verb adds nothing."

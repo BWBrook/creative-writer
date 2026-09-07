@@ -56,13 +56,23 @@ def _safe_external_text(value: str, label: str) -> str:
     return value
 
 
+def _neutralise_markdown(value: str) -> str:
+    """Flatten Markdown the scanner may emit so it renders as plain text."""
+
+    value = value.replace("`", "'")
+    value = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", value)
+    value = re.sub(r"(\*\*|__)", "", value)
+    value = re.sub(r"^(?:[#>|+*-]+|\d+\.)\s*", "", value)
+    if _MARKDOWN_STRUCTURE.search(value):
+        value = re.sub(r"[`*_#>|\[\]]", "", value)
+    return value.strip()
+
+
 def _safe_external_editorial_text(value: str, label: str) -> str:
     value = _safe_external_text(value, label)
     if _FORBIDDEN_EDITORIAL_CLAIM.search(value):
         raise ValueError(f"{label} contains a prohibited editorial claim")
-    if _MARKDOWN_STRUCTURE.search(value):
-        raise ValueError(f"{label} contains Markdown structure")
-    return value
+    return _safe_external_text(_neutralise_markdown(value), label)
 
 
 @dataclass(slots=True)

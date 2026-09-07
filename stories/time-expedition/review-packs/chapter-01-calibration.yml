@@ -1,0 +1,35 @@
+title: "Chapter I calibration"
+purpose: "Test whether the first complete chapter sustains the recovered-Wells conceit before drafting proceeds further into the expedition."
+entries:
+  - id: reopened-frame
+    label: "The narrator corrects the record"
+    manuscript: "manuscript/01-the-obstruction.md"
+    start_line: 1
+    end_line: 29
+    kind: confidence
+    question: "Does this feel like a credible continuation of the original anonymous frame, rather than a modern sequel announcing itself?"
+    context: "The opening must preserve the original epilogue's apparent finality while making the Traveller's delayed return immediately legible."
+  - id: temporal-obstruction
+    label: "The failed return"
+    manuscript: "manuscript/01-the-obstruction.md"
+    start_line: 65
+    end_line: 124
+    kind: uncertainty
+    question: "Is the obstruction concrete, strange, and period-plausible, or does its explanation become too elaborate for Wells's method?"
+    context: "This is the anthology-spine mystery. It should be established by observed effects and remain unresolved."
+  - id: adventure-admitted
+    label: "Filby names the motive"
+    manuscript: "manuscript/01-the-obstruction.md"
+    start_line: 208
+    end_line: 241
+    kind: confidence
+    question: "Do Filby and the Traveller sound socially distinct here, and does the admission of adventure emerge without turning into a modern statement of theme?"
+    context: "The expedition needs mixed motives: scientific inquiry, vanity, and a real appetite for dangerous discovery."
+  - id: witnessed-departure
+    label: "The backward departure"
+    manuscript: "manuscript/01-the-obstruction.md"
+    start_line: 329
+    end_line: 357
+    kind: uncertainty
+    question: "Does this departure echo the canonical machine effects while remaining sufficiently independent in phrasing and ending on the right material residue?"
+    context: "The revision deliberately avoids copying the original disappearance's transparent-figure image and leaves Filby with the damaged screw."

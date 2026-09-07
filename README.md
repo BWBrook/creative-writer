@@ -2,6 +2,9 @@
 
 Tools and workflow for collaborative human-AI narrative writing.
 
+Starting a fresh task? Read [HANDOVER.md](HANDOVER.md) for the current writing
+state, immediate checkpoint, and minimal reading route (7 September 2026).
+
 This repository is being built iteratively. The initial focus is to:
 
 - establish a shared workflow for scoping the project,
@@ -106,8 +109,9 @@ operational: its provenance-locked Wells profile, six curated packets,
 score-free advisory lint reports, and tracked calibration surfaces work end to
 end. The first substantive Permian chapter is the next style-calibration event;
 synthetic and placeholder prose will not be used for repeated threshold tuning.
-The immediate next project tranche is the dual-layer Permian research dossier,
-before detailed chapter and scene architecture or manuscript drafting.
+The Permian research dossier and detailed architecture are now complete.
+Chapter I has a working draft awaiting editorial calibration; see
+[HANDOVER.md](HANDOVER.md) for the current checkpoint and fresh-task guidance.
 
 For a simple script wrapper, you can also run:
 

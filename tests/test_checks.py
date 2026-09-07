@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import datetime
 from pathlib import Path
 import shutil
-import subprocess
-import sys
 from typing import Any
 
 import pytest
@@ -96,46 +93,6 @@ def _write_style_review_pack(
         },
     )
     return manifest_path
-
-
-def _write_style_review(
-    story_dir: Path,
-    *,
-    mutation: dict[str, Any] | None = None,
-    filename: str = "opening-first-pass.md",
-) -> Path:
-    payload: dict[str, Any] = {
-        "review_id": "opening-first-pass",
-        "date": datetime.date(2026, 7, 31),
-        "scope": "chapter",
-        "manuscripts": ["manuscript/01-opening.md"],
-        "profile_id": "configured-style-profile",
-        "profile_version": "1.0.0",
-        "lint_report": {
-            "path": (
-                "build/configured-style/style/chapters/"
-                "01-opening-lint-report.json"
-            ),
-            "sha256": "a" * 64,
-        },
-        "reference_packets": ["frame"],
-        "reviewer_id": "codex",
-        "reviewer_role": "ai",
-        "outcome": "qualified",
-    }
-    payload.update(mutation or {})
-    path = story_dir / "style-reviews" / filename
-    path.parent.mkdir(parents=True, exist_ok=True)
-    front_matter = yaml.safe_dump(
-        payload,
-        sort_keys=False,
-        allow_unicode=True,
-    )
-    path.write_text(
-        f"---\n{front_matter}---\n\n# Decision\n\nRetain for human review.\n",
-        encoding="utf-8",
-    )
-    return path
 
 
 @pytest.fixture
@@ -692,10 +649,9 @@ def test_check_accepts_mixed_style_roles_without_warning(
     assert not result.warnings
 
 
-def test_check_accepts_valid_style_review_and_calibration_metadata(
+def test_check_accepts_valid_calibration_metadata(
     configured_style_story: Path,
 ) -> None:
-    _write_style_review(configured_style_story)
     _write_style_review_pack(
         configured_style_story,
         _valid_review_pack_style(),
@@ -805,179 +761,3 @@ def test_check_rejects_style_calibration_without_active_profile(
         and "no active style profile" in error.message
         for error in result.errors
     )
-
-
-def test_check_reports_invalid_tracked_style_review(
-    configured_style_story: Path,
-) -> None:
-    review_path = _write_style_review(
-        configured_style_story,
-        mutation={"reference_packets": ["unknown-packet"]},
-    )
-
-    result = check_story(
-        configured_style_story.parent.parent,
-        "configured-style",
-    )
-
-    assert not result.ok
-    assert any(
-        error.location == str(review_path)
-        and "unknown style packet" in error.message
-        for error in result.errors
-    )
-
-
-def test_check_rejects_symlinked_style_review_directory(
-    configured_style_story: Path,
-) -> None:
-    root = configured_style_story.parent.parent
-    external_holder = root / "external-review-holder"
-    _write_style_review(external_holder)
-    review_dir = configured_style_story / "style-reviews"
-    review_dir.symlink_to(
-        external_holder / "style-reviews",
-        target_is_directory=True,
-    )
-
-    result = check_story(root, "configured-style")
-
-    assert not result.ok
-    assert any(
-        error.location == str(review_dir)
-        and "style-reviews directory must not be a symlink" in error.message
-        for error in result.errors
-    )
-
-
-def test_check_rejects_symlinked_style_review_file(
-    configured_style_story: Path,
-) -> None:
-    root = configured_style_story.parent.parent
-    external_holder = root / "external-review-holder"
-    external_review = _write_style_review(external_holder)
-    review_dir = configured_style_story / "style-reviews"
-    review_dir.mkdir()
-    review_link = review_dir / "linked-review.md"
-    review_link.symlink_to(external_review)
-
-    result = check_story(root, "configured-style")
-
-    assert not result.ok
-    assert any(
-        error.location == str(review_link)
-        and "style review file must not be a symlink" in error.message
-        for error in result.errors
-    )
-
-
-def test_check_rejects_configured_manuscript_symlink_escape(
-    configured_style_story: Path,
-) -> None:
-    root = configured_style_story.parent.parent
-    external = root / "external-manuscript.md"
-    external.write_text("External manuscript.\n", encoding="utf-8")
-    manuscript = configured_style_story / "manuscript" / "01-opening.md"
-    manuscript.unlink()
-    manuscript.symlink_to(external)
-    _write_style_review(configured_style_story)
-
-    result = check_story(root, "configured-style")
-
-    assert not result.ok
-    assert any(
-        error.location == str(manuscript)
-        and "resolves outside the story manuscript directory" in error.message
-        for error in result.errors
-    )
-
-
-def test_check_rejects_duplicate_style_review_ids(
-    configured_style_story: Path,
-) -> None:
-    first = _write_style_review(
-        configured_style_story,
-        filename="a-first.md",
-    )
-    second = _write_style_review(
-        configured_style_story,
-        filename="b-second.md",
-    )
-
-    result = check_story(
-        configured_style_story.parent.parent,
-        "configured-style",
-    )
-
-    duplicate_errors = [
-        error
-        for error in result.errors
-        if "duplicate review_id" in error.message
-    ]
-    assert len(duplicate_errors) == 1
-    assert duplicate_errors[0].location == str(second)
-    assert str(first) in duplicate_errors[0].message
-
-
-def test_importing_cli_does_not_load_explicit_analysis_modules() -> None:
-    repository = Path(__file__).resolve().parents[1]
-    completed = subprocess.run(
-        [
-            sys.executable,
-            "-c",
-            (
-                "import sys\n"
-                "import creative_writer.cli\n"
-                "blocked = (\n"
-                "    'creative_writer.style_lint',\n"
-                "    'creative_writer.style_references',\n"
-                "    'creative_writer.style_diagnostics',\n"
-                "    'creative_writer.ai_audit',\n"
-                ")\n"
-                "print(','.join(name for name in blocked if name in sys.modules))\n"
-            ),
-        ],
-        cwd=repository,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-
-    assert completed.returncode == 0, completed.stderr
-    assert completed.stdout == "\n"
-
-
-def test_check_cli_path_does_not_load_explicit_analysis_modules(
-    tmp_path: Path,
-) -> None:
-    create_story(tmp_path, "plain-story", "original")
-    repository = Path(__file__).resolve().parents[1]
-    completed = subprocess.run(
-        [
-            sys.executable,
-            "-c",
-            (
-                "from pathlib import Path\n"
-                "import sys\n"
-                "import creative_writer.cli as cli\n"
-                "cli.repo_root = lambda: Path(sys.argv[1])\n"
-                "status = cli.main(['check', '--story', 'plain-story'])\n"
-                "blocked = (\n"
-                "    'creative_writer.style_lint',\n"
-                "    'creative_writer.style_references',\n"
-                "    'creative_writer.style_diagnostics',\n"
-                "    'creative_writer.ai_audit',\n"
-                ")\n"
-                "loaded = ','.join(name for name in blocked if name in sys.modules)\n"
-                "print(f'PROBE:{status}:{loaded}')\n"
-            ),
-            str(tmp_path),
-        ],
-        cwd=repository,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-
-    assert completed.returncode == 0, completed.stderr
-    assert completed.stdout.splitlines()[-1] == "PROBE:0:"

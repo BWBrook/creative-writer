@@ -30,8 +30,7 @@ The three physically separate, hash-bound passage indexes are committed here:
 The real partition contains twelve retained sources and fifteen analytical
 witnesses. *The Star* is held out in full; the other Tier 1-3 witnesses use
 deterministic within-work holdouts, while all Tier 4 material remains outside
-the development index. Re-running `prepare` reproduces the tracked manifest
-and generated indexes byte for byte.
+the development index.
 
 `develop` can read only the development index and is available only before the
 candidate freeze, while analysis status is `protocol` or `development`.

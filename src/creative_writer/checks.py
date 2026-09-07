@@ -24,13 +24,10 @@ from creative_writer.prose_heuristics import run_surface_heuristics
 from creative_writer.review_packs import review_pack_manifest_paths, validate_review_pack_manifest
 from creative_writer.style_models import StyleReferencePacket
 from creative_writer.style_profiles import (
+    StyleContext,
     load_style_context,
     resolve_style_profile_path,
     validate_chapter_style_metadata,
-)
-from creative_writer.style_reviews import (
-    validate_review_pack_style_context,
-    validate_style_reviews,
 )
 
 MANDATORY_ARTIFACTS = [
@@ -309,17 +306,6 @@ def _validate_configured_style(
         ):
             _add_error(result, manifest_path, metadata_error)
 
-    for metadata_error in validate_style_reviews(
-        story_dir,
-        context,
-        manuscript_paths,
-    ):
-        location, separator, message = metadata_error.partition(": ")
-        _add_error(
-            result,
-            location if separator else profile_path,
-            message if separator else metadata_error,
-        )
 
 
 def check_story(
@@ -613,3 +599,52 @@ def check_story(
     )
     result.report_path.write_text(report_body, encoding="utf-8")
     return result
+
+
+def validate_review_pack_style_context(
+    entry: ReviewPackEntry,
+    context: StyleContext,
+    manuscript_paths: set[str],
+) -> list[str]:
+    """Cross-check optional calibration metadata against the active profile."""
+
+    style = entry.style
+    if style is None:
+        return []
+
+    prefix = f"Review-pack entry `{entry.id}`"
+    errors: list[str] = []
+    if style.profile_id != context.profile.profile_id:
+        errors.append(
+            f"{prefix} profile ID `{style.profile_id}` does not match active "
+            f"profile `{context.profile.profile_id}`"
+        )
+    if style.profile_version != context.profile.version:
+        errors.append(
+            f"{prefix} profile version `{style.profile_version}` does not "
+            f"match active profile version `{context.profile.version}`"
+        )
+
+    known_roles = {role.id for role in context.profile.roles}
+    if style.narrative_role not in known_roles:
+        errors.append(
+            f"{prefix} uses unknown style role `{style.narrative_role}`"
+        )
+
+    known_claims = {
+        claim_id
+        for rule in context.profile.rules
+        for claim_id in rule.claim_ids
+    }
+    for claim_id in style.claim_ids:
+        if claim_id not in known_claims:
+            errors.append(
+                f"{prefix} uses unknown Phase 2B claim `{claim_id}`"
+            )
+
+    if entry.manuscript not in manuscript_paths:
+        errors.append(
+            f"{prefix} uses unknown configured manuscript "
+            f"`{entry.manuscript}`"
+        )
+    return errors

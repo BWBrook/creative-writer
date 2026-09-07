@@ -3,7 +3,7 @@
 Use this prompt with ChatGPT Pro or Deep Research. Upload the following three
 project files with it:
 
-1. `docs/superpowers/specs/2026-07-26-last-week-of-the-permian-story-design.md`
+1. `story-design-2026-07-26.md` (in this directory)
 2. `stories/time-expedition/original/text/the-time-machine.md`
 3. `stories/time-expedition/original/text/text-book-of-biology-part-1.md`
 

@@ -41,7 +41,7 @@ default_packet_ids:
 change_basis: "Initial operationalisation of the human-approved Phase 2B Wells evidence layer and the approved Phase 2C design dated 2026-07-31."
 profile_review_refs:
   - "source-study/validation.md#final-audit-rereview"
-  - "docs/superpowers/specs/2026-07-31-wells-phase-2c-operational-style-design.md"
+  - "Phase 2C operational style design, 2026-07-31 (retired planning document; Git history before commit 099ae07)"
 roles:
   - id: frame
     label: Frame

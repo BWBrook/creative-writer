@@ -10,7 +10,7 @@ story: "The Last Week of the Permian"
 source_inputs:
   - "the-last-week-of-the-permian-dual-layer-research-dossier.md"
   - "research-input-review.md"
-  - "../../../../docs/superpowers/specs/2026-07-26-last-week-of-the-permian-story-design.md"
+  - "story-design-2026-07-26.md"
 ---
 
 # Purpose
@@ -21,7 +21,7 @@ It records the scientific reconstruction available backstage, the knowledge
 and language available in the late 1890s, and the fictional choices permitted
 for the next architecture pass.
 
-The [approved story design](../../../../docs/superpowers/specs/2026-07-26-last-week-of-the-permian-story-design.md)
+The [approved story design](story-design-2026-07-26.md)
 remains authoritative for structure, character roles, temporal rules, and
 ending. This dossier does not draft prose or change the five-act design.
 

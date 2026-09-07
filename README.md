@@ -12,10 +12,6 @@ This repository is being built iteratively. The initial focus is to:
 - build small capabilities one at a time,
 - test each capability against real writing work.
 
-Current working document:
-
-- [docs/interview.md](docs/interview.md)
-
 ## v0.1 foundation
 
 The first implementation slice is a file-first story framework with:
@@ -60,7 +56,7 @@ Optional artifact templates are included for:
 
 ```bash
 make init-story STORY=my-story KIND=original
-make init-story STORY=my-story KIND=original STYLE_CARD=quiet_catastrophe_realism
+make init-story STORY=my-story KIND=original STYLE_CARD=rationalist_sense_of_wonder_sci_fi
 make new-story STORY=my-story KIND=original
 make style-cards
 make check STORY=mars-2044-cave
@@ -88,12 +84,6 @@ synthetic and placeholder prose will not be used for repeated threshold tuning.
 The Permian research dossier and detailed architecture are now complete.
 Chapter I has a working draft awaiting editorial calibration; see
 [HANDOVER.md](HANDOVER.md) for the current checkpoint and fresh-task guidance.
-
-For a simple script wrapper, you can also run:
-
-```bash
-scripts/new_story.sh my-story original "My Story Title" quiet_catastrophe_realism
-```
 
 `STYLE_CARD` can be either:
 
@@ -159,9 +149,7 @@ make style-reference STORY=<slug> PACK=<name> PROFILE=<path>
 ```
 
 An explicit profile override fully replaces the `contract.yml` profile for
-that command; the superseded profile is not validated. The Make targets reject
-a blank `STORY` (and a blank `PACK` for `style-reference`) before invoking the
-CLI.
+that command; the superseded profile is not validated.
 
 `style-lint` requires a configured profile or an override. Its default
 whole-story run writes matching advisory reports to

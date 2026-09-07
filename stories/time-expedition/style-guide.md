@@ -270,16 +270,13 @@ Escalate selectively. A human calibration pack normally contains three to
 five passages, one precise question per passage, the intended role, the cited
 evidence and variation, the AI judgement, and the decision impact.
 
-An AI reviewer may close a chapter review with recorded rationale. Story and
-anthology acceptance requires explicit human approval. Missing milestone
-reviews do not block builds; reviews that exist under `style-reviews/` must
-validate.
+Story and anthology acceptance requires explicit human approval. Review
+judgements are recorded in review-pack manifests, commit messages, and the
+conversation that produced them; there is no separate review-record format.
 
 ## Profile discipline
 
-Findings do not mutate the profile. Record accepted variation, uncertainty,
-human calibration, and proposed changes in a tracked authenticity review.
-Every adopted profile change must increment the version, name the affected
-rule or tolerance, cite the motivating review evidence, and state whether
-earlier reports need reinterpretation. One ruling remains calibration evidence,
-not a new universal rule.
+Findings do not mutate the profile. Every adopted profile change must
+increment the version, name the affected rule or tolerance, and cite the
+motivating evidence in its commit message. One ruling remains calibration
+evidence, not a new universal rule.

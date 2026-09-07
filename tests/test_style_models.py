@@ -7,12 +7,7 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from creative_writer.style_models import (
-    StyleLintReport,
-    StyleProfile,
-    StyleReferencePacket,
-    StyleReviewFrontMatter,
-)
+from creative_writer.style_models import StyleLintReport, StyleProfile, StyleReferencePacket
 
 SHA256_A = "a" * 64
 SHA256_B = "b" * 64
@@ -363,102 +358,6 @@ def test_style_lint_report_preserves_advisory_contract_without_score() -> None:
     }
     assert report.generic_ai.status == "complete"
     assert "score" not in report.model_dump()
-
-
-def test_style_review_accepts_ai_chapter_decision() -> None:
-    payload = valid_style_review_payload()
-    payload["outcome"] = "accepted"
-
-    review = StyleReviewFrontMatter.model_validate(payload)
-
-    assert review.scope == "chapter"
-    assert review.reviewer_role == "ai"
-    assert review.outcome == "accepted"
-    assert review.date == datetime.date(2026, 7, 31)
-
-
-def test_style_review_accepts_human_story_milestone() -> None:
-    payload = valid_style_review_payload()
-    payload.update(scope="story", reviewer_id="barry", reviewer_role="human")
-    payload["outcome"] = "accepted"
-
-    review = StyleReviewFrontMatter.model_validate(payload)
-
-    assert review.scope == "story"
-    assert review.reviewer_role == "human"
-    assert review.outcome == "accepted"
-
-
-@pytest.mark.parametrize("scope", ["story", "anthology"])
-def test_style_review_milestone_acceptance_requires_human_reviewer(
-    scope: str,
-) -> None:
-    payload = valid_style_review_payload()
-    payload.update(scope=scope, reviewer_role="ai", outcome="accepted")
-
-    with pytest.raises(ValidationError, match="human"):
-        StyleReviewFrontMatter.model_validate(payload)
-
-
-def test_style_review_rejects_unknown_outcome() -> None:
-    payload = valid_style_review_payload()
-    payload["outcome"] = "approved"
-
-    with pytest.raises(ValidationError):
-        StyleReviewFrontMatter.model_validate(payload)
-
-
-@pytest.mark.parametrize(
-    "manuscript",
-    [
-        "../manuscript/chapter.md",
-        "manuscript/../chapter.md",
-        "drafts/chapter.md",
-        "manuscript/chapter.txt",
-    ],
-)
-def test_style_review_requires_canonical_markdown_below_manuscript(
-    manuscript: str,
-) -> None:
-    payload = valid_style_review_payload()
-    payload["manuscripts"] = [manuscript]
-
-    with pytest.raises(ValidationError, match="manuscript"):
-        StyleReviewFrontMatter.model_validate(payload)
-
-
-@pytest.mark.parametrize(
-    ("field", "duplicate"),
-    [
-        ("manuscripts", "manuscript/01-last-week-of-the-permian.md"),
-        ("reference_packets", "frame-and-testimony"),
-    ],
-)
-def test_style_review_rejects_duplicate_reference_lists(
-    field: str,
-    duplicate: str,
-) -> None:
-    payload = valid_style_review_payload()
-    payload[field].append(duplicate)
-
-    with pytest.raises(ValidationError, match="unique"):
-        StyleReviewFrontMatter.model_validate(payload)
-
-
-def test_style_review_requires_canonical_lint_report_path() -> None:
-    payload = valid_style_review_payload()
-    payload["lint_report"]["path"] = "build/../lint-report.json"
-
-    with pytest.raises(ValidationError, match="relative POSIX"):
-        StyleReviewFrontMatter.model_validate(payload)
-
-
-def test_style_review_front_matter_is_strict() -> None:
-    payload = valid_style_review_payload()
-    payload["authenticity_score"] = 91
-
-    with pytest.raises(ValidationError):
-        StyleReviewFrontMatter.model_validate(payload)
 
 
 @pytest.mark.parametrize("section", ["findings", "practice_questions"])

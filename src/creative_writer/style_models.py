@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import datetime
 import math
 from typing import Annotated, Literal
 
@@ -55,9 +54,6 @@ StyleFindingCategory = Literal[
     "surface_warning",
     "generic_ai",
 ]
-StyleReviewScope = Literal["chapter", "story", "anthology"]
-StyleReviewOutcome = Literal["accepted", "qualified", "revise"]
-StyleReviewerRole = Literal["ai", "human"]
 StyleToleranceMetric = Literal[
     "sentence_length_median",
     "sentence_length_p90",
@@ -92,51 +88,6 @@ class StyleLintReportReference(StrictModel):
     sha256: SHA256
 
     _path = field_validator("path")(_validate_canonical_relative_path)
-
-
-class StyleReviewFrontMatter(StrictModel):
-    review_id: Slug
-    date: datetime.date
-    scope: StyleReviewScope
-    manuscripts: list[RelativePath] = Field(min_length=1)
-    profile_id: Slug
-    profile_version: str = Field(pattern=r"^\d+\.\d+\.\d+$")
-    lint_report: StyleLintReportReference
-    reference_packets: list[Slug] = Field(default_factory=list)
-    reviewer_id: NonEmptyText
-    reviewer_role: StyleReviewerRole
-    outcome: StyleReviewOutcome
-
-    @field_validator("manuscripts")
-    @classmethod
-    def canonical_unique_manuscripts(cls, value: list[str]) -> list[str]:
-        canonical = [
-            _validate_canonical_relative_path(manuscript)
-            for manuscript in value
-        ]
-        if any(
-            not manuscript.startswith("manuscript/")
-            or not manuscript.endswith(".md")
-            for manuscript in canonical
-        ):
-            raise ValueError(
-                "review manuscripts must be below manuscript/ and end in .md"
-            )
-        return _validate_unique(canonical, "review manuscript paths")
-
-    @field_validator("reference_packets")
-    @classmethod
-    def unique_reference_packets(cls, value: list[str]) -> list[str]:
-        return _validate_unique(value, "review reference packet IDs")
-
-    @model_validator(mode="after")
-    def enforce_human_milestone_acceptance(self) -> "StyleReviewFrontMatter":
-        if self.scope in {"story", "anthology"} and self.outcome == "accepted":
-            if self.reviewer_role != "human":
-                raise ValueError(
-                    "story and anthology acceptance requires a human reviewer"
-                )
-        return self
 
 
 class StylePassageIndexes(StrictModel):

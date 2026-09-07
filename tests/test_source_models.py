@@ -6,7 +6,7 @@ import pytest
 
 from creative_writer.exceptions import CreativeWriterError
 from creative_writer.files import load_yaml_model
-from creative_writer.models import SourceStudyAdmission, SourcesRegistry
+from creative_writer.models import SourcesRegistry
 
 
 VALID_ADMISSION = """composition_window:
@@ -79,86 +79,6 @@ def _retained_record_yaml(derived: str) -> str:
     provenance: {{transcription: Test transcription, page_scans: Test scans}}
     rights: {{source_text: Public domain test fixture., edition_contributions: Test edition statement.}}
 """
-
-
-def test_source_study_admission_parses_valid_yaml(tmp_path: Path) -> None:
-    path = tmp_path / "admission.yml"
-    path.write_text(VALID_ADMISSION, encoding="utf-8")
-
-    admission = load_yaml_model(path, SourceStudyAdmission)
-
-    assert admission.composition_window.start == 1897
-    assert admission.sources[0].authority.style_authority == "primary"
-    assert admission.sources[0].edition.public_domain_context.startswith(
-        "Public-domain Wells text"
-    )
-
-
-@pytest.mark.parametrize(
-    "field",
-    [
-        "public_domain_context",
-        "textual_limitations",
-        "editorial_normalisation",
-        "variant_concerns",
-    ],
-)
-def test_source_study_admission_requires_each_edition_risk_field(
-    tmp_path: Path,
-    field: str,
-) -> None:
-    path = tmp_path / "admission.yml"
-    lines = [
-        line
-        for line in VALID_ADMISSION.splitlines()
-        if not line.startswith(f"      {field}:")
-    ]
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-
-    with pytest.raises(CreativeWriterError, match=field):
-        load_yaml_model(path, SourceStudyAdmission)
-
-
-def test_source_study_admission_rejects_duplicate_ids(tmp_path: Path) -> None:
-    path = tmp_path / "admission.yml"
-    path.write_text(VALID_ADMISSION + VALID_ADMISSION.split("sources:\n", 1)[1], encoding="utf-8")
-
-    with pytest.raises(CreativeWriterError, match="source IDs must be unique"):
-        load_yaml_model(path, SourceStudyAdmission)
-
-
-def test_period_control_cannot_claim_positive_style_authority(tmp_path: Path) -> None:
-    path = tmp_path / "admission.yml"
-    path.write_text(
-        VALID_ADMISSION.replace("tier: 1", "tier: 4")
-        .replace("story_world_canon: true", "story_world_canon: false")
-        .replace("style_authority: primary", "style_authority: bounded"),
-        encoding="utf-8",
-    )
-
-    with pytest.raises(CreativeWriterError, match="Tier 4 sources must use control style authority"):
-        load_yaml_model(path, SourceStudyAdmission)
-
-
-@pytest.mark.parametrize(
-    ("tier", "style_authority"),
-    [(2, "primary"), (3, "secondary")],
-)
-def test_wells_witness_authority_must_match_tier(
-    tmp_path: Path,
-    tier: int,
-    style_authority: str,
-) -> None:
-    path = tmp_path / "admission.yml"
-    path.write_text(
-        VALID_ADMISSION.replace("tier: 1", f"tier: {tier}")
-        .replace("story_world_canon: true", "story_world_canon: false")
-        .replace("style_authority: primary", f"style_authority: {style_authority}"),
-        encoding="utf-8",
-    )
-
-    with pytest.raises(CreativeWriterError, match=f"Tier {tier} sources"):
-        load_yaml_model(path, SourceStudyAdmission)
 
 
 def test_retained_full_work_requires_markdown_fingerprint(tmp_path: Path) -> None:

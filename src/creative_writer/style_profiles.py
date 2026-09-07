@@ -272,16 +272,10 @@ def _validate_index_bindings(
             "tier4_control_passage_index",
         ),
     )
-    for name, profile_binding, manifest_binding, generated_key in bindings:
+    # The manifest records where the frozen study generated each index; the
+    # profile records where the committed copy now lives. Only content is bound.
+    for name, profile_binding, manifest_binding, _generated_key in bindings:
         safe_relative_path(root, profile_binding.path)
-        if (
-            profile_binding.path != manifest_binding.path
-            or profile_binding.path != analysis.generated_paths[generated_key]
-        ):
-            raise CreativeWriterError(
-                f"{name} passage-index path does not match the approved "
-                "analysis and holdout manifest"
-            )
         if profile_binding.sha256 != manifest_binding.sha256:
             raise CreativeWriterError(
                 f"{name} passage-index SHA-256 does not match the approved "

@@ -490,13 +490,6 @@ def test_style_reference_accepts_yml_suffix_and_reports_output_metadata(
     style_packet_story: StylePacketFixture,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(
-        "creative_writer.style_references.run_source_analysis",
-        lambda *_args, **_kwargs: pytest.fail(
-            "verified indexes must not trigger preparation"
-        ),
-    )
-
     result = generate_style_reference(
         style_packet_story.root,
         "packet-story",
@@ -521,7 +514,6 @@ def test_style_reference_accepts_yml_suffix_and_reports_output_metadata(
         / "frame.md"
     )
     assert result.entry_count == 3
-    assert result.source_indexes_prepared is False
 
 
 def test_style_reference_rejects_symlinked_output_target(
@@ -902,59 +894,6 @@ def test_style_reference_renders_source_identity_and_passage_metadata(
     assert "Permitted use: Study evidentiary mediation." in body
 
 
-def test_style_reference_prepares_missing_indexes_exactly_once(
-    style_packet_story: StylePacketFixture,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    for path in style_packet_story.index_paths.values():
-        path.unlink()
-    calls = 0
-
-    def prepare(root: Path, slug: str, stage: str) -> None:
-        nonlocal calls
-        calls += 1
-        assert root == style_packet_story.root
-        assert slug == "packet-story"
-        assert stage == "prepare"
-        for name, path in style_packet_story.index_paths.items():
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(style_packet_story.index_bytes[name])
-
-    monkeypatch.setattr(
-        "creative_writer.style_references.run_source_analysis",
-        prepare,
-    )
-
-    result = generate_style_reference(
-        style_packet_story.root,
-        "packet-story",
-        "frame",
-    )
-
-    assert calls == 1
-    assert result.source_indexes_prepared is True
-
-
-def test_style_reference_does_not_prepare_when_indexes_are_verified(
-    style_packet_story: StylePacketFixture,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(
-        "creative_writer.style_references.run_source_analysis",
-        lambda *_args, **_kwargs: pytest.fail(
-            "verified indexes must not be regenerated"
-        ),
-    )
-
-    result = generate_style_reference(
-        style_packet_story.root,
-        "packet-story",
-        "frame",
-    )
-
-    assert result.source_indexes_prepared is False
-
-
 def test_style_reference_accepts_physical_partition_witness_ordinal_gaps(
     style_packet_story: StylePacketFixture,
 ) -> None:
@@ -986,55 +925,6 @@ def test_style_reference_accepts_physical_partition_witness_ordinal_gaps(
     )
 
     assert result.entry_count == 3
-
-
-def test_style_reference_blocks_stale_present_index_before_prepare(
-    style_packet_story: StylePacketFixture,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    style_packet_story.index_paths["development"].write_bytes(b"stale\n")
-    style_packet_story.index_paths["heldout_wells"].unlink()
-    monkeypatch.setattr(
-        "creative_writer.style_references.run_source_analysis",
-        lambda *_args, **_kwargs: pytest.fail(
-            "stale present indexes must block before preparation"
-        ),
-    )
-
-    with pytest.raises(
-        CreativeWriterError,
-        match="development.*SHA-256 mismatch",
-    ):
-        generate_style_reference(
-            style_packet_story.root,
-            "packet-story",
-            "frame",
-        )
-
-
-def test_style_reference_verifies_indexes_created_by_prepare(
-    style_packet_story: StylePacketFixture,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    style_packet_story.index_paths["development"].unlink()
-
-    def prepare(_root: Path, _slug: str, _stage: str) -> None:
-        style_packet_story.index_paths["development"].write_bytes(b"wrong\n")
-
-    monkeypatch.setattr(
-        "creative_writer.style_references.run_source_analysis",
-        prepare,
-    )
-
-    with pytest.raises(
-        CreativeWriterError,
-        match="development.*SHA-256 mismatch",
-    ):
-        generate_style_reference(
-            style_packet_story.root,
-            "packet-story",
-            "frame",
-        )
 
 
 def test_style_reference_rejects_unknown_passage(
@@ -1137,7 +1027,7 @@ def test_style_reference_parser_defaults_profile_to_none() -> None:
     assert args.profile is None
 
 
-def test_style_reference_cli_reports_output_entries_and_index_preparation(
+def test_style_reference_cli_reports_output_and_entries(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -1158,7 +1048,6 @@ def test_style_reference_cli_reports_output_entries_and_index_preparation(
         return SimpleNamespace(
             output_path=output_path,
             entry_count=4,
-            source_indexes_prepared=True,
         )
 
     monkeypatch.setattr(cli_module, "repo_root", lambda: tmp_path)
@@ -1187,7 +1076,6 @@ def test_style_reference_cli_reports_output_entries_and_index_preparation(
     assert capsys.readouterr().out.splitlines() == [
         f"Style reference packet written to {output_path}",
         "Entries: 4",
-        "Source indexes prepared: yes",
     ]
 
 

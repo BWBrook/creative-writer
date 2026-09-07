@@ -9,30 +9,23 @@ metadata record. No records remain approved or proposed.
 `original/sources.yml` contains exactly the twelve retained records. *The Lost
 World* remains Tier 5 and intentionally has no retained artifact.
 
-The generated review surface is
-`build/time-expedition/reports/source-admission-report.md`. It reconciles the
-admission record with retained-source metadata and shows authority, permitted
-and prohibited uses, selected subworks, edition risks, and retained
-fingerprints, derivation, provenance, and rights. The admitted corpus passed
-this gate, the deterministic Phase 2B partition is locked in `holdouts.yml`,
-and detailed analysis is technically complete.
+The admitted corpus passed its admission gate, the deterministic Phase 2B
+partition is locked in `holdouts.yml`, and the analysis is complete.
 
-## Phase 2B staged analysis
+## Phase 2B evidence layer
 
-The public interface is:
+The study is closed. The staged pipeline that produced it (`source-admission`
+and `source-analysis prepare/develop/validate`) was retired from the codebase
+once the evidence layer was approved; its last version is in Git history at
+commit `59ab51a`. The `build/` paths recorded inside the frozen YAML files
+below are where that pipeline wrote its outputs and are kept as historical
+record.
 
-```bash
-make source-analysis STORY=time-expedition STAGE=prepare
-make source-analysis STORY=time-expedition STAGE=develop
-make source-analysis STORY=time-expedition STAGE=validate
-```
+The three physically separate, hash-bound passage indexes are committed here:
 
-`prepare` is the only stage allowed to parse retained source Markdown. It
-locks the corpus and writes three physically separate, hash-bound indexes:
-
-- `build/time-expedition/source-study/indexes/development.jsonl` for Tier 1-3 development material;
-- `build/time-expedition/source-study/indexes/heldout-wells.jsonl` for held-out Wells material;
-- `build/time-expedition/source-study/indexes/tier4-controls.jsonl` for Tier 4 comparative controls.
+- `indexes/development.jsonl` for Tier 1-3 development material;
+- `indexes/heldout-wells.jsonl` for held-out Wells material;
+- `indexes/tier4-controls.jsonl` for Tier 4 comparative controls.
 
 The real partition contains twelve retained sources and fifteen analytical
 witnesses. *The Star* is held out in full; the other Tier 1-3 witnesses use
@@ -75,8 +68,7 @@ re-review.
 
 The writer-facing synthesis is `wells-profile.md`, the claim store is
 `evidence-ledger.yml`, and the negative-control analysis is
-`period-controls.md`. The generated compiled report is
-`build/time-expedition/source-study/validation/current/analysis-report.md`.
+`period-controls.md`.
 
 This workflow remains descriptive and source-bound. Phase 2B did not author
 style guidance, alter a style card, plan the Permian material, or change

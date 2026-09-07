@@ -72,39 +72,15 @@ make review-pack STORY=mars-2044-cave PACK=first-human-pass
 make style-lint STORY=time-expedition
 make style-lint STORY=time-expedition CHAPTER=01-the-obstruction
 make style-reference STORY=time-expedition PACK=frame-and-testimony
-make source-analysis STORY=time-expedition STAGE=prepare
 make test
 ```
-
-Phase 2B source analysis is staged explicitly:
-
-```bash
-creative-writer source-analysis --story <slug> --stage prepare
-creative-writer source-analysis --story <slug> --stage develop
-creative-writer source-analysis --story <slug> --stage validate
-```
-
-`prepare` creates or verifies the corpus lock and three physical passage
-indexes; `develop` reads only the development index and is intentionally
-limited to the pre-freeze `protocol`/`development` lifecycle; `validate`
-reports the managed validation generation. The validation record advances in
-order from `frozen` to `heldout_assessed` to `complete`, so held-out Wells
-material is assessed before Tier 4 controls can be opened. The committed
-`heldout_assessed` record contains held-out results only; its validation run
-generates the control-inclusive packet used to author control comparisons,
-reviewer records, and claim transitions for `complete`. Candidate
-`analysis.yml` and `holdouts.yml` remain immutable for that validation run. At
-`complete`, the writer-facing profile and evidence ledger may be the separately
-hash-checked final versions required by the approved workflow. Phase 2B produces
-descriptive evidence only and stops before Phase 2C style guidance, planning,
-or manuscript changes.
 
 The `time-expedition` Phase 2B study is technically complete and has passed its
 independent acceptance re-review. Its final evidence layer contains six
 validated and four qualified claims, with no rejected or strong-confidence
-claims. The compiled report is available at
-`build/time-expedition/source-study/validation/current/analysis-report.md`.
-Barry gave substantive approval on 23 July 2026. Phase 2C v1 is now
+claims. Its evidence layer, validation record, and passage indexes are
+committed under `stories/time-expedition/source-study/`; the code that produced
+them was retired once the study closed and remains in Git history. Barry gave substantive approval on 23 July 2026. Phase 2C v1 is now
 operational: its provenance-locked Wells profile, six curated packets,
 score-free advisory lint reports, and tracked calibration surfaces work end to
 end. The first substantive Permian chapter is the next style-calibration event;
@@ -215,9 +191,8 @@ execution error. Set `generic_ai_audit: false` to record that surface as
 disabled instead of partial.
 
 `style-reference` compiles one curated manifest to
-`build/<slug>/style/reference-packets/<pack>.md`. This explicit command may
-prepare missing, hash-pinned Phase 2B passage indexes; it reports whether it
-did so. Compiled packets preserve profile, claim, passage, source, authority,
+`build/<slug>/style/reference-packets/<pack>.md` from the committed,
+hash-pinned passage indexes. Compiled packets preserve profile, claim, passage, source, authority,
 and selection provenance. Tier 4 material is confined to negative comparison.
 Reference text is for studying narrative method, evidentiary sequence, role,
 and cadence: do not borrow distinctive phrases, sentence skeletons, images,

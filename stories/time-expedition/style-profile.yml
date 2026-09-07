@@ -22,13 +22,13 @@ provenance:
     sha256: 39582142777a486157b2249e1f317710099dc2ef8f4e047080cdd53875bd23e4
   passage_indexes:
     development:
-      path: build/time-expedition/source-study/indexes/development.jsonl
+      path: stories/time-expedition/source-study/indexes/development.jsonl
       sha256: 76131fb52a054567695800cf2028f956679cf1f1723bc80a471f7252d181a3c8
     heldout_wells:
-      path: build/time-expedition/source-study/indexes/heldout-wells.jsonl
+      path: stories/time-expedition/source-study/indexes/heldout-wells.jsonl
       sha256: c503a29906aa6fbdbd4847daed698de405d936e9513f6dba020dbde16e74ed6d
     tier4_controls:
-      path: build/time-expedition/source-study/indexes/tier4-controls.jsonl
+      path: stories/time-expedition/source-study/indexes/tier4-controls.jsonl
       sha256: 8534aba41eb247f00ebb579cfcc8b8635e66c5e0a339792a76d712cddf45b936
   approved_review_run_id: final-audit-rereview
 default_packet_ids:

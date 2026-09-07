@@ -12,7 +12,6 @@ import uuid
 from creative_writer.exceptions import CreativeWriterError
 from creative_writer.files import ensure_directory, load_yaml_model
 from creative_writer.models import ContractConfig
-from creative_writer.source_analysis import run_source_analysis
 from creative_writer.source_analysis_common import safe_relative_path, sha256_file
 from creative_writer.source_analysis_models import EvidenceClaim, PassageRecord
 from creative_writer.source_passages import (
@@ -74,7 +73,6 @@ class StyleReferenceResult:
     manifest_path: Path
     output_path: Path
     entry_count: int
-    source_indexes_prepared: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -181,29 +179,9 @@ def _verify_present_index(binding: _IndexBinding) -> None:
         )
 
 
-def _prepare_missing_indexes(
-    root: Path,
-    slug: str,
-    bindings: list[_IndexBinding],
-) -> bool:
-    missing: list[_IndexBinding] = []
+def _verify_indexes(bindings: list[_IndexBinding]) -> None:
     for binding in bindings:
-        if binding.path.exists():
-            _verify_present_index(binding)
-        else:
-            missing.append(binding)
-    if not missing:
-        return False
-
-    run_source_analysis(root, slug, "prepare")
-    for binding in bindings:
-        if not binding.path.exists():
-            raise CreativeWriterError(
-                f"{binding.name} passage index is missing after "
-                f"source-analysis prepare: {binding.path}"
-            )
         _verify_present_index(binding)
-    return True
 
 
 def _read_verified_partition(binding: _IndexBinding) -> list[PassageRecord]:
@@ -675,11 +653,7 @@ def generate_style_reference(
     _validate_section_order(manifest)
 
     bindings = _index_bindings(resolved_root, context)
-    prepared = _prepare_missing_indexes(
-        resolved_root,
-        slug,
-        bindings,
-    )
+    _verify_indexes(bindings)
     indexes, passages = _load_indexes(bindings)
     entries = _resolve_entries(
         context,
@@ -713,5 +687,4 @@ def generate_style_reference(
         manifest_path=manifest_path,
         output_path=output_path,
         entry_count=len(entries),
-        source_indexes_prepared=prepared,
     )

@@ -123,19 +123,6 @@ class ContractConfig(BaseModel):
     style_lint: StyleLintSettings | None = None
 
 
-class CompositionWindow(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    start: int = Field(ge=1800, le=2100)
-    end: int = Field(ge=1800, le=2100)
-
-    @model_validator(mode="after")
-    def validate_order(self) -> "CompositionWindow":
-        if self.end < self.start:
-            raise ValueError("composition window end must not precede start")
-        return self
-
-
 class SourceAuthority(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -167,80 +154,6 @@ class SourceWork(BaseModel):
     title: NonEmptyStr
     author: NonEmptyStr
     first_published: int | None = Field(default=None, ge=1800, le=2100)
-
-
-class PlannedSourceEdition(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    publisher: NonEmptyStr
-    homepage: NonEmptyStr
-    download_url: NonEmptyStr
-    artifact_format: Literal[
-        "standard-ebooks-compatible-epub",
-        "project-gutenberg-epub",
-    ]
-    planned_path: NonEmptyStr
-    public_domain_context: NonEmptyStr
-    textual_limitations: NonEmptyStr
-    editorial_normalisation: NonEmptyStr
-    variant_concerns: NonEmptyStr
-
-    @field_validator("planned_path")
-    @classmethod
-    def validate_planned_path(cls, value: str) -> str:
-        if not value.startswith("original/") or not value.endswith(".epub"):
-            raise ValueError("planned_path must be an EPUB below original/")
-        return value
-
-
-class SourceSelection(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    id: Slug
-    title: NonEmptyStr
-    first_published: int = Field(ge=1800, le=2100)
-    analytical_roles: list[NonEmptyStr] = Field(min_length=1)
-
-
-class SourceAdmissionRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    id: Slug
-    status: Literal["admitted", "approved", "proposed", "excluded"]
-    authority: SourceAuthority
-    work: SourceWork
-    analytical_roles: list[NonEmptyStr] = Field(min_length=1)
-    permitted_uses: list[NonEmptyStr] = Field(min_length=1)
-    prohibited_uses: list[NonEmptyStr] = Field(min_length=1)
-    rationale: NonEmptyStr
-    edition: PlannedSourceEdition
-    selections: list[SourceSelection] = Field(default_factory=list)
-
-    @model_validator(mode="after")
-    def validate_status(self) -> "SourceAdmissionRecord":
-        if self.status == "excluded" and self.authority.tier != 5:
-            raise ValueError("excluded sources must use Tier 5")
-        if self.status != "excluded" and self.authority.tier == 5:
-            raise ValueError("Tier 5 sources must be excluded")
-        return self
-
-
-class SourceStudyAdmission(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    composition_window: CompositionWindow
-    editorial_mode: Literal["restrained_apparatus"]
-    sources: list[SourceAdmissionRecord] = Field(min_length=1)
-
-    @model_validator(mode="after")
-    def validate_sources(self) -> "SourceStudyAdmission":
-        ids = [item.id for item in self.sources]
-        if len(ids) != len(set(ids)):
-            raise ValueError("source IDs must be unique")
-        tier_one = [item for item in self.sources if item.authority.tier == 1]
-        if len(tier_one) != 1:
-            raise ValueError("admission must contain exactly one Tier 1 source")
-        return self
 
 
 class RetainedSourceRole(BaseModel):

@@ -15,7 +15,7 @@ from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
-from creative_writer.source_metrics import sentence_spans, tokenize
+from creative_writer.sentences import sentence_spans, tokenize
 
 
 _ATX_HEADING_RE = re.compile(r"^[ \t]{0,3}#{1,6}(?:[ \t]+|$)")

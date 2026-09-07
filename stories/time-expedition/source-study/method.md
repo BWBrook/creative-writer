@@ -17,7 +17,9 @@ excluded record has no source artifact or positive authority.
 
 ## Phase 2B lifecycle
 
-The command-line interface is:
+This section records the method as it was run. The command-line interface it
+describes was retired after the study closed; see `README.md` in this
+directory. The interface was:
 
 ```bash
 creative-writer source-analysis --story time-expedition --stage prepare

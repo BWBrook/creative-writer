@@ -1,6 +1,6 @@
 schema_version: 1
 profile_id: wells-1895-1899
-version: 1.0.0
+version: 1.1.0
 title: "Late-1890s H. G. Wells operational style profile"
 eligible_claim_statuses: [validated, qualified]
 provenance:
@@ -38,7 +38,7 @@ default_packet_ids:
   - dialogue-and-social-friction
   - danger-and-action
   - reflection-and-closure
-change_basis: "Initial operationalisation of the human-approved Phase 2B Wells evidence layer and the approved Phase 2C design dated 2026-07-31."
+change_basis: "1.1.0 (2026-09-07): after Chapter I calibration, the uniform-cadence review threshold rises from CV 0.28 to a provisional 0.45, and the role-shaped-syntax diagnostic gains a sentence-length p90 tolerance (review below 26) with The Time Machine's Phase 2B value of 31 as reference. Chapter I measured p90 24 and CV 0.84 by the project scanner; the old CV threshold sat far below any value the scanner produces and could not prompt review, and no p90 comparison existed. 1.0.0: initial operationalisation of the human-approved Phase 2B evidence layer and the Phase 2C design dated 2026-07-31."
 profile_review_refs:
   - "source-study/validation.md#final-audit-rereview"
   - "Phase 2C operational style design, 2026-07-31 (retired planning document; Git history before commit 099ae07)"
@@ -285,6 +285,15 @@ rules:
         - exclaimed
         - cried
       minimum_sentences: 12
+    tolerance:
+      metric: sentence_length_p90
+      minimum_sample_size: 40
+      review_below: 26
+      reference_witness_ids:
+        - the-time-machine
+      reference_value: 31
+      reference_label: "The Time Machine sentence-length p90 (Phase 2B quantitative profile)"
+      rationale: A short upper tail suggests the long periodic sentence has dropped out; The Time Machine measures 31 by the same Phase 2B scanner. This is a review prompt, not a target.
     source_passage_ids:
       - the-time-machine:iii:102:301f3d1a7670
       - the-invisible-man:vii:223:04a2271ebbf5
@@ -452,7 +461,7 @@ rules:
     tolerance:
       metric: sentence_length_cv
       minimum_sample_size: 20
-      review_below: 0.28
+      review_below: 0.45
       reference_witness_ids:
         - the-time-machine
         - the-invisible-man
@@ -462,7 +471,7 @@ rules:
         - selected-short-fiction/the-sea-raiders
         - selected-short-fiction/the-crystal-egg
         - selected-short-fiction/the-star
-      rationale: This broad review threshold locates unusually even local cadence; it is not a target, Wells norm, or pooled authority-corpus average.
+      rationale: Provisional. Chapter I measured CV 0.84 by this scanner and the earlier 0.28 threshold sat far below any observed value; Phase 2B recorded no CV for Wells, so this bound awaits a source measurement by the same scanner. It is a review prompt, not a target or pooled corpus average.
     source_passage_ids: []
     variation_passage_ids: []
     control_passage_ids: []

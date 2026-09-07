@@ -102,7 +102,7 @@ def _configure_contract(
 ) -> None:
     path = story / "contract.yml"
     payload = yaml.safe_load(path.read_text(encoding="utf-8"))
-    payload["lint"]["em_dash"]["max_per_chapter"] = 1
+    payload["lint"]["em_dash"]["max_per_thousand_words"] = 50
     payload["lint"]["contrastive_parallelism"]["max_instances_per_chapter"] = 0
     payload["style_lint"] = {
         "profile": profile,
@@ -595,7 +595,9 @@ def test_punctuation_drift_calibration_raises_shared_surface_warning() -> None:
     )
 
     em_dash = next(warning for warning in warnings if warning.rule_id == "em-dash-overuse")
-    assert em_dash.observed == "Em dash count 4 exceeds configured limit 2."
+    assert em_dash.observed == (
+        "Em dashes: 4 in 11 words (363.6 per 1,000); configured maximum 1 per 1,000."
+    )
 
 
 def test_generic_ai_surface_calibration_is_separately_labelled(
@@ -1412,3 +1414,30 @@ def test_style_lint_cli_reports_both_generated_paths(
         "Findings: 3",
         "Result status: complete",
     ]
+
+
+def test_threshold_note_cites_reference_value_when_configured() -> None:
+    from types import SimpleNamespace
+
+    from creative_writer.style_lint import _threshold_result
+    from creative_writer.style_models import StyleTolerance
+
+    tolerance = StyleTolerance.model_validate(
+        {
+            "metric": "sentence_length_p90",
+            "minimum_sample_size": 10,
+            "review_below": 26.0,
+            "reference_witness_ids": ["the-time-machine"],
+            "reference_value": 31.0,
+            "reference_label": "The Time Machine p90",
+            "rationale": "Short tails prompt review.",
+        }
+    )
+    resolved = SimpleNamespace(rule=SimpleNamespace(tolerance=tolerance))
+
+    triggered, note = _threshold_result(
+        resolved, {"sentence_length_p90": 24.0}, 40, 10
+    )
+
+    assert triggered is True
+    assert "Reference: The Time Machine p90 31." in note

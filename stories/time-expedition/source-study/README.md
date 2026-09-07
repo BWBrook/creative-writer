@@ -76,7 +76,7 @@ layer on 23 July 2026.
 
 ## Phase 2C operational handoff
 
-The approved Phase 2C consumer is `../style-profile.yml`, version `1.0.0`. It
+The approved Phase 2C consumer is `../style-profile.yml`, version `1.1.0`. It
 binds the final analysis, source registry, holdout manifest, ledger, validation
 record, and all three generated indexes by SHA-256. It may operationalise only
 claims whose final status is `validated` or `qualified`, and every rule retains

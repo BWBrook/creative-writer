@@ -573,6 +573,18 @@ def test_style_profile_rejects_controls_on_non_anti_drift_rule() -> None:
         StyleProfile.model_validate(payload)
 
 
+def test_style_profile_requires_paired_tolerance_reference() -> None:
+    payload = valid_style_profile_payload()
+    payload["rules"][2]["tolerance"]["reference_value"] = 31.0
+
+    with pytest.raises(ValidationError, match="both a value and a label"):
+        StyleProfile.model_validate(payload)
+
+    payload["rules"][2]["tolerance"]["reference_label"] = "The Time Machine p90"
+    profile = StyleProfile.model_validate(payload)
+    assert profile.rules[2].tolerance.reference_value == 31.0
+
+
 def test_style_profile_rejects_tolerance_without_numeric_bound() -> None:
     payload = valid_style_profile_payload()
     del payload["rules"][2]["tolerance"]["review_below"]

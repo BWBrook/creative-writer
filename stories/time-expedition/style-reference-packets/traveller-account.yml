@@ -3,7 +3,7 @@ id: traveller-account
 title: Traveller account
 purpose: Compare the reported account's movement among remembered experience, present telling, reflective distance, and local syntactic pressure without imposing one first-person cadence.
 profile_id: wells-1895-1899
-profile_version: 1.0.0
+profile_version: 1.1.0
 roles:
   - reported-account
   - notebook

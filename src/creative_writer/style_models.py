@@ -60,6 +60,7 @@ StyleToleranceMetric = Literal[
     "sentence_length_cv",
     "paragraph_length_median",
     "dialogue_proportion",
+    "em_dashes_per_thousand_words",
 ]
 
 
@@ -182,6 +183,8 @@ class StyleTolerance(StrictModel):
     review_below: StrictFloat | None = None
     review_above: StrictFloat | None = None
     reference_witness_ids: list[NonEmptyText] = Field(min_length=1)
+    reference_value: StrictFloat | None = None
+    reference_label: NonEmptyText | None = None
     rationale: NonEmptyText
 
     @field_validator("review_below", "review_above")
@@ -200,6 +203,10 @@ class StyleTolerance(StrictModel):
     def require_numeric_bound(self) -> "StyleTolerance":
         if self.review_below is None and self.review_above is None:
             raise ValueError("style tolerance requires at least one numeric bound")
+        if (self.reference_value is None) != (self.reference_label is None):
+            raise ValueError("tolerance reference requires both a value and a label")
+        if self.reference_value is not None and not math.isfinite(self.reference_value):
+            raise ValueError("style tolerance reference value must be finite")
         return self
 
 

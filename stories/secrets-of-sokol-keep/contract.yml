@@ -5,7 +5,7 @@ review_mode: git_diff
 lint:
   em_dash:
     enabled: true
-    max_per_chapter: 1
+    max_per_thousand_words: 0.5
   contrastive_parallelism:
     enabled: true
     max_instances_per_chapter: 1

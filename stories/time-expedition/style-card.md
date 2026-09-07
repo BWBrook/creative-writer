@@ -2,7 +2,7 @@
 
 Operational companion to [`style-guide.md`](style-guide.md) and
 [`style-profile.yml`](style-profile.yml), profile `wells-1895-1899` version
-`1.0.0`. This card is a desk reference, not an imitation prompt or phrase bank.
+`1.1.0`. This card is a desk reference, not an imitation prompt or phrase bank.
 
 ## Authority
 

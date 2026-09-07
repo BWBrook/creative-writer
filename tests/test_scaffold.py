@@ -30,7 +30,7 @@ def test_init_story_creates_required_and_optional_artifacts(tmp_path: Path) -> N
         "lint:\n"
         "  em_dash:\n"
         "    enabled: true\n"
-        "    max_per_chapter: 2\n"
+        "    max_per_thousand_words: 1\n"
         "  contrastive_parallelism:\n"
         "    enabled: true\n"
         "    max_instances_per_chapter: 1\n",

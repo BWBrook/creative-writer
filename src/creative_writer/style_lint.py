@@ -533,6 +533,7 @@ def _validate_measurement_contract(
             "sentence_length_p90",
             "sentence_length_cv",
             "paragraph_length_median",
+            "em_dashes_per_thousand_words",
         },
         "dialogue_profile": {"dialogue_proportion"},
     }
@@ -621,6 +622,7 @@ def _sentence_measurements(
         "sentence_length_p90": _p90(diagnostics.sentence_lengths),
         "sentence_length_cv": diagnostics.sentence_length_cv,
         "paragraph_length_median": _median(diagnostics.paragraph_lengths),
+        "em_dashes_per_thousand_words": diagnostics.em_dashes_per_thousand_words,
     }
 
 
@@ -667,6 +669,11 @@ def _threshold_result(
             f"{tolerance.metric} is unavailable for this manuscript.",
         )
 
+    reference = (
+        f" Reference: {tolerance.reference_label} {tolerance.reference_value:g}."
+        if tolerance.reference_value is not None
+        else ""
+    )
     crossed: list[str] = []
     if tolerance.review_below is not None and value < tolerance.review_below:
         crossed.append(f"below {tolerance.review_below:g}")
@@ -676,7 +683,7 @@ def _threshold_result(
         return (
             True,
             f"{tolerance.metric} {value:g} is {' and '.join(crossed)} "
-            f"with sample size {sample_size}. {tolerance.rationale}",
+            f"with sample size {sample_size}.{reference} {tolerance.rationale}",
         )
     bounds: list[str] = []
     if tolerance.review_below is not None:
@@ -686,7 +693,7 @@ def _threshold_result(
     return (
         False,
         f"{tolerance.metric} {value:g} is within the configured context "
-        f"({'; '.join(bounds)}), with sample size {sample_size}.",
+        f"({'; '.join(bounds)}), with sample size {sample_size}.{reference}",
     )
 
 
@@ -1220,116 +1227,139 @@ def _render_claim_statuses(
 def _render_claim_jurisdictions(jurisdictions: Sequence[object]) -> str:
     rendered: list[str] = []
     for jurisdiction in jurisdictions:
-        roles = (
-            ", ".join(f"`{role}`" for role in jurisdiction.roles)
-            or "None"
-        )
+        roles = ", ".join(f"`{role}`" for role in jurisdiction.roles) or "None"
         witnesses = (
-            ", ".join(
-                f"`{witness}`"
-                for witness in jurisdiction.eligible_witness_ids
-            )
+            ", ".join(f"`{witness}`" for witness in jurisdiction.eligible_witness_ids)
             or "None"
         )
         rendered.append(
-            f"`{jurisdiction.scope}` (roles: {roles}; "
-            f"eligible witnesses: {witnesses})"
+            f"`{jurisdiction.scope}` (roles: {roles}; eligible witnesses: {witnesses})"
         )
     return "; ".join(rendered) or "None"
 
 
-def _render_question(question: StylePracticeQuestion) -> list[str]:
-    claims = ", ".join(f"`{claim}`" for claim in question.claim_ids) or "None"
-    statuses = _render_claim_statuses(
-        question.claim_ids,
-        question.claim_statuses,
-    )
-    jurisdictions = _render_claim_jurisdictions(
-        question.claim_jurisdictions
-    )
-    sources = (
-        ", ".join(f"`{source}`" for source in question.source_passage_ids)
-        or "None"
-    )
-    roles = ", ".join(f"`{role}`" for role in question.roles) or "None"
-    return [
-        f"### `{question.rule_id}`",
-        "",
-        f"- Advisory: `{question.advisory}`",
-        f"- Roles: {roles}",
-        f"- Phase 2B claims: {claims}",
-        f"- Claim statuses: {statuses}",
-        f"- Claim jurisdictions: {jurisdictions}",
-        f"- Source passages: {sources}",
-        f"- Question: {_markdown_safe(question.question)}",
-        f"- Limits: {_markdown_safe(question.interpretation_limits)}",
-        "",
-    ]
+def _render_ids(values: Sequence[str]) -> str:
+    return ", ".join(f"`{value}`" for value in values) or "None"
 
 
-def _render_finding(finding: StyleFinding) -> list[str]:
-    roles = ", ".join(f"`{role}`" for role in finding.roles) or "None"
-    claims = ", ".join(f"`{claim}`" for claim in finding.claim_ids) or "None"
-    statuses = _render_claim_statuses(
-        finding.claim_ids,
-        finding.claim_statuses,
-    )
-    jurisdictions = _render_claim_jurisdictions(
-        finding.claim_jurisdictions
-    )
-    sources = (
-        ", ".join(f"`{source}`" for source in finding.source_passage_ids)
-        or "None"
-    )
-    return [
-        f"### `{finding.id}`",
-        "",
-        f"- Category: `{finding.category}`",
-        f"- Rule: `{finding.rule_id}`",
-        f"- Location: `{finding.manuscript}:{finding.line_start}`"
-        + (
-            f"-{finding.line_end}"
-            if finding.line_end != finding.line_start
-            else ""
-        ),
-        f"- Advisory: `{finding.advisory}`",
-        f"- Roles: {roles}",
-        f"- Phase 2B claims: {claims}",
-        f"- Claim statuses: {statuses}",
-        f"- Claim jurisdictions: {jurisdictions}",
-        f"- Source passages: {sources}",
-        f"- Observed: {_markdown_safe(finding.observed_signal)}",
-        f"- Editorial question: {_markdown_safe(finding.editorial_question)}",
-        f"- Limits: {_markdown_safe(finding.limitations)}",
-        "",
+_EXCERPT_LIMIT = 200
+
+
+def _excerpt(
+    excerpts: dict[str, Sequence[str]],
+    finding: StyleFinding,
+) -> str | None:
+    lines = excerpts.get(finding.manuscript)
+    if lines is None or not 1 <= finding.line_start <= len(lines):
+        return None
+    text = lines[finding.line_start - 1].strip()
+    if not text:
+        return None
+    if len(text) > _EXCERPT_LIMIT:
+        text = text[: _EXCERPT_LIMIT - 1].rstrip() + "…"
+    return _markdown_safe(text)
+
+
+def _render_finding(
+    finding: StyleFinding,
+    excerpts: dict[str, Sequence[str]],
+) -> list[str]:
+    location = f"{finding.manuscript}:{finding.line_start}"
+    if finding.line_end != finding.line_start:
+        location += f"-{finding.line_end}"
+    lines = [
+        f"- `{finding.id}` `{finding.rule_id}` at `{location}`: "
+        f"{_markdown_safe(finding.observed_signal)}"
     ]
+    excerpt = _excerpt(excerpts, finding)
+    if excerpt is not None and finding.category != "generic_ai":
+        lines.append(f"  > {excerpt}")
+    lines.append(f"  {_markdown_safe(finding.editorial_question)}")
+    return lines
+
+
+_CATEGORY_LABELS = {
+    "wells_practice": "Wells practice",
+    "contextual_diagnostic": "Contextual diagnostics",
+    "anti_drift": "Anti-drift",
+    "surface_warning": "Surface warnings",
+    "generic_ai": "Generic AI-writing signals",
+}
 
 
 def _render_findings(
     findings: Sequence[StyleFinding],
-    *,
-    compact: bool = False,
+    excerpts: dict[str, Sequence[str]],
 ) -> list[str]:
     if not findings:
         return ["- None.", ""]
-    if compact:
-        return [
-            *[
-                f"- `{finding.id}` | `{finding.category}` | "
-                f"`{finding.manuscript}:{finding.line_start}` | "
-                f"`{finding.rule_id}` | "
-                f"{_markdown_safe(finding.observed_signal)}"
-                for finding in findings
-            ],
-            "",
-        ]
     lines: list[str] = []
-    for finding in findings:
-        lines.extend(_render_finding(finding))
+    for category in _CATEGORY_LABELS:
+        group = [finding for finding in findings if finding.category == category]
+        if not group:
+            continue
+        lines.extend([f"**{_CATEGORY_LABELS[category]}** ({len(group)})", ""])
+        for finding in group:
+            lines.extend(_render_finding(finding, excerpts))
+        lines.append("")
     return lines
 
 
-def _render_markdown(report: StyleLintReport) -> str:
+def _format_measurement(value: object) -> str:
+    if isinstance(value, float):
+        return f"{value:.3g}" if abs(value) < 1 else f"{value:.1f}".rstrip("0").rstrip(".")
+    return str(value)
+
+
+def _render_diagnostic(diagnostic: StyleDiagnosticRecord) -> list[str]:
+    where = (
+        f"on `{diagnostic.manuscript}`"
+        if diagnostic.manuscript is not None
+        else "across " + _render_ids(diagnostic.manuscripts)
+    )
+    measurements = "; ".join(
+        f"{metric} {_format_measurement(value)}"
+        for metric, value in sorted(diagnostic.measurements.items())
+        if value is not None and not isinstance(value, str)
+    )
+    crossed = "review threshold crossed" if diagnostic.triggered else "no threshold crossed"
+    lines = [
+        f"- `{diagnostic.rule_id}` {where} ({crossed}): {measurements}",
+        f"  {_markdown_safe(diagnostic.tolerance_note)}",
+    ]
+    for metric, value in sorted(diagnostic.measurements.items()):
+        if isinstance(value, str):
+            lines.append(f"  {metric}: {_markdown_safe(value)}")
+    return lines
+
+
+def _render_question(question: StylePracticeQuestion) -> list[str]:
+    lines = [
+        f"### `{question.rule_id}`",
+        "",
+        f"{_markdown_safe(question.question)}",
+        "",
+        f"- Advisory `{question.advisory}`; roles: {_render_ids(question.roles)}",
+    ]
+    if question.claim_ids:
+        lines.append(
+            "- Claim statuses: "
+            + _render_claim_statuses(question.claim_ids, question.claim_statuses)
+        )
+        lines.append(
+            "- Claim jurisdictions: "
+            + _render_claim_jurisdictions(question.claim_jurisdictions)
+        )
+    lines.append(f"- Source passages: {_render_ids(question.source_passage_ids)}")
+    lines.append("")
+    return lines
+
+
+def _render_markdown(
+    report: StyleLintReport,
+    excerpts: dict[str, Sequence[str]] | None = None,
+) -> str:
+    excerpts = excerpts or {}
     lines = [
         f"# Style Lint Report: {report.story_title}",
         "",
@@ -1341,178 +1371,100 @@ def _render_markdown(report: StyleLintReport) -> str:
         "",
         "All findings are advisory review prompts. Manuscript prose was not changed.",
         "",
-        "## Run scope and manuscript inventory",
+        "## Manuscript inventory",
         "",
-        f"- Role caveat: {report.role_caveat}",
     ]
     for chapter in report.chapters:
-        roles = ", ".join(f"`{role}`" for role in chapter.roles) or "None"
-        packets = (
-            ", ".join(f"`{packet}`" for packet in chapter.packet_ids)
-            or "None"
-        )
         lines.append(
-            f"- `{chapter.stub}` -> `{chapter.manuscript}` | "
-            f"{chapter.title} | roles: {roles} | packets: {packets} | "
+            f"- `{chapter.manuscript}` | {chapter.title} | "
+            f"roles: {_render_ids(chapter.roles)} | "
+            f"packets: {_render_ids(chapter.packet_ids)} | "
             f"words: {chapter.word_count}"
         )
+    lines.extend(["", f"{report.role_caveat}", ""])
 
-    lines.extend(
-        [
-            "",
-            "## Profile and evidence provenance",
-            "",
-            f"- Profile SHA-256: `{report.profile_sha256}`",
-            f"- Evidence ledger SHA-256: `{report.evidence_ledger_sha256}`",
-            f"- Validation record SHA-256: `{report.validation_record_sha256}`",
-        ]
-    )
-    if report.packet_manifest_sha256s:
-        for packet_id, digest in sorted(report.packet_manifest_sha256s.items()):
-            lines.append(f"- Packet `{packet_id}` SHA-256: `{digest}`")
-    else:
-        lines.append("- Packet manifests: None.")
+    lines.extend([f"## Findings ({len(report.findings)})", ""])
+    lines.extend(_render_findings(report.findings, excerpts))
 
-    lines.extend(["", "## Finding inventory", ""])
-    lines.extend(_render_findings(report.findings, compact=True))
-
-    evidence_questions = [
-        question for question in report.practice_questions if question.claim_ids
-    ]
+    evidence_questions = [q for q in report.practice_questions if q.claim_ids]
     lines.extend(["## Evidence-backed practice questions", ""])
     if evidence_questions:
         for question in evidence_questions:
             lines.extend(_render_question(question))
     else:
         lines.extend(["- None.", ""])
-    lines.extend(
-        _render_findings(
-            [
-                finding
-                for finding in report.findings
-                if finding.category == "wells_practice"
-            ]
-        )
-    )
 
     lines.extend(["## Contextual diagnostics", ""])
     if report.diagnostics:
         for diagnostic in report.diagnostics:
-            roles = (
-                ", ".join(f"`{role}`" for role in diagnostic.roles)
-                or "None"
-            )
-            provenance = ", ".join(
-                f"`{manuscript}`"
-                for manuscript in diagnostic.manuscripts
-            )
-            heading = (
-                f"on `{diagnostic.manuscript}`"
-                if diagnostic.manuscript is not None
-                else f"across {provenance}"
-            )
-            lines.extend(
-                [
-                    f"### `{diagnostic.rule_id}` {heading}",
-                    "",
-                    f"- Roles: {roles}",
-                    f"- Manuscripts measured: {provenance}",
-                    f"- Sample size: {diagnostic.sample_size}",
-                    f"- Review threshold crossed: "
-                    f"`{'yes' if diagnostic.triggered else 'no'}`",
-                ]
-            )
-            for metric, value in sorted(diagnostic.measurements.items()):
-                lines.append(f"- `{metric}`: `{value}`")
-            lines.extend(
-                [
-                    f"- Context: {diagnostic.tolerance_note}",
-                    f"- Limits: {diagnostic.limitations}",
-                    "",
-                ]
-            )
+            lines.extend(_render_diagnostic(diagnostic))
+        lines.append("")
     else:
         lines.extend(["- None.", ""])
-    contextual = [
-        finding
-        for finding in report.findings
-        if finding.category == "contextual_diagnostic"
-    ]
-    lines.extend(["### Story-level observations", ""])
-    lines.extend(
-        _render_findings(
-            [finding for finding in contextual if finding.scope == "story"]
-        )
-    )
-    lines.extend(["### Chapter and passage observations", ""])
-    lines.extend(
-        _render_findings(
-            [finding for finding in contextual if finding.scope != "story"]
-        )
-    )
 
     lines.extend(["## Anti-drift observations", ""])
-    anti_drift_questions = [
-        question
-        for question in report.practice_questions
-        if not question.claim_ids
-    ]
+    anti_drift_questions = [q for q in report.practice_questions if not q.claim_ids]
     if anti_drift_questions:
         for question in anti_drift_questions:
             lines.extend(_render_question(question))
     else:
         lines.extend(["- None.", ""])
-    lines.extend(
-        _render_findings(
-            [
-                finding
-                for finding in report.findings
-                if finding.category == "anti_drift"
-            ]
-        )
-    )
 
-    lines.extend(["## Surface warnings", ""])
-    lines.extend(
-        _render_findings(
-            [
-                finding
-                for finding in report.findings
-                if finding.category == "surface_warning"
-            ]
-        )
-    )
-
+    surface = [f for f in report.findings if f.category == "surface_warning"]
     lines.extend(
         [
+            "## Surface warnings",
+            "",
+            (
+                f"- {len(surface)} configured surface warning(s) listed above."
+                if surface
+                else "- None."
+            ),
+            "",
             "## Generic AI-writing signals",
             "",
-            f"- Status: `{report.generic_ai.status}`",
-            f"- Scanner: `{report.generic_ai.scanner or 'not run'}`",
-            "- Groups: "
-            + (
-                ", ".join(
-                    f"`{group}`" for group in report.generic_ai.group_names
-                )
-                or "None"
-            ),
-            f"- Caution: {report.generic_ai.caution}",
+            f"- Status: `{report.generic_ai.status}`; scanner: "
+            f"`{report.generic_ai.scanner or 'not run'}`; groups: "
+            f"{_render_ids(report.generic_ai.group_names)}; findings: "
+            f"{len(report.generic_ai.finding_ids)}",
+            f"- {report.generic_ai.caution}",
         ]
     )
     if report.generic_ai.notice:
-        lines.append(f"- Notice: {report.generic_ai.notice}")
+        lines.append(f"- {report.generic_ai.notice}")
     lines.append("")
-    lines.extend(
-        _render_findings(
-            [
-                finding
-                for finding in report.findings
-                if finding.category == "generic_ai"
-            ]
-        )
-    )
 
-    lines.extend(["## Limitations", ""])
+    limits: dict[str, str] = {}
+    sources: dict[str, Sequence[str]] = {}
+    for question in report.practice_questions:
+        limits.setdefault(question.rule_id, question.interpretation_limits)
+        sources.setdefault(question.rule_id, question.source_passage_ids)
+    for diagnostic in report.diagnostics:
+        limits.setdefault(diagnostic.rule_id, diagnostic.limitations)
+    for finding in report.findings:
+        limits.setdefault(finding.rule_id, finding.limitations)
+        sources.setdefault(finding.rule_id, finding.source_passage_ids)
+    lines.extend(["## Rule limits and sources", ""])
+    for rule_id in sorted(limits):
+        entry = f"- `{rule_id}`: {_markdown_safe(limits[rule_id])}"
+        if sources.get(rule_id):
+            entry += f" Sources: {_render_ids(sources[rule_id])}."
+        lines.append(entry)
+
+    lines.extend(
+        [
+            "",
+            "## Provenance",
+            "",
+            f"- Profile SHA-256: `{report.profile_sha256}`",
+            f"- Evidence ledger SHA-256: `{report.evidence_ledger_sha256}`",
+            f"- Validation record SHA-256: `{report.validation_record_sha256}`",
+        ]
+    )
+    for packet_id, digest in sorted(report.packet_manifest_sha256s.items()):
+        lines.append(f"- Packet `{packet_id}` SHA-256: `{digest}`")
+
+    lines.extend(["", "## Limitations", ""])
     lines.extend(f"- {item}" for item in report.limitations)
     lines.extend(["", "## Next steps", ""])
     lines.extend(f"- {item}" for item in report.next_steps)
@@ -2018,7 +1970,11 @@ def generate_style_lint(
         if scope == "story"
         else layout.chapter_targets[chapters[0].stub_path.stem]
     )
-    markdown_bytes = _render_markdown(report).encode("utf-8")
+    excerpts = {
+        manuscripts[chapter.manuscript_path]: chapter.manuscript_body.splitlines()
+        for chapter in chapters
+    }
+    markdown_bytes = _render_markdown(report, excerpts).encode("utf-8")
     json_bytes = json.dumps(
         report.model_dump(mode="json"),
         ensure_ascii=False,

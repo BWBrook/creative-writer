@@ -3,7 +3,7 @@ id: frame-and-testimony
 title: Frame and testimony
 purpose: Compare visible chains of witnessing, telling, recording, and contest while preserving uncertainty and authentic variation in how testimony reaches the reader.
 profile_id: wells-1895-1899
-profile_version: 1.0.0
+profile_version: 1.1.0
 roles:
   - frame
   - notebook

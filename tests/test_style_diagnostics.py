@@ -249,10 +249,10 @@ def test_repeated_opening_reports_first_and_last_paragraph_lines() -> None:
 def test_surface_heuristics_report_exact_thresholds_and_locations() -> None:
     lint = LintSettings.model_validate(
         {
-            "em_dash": {"enabled": True, "max_per_chapter": 1},
+            "em_dash": {"enabled": True, "max_per_thousand_words": 50},
             "contrastive_parallelism": {
                 "enabled": True,
-                "max_instances_per_chapter": 1,
+                "max_instances_per_chapter": 2,
             },
         }
     )
@@ -261,31 +261,38 @@ def test_surface_heuristics_report_exact_thresholds_and_locations() -> None:
         "Another — there.\n"
         "It was not only calm but also cold.\n"
         "It was not dark but dim.\n"
+        "\n"
+        "\"It is lunacy.\"\n"
+        "\n"
+        "\"It is experiment.\"\n"
     )
 
     assert run_surface_heuristics(text, lint) == [
         SurfaceHeuristicWarning(
             rule_id="em-dash-overuse",
-            observed="Em dash count 2 exceeds configured limit 1.",
+            observed=(
+                "Em dashes: 2 in 24 words (83.3 per 1,000); configured "
+                "maximum 50 per 1,000."
+            ),
             line_start=1,
             line_end=2,
         ),
         SurfaceHeuristicWarning(
             rule_id="contrastive-parallelism",
             observed=(
-                "Contrastive parallelism count 2 exceeds configured limit 1."
+                "Contrastive parallelism count 3 exceeds configured limit 2."
             ),
             line_start=3,
-            line_end=4,
+            line_end=8,
         ),
     ]
 
     at_threshold = LintSettings.model_validate(
         {
-            "em_dash": {"enabled": True, "max_per_chapter": 2},
+            "em_dash": {"enabled": True, "max_per_thousand_words": 90.0},
             "contrastive_parallelism": {
                 "enabled": True,
-                "max_instances_per_chapter": 2,
+                "max_instances_per_chapter": 3,
             },
         }
     )

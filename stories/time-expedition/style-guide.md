@@ -2,7 +2,7 @@
 
 ## Status and purpose
 
-This guide operationalises `style-profile.yml` version `1.0.0`. Its authority
+This guide operationalises `style-profile.yml` version `1.1.0`. Its authority
 is the human-approved Phase 2B evidence layer, not recollection of Wells, a
 generic Victorian register, or the surface resemblance of a generated passage.
 

@@ -69,7 +69,7 @@ class EmDashLint(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     enabled: bool = True
-    max_per_chapter: int = Field(default=2, ge=0)
+    max_per_thousand_words: float = Field(default=1.0, ge=0)
 
 
 class ContrastiveLint(BaseModel):

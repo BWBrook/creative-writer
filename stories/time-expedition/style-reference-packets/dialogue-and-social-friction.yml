@@ -3,7 +3,7 @@ id: dialogue-and-social-friction
 title: Dialogue and social friction
 purpose: Compare role-shaped exchanges, local syntactic expansion and contraction, and humour produced through social mismatch without prescribing one dialogue rhythm.
 profile_id: wells-1895-1899
-profile_version: 1.0.0
+profile_version: 1.1.0
 roles:
   - social-dialogue
 claim_ids:

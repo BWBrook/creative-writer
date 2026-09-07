@@ -3,7 +3,7 @@ id: observation-and-exposition
 title: Observation and exposition
 purpose: Compare observation-led inference, scene-pressured explanation, selective description, and authentic nonfiction variation without treating qualification as a verbal quota.
 profile_id: wells-1895-1899
-profile_version: 1.0.0
+profile_version: 1.1.0
 roles:
   - scientific-inference
   - scientific-exposition

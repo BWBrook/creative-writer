@@ -45,6 +45,7 @@ class ManuscriptDiagnostics:
     sentence_lengths: list[int]
     paragraph_lengths: list[int]
     sentence_length_cv: float | None
+    em_dashes_per_thousand_words: float | None
     dialogue_word_proportion: float | None
     punctuation_counts: dict[str, int]
     lexicon_hits: dict[str, list[LocatedSignal]]
@@ -631,6 +632,7 @@ def analyse_manuscript(
         for match in _DIALOGUE_RE.finditer(paragraph.text)
     )
     prose_text = "\n".join(line for _, line in lines)
+    punctuation_counts = _punctuation_counts(prose_text)
 
     return ManuscriptDiagnostics(
         word_count=word_count,
@@ -639,10 +641,13 @@ def analyse_manuscript(
         sentence_lengths=sentence_lengths,
         paragraph_lengths=paragraph_lengths,
         sentence_length_cv=sentence_length_cv,
+        em_dashes_per_thousand_words=(
+            punctuation_counts["em_dash"] * 1000 / word_count if word_count else None
+        ),
         dialogue_word_proportion=(
             dialogue_words / word_count if word_count else None
         ),
-        punctuation_counts=_punctuation_counts(prose_text),
+        punctuation_counts=punctuation_counts,
         lexicon_hits=_lexicon_hits(paragraphs, lexicons),
         repeated_ngrams=_repeated_ngrams(
             paragraphs,

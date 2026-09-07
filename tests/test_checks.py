@@ -280,7 +280,7 @@ review_mode: git_diff
 lint:
   em_dash:
     enabled: true
-    max_per_chapter: 0
+    max_per_thousand_words: 0
   contrastive_parallelism:
     enabled: true
     max_instances_per_chapter: 0
@@ -315,7 +315,7 @@ Stub text.
     assert result.ok
     assert len(result.warnings) == 2
     assert [warning.message for warning in result.warnings] == [
-        "Em dash count 1 exceeds configured limit 0.",
+        "Em dashes: 1 in 13 words (76.9 per 1,000); configured maximum 0 per 1,000.",
         "Contrastive parallelism count 1 exceeds configured limit 0.",
     ]
 

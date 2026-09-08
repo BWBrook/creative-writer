@@ -87,10 +87,11 @@ still leaves him vulnerable to error?
 The Traveller occupies four stations in one forward sequence: baseline, about
 thirteen months later, about twenty-three months after baseline, and a final
 station about thirty months after baseline. These are approximate machine
-calibrations rather than geological dates. He spends roughly one day at each
-of the first three stations and about three days at the last, making the title
-a description of his own accumulated experience rather than a seven-day global
-extinction claim.
+calibrations rather than geological dates. He spends about two days at the
+baseline station, where the machine must be moved and the marks established,
+roughly one day at each of the two middle stations, and about three days at
+the last: some seven days of his own accumulated experience, which is what the
+title describes, rather than a seven-day global extinction claim.
 
 ### Predator continuity
 

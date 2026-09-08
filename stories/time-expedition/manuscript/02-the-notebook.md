@@ -149,12 +149,13 @@ have others to set against them.*
 below me there is a cleft under a block of harder stone, deep enough to take
 the machine and me, and dry, and I have decided to have it. I did not know
 until I began how heavy the thing is on ground that is not a floor. I used the
-coil of wire round a horn of rock and the spade as a lever and bent the spade.
-Four hours. I have it under the block with two feet to spare at the back and
-the levers in my pocket. The floor of the cleft is rubble and red dust. There
-is a crack at the back through which a little air moves, and the rock there is
-cool at noon. I have drawn a chalk line across the crack, and hung the plumb
-from a peg of wire above it, and I shall know if either moves.*
+coil of wire round a horn of rock and a bar of the rock itself as a lever, and
+broke two such bars before the third held. Four hours. I have it under the
+block with two feet to spare at the back and the levers in my pocket. The floor
+of the cleft is rubble and red dust. There is a crack at the back through which
+a little air moves, and the rock there is cool at noon. I have drawn a chalk
+line across the crack, and hung the plumb from a peg of wire above it, and I
+shall know if either moves.*
 
 Filby turned two leaves. "Figures. Then the marks."
 
@@ -224,7 +225,7 @@ nine. Shade thermometer 104 at two. Stream stake: water two feet three inches
 below the notch. Lake notch: dry mud for sixty paces beyond it, cracked. Air
 II. Water II, both. The scrub the same and not the same; duller. Fish in the
 deep reach; none in the shallows. Slept badly. The heat at night is the new
-thing.*
+thing. This is not a season. I am nearly sure that it is not a season.*
 
 *The animal, or another. The scar. It drank a long time.*
 

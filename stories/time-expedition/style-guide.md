@@ -180,7 +180,8 @@ bindings:
   after eight paragraphs. Decide whether they organise the account or flatten
   its launches.
 - `diagnostic-uniform-cadence` reviews a sentence-length coefficient of
-  variation below `0.28` after twenty sentences. The threshold is broad,
+  variation below `0.45` after twenty sentences (profile 1.1.0; provisional,
+  awaiting a Wells measurement by the same scanner). The threshold is broad,
   parser-dependent, and not a Wells norm.
 
 Sentence boundaries, paragraphing, and quotation spans are approximate. In

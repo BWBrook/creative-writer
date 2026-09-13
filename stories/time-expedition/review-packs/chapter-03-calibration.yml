@@ -1,0 +1,43 @@
+title: "Chapter III calibration"
+purpose: "Test whether the first sustained spoken expedition account sounds like Wells in 1895, with all other considerations subordinate to that judgement."
+entries:
+  - id: society-and-speaking-voice
+    label: "The hearing and the transfer to speech"
+    manuscript: "manuscript/03-the-first-intervals.md"
+    start_line: 1
+    end_line: 48
+    kind: uncertainty
+    question: "Does the Burlington House opening and the narrator's transfer into the account sustain Wells's 1895 voice without making the meeting procedure or the act of transcription too conspicuous?"
+    context: "Filby finds a communicating Fellow; the Medical Man's minimum fortnight has elapsed; a Vice-President presides. The source comparison is The Time Machine II, especially the socially uneven arrival and the transfer from spoken to written testimony. The full machine stays at Richmond."
+  - id: travel-under-the-rock
+    label: "The first advance from the refuge"
+    manuscript: "manuscript/03-the-first-intervals.md"
+    start_line: 63
+    end_line: 96
+    kind: confidence
+    question: "Does the movement from apprehension beneath the rock to the obscured plain sound like the particular Traveller, rather than an author deliberately supplying him with irrational reactions?"
+    context: "Compare the bodily sensations and changing attention in The Time Machine III. The rock remains intact; fear of rematerialisation and a minor knock add cost without using a machinery failure or anticipating the later collapse."
+  - id: the-unmarked-stake
+    label: "An absence becomes a conviction"
+    manuscript: "manuscript/03-the-first-intervals.md"
+    start_line: 120
+    end_line: 136
+    kind: uncertainty
+    question: "Does the Traveller's pleasure in the absent flood-mark make his premature conviction persuasive in Wells's voice, without the retrospective speaker either silently certifying it or explaining away the mistake too soon?"
+    context: "Fable planted the conviction in Chapter II. The lack of a surviving mark cannot establish that water never rose during thirteen unobserved months. The Geologist retains that objection for Chapter VI. Compare the enjoyed explanatory construction in The Time Machine IV, not just its final correction."
+  - id: the-opposite-bank
+    label: "The glass brings the animal closer"
+    manuscript: "manuscript/03-the-first-intervals.md"
+    start_line: 199
+    end_line: 220
+    kind: confidence
+    question: "Does the animal scene combine observation, bodily apprehension and the Traveller's uneven attention in a convincing 1895 voice while keeping the predator an ordinary animal?"
+    context: "The scar is seen briefly, identity is inferred, the animal drinks for a long time and watches from the opposite bank. It does not cross until Station III. The camera is left behind, so this encounter produces no identifying photograph."
+  - id: the-warm-refuge
+    label: "Work, a sleepless night, and another interval"
+    manuscript: "manuscript/03-the-first-intervals.md"
+    start_line: 222
+    end_line: 258
+    kind: uncertainty
+    question: "Does the warm refuge and the decision to advance carry the account forward in Wells's voice, or does the physical unease become too carefully arranged towards the final unseen river?"
+    context: "The working visit lasts about one day and night. The plumb stays hanging. Ten further months will put Chapter IV about twenty-three months beyond baseline; the traveller expects confirmation but still tests another season. The note about food explains limited waiting without creating an immediate starvation crisis."

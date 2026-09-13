@@ -12,9 +12,9 @@ The active project is `stories/time-expedition/`, a recovered anthology of
 further journeys by H. G. Wells's Time Traveller. Its first expedition, *The
 Last Week of the Permian*, is planned at six numbered chapters and an epilogue
 (roughly 18,000–22,000 words; budgets are guidelines, not limits). Chapters I and II
-are drafted, each with a calibration review pack awaiting the other
-collaborator's critique; Chapters III–VI and the epilogue are stubs with scene
-cards. The story contract is in
+have been drafted and revised after collaborator critique. Chapter III has a
+first draft and a calibration pack for Fable; Chapters IV–VI and the epilogue
+are stubs with scene cards. The story contract is in
 `narrative-design.md` and `outline.md`; the Permian science and its Victorian
 translation are in `research/last-week-of-the-permian/`.
 

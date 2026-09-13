@@ -24,7 +24,8 @@ arrangement, without implying that sponsorship endorses the account.
 The Antarctic discussion reported in March 1898 has Sir John Evans presiding
 in Lord Lister's absence, with the chair directing discussion towards
 scientific matters. Chapter III uses an unnamed Vice-President, a brief
-introduction, and questions deferred until the account ends. It invents no
+introduction, and questions deferred until the account ends, with one brief
+clarification about shade nevertheless breaking into the address. It invents no
 verbatim historical procedure or named participant.
 
 - [Nature, 3 March 1898, The Scientific Advantages of an Antarctic Expedition](https://www.nature.com/articles/057413a0.pdf)
@@ -62,12 +63,20 @@ Station II bottles or air to the surviving exhibits.
   The later examination must retain that distinction.
 - Fish remain in the deeper reach; vegetation persists but looks duller.
   Faunal collapse and major vegetation failure belong to later chapters.
+- His imagined upstream diversion gives the water recession and exposed dusty
+  ground a local explanation. He has not traced a river–lake connection; their
+  common decline seems to confirm his assumption. Looking from the cairn finds
+  no new course. Neither the diversion nor its location is an established fact.
+  Chapter IV can test its adequacy against changes beyond the water margins.
 - The scarred predator drinks on the opposite bank and watches him. Its
   crossing to his bank belongs to Station III.
 - The plumb remains hanging in the refuge through the next advance. No roof
-  grains fall here; that observation is already assigned to Station III.
+  grains fall here; that observation is already assigned to Station III, where
+  the notebook explicitly leaves both chalk line and plumb unaltered.
 - The next advance is ten months, reaching about twenty-three months after
   baseline. The choice is made here; arrival belongs to Chapter IV.
+  He now allows that fuller seasonal water could re-enter an abandoned bed,
+  rather than assuming a different season must undo a permanent diversion.
 
 ## Narrative handoff
 

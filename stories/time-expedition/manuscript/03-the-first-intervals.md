@@ -17,7 +17,7 @@ fitted him badly still. There was a glass of water within reach which he had
 pushed behind the jar.
 
 The room was by no means full. Some of the men had come to look at an animal;
-others, I understood, to hear how its alleged age had been determined. Two
+others, I understood, to hear how its supposed age had been determined. Two
 behind me were discussing a paper entirely unconnected with our business, and
 continued until the chair was taken. Filby had the photographs in a stiff
 cover upon his knees and was unwilling to let them out of his possession. The
@@ -69,8 +69,8 @@ stooping lower and lower over the dials—though to stoop would have availed me
 nothing if that mass had settled upon the place I occupied. I increased the
 speed to get it over. For a little while a whitish illumination showed the
 lower edge of the stone; then even that went, and I stopped at the first
-return of light that I could distinguish, a little beyond my intended reading.
-The interval upon the dials was about thirteen months.
+return of light that I could distinguish, with the dials marking about
+thirteen months.
 
 "The roof was still above me. It was so low and so substantial that I put my
 hand against it. I had been afraid of finding it upon my shoulders, and now
@@ -95,20 +95,18 @@ lay in the sun. Its throat moved. That small and perfectly ordinary action did
 more to bring me out of my bewilderment than the recognition of the ridge, and
 I went down towards the river with quite a foolish eagerness to find my stake.
 
-"It was there, leaning a little, with the wire I had put about its head loose
-and rusty. The upper part had bleached. Below the notch the wood was darker,
-and below that again a length of it stood clear which I remembered driving
-through wet mud. I took it in my hand and shook it. It held. The water was two
-feet three inches below my mark.
+"It was there, leaning a little. The upper part had bleached. Below the notch
+the wood was darker, and below that again a length of it stood clear which I
+remembered driving through wet mud. I took it in my hand and shook it. It
+held. The water was two feet three inches below my mark.
 
-"I had to go down the bank to reach it, and in doing so I broke through a thin
-crust and sank above the ankle. There was soft mud beneath, warm and
-surprisingly tenacious; my boot came out with a noise like a cork drawn from a
-bottle. I laughed. There was something delicious in finding my own little
-piece of wood weathered by a year—a year which had passed almost without
-touching me! Two days ago I had cut that notch. This morning I could have
-picked rotten fibres from beside it. I began to understand what I might do
-with the machine.
+"I went down the bank to reach it, and in doing so broke through a thin crust
+and sank above the ankle. There was soft mud beneath, warm and surprisingly
+tenacious; my boot came out with a noise like a cork drawn from a bottle. I
+laughed. There was something delicious in finding my own little piece of wood
+weathered by a year—a year which had passed almost without touching me! Two
+days ago I had cut that notch. This morning I could have picked rotten fibres
+from beside it. I began to understand what I might do with the machine.
 
 "It was nine by my watch before the haze lifted enough for me to see across
 the river and distinguish the low bushes beyond it. The water moved quietly in
@@ -137,55 +135,73 @@ wrote that there had been none. I was impatient to get to the lake.
 
 "The way was more troublesome than before. What had been firm ground near its
 margin was covered now with brittle scales of dried mud which slipped
-underfoot and broke with a faint jingling sound. I kept mistaking pale patches
-ahead for water. Each time I reached one there was another shining beyond it,
-and between them the same wretched, uneven crust. The sun was high enough to
+underfoot and broke with a faint jingling sound. The sun was high enough to
 make the shadow of my hat very small. When I came to the second stake, the
-actual water lay sixty paces farther out.
+water lay sixty paces farther out.
 
-"I counted the paces twice, because on the first attempt I went too far to one
-side and had to turn. The new margin curved away from the old; it was not a
-simple shrinking of the outline I had drawn. Here a tongue of mud projected,
-there a shallow pool remained cut off. I could smell the warm water before I
-touched it. It left a stronger taste upon my finger than the first sample had
-done, but I distrusted that comparison, for my lips were dry and I had mud
-upon my hands. I filled the bottle, stopped it, and sat down to write its
-label with the sun burning the back of my neck.
+"The new margin curved away from the old; it was not a simple shrinking of the
+outline I had drawn. Here a tongue of mud projected, there a shallow pool
+remained cut off. I could smell the warm water before I touched it. It left a
+stronger taste upon my finger than the first sample had done, but I distrusted
+that comparison, for my lips were dry and I had mud upon my hands. I filled
+the bottle, stopped it, and sat down to write its label with the sun burning
+the back of my neck.
+
+"It occurred to me, as I sat there, that the river might have turned aside
+somewhere above the ridge. There was so little fall across that plain! A bank
+broken through, a new passage scoured a little deeper than the old, and the
+water would be carried off in another direction, leaving my stake, and perhaps
+the lake itself, beyond the reach of floods. I had not followed the stream to
+its mouth, but I had supposed that it supplied the lake, and now their common
+shrinkage seemed to confirm the connection. There was no need, on that
+supposition, for the rains to have failed at all. Somewhere beyond my view
+there might be green banks and a full river, while here the pools dried up and
+the bare mud lay baking in the sun. Even the dust became intelligible. I began
+to look with a considerable interest at the dry hollows between the bushes,
+wondering which had once carried water, and how long it had taken the scrub to
+establish itself in them. I meant to look for the new course from the cairn
+that afternoon. For the present I had the bottle between my feet, still
+without its label.
 
 "The pencil point broke. I had sharpened it very carefully before leaving the
-shelter, and the trivial mishap enraged me. I laid the bottle between my feet
+shelter, and the trivial mishap enraged me. I laid the bottle on its side
 while I pared the wood, and for a minute or two forgot the lake, the Permian,
 and everything but the necessity of getting a point upon that miserable
-pencil. Then I saw that the scrap of paper intended for the label was
-travelling over the mud in the wind. I had to run after it.
+pencil.
 
-"I came back panting, with the paper stuck to a wet finger. Until then the
-work had pleased me. At Richmond it had seemed a matter of taking a few
-readings at successive dates. I had made no allowance for the walking between
-them, nor for doing again, with yesterday's stiffness still in my back,
-everything I had done a year before. I wanted water from the stream, and the
-stream was behind me across that glaring waste. My bottle held the bitter
-water I had just collected. I took a mouthful from my drinking-flask and found
-it warm.
+"By the time I had finished the label I wanted to be back at the shelter.
+Until then the work had pleased me. At Richmond it had seemed a matter of
+taking a few readings at successive dates; I had made no allowance for the
+walking between them, nor for doing again, with yesterday's stiffness still in
+my back, everything I had done a year before. I wanted water from the stream,
+and the stream was behind me across that glaring waste. My bottle held the
+bitter water I had just collected. I took a mouthful from my drinking-flask
+and found it warm.
 
-"At two the thermometer in the shade stood at a hundred and four. I moved it
-farther from the sunlit rock, waited, and read it again. It remained there. I
-had taken it out to the cairn with the camera, and left it in the shadow while
-I repeated my three views. Even through the finder the plain was altered. The
-distant ridge which had bounded the first view could scarcely be
-distinguished; the white margin of the lake had widened, and a bush close
-below me, by which I had fixed the direction, looked as though it had been
-rolled in dust.
+"At two the thermometer stood at a hundred and four."
+
+"In the sun?" said a man behind me.
+
+"In the shade," said the Traveller. He looked towards the questioner for a
+moment before he went on.
+
+"I moved it farther from the sunlit rock, waited, and read it again. It
+remained there. I had taken it out to the cairn with the camera, and left it
+in the shadow while I repeated my three views. Even through the finder the
+plain was altered. The distant ridge which had bounded the first view could
+scarcely be distinguished; the white margin of the lake had widened, and a
+bush close below me, by which I had fixed the direction, looked as though it
+had been rolled in dust. I searched with the glass along the upper course of
+the river, but lost it among the bushes. The haze hid everything beyond.
 
 "The colour of the scrub troubled me. There was still much the same quantity
 of it—so far as I could judge—and the little resinous trees and the fern-like
 things stood separately over the red earth, with the bare spaces between them
-as before. But the grey had spread over them. I rubbed a leaf between finger
-and thumb and got dust upon the skin, and for some time I was disposed to put
-the whole appearance down to that. Yet where I rubbed the dust away the leaf
-did not look as I remembered it. I took a spray back with me. It was a poor
-thing to bring, for I had already begun to doubt my recollection of the first
-one.
+as before; but the grey had spread over them, and when I rubbed a leaf between
+finger and thumb, though I got dust upon the skin, the green beneath did not
+look as I remembered it. I rubbed another, and then broke off a spray to take
+back. I wished I had kept a leaf from my first visit. I put the spray beside
+the thermometer.
 
 "There were insects in the bushes still. Something bit me behind the ear while
 I was occupied with the camera, and at the river I put up the same small
@@ -207,9 +223,8 @@ identity had been settled.
 "It drank for a long time. Twice it raised its head and looked across at me. I
 had been about to fill my second water-bottle, and I remained with the stopper
 in my hand until I noticed that my thumb was trembling. There was no reason
-why it should come across. It had seen me before and left me alone.
-Nevertheless, the narrowness of the water between us had acquired an interest
-quite independent of my observations upon the climate.
+why it should come across. It had seen me before and left me alone. I looked
+along the water for the shallowest place.
 
 "I thought of fetching the camera. The shelter was behind me, the animal was
 in front, and the glass kept bringing those two teeth very close—yet when I
@@ -221,10 +236,9 @@ made for the shelter much faster than I had intended.
 
 "The sample work took me into the dusk. I had brought the sealed tube of air
 and the two water-bottles aboard, marked the readings, and compared them with
-the first set; then I had to secure everything for another start. My fingers
-were stiff, and I had to undo the fastening twice before I could get the last
-case aboard. I left the smaller things where they lay and stretched myself
-upon the ground.
+the first set; then everything must be secured for another start. My fingers
+were stiff, and I undid the fastening twice before I got the last case aboard.
+I left the smaller things where they lay and stretched myself upon the ground.
 
 "I could not sleep. The cleft had been cool when I first chose it, but the
 warmth that had entered during the day seemed to have got into the stone
@@ -245,14 +259,14 @@ until it burnt my finger.
 the food was packed for travelling, and I had already used more of it than I
 cared to think about. I could go forward ten months in less time than it took
 me to walk to the lake, and come once more near the season in which I had
-first arrived. The water ought then to be restored. I tried to imagine it
-washing about the stake again, but I could see only the bare wood. I expected
-to find the stream lower still.
+first arrived, when there might be enough water to fill the old bed again,
+even though the river had found another course. I lay trying to imagine it
+washing about the stake, but I could see only the bare wood. I expected to
+find the stream lower still.
 
 "By morning I had slept a little, though I could not have said when. I drank,
 ate without much inclination, and finished the packing. When I went to examine
 the plumb, it hung above the chalk line, exactly as I had left it. I left it
-hanging and made room for myself in the saddle. I was to advance ten months.
-Outside, the brown obscurity was beginning again to fill the lower ground, and
-I tried to distinguish the stream before I started. I could hear it, but I
-could not see it.
+hanging and made room for myself in the saddle. Outside, the brown obscurity
+was beginning again to fill the lower ground. I took the levers in my hands
+and started.

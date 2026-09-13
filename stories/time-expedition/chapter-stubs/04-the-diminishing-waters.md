@@ -68,6 +68,12 @@ of one locality make that confidence increasingly dangerous.
 ## Continuity notes
 
 - Avoid a list of disasters; each observation must revise the working model.
+- Chapter III leaves him pleased with an imagined upstream diversion. He has
+  neither found the new course nor traced the assumed river–lake connection.
+  Test this local explanation against the widening changes before replacing it;
+  it does not establish the later flood's actual course.
+- At Station III, falling grains precede any displaced indicator: Chapter II
+  explicitly records the chalk line and plumb as unaltered.
 - The predator's identity remains probable rather than certain.
 - Fire and tremors remain absent unless later physical verification makes one
   indispensable.

@@ -5,15 +5,15 @@ entries:
     label: "The machine comes back"
     manuscript: "manuscript/02-the-notebook.md"
     start_line: 1
-    end_line: 62
+    end_line: 63
     kind: uncertainty
     question: "Does the return disclose cost without disclosing the climax? Do the mud, the wound, the lashed jar, and the missing kit read as evidence to be explained later, or do they telegraph the flood and the refuge failure?"
     context: "The scene cards ask that injuries match the later crisis without conspicuously labelled damage. The Medical Man's presence from Chapter I is what makes immediate care plausible."
   - id: permission-and-drying
     label: "Filby dries the notebook"
     manuscript: "manuscript/02-the-notebook.md"
-    start_line: 64
-    end_line: 113
+    start_line: 65
+    end_line: 111
     kind: confidence
     question: "Is the implied permission the right weight? It is meant to produce mild friction on the Traveller's return, not a breach."
     context: "The design wanted permission implied rather than explicit. Drying a wet book leaf by leaf was chosen because it makes reading unavoidable and gives Filby a defensible position."
@@ -21,23 +21,23 @@ entries:
     label: "The scarred animal and the decision to go forward"
     manuscript: "manuscript/02-the-notebook.md"
     start_line: 194
-    end_line: 216
+    end_line: 215
     kind: confidence
     question: "Is the notebook voice a compressed field record rather than telegraphese, and does the predator stay an animal? Does the allusion to Owen and the Cape beds stay inside what the Traveller could know?"
     context: "The dossier permits the notebook to leave the predator unnamed or theriodont-like; the lecture may go further. The left-shoulder scar is the continuity mark the Society will later question."
   - id: record-breaks-down
     label: "The later entries fail"
     manuscript: "manuscript/02-the-notebook.md"
-    start_line: 217
-    end_line: 256
+    start_line: 216
+    end_line: 259
     kind: uncertainty
     question: "Do the Station II–IV fragments give away too much of Chapters III–V, or too little to create appetite? They are meant to show direction (haze, heat, falling water, the same animal thinner) without narrating the crisis."
     context: "The outline requires the notebook to stop before the crisis becomes a coherent narrative, so the lecture can resume where it fails."
   - id: interruption-and-residue
     label: "The Traveller asks for the Society"
     manuscript: "manuscript/02-the-notebook.md"
-    start_line: 257
-    end_line: 320
+    start_line: 260
+    end_line: 318
     kind: uncertainty
     question: "Does the Traveller's reason for wanting a public hearing sound like his, and does the chapter end on the right residue? The fish losing its colour in spirit was chosen over Filby's closing line."
     context: "The Medical Man's fortnight sets the interval before the Burlington House meeting; Filby is charged with finding a Fellow to communicate the account."

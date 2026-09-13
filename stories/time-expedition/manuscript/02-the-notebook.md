@@ -31,7 +31,8 @@ to the shoulder and had held him there; the other hung. He had no hat. There
 was a wound in the hair above his left ear, closed with the same red earth, and
 both hands were bound in strips torn from a shirt, the knots tied with his
 teeth. He was quite conscious. He looked at us, and at the clock, and said,
-distinctly, "Four. I said dinner," and shut his eyes.
+distinctly, "Four. I said dinner," and shut his eyes. I sat down upon the
+boards where I stood, and I do not know for how long.
 
 The Medical Man came through the garden door at a run—I have never seen a man
 so glad of an occupation—and would not let us lift the Traveller until he had
@@ -62,16 +63,16 @@ down very carefully upon the bench, under the programme with the time written
 on it, and stood looking at the fish for a long while.
 
 For nine days the Traveller lay in the room over the laboratory, and for the
-first three of them the Medical Man did not go home. The fever, he said, was of
-the kind a man takes from heat and want of water and afterwards from sleeping
-wet, and he had treated it often enough in soldiers; the hands were another
-matter, and the arm; and there was a stiffness across the back and shoulders
-which he thought had been got by hauling at something heavy for a long time. He
-asked no questions—I think he had decided that the questions were Filby's—and
-he dressed the hands twice a day with a patience I should not have credited him
-with; and when the Traveller talked, which he did a good deal in the first days
-and always in figures, the Medical Man wrote the figures down on the back of a
-prescription and gave the paper to Filby.
+first three of them the Medical Man did not go home. The fever he made light
+of: heat, want of water, then sleeping wet; he had treated it in soldiers. The
+hands were another matter, and the arm. What he could not account for was a
+stiffness across the back and shoulders, and he stood a long while at the foot
+of the bed considering it before he said that it had been got by hauling at
+something heavy, and for a long time. He asked no questions. He dressed the
+hands twice a day with a patience I should not have credited him with, and when
+the Traveller talked—which he did a good deal in the first days, and always in
+figures—the Medical Man wrote the figures down on the back of a prescription
+and gave the paper to Filby.
 
 On the third day the Traveller was clear-headed for an hour in the afternoon.
 He asked for water, and then for the notebook. It had been in the inner pocket
@@ -80,24 +81,21 @@ leaves were stuck at the edges and the pencil had run where the water had
 reached it. He turned it over in his bandaged hands, could not open it, and
 gave it to Filby.
 
-"Dry it," he said. "Leaf by leaf. A knife, not your fingers. Do not read it
-with a hot iron." And then, when Filby had got to the door: "There is nothing
-in it you cannot read."
+"Dry it," he said. "Leaf by leaf. A knife, not your fingers, and not near the
+fire." And then, when Filby had got to the door: "There is nothing in it you
+cannot read."
 
-That was the whole of the permission, and Filby afterwards held that it was
-enough, and the Traveller afterwards held that it was a remark about the
-handwriting. I was not present at the drying. It was done in the study, at the
-fire, with a paper-knife and blotting-paper, over two evenings; and a man who
-has separated a wet book leaf from leaf with a paper-knife, holding each to the
-lamp to see whether it is dry, has read it, whatever he intended.
+I was not present at the drying. It was done in the study, at the table, with
+a paper-knife and blotting-paper, over two evenings; and a man who has
+separated a wet book leaf from leaf, holding each to the lamp to see whether it
+is dry, has read it, whatever he intended.
 
 On the fifth day the Traveller tried to give us the account. He got as far as
 the dragging of the machine into the shelter and then lost the order of things,
 and began to give us the third station before the first, and stopped himself,
 and was angry with the stopping. The Medical Man ended it. On the seventh day
 he sat up. On the ninth, when I came down from town, Filby met me in the hall
-with the notebook under his arm and the look of one who has made up his mind
-and would rather not discuss it.
+with the notebook under his arm.
 
 "He is asleep," said Filby. "He will sleep till ten; the Doctor has seen to
 that. You have been coming here every evening for a week to hear a story, and
@@ -119,15 +117,15 @@ rule.
 days flicker as before, but the light of them is wrong, and I have not yet made
 out why; I think the sun rises where I expect it to set, and I did not think of
 that in the laboratory. The second dial ran back through its thousands and the
-third began to move, and when the third was moving fast enough to be read I was
-very sick and could not read it. The fourth dial, which I built because the
-arithmetic required it and never expected to see move, moved. I have stopped
-three times. The first stop was in brown water to the waist, warm, with a low
-shore a mile off; I came away at once. The second was in darkness, with a
-pressure upon the ears and a heat coming into the frame which I did not stay to
-account for. This is the third. The fourth dial stands a little short of
-ninety-two, if it can be trusted at that extreme, which I have no means of
-knowing. I am on rock, in sunlight, and the sun is very high.*
+third began to move, and by the time its movement could be seen I was very sick
+and could not read the hand. The fourth dial, which I built because the
+arithmetic required it and had seen move once, forward, and never so far,
+moved. I have stopped three times. The first stop was in brown water to the
+waist, warm, with a low shore a mile off; I came away at once. The second was
+in darkness, with a pressure upon the ears and a heat coming into the frame
+which I did not stay to account for. This is the third. The fourth dial stands
+a little short of ninety-two, if it can be trusted at that extreme, which I
+have no means of knowing. I am on rock, in sunlight, and the sun is very high.*
 
 "He was insensible after that," said Filby. "He says so lower down. Four hours
 by the watch. Then this."
@@ -136,14 +134,17 @@ by the watch. Then this."
 south and east into a plain of red earth and grey scrub, and across the plain
 runs a river, or the bed of one: a channel a quarter of a mile broad with a
 stream in it that I could wade, so far as I can judge from here, and the rest
-of the bed cracked mud with a bloom on it that I take to be salt. The river
-goes east into a lake, or a white sheet that shines like one. North and west,
-behind me, the rock rises in a ridge of broken beds, red and brown, lying
-nearly flat, and weathered along their joints into shelves and clefts. There is
-no tree taller than a man. There is no sound but insects. The heat is great and
-the shadows are short. I have taken the pressure and the temperature in the
-shade of the machine and put the figures below; they are worth nothing until I
-have others to set against them.*
+of the bed cracked mud with a bloom on it that I take to be salt. Salt: then
+the sea, and I had the whole plain for an estuary and the white sheet beyond it
+for tidal flats before I had put up the glass. It is a lake. The white is its
+margin. I had the sea because I wanted it. North and west, behind me, the rock
+rises in a ridge of broken beds, red and brown, lying nearly flat, and
+weathered along their joints into shelves and clefts. There is no tree taller
+than a man. There is no sound but insects. I said something aloud, to hear a
+voice in it, and did not like the effect, and shall not do it again. The heat
+is great and the shadows are short. I have taken the pressure and the
+temperature in the shade of the machine and put the figures below; they are
+worth nothing until I have others to set against them.*
 
 *The machine cannot stand where it is. Forty yards along the ridge and a little
 below me there is a cleft under a block of harder stone, deep enough to take
@@ -181,15 +182,14 @@ interest. Across the river, far off, a party of heavy grazing beasts, a dozen,
 moving slowly; through the glass they have a beaked head like a tortoise's and
 a body like a hog's, and I can make nothing of them. I have not gone near them.
 Fish in the stream where it deepens below the ridge. I netted six at the second
-cast and kept the best. It is six inches long. The scales are rhomboidal and
-enamelled and lie in oblique rows; the tail is unequal, the upper lobe running
-on as in a dogfish; the fins are distinct; the mouth is small and set with
-small sharp teeth. It is a ganoid—of the kind the Magnesian Limestone gives up
-in fragments—and I have it whole in spirit with its label. The lake was like
-glass all the afternoon and there was no wind. Whatever else happens I have my
+cast and kept the best, and sat down in the shallows with it in my two hands
+like a boy. It is six inches long. The scales are rhomboidal and enamelled and
+lie in oblique rows; the tail is unequal, the upper lobe running on as in a
+dogfish; the fins are distinct; the mouth is small and set with small sharp
+teeth. It is a ganoid—of the kind the Magnesian Limestone gives up in
+fragments—and I have it whole in spirit with its label. The lake was like glass
+all the afternoon and there was no wind. Whatever else happens I have my
 specimen.*
-
-Filby looked up at the jar upon the bench and back at the page.
 
 *Second day, evening. An animal came down to drink across the river at sunset,
 not two hundred yards from the stake. It is the largest thing I have seen here.
@@ -200,32 +200,33 @@ outside the lip, longer than the rest. I do not know whether it has hair.
 Across the left shoulder there is a pale line, an old wound healed and bare,
 the length of my forearm. It looked at me across the water for about half a
 minute, drank again, and went up the far bank without haste. It does not know
-what I am and does not care what I am. I had the revolver in my hand and am
-glad to have had it and glad not to have wanted it. If Filby's lecturer was
-right about the Cape beds this is something of the kind that Owen has been
-naming, and if he was wrong it is something no one has named.*
+what I am. I found the revolver in my hand afterwards and do not remember
+taking it out. I should like to call it one of Owen's Cape reptiles and have
+done with it, and I have no right to; I have seen it drink.*
 
-*Third day. Its tracks in the mud by the water: four toes and a fifth set back
-and inward, the print the length of my hand from wrist to fingertip. I have
-drawn one and measured it. I have gone over the marks and the bottles and the
-figures again and there is nothing more to be had from this place today. I am
-going forward. The machine will stay under the block; I shall set the second
+*Third day, early. Its tracks in the mud by the water: four toes and a fifth
+set back and inward, the print the length of my hand from wrist to fingertip. I
+have drawn one and measured it. I have gone over the marks and the bottles and
+the figures again and there is nothing more to be had from this place today. I
+am going forward. The machine will stay under the block; I shall set the second
 dial for a year and a little over, and come back to the marks, and take
-everything again. If the change Filby's geologists cannot find is here to be
-found, it will be found by taking the same things twice.*
+everything again. Filby's geologists have a dozen districts and no dates. I
+have one district and a machine. If the thing is here I shall have it.*
 
 Filby stopped, and did something I had not seen him do before, which was to
 lick his thumb before turning the leaf.
 
-"Now it alters," he said. "Not the writing. The writing is his to the end. But
-he stops making sentences."
+"Now it alters," he said. "Not the writing—the hand is his, and it gets worse.
+But he stops making sentences."
 
 *Station II. Thirteen months by the dial. Haze; the far bank not visible before
 nine. Shade thermometer 104 at two. Stream stake: water two feet three inches
 below the notch. Lake notch: dry mud for sixty paces beyond it, cracked. Air
 II. Water II, both. The scrub the same and not the same; duller. Fish in the
 deep reach; none in the shallows. Slept badly. The heat at night is the new
-thing. This is not a season. I am nearly sure that it is not a season.*
+thing. The stake shows no flood-mark above the notch: thirteen months, and the
+stream has not once been up. This is not a season. A season would have left a
+line on the stake.*
 
 *The animal, or another. The scar. It drank a long time.*
 
@@ -237,11 +238,13 @@ top.*
 *Roof: grains falling at the back of the cleft in the night. Chalk line
 unaltered. Plumb unaltered.*
 
-*The animal. Thin. It watched me for an hour from the far bank and did not
-drink.*
+*The animal, on this bank. It has crossed. Thinner, I think, or it is the light
+at this hour. It stood a long while and did not drink, and I do not know what
+it was waiting for.*
 
 "Then a page of figures," said Filby, "the same figures, in the same order,
-three times, and the third time in a hand I should not have known. Then this."
+three times, and the third time in a hand I should not have known for his if
+the pencil had not been the same. Then this."
 
 *Station IV. Thirty months. Pressure falling since noon. I shall stay.*
 
@@ -252,16 +255,15 @@ I have held every one of them to the lamp."
 
 Neither of us said anything for a time. The fire had got low. Filby put the
 book face down upon his knee—a thing he does with other men's letters—and
-looked at the jar.
+sat.
 
 "Four feet one," said a voice from the door, "and then he stops making
 sentences. You read badly, Filby. You always did."
 
 The Traveller was in the doorway in his dressing-gown, with one hand on the
 jamb and the other, in its linen, held against his chest. I do not know how
-long he had stood there. The Medical Man was behind him on the stair, with the
-air of having lost an argument on the landing and of meaning to win it
-downstairs.
+long he had stood there. The Medical Man was behind him on the stair and had
+not stopped him.
 
 "You gave it me to dry," said Filby.
 
@@ -269,34 +271,30 @@ downstairs.
 
 "You said there was nothing in it I could not read."
 
-"There is nothing in it anyone cannot read. That is what is the matter with
-it." He came into the room, slowly, and sat down in the low chair, and the
-Medical Man came in after him and stood by the fire with his hands behind him
-and his face saying that he would give it ten minutes. The Traveller held out
-his bandaged hand and Filby put the notebook in it, and he laid it upon his
-knee without opening it.
+"There is nothing in it. There are readings." He came into the room, slowly,
+and sat down in the low chair; the Medical Man came in after him and stood by
+the fire with his hands behind him. The Traveller held out his bandaged hand
+and Filby put the notebook in it, and he laid it upon his knee without opening
+it. "You said 'figures' where the figures were. I heard you from the stair.
+They are the only part of it worth having, and you cannot read them, and I
+cannot read them to you, because they want the rest. The rest is in my head,
+and it is in there in the wrong order. You have had nine days of it in the
+wrong order. I am not going to give you a tenth."
 
-"I stopped writing," he said, "because from that evening there was no time to
-write, and because when there was time again there was no light, and because
-when there was light I had other uses for my hands. What happened after the
-pressure fell is in my head and nowhere else. It is in my head in the wrong
-order, as you have seen. I have been putting it in the right order for nine
-days, and I could give it to you now, the two of you, here—and you would
-believe me, Filby, because you saw the machine come in, and you," he said to
-me, "would believe me because you have believed me before, and it would be
-worth exactly what a story told to two friends by a fire is worth."
+"Then give it us in the right order," said Filby. "What happened to the
+animal?"
 
-"I saw the animal drink," said Filby. "In your writing. I should like to hear
-the rest."
+The Traveller did not answer that. He looked at the notebook on his knee for
+some time, and when he spoke it was with an irritation I had not heard from him
+since he was well.
 
-"You shall hear it where it can be contradicted." He shifted the notebook on
-his knee. "I want a room with men in it who know the Permian beds and have
-never dined with me. I want the fish on the table in front of them, and the
-tubes, and the bottles, and the mud, and these pages, and I want to be asked by
-a man who has spent his life on the New Red Sandstone how I know where I was.
-Filby, you sat in Burlington House a fortnight ago and heard three Fellows
-disagree about an absence. You know men there. I want them, and their room, and
-their afternoon, and I want it before I have had time to make this tidy."
+"You would believe me. That is the trouble with you. You saw the machine come
+in, and he"—this was to me—"has believed me before. I want a room with men in
+it who know the Permian beds and have never dined with me. I want the fish in
+front of them, and the tubes, and the mud, and I want to be asked by a man who
+has spent his life on the New Red Sandstone how I know where I was, and I want
+to see his face when I tell him. Filby, you sat in Burlington House a fortnight
+ago and heard three Fellows disagree about an absence. You know men there."
 
 "A special meeting of the Royal Society," said Filby slowly, "on the
 application of a man who is not a Fellow, who has been three years dead, and

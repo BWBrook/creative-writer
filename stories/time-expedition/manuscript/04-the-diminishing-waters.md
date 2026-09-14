@@ -125,9 +125,10 @@ red skies over Surrey, and out of these I built a mountain on fire at the other
 side of the world—and I will tell you honestly that the building of it was the
 happiest hour I spent in that country. You may take the mountain from me
 presently. I know some of you mean to. I only ask you to notice that I did not
-carry it there with me. I carried a river."
+take it there with me. I took a theory about a river, and I have told you what
+became of that."
 
-"You had carried a river ten months," said someone near the front, "and gave it
+"You held to your river ten months," said someone near the front, "and gave it
 up in an afternoon."
 
 "I gave it up in an hour," said the Traveller, "and I have not quite given it

@@ -5,6 +5,7 @@ manuscript: "manuscript/04-the-diminishing-waters.md"
 scene_cards_dir: "scene-cards/04-the-diminishing-waters"
 characters:
   - time-traveller
+  - frame-narrator
   - scarred-predator
 locations:
   - ancient-ridge

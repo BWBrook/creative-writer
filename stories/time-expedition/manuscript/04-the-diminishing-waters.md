@@ -3,15 +3,14 @@ under the rock and watched the light beyond the entrance flutter and go grey,
 and told myself that a stone which had stood for a year would stand for ten
 months more. It did. When the light steadied I was under the roof, with the
 dust thick on the foot-rest and a little heap of grit, as much as would fill an
-egg-cup, lying against the frame where none had lain before. I looked up. I put
-my hand to the back of the cleft and felt the chalk line, and the plumb hung
-over it as I had left it, and while I stood with my fingers on the mark a
+egg-cup, lying against the frame where none had lain before. I looked up. Then
+I went to the back of the cleft and felt for the chalk line. The plumb hung
+over it as I had left it; but while I stood with my fingers on the mark a
 single grain came down past my face and struck the rail with a sound like a
 seed dropped upon paper.
 
-"You will think that a small thing. I thought it a small thing. I swept the
-grit off the foot-rest with my sleeve and went to the entrance, and the smell
-met me before I reached it.
+"I thought it a small thing. I swept the grit off the foot-rest with my sleeve
+and went to the entrance, and the smell met me before I reached it.
 
 "I had smelt it faintly at the second station, at the lake, and had put it down
 to the warm margin. Now it filled the plain. It was the smell of a pond that
@@ -24,21 +23,19 @@ twenty steps.
 
 "The stake was there, and the water was four feet one inch below my notch, and
 the stream that had been a river when I first saw it, and a brook when I saw it
-next, was now a chain wide and I could have stepped across it in most places. I
-did not step across it. Where it deepened below the ridge, in the reach where I
-had netted my fish, the surface was alive. I had never seen fish so crowded!
-They lay in the brown water in a mass, heads to the trickle where it came in
-over the stones, and their gill-covers beat so fast that the whole reach seemed
-to shiver. Along the margin, where the water had gone back from the mud, they
-lay dead in a line, some dozens of them, silver turning to lead, and the small
-biting things I have mentioned were busy among them. I sat down on the bank and
-counted the dead as far as I could see, and made it sixty-four, and wrote the
-number, and my hand was not steady when I wrote it. It was not fear. I was very
-hot, and I had been three days in that country and it had taken the strength
-out of me as a warm bath does, and the number was larger than I had
-expected—that was all. I remember thinking, quite clearly, that a man who had
-never left Richmond would have called that reach a remarkably good place for
-eels.
+next, was now a chain wide where it spread over the stones, and a man could
+have waded it almost anywhere without wetting his knees. I did not wade it.
+Where it deepened below the ridge, in the reach where I had netted my fish, the
+surface was alive. I had never seen fish so crowded! They lay in the brown
+water in a mass, heads to the trickle where it came in over the stones, and
+their gill-covers beat so fast that the whole reach seemed to shiver. Along the
+margin, where the water had gone back from the mud, they lay dead in a line,
+some dozens of them, silver turning to lead, and the small biting things I have
+mentioned were busy among them. I sat down on the bank and counted the dead as
+far as I could see, and made it sixty-four, and wrote the number, and my hand
+was not steady when I wrote it. It was not fear. I was very hot, and I had been
+three days in that country and it had taken the strength out of me as a warm
+bath does, and the number was larger than I had expected—that was all.
 
 "I filled the bottle where the trickle came in, which was the cleanest water I
 could find, and then, because I had the papers with me, I dipped a strip of the
@@ -47,10 +44,9 @@ while I held it. Sulphuretted hydrogen, gentlemen—the gas of a foul ditch! I
 tried another pool, and another, and the paper went brown in each, and I stood
 holding the strips and understood that the water the fish were crowding towards
 was the only water in that reach fit to breathe, and that they knew it better
-than I did. I have the strips. The chemists among you shall have them, and they
-will tell you, I dare say, that any stagnant pool in Surrey would do as much;
-and they will be right, and I shall have nothing to say to them except that
-there had been no stagnant pool there two years before.
+than I did. I have the strips; they came home between the leaves of the book,
+and the chemists among you shall have them. Any stagnant pool in Surrey would
+do as much, I know. There had been no stagnant pool there two years before.
 
 "The reeds were brown at the top. I put that down in the book as I had put down
 the number of the dead, and it was only when I came to the scrub that I began
@@ -59,21 +55,23 @@ nor all their leaves; but under every one there was a litter of yellow needles
 such as I had not seen at either of my former visits. The ground between the
 trees, which had carried the fern-like things, was bare red earth, with the
 stumps of them standing up out of it like the pegs of a tent that has been
-taken down. The dust I had rubbed from a leaf ten months before was not dust. I
-had been rubbing at the colour of a plant that was dying, and I had brought a
-spray of it home to Richmond and set it beside my thermometer.
+taken down. Ten months before I had rubbed the dust from a leaf and not liked
+the colour under it, and had set the spray down beside my thermometer and
+thought about the thermometer. I had been looking at a plant that was dying,
+and thinking about the heat.
 
 "I went up on the ridge to look for my river.
 
-"I must explain that I went up in some confidence. I had my theory, and I had
-carried it ten months as one carries a good watch, and I had only to find the
-new course to have it proved—a green line somewhere across the plain, a bank of
-reeds, a glint. I went along the ridge farther than I had been before, past the
-cairn, until the rock fell away, and I stood there with the glass for the
-better part of an hour. There was no green line, and no glint. The haze took
-the plain at about two miles and gave back nothing; and nearer, where I could
-see, the hollows between the bushes that I had wondered about so pleasantly at
-the second station were as dry as the bushes, and had plainly been dry a long
+"I must explain that I went up in some confidence. I had my theory. By my own
+reckoning I had made it the afternoon before and slept on it, badly, and it had
+seemed in the night quite sufficient; and I had only to find the new course to
+have it proved—a green line somewhere across the plain, a bank of reeds, a
+glint. I went along the ridge farther than I had been before, past the cairn,
+until the rock fell away, and I stood there with the glass for the better part
+of an hour. There was no green line, and no glint. The haze took the plain at
+about two miles and gave back nothing; and nearer, where I could see, the
+hollows between the bushes that I had wondered about so pleasantly at the
+second station were as dry as the bushes, and had plainly been dry a long
 while. Somewhere beyond my sight there might still be a full river and green
 banks. I told myself so. But the beaked beasts I had seen grazing a mile off
 across the water were not a mile off now. They were in the river bed below me,
@@ -83,14 +81,13 @@ anywhere within the range of a beast that size, I do not think they would have
 been standing in the mud drinking what the fish were dying in.
 
 "I came down off the ridge and I did not think about the river again for some
-hours. I did the work. I have found that the work will carry a man over a good
-deal. I took the air, and the water, and a packet of the black mud from the
-pool where the paper had gone darkest, and I repeated my views from the cairn,
-though there was nothing in the finder but brown. I walked to the lake stake
-and paced from it to the wet ground and made it a hundred and forty paces, and
-the water when I reached it was warm as a bath and left my finger white when it
-dried. At two the thermometer, in the deepest shade I could find for it, stood
-at a hundred and nine."
+hours. I did the work. I took the air, and the water, and a packet of the black
+mud from the pool where the paper had gone darkest, and I repeated my views
+from the cairn, though there was nothing in the finder but brown. I walked to
+the lake stake and paced from it to the wet ground and made it a hundred and
+forty paces, and the water when I reached it was warm as a bath and left my
+finger white when it dried. At two the thermometer, in the deepest shade I
+could find for it, stood at a hundred and nine."
 
 He stopped here and drank. It was the first time he had touched the glass, and
 I saw that he put it down again behind the jar.
@@ -102,37 +99,28 @@ told by a gentleman I did not know that it was dust—that a mountain had blown
 up in the Straits of Sunda, half the world away, and that we were looking at
 it. I did not believe him. I believed him some years later, when this Society
 printed its report. And I thought of him on that ridge with the glass in my
-hand and the brown sky over me, and the thought came to me all at once, as such
-thoughts do, and I am afraid I welcomed it as a man welcomes an old friend in a
-strange town.
+hand and the brown sky over me.
 
-"Consider what I had. A haze that had thickened at three visits and lifted at
-none. A heat that had risen, and risen most at night, when the ground should
-have given back what it took. A river failing, a lake shrinking, and no fuller
-water anywhere the animals could reach. Reeds and trees failing together with
-the water. Fish dying in water that a lead paper found foul. A star that had
-gone out over my head with no cloud near it! Not one of those things was beyond
-an ordinary explanation. All of them together, in the same direction, in the
-same place, three times running—that wanted something larger than a dry year
-and a shifted bank. It wanted something in the sky. And I knew of one thing
-that could put a brown veil over half a planet and keep it there, and I had
-seen it do so, from Richmond Hill, in the autumn of 'eighty-three.
+"It was the haze that did it. I had explained the river to myself very
+comfortably by a broken bank; I could not explain the haze by a broken bank,
+nor the heat at night, nor a star going out over my head with no cloud near it!
+And once I had let the haze go up into the sky, the river went up after it. A
+veil over the sun would hold the heat in at night and keep the days brown; a
+dry year under such a veil would be drier than any dry year; a river would fail
+under it, and a lake shrink, and the plants go before the animals, and the
+animals come down to stand in the last of the water. It wanted no broken bank
+at all. It wanted something in the sky, and I knew of one thing that could put
+a brown veil across half a planet and keep it there, for I had stood under it
+on Richmond Hill.
 
 "There, gentlemen. That is my volcano. I cannot point to it. I did not see a
 glow on any horizon, nor hear a sound, nor find so much as a pinch of ash on my
-thermometer. I had a haze, a heat, a dying river, a lead paper, and a memory of
-red skies over Surrey, and out of these I built a mountain on fire at the other
-side of the world—and I will tell you honestly that the building of it was the
-happiest hour I spent in that country. You may take the mountain from me
-presently. I know some of you mean to. I only ask you to notice that I did not
-take it there with me. I took a theory about a river, and I have told you what
-became of that."
-
-"You held to your river ten months," said someone near the front, "and gave it
-up in an afternoon."
-
-"I gave it up in an hour," said the Traveller, "and I have not quite given it
-up yet. But you shall hear.
+thermometer. I had a brown sky and the memory of one, and out of these I built
+a mountain on fire at the other side of the world—and I will tell you honestly
+that the building of it was the happiest hour I spent in that country. You may
+take the mountain from me presently; I know some of you mean to. I did not take
+it there with me. I took a theory about a river, and I have not quite done with
+that either, for there is a great deal of that plain I never saw.
 
 "It was towards four, and I was at the deep reach again, counting—I had it in
 my head that the number would be different by evening, and it was—when I saw
@@ -148,17 +136,16 @@ there with the warm mud coming in over my boots and the gun in both hands.
 "It did not move. It was leaner than I remembered, so much leaner that the
 bones of the hip stood up under the skin, and its head seemed larger for it,
 and lower. When it turned a little I saw the pale mark across the shoulder—the
-left shoulder—and knew it, or believed I knew it; which came to the same thing
-then, and does not come to the same thing here. I will not swear to you that it
-was the same animal. I swore it to myself on that bank. It came down out of the
+left shoulder—and knew it, or believed I knew it. It came down out of the
 shadow of the bush—not towards me, but towards the water, along the margin
 where the dead fish lay—and it put its head down and took one, and I heard the
 bones go. It did not eat as a dog eats. It swallowed the thing whole, in three
 movements of the head, and took another, and stood with the tail of it hanging
 from its jaw and looked at me. I have seen a fox take a dead pheasant so, in a
-hard winter. I had not thought to see the largest flesh-eater of that world
-stooping to carrion, and I understood, with the water warm about my ankles,
-that it had not come across the river for the fish.
+hard winter. I had not thought to see the largest flesh-eater I had met in that
+country stooping to carrion; and it came into my head, with the water warm
+about my ankles, that a beast brought to that had not crossed a river for fish.
+I do not know it. I thought it then, and I kept the revolver up.
 
 "We stood so, it and I, for about an hour. I have the time from the watch, and
 I did not believe it when I read it. It ate, and looked at me, and ate. I did
@@ -204,38 +191,33 @@ crack through it as fine as a hair. The floor at the back was all grit now, and
 a stone the size of a man's head lay where I had used to set the food-case, and
 the crack breathed on me like a mouth.
 
-"I stood there some time. I should like to tell you that I weighed the matter
-as a reasonable man weighs it, and I did weigh it, but I will tell you what
-went into the scale on the one side. I had seen that country three times, and
-each time it was further gone than the last, and each time I had seen it for a
-day and gone away; and I had a sequence, gentlemen, I had a very good sequence,
-and I had never once seen the thing happen! I had seen the reach full of dying
-fish. I had not seen a fish die. I had seen the stake bare and the trees shed
-and the animal thin, and all of it was as if a man should judge a fever by
-looking in at the patient once a week. And here was the glass falling as I had
-waited ten months for it to fall, and if I stayed I should see rain come to
-that plain, or see that it did not, and either way I should see the process and
-not the print of it. That went into the scale. On the other side went a
-finger's breadth of plumb and a stone the size of a head. I am telling you the
-truth. It did not seem to me a difficult choice.
+"I stood there some time. I will tell you what went into the scale on the one
+side. I had seen that country three times, and each time it was further gone
+than the last, and each time I had seen it for a day or two and gone away; and
+I had a sequence, gentlemen, I had a very good sequence, and I had never once
+seen the thing happen! I had seen the reach full of dying fish. I had not seen
+a fish die. I had seen the stake bare and the trees shed and the animal thin,
+and all of it was as if a man should judge a fever by looking in at the patient
+once a week. And here was the glass falling, and if I stayed—two days, three,
+as long as the food held—I should see rain come to that plain, or see that it
+did not. That went into the scale. On the other side went a finger's breadth of
+plumb and a stone the size of a head. It did not seem to me a difficult choice.
 
-"But I am not a fool, whatever the geologists among you may presently suggest,
-and I did one thing before I did anything else. I had a leather satchel among
-the cases, a strong one, and I emptied it, and into it I put the things I could
-not do without and could not get again. The jar with the fish. The two air
-tubes, the first and the third. The two water-bottles, the first and the
-third—I had the second, but the third was the fouler and the better witness.
-One packet of the black deposit. And the roll from the camera. I wound it off
-in the dark at the back of the cleft with my coat over my head, and put it in a
-tobacco tin, and sealed the lid with wax from a candle. The jar I sealed in the
-same way, wax over the stopper and a piece of oilcloth over the wax, and wedged
-it between the rails where a man in the saddle has it against his knee, and the
-tin beside it; and the satchel I lashed to the frame with wire, under the
-saddle. The rest—the pressings, the other bottles, the instruments, the second
-roll that was still in the camera—I left on their shelves. If I came back to
-Richmond with what was in that satchel I should have a case, and if I came back
-with nothing but myself I should have a story, and I had brought you one of
-those before and I saw how it was taken.
+"I did one thing before I did anything else. I had a leather satchel among the
+cases, a strong one, and I emptied it and put into it the things I could not
+get again: the two air tubes, the first and the third; two of the stream
+bottles, the first and the third, the third being the fouler and the better
+witness; and one packet of the black deposit. I lashed it to the frame with
+wire, under the saddle. The jar with the fish I sealed with wax over the
+stopper and a piece of oilcloth over the wax, and wedged between the rails
+where a man in the saddle has it against his knee. The roll in the camera I
+wound off in the dark at the back of the cleft with my coat over my head, and
+put a fresh one in by feel, and the exposed roll went into a tobacco tin with
+candle-wax on the lid, beside the jar. The rest—the pressings, the lake
+bottles, the instruments, the camera with its new roll—I left on their shelves.
+If I came back with what was on that machine I should have a case; if I came
+back with nothing but myself I should have a story, and I had brought you one
+of those before and seen how it was taken.
 
 "Then I went to the entrance and looked at the sky. It was the colour of weak
 coffee, and very low, and the air under it was as still as the air in a church.
@@ -244,6 +226,6 @@ with a black rim. The river bed was a line of pale mud with a thread down the
 middle of it that caught no light. I could not see the beaked beasts. I could
 not see the animal. I took out the book and wrote the date by the dial, and the
 reading of the aneroid, and that it was falling, and then I wrote the three
-words which you have heard Filby read to you. I put the book in my pocket and
-sat down in the mouth of the cleft, with the revolver across my knees and the
-machine at my back, to wait for the rain.
+words that stand last in that book. I put the book in my pocket and sat down in
+the mouth of the cleft, with the revolver across my knees and the machine at my
+back, to wait for the rain.

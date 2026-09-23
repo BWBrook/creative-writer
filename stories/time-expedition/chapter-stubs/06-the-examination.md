@@ -7,6 +7,7 @@ characters:
   - time-traveller
   - frame-narrator
   - filby
+  - medical-man
   - meeting-chair
   - society-gadfly
   - geologist

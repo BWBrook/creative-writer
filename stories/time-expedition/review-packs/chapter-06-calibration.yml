@@ -1,0 +1,51 @@
+title: "Chapter VI calibration"
+purpose: "Test whether the examination sounds like Wells's frame narrator in 1895 reporting a learned meeting: occupational speakers shaped by what each can admit, summary and quotation sharing the work, and confidence moved by each question without the Traveller winning or losing outright."
+# Fable's first-draft self-review: ready for Astra's critique, not accepted.
+# Lint: 65 advisory findings. The repeated-phrase hits are almost all reporting
+# frames ('he said that', 'I saw the') natural to a narrator summarising
+# speeches; monitor 'I saw' (8) and 'I do not' openings across the dialogue.
+# The one contrastive-parallelism warning (limit 1, count 2) falls on two
+# speakers' natural antitheses (Chemist 'could/could not'; Anatomist 'lay
+# money/not swear') and is dismissed. 'a man who' reduced from five to one.
+# The ai-audit parallelism flags are ordinary prepositional phrases; dismissed.
+entries:
+  - id: proof-before-claim
+    label: "The gadfly and the witnesses"
+    manuscript: "manuscript/06-the-examination.md"
+    start_line: 1
+    end_line: 77
+    kind: confidence
+    question: "Does the narrator's return to the room, the gadfly's dispatch by Filby and the Medical Man, and the chair's ruling read as Wells's sober frame voice observing a meeting, or as an author clearing the stage? Is the narrator's own testimony (the published obituary) the right weight?"
+    context: "Frame role. The narrator resumes note-taking because questions are shorter than answers, which licenses the more exact dialogue that follows. Filby's and the Medical Man's facts come from Chapters I–II. The scene card asks that the gadfly be brief so that genuine scepticism belongs to the experts."
+  - id: the-geologist
+    label: "A district which does not exist"
+    manuscript: "manuscript/06-the-examination.md"
+    start_line: 79
+    end_line: 189
+    kind: uncertainty
+    question: "Is the Geologist a serious antagonist in a period geologist's own idiom (borings, red beds, the Magnesian Limestone, the dial welcomed and disarmed), and does the Traveller's concession preserve a real observed claim rather than collapsing? Does the pleasure at two hundred and fifty million years sound like the man or like our design enjoying a historical irony?"
+    context: "Principal intellectual antagonist. He asks the question the Traveller wanted (II) and takes the mountain the Traveller offered (IV). The red-marl line is his own; the narrator notes its likeness to Filby's joke. Australian drought and the London borings are period knowledge. The seven missing beasts revive Chapter I's 'gone somewhere else' without the Geologist knowing it."
+  - id: chemist-and-anatomist
+    label: "A smell for a dust; a fish without a name"
+    manuscript: "manuscript/06-the-examination.md"
+    start_line: 191
+    end_line: 307
+    kind: uncertainty
+    question: "Do the Chemist and the Anatomist speak in two different evidentiary habits, and does each question change confidence (dust removed, gas substituted; Permian widened to Permian-or-Carboniferous; theriodont reduced to resemblance; identity granted as a wager)? Is the Chemist's Tyndall-and-Sweden passage period exposition under pressure, or a modern explanation in costume?"
+    context: "Scientific exposition and social dialogue. The Chemist's carbonic-acid conjecture is the only place the modern backstage enters, and it enters as an examiner's Victorian speculation which the Traveller does not adopt. The Anatomist is the communicating Fellow of Chapter III. The fish changes custody here; the notebook does not."
+  - id: the-astronomer
+    label: "Upon the same ground"
+    manuscript: "manuscript/06-the-examination.md"
+    start_line: 309
+    end_line: 375
+    kind: uncertainty
+    question: "Does the anchoring question land as the chapter's deepest limit in Wells's manner, with the Traveller's masthead analogy failing in his own mouth and the narrator's afterthought earning its place? Is the Kelvin quarrel one sentence too clever?"
+    context: "Terrestrial anchoring is introduced as a clue here and must remain behaviour, not theory. The Astronomer states the earth's motions in period figures and supplies no mechanism. Latitude is noted by both men and left. The narrator's paragraph recalls the eddy of Chapter I."
+  - id: a-divided-finding
+    label: "I will take the valley"
+    manuscript: "manuscript/06-the-examination.md"
+    start_line: 377
+    end_line: 422
+    kind: confidence
+    question: "Does the close credit the journey and divide the interpretation without applause or defeat, and does the changed custody of the fish, the receipt on the programme and the notebook nobody asked for make an evidentiary ending rather than an emotional one? Is 'I shall have to find out' the right size of appetite to leave for the epilogue?"
+    context: "The chair's summary follows Society practice: no vote, referral to Fellows, a deputation to Richmond. The Traveller's hierarchy (seen, sequence, probability, guess) is the scene card's turn. The epilogue keeps the altered settings and the temporal obstruction; nothing here names a destination."

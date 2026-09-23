@@ -104,8 +104,7 @@ hand and the brown sky over me.
 "It was the haze that did it. I had explained the river to myself very
 comfortably by a broken bank; I could not explain the haze by a broken bank,
 nor the heat at night, nor a star going out over my head with no cloud near it!
-And once I had let the haze go up into the sky, the river went up after it. A
-veil over the sun would hold the heat in at night and keep the days brown; a
+A veil over the sun would hold the heat in at night and keep the days brown; a
 dry year under such a veil would be drier than any dry year; a river would fail
 under it, and a lake shrink, and the plants go before the animals, and the
 animals come down to stand in the last of the water. It wanted no broken bank

@@ -7,7 +7,7 @@ entries:
     start_line: 24
     end_line: 61
     kind: confidence
-    question: "Do the dying fish, the counted dead, and the sulphuretted-hydrogen test arrive as things a man saw and did, in his cadence, or as an evidence ladder being climbed? Is the aside about eels his humour or the author's?"
+    question: "Do the dying fish, the counted dead, and the sulphuretted-hydrogen test arrive as things a man saw and did, in his cadence, or as an evidence ladder being climbed? Does the admission that any stagnant pool in Surrey would do as much sound like his honesty or the author's hedge?"
     context: "Aquatic distress is the first biological rung of the dossier's clue ladder. Lead-acetate paper is period field chemistry; the strips become the Chemist's material in VI. The lecture must add lived experience to the Chapter II fragment 'Stream: four feet one… The reeds brown at the top.'"
   - id: losing-the-river
     label: "The diversion theory meets the ridge"
@@ -21,23 +21,23 @@ entries:
     label: "The autumn of 'eighty-three"
     manuscript: "manuscript/04-the-diminishing-waters.md"
     start_line: 95
-    end_line: 123
+    end_line: 122
     kind: uncertainty
-    question: "Is the Krakatoa memory a period-true route to 'distant volcanic action', and is the welcome he gives the idea ('as a man welcomes an old friend in a strange town') Wells's Traveller enjoying a theory, or our design speaking? The spoken interruption is removed; the theory stays alive in his own words."
+    question: "Is the Krakatoa memory a period-true route to 'distant volcanic action', and does the argument move as a man's thought moves — from the one thing his river cannot explain to a veil over the sun — rather than as a recital of clues? Is 'the happiest hour I spent in that country' Wells's Traveller enjoying a theory, or our design speaking?"
     context: "The 1883 sunsets over London and the Royal Society's 1888 report are within a scientifically literate Briton's knowledge. The dossier allows inference of vast distant volcanic action but forbids locating the source. He keeps the diversion theory alive himself ('I have not quite done with that either') for the Geologist in VI."
   - id: carrion
     label: "The animal on his bank"
     manuscript: "manuscript/04-the-diminishing-waters.md"
-    start_line: 125
-    end_line: 170
+    start_line: 124
+    end_line: 169
     kind: confidence
-    question: "Does the predator stay an animal under pressure (carrion, an hour's standing, no attack), with fear in the Traveller's body rather than in commentary? Is 'I swore it to myself on that bank' the right handling of an identity he cannot prove?"
+    question: "Does the predator stay an animal under pressure (carrion, an hour's standing, no attack), with fear in the Traveller's body rather than in commentary? Are 'knew it, or believed I knew it' and 'I do not know it. I thought it then' the right weight for an identity and a motive he cannot prove?"
     context: "Chapter II's Station III fragment: 'The animal, on this bank. It has crossed. Thinner… did not drink, and I do not know what it was waiting for.' The scene card forbids attack here and keeps identity challengeable in VI. Grains fall in the night; chalk and plumb stay unaltered until Station IV."
   - id: the-choice
     label: "A finger's breadth of plumb"
     manuscript: "manuscript/04-the-diminishing-waters.md"
-    start_line: 184
-    end_line: 231
+    start_line: 183
+    end_line: 230
     kind: uncertainty
-    question: "Is the decision to stay three days made for a reason the man can own — wanting to see the process, not the print — without becoming a speech about method? Does the satchel inventory read as a field act rather than a list, and does the chapter end on action?"
+    question: "Is the decision to stay made for a reason the man can own — a good sequence of visits and never once having seen the thing happen — without becoming a speech about method? Does the satchel inventory read as a field act rather than a list, and does the chapter end on action?"
     context: "The design's surviving exhibits: fish, air I and III, water I and III, one Station III deposit packet, one early film roll; notebook on his person. Chapter II's return shows the jar sealed in wax and oilcloth between the rails, a single tin, and a sodden lashed satchel. The last notebook line is 'I shall stay.'"

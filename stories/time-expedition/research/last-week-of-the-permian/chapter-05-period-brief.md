@@ -3,7 +3,8 @@
 This brief records the bounded checks needed for Chapter V and its revision
 after Fable's critique in correspondence thread 52, message 480.
 The narrative design and canonical research dossier remain authoritative for
-the expedition. The revised chapter is ready for Fable's focused retest.
+the expedition. Fable passed the revision in message 486; the two requested
+sentence repairs are complete, and the chapter is ready for Barry's read.
 
 ## Revolver
 

@@ -1,9 +1,10 @@
 title: "Chapter V calibration"
-purpose: "Retest the revision after Fable's critique: does the waiting, crisis and return truly sound like Wells's Traveller in 1895? His presence as a speaker is the central question; continuity and diagnostics support that judgement."
-# Astra's revision after Fable's message 480, thread 52; ready for his focused
-# retest, not accepted. Revise: the absent speaker in the waiting and return,
-# the repeated automatic gun-drawing beat, and some uniform starts in clearing
-# the machine. Preserve the small animal, delirium, plumb and unfinished fate.
+purpose: "Retain five calibration passages for Barry's read after Fable's passed retest: does the waiting, crisis and return truly sound like Wells's Traveller in 1895? His presence as a speaker remains central; continuity and diagnostics support that judgement."
+# Fable passed the revision in message 486, thread 52, subject to two local
+# repairs, now complete: fold the vocative into the garden question and restore
+# the failed lift that makes dragging the case an alternative. No further
+# collaborator critique cycle is needed; Barry's read remains. The small animal,
+# delirium, plumb and unfinished fate are preserved.
 # The Time Machine X supports a short gait within the fight; XII restores the
 # teller's relation to his listeners during the return. Monitor those functions
 # and the accumulated first-person observation phrases, not punctuation quotas
@@ -18,7 +19,7 @@ entries:
     manuscript: "manuscript/05-the-refuge.md"
     start_line: 1
     end_line: 62
-    kind: uncertainty
+    kind: confidence
     question: "Does the unrecorded aneroid reading restore the man speaking to the room while leaving the waiting, uneven sympathy and bodily relief in Wells's voice?"
     context: "Reported account. Compare The Time Machine IX and XII for shifts between remembered experience and present telling. The new aside admits what he cannot supply, instead of decorating the account with an address. The notebook still ends at 'I shall stay.' Fable passed the little animal; that paragraph is unchanged. The rain no longer receives a modern emotional summary. The first afternoon and second morning are lived time."
   - id: the-river-and-its-load
@@ -34,22 +35,22 @@ entries:
     manuscript: "manuscript/05-the-refuge.md"
     start_line: 138
     end_line: 178
-    kind: uncertainty
+    kind: confidence
     question: "Do the deliberate draw, the wounded animal's flight into shelter and the Traveller's fear for the quartz rod carry the encounter in Wells's voice without explaining its mechanics too insistently?"
     context: "Danger-action, under The Time Machine VI, IX and X. The two-foot clearance is stated without assuming the Society heard the private notebook reading. Two shots are fired; four charges remain loaded and six in reserve. The gun works, but the machine lies beyond the beast. The quartz rod belongs to established machine continuity; the added fear concerns being stranded, not a new unique function for the rod. The plumb paragraph is unchanged."
   - id: clearing-the-machine
     label: "The cases, the hand and the levers"
     manuscript: "manuscript/05-the-refuge.md"
     start_line: 188
-    end_line: 245
-    kind: uncertainty
+    end_line: 244
+    kind: confidence
     question: "Do the few joined movements in clearing the machine vary the attention naturally while preserving the short, bodily urgency that Wells allows inside his fight?"
     context: "The Time Machine X is the closest cadence comparison, with VI and IX providing further action contexts. No audience interruption has been inserted into the close work. He clears material obstructions before travelling; his revolver returns in its case and the separately secured proof survives. The animal tries the obstructed left route. Neither the complete collapse nor its fate is witnessed; the closing thought about leaving enough years behind him is unchanged."
   - id: the-forty-yards
-    label: "The stranger's lawn and the patient gentlemen"
+    label: "The stranger's lawn and the closed windows"
     manuscript: "manuscript/05-the-refuge.md"
-    start_line: 247
-    end_line: 280
-    kind: uncertainty
+    start_line: 246
+    end_line: 279
+    kind: confidence
     question: "Does the renewed address sound like Wells's exhausted Traveller acknowledging the oddity of his escape, with the afternoon's hauling felt through the shadow and the piano?"
     context: "The Time Machine XII governs both the return cadence and the preserved spatial displacement. The Richmond stop restores the forty yards by physical hauling before the laboratory exists. The revision gives that work most of an afternoon and lets the speaker wonder why nobody challenged him. The bee, piano, bandages and clock remain. It adds no lateral machine power or account of vertical anchoring; VI retains the examination. Test whether the address belongs to this man's telling rather than announcing the repair."

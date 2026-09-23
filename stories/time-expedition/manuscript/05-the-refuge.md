@@ -188,12 +188,11 @@ sand across the floor.
 "I got into the passage on the right, kneeling in the water. The revolver
 hindered me until I had thrust it into the case beneath my coat and could
 get both hands upon the stones. A flat piece lay across the foot-rest with
-one end under a case, and when I pulled at it the whole case moved. I
-dragged the case towards me instead. Something glass broke inside it; then
-its lid came off in my hands, and the water took little packets of paper out
-of it and turned them over and over about my knees. I pushed the empty box
-into the stream and heaved the slab, which was loose now, against the
-opposite side of the cleft.
+one end under a case, and I could not lift it. I dragged the case towards me
+instead. Something glass broke inside it; then its lid came off in my hands,
+and the water took little packets of paper out of it and turned them over
+and over about my knees. I pushed the empty box into the stream and heaved
+the slab, which was loose now, against the opposite side of the cleft.
 
 "While I was at this the animal was moving, scraping its feet among the
 fallen things; presently its head showed beyond the farther rail. It had
@@ -264,10 +263,10 @@ house had reached me before I was done.
 
 "I have often wondered why no one came out. There was somebody in the house;
 the piano went on while I dragged that fantastic thing across the grass, and
-presently stopped, and began again. You have listened to me very patiently,
-gentlemen—but what should I have said to the owner of that garden? I had
-neither the strength to explain myself nor the means of concealing the
-machine. I kept looking at the windows. Not one of them opened!
+presently stopped, and began again. What should I have said to the owner of
+that garden, gentlemen? I had neither the strength to explain myself nor the
+means of concealing the machine. I kept looking at the windows. Not one of
+them opened!
 
 "Before I started again I tore strips from my shirt and bound my hands. I
 could not tie the knots with my fingers, and had to draw them tight with my

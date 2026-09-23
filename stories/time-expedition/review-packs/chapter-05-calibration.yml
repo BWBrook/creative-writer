@@ -1,0 +1,51 @@
+title: "Chapter V calibration"
+purpose: "Test whether the continuous crisis and return truly sound like Wells's Traveller in 1895. Spatial clarity, period equipment and continuity support that judgement; none substitutes for it."
+# Astra's first-draft self-review: ready for Fable's critique, not accepted.
+# The longer flood sentences were revised for gathering attention, not a target
+# percentile. Monitor the remaining short upper tail and the repeated first-person
+# observation components across the action. Dismiss the four local 'seemed'
+# locators as problems: fatigue, photographic dissatisfaction, uncertain graze,
+# and perception during travel each need their qualification. Other repeated
+# connective/object phrases are ordinary syntax. Generic 'mark', 'side to side',
+# 'whether ... or', and 'take shape' findings are contextual false positives.
+entries:
+  - id: waiting-and-the-rain
+    label: "The little animal and the welcome rain"
+    manuscript: "manuscript/05-the-refuge.md"
+    start_line: 18
+    end_line: 58
+    kind: uncertainty
+    question: "Does the movement from wishing the little animal a drink to welcoming the rain sound like the particular Traveller's uneven sympathies and bodily relief in Wells's voice?"
+    context: "Reported account. Compare the unstable fear, aggression, recognition and pity in The Time Machine IX, without copying its incidents or treating sympathy as a compulsory moral. His momentary willingness to return with an account of a dry summer is relief; it does not settle the volcanic inference for VI. The first day of waiting and the second morning belong to lived time, not the months crossed in the machine."
+  - id: the-river-and-its-load
+    label: "The rain carries away the path"
+    manuscript: "manuscript/05-the-refuge.md"
+    start_line: 60
+    end_line: 114
+    kind: confidence
+    question: "Does the widening view of runoff, unfamiliar trees and displaced animals acquire the movement and scale of Wells's observed catastrophe while keeping this man's limited vantage?"
+    context: "Scientific inference and danger-action. The Time Machine III and IX govern attention and cadence; the danger-and-action packet's War of the Worlds passages supply bounded comparison for recognising danger through its consequences. The initial draft was too uniformly brisk here; the revision lets connected observations accumulate. The floating trees come from unseen country. The new channel is witnessed locally, and neither it nor the lost stake proves what happened during his thirteen-month absence."
+  - id: the-animal-in-the-cleft
+    label: "Four charges and the bright rod"
+    manuscript: "manuscript/05-the-refuge.md"
+    start_line: 134
+    end_line: 173
+    kind: confidence
+    question: "Does the shot, the animal's retreat into the cleft and the Traveller's fixation upon the vulnerable rod carry fear in Wells's voice while making his failure to fire again convincing?"
+    context: "Danger-action, under The Time Machine VI and IX and the bounded danger-and-action packet. He goes outside to inspect the route for hauling the machine back to its original ground. Two shots are fired, with only an apparent graze; four charges remain loaded and six remain in reserve. The weapon works. Machine and animal positions create the limit. The period brief verifies a pre-1895 six-chambered double-action analogue without naming a model in the prose."
+  - id: clearing-the-machine
+    label: "The cases, the hand and the levers"
+    manuscript: "manuscript/05-the-refuge.md"
+    start_line: 183
+    end_line: 238
+    kind: uncertainty
+    question: "Can you still hear Wells's Traveller through the close work of clearing the machine, losing the camera and fitting the levers, with the changing attention and irregular pace his danger scenes allow?"
+    context: "The Time Machine VI, IX and XI are the primary comparisons. The current short sentence upper tail remains a monitor finding, not a requirement to lengthen sentences. He clears material obstructions before travelling; his revolver returns in its case, and the separately secured proof survives. The animal lies crosswise behind the machine after the shelf fall, then tries the obstructed left route. Neither the complete collapse nor the animal's fate is witnessed. The line about leaving enough years behind him is frightened thought, not a new power attributed to the beast."
+  - id: the-forty-yards
+    label: "Richmond before the laboratory"
+    manuscript: "manuscript/05-the-refuge.md"
+    start_line: 240
+    end_line: 265
+    kind: uncertainty
+    question: "Does the brief earlier-Richmond stop belong naturally to Wells's Traveller's exhausted return, including his attention to the bee and the piano?"
+    context: "The Time Machine XII expressly preserves the distance the Morlocks carried the machine as a displacement across the returned laboratory. Chapter II here moved it forty yards into the cleft, so V must restore that distance physically. His intended ancient haul is prevented; before the laboratory exists he recognises the house and wall and hauls it to the future laboratory's ground. This draft choice also permits the shirt-strip bandages and prolonged exertion established in II. It adds no lateral machine power, further ancient sampling station, or solution to terrestrial anchoring. The spoken account closes on the clock, leaving the public examination to VI."

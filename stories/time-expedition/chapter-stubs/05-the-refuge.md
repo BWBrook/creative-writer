@@ -12,6 +12,7 @@ locations:
   - alluvial-plain
   - seasonal-river
   - saline-lake
+  - richmond-study
 clues_introduced: []
 clues_resolved:
   - refuge-instability
@@ -58,6 +59,8 @@ whose desperation has overcome its earlier caution.
 - Force a choice between the full archive and immediate access to the controls.
 - Preserve only the attached proof satchel, notebook, and instrument register.
 - Escape at the point of structural failure.
+- Restore the machine's forty-yard displacement physically during a brief
+  homeward stop before the laboratory was built.
 
 ## Continuity notes
 
@@ -67,3 +70,6 @@ whose desperation has overcome its earlier caution.
 - The machine works once physically reached; machinery failure is not the
   climax.
 - Final photographs and most sequential samples are lost.
+- The revolver returns in its case beneath his coat, as Chapter II establishes.
+- The brief Richmond stop permits the final hauling and shirt-strip bandages;
+  it adds no further ancient observation station or lateral machine power.

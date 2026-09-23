@@ -24,8 +24,9 @@ the refuge loses structural continuity.
 
 ## Exit state
 
-The Traveller escapes with the proof satchel, notebook, and instrument register
-while the final evidence and exact fate of the predator remain behind.
+The Traveller escapes with the secured exhibits and notebook, including its
+instrument readings, while the final evidence and exact fate of the predator
+remain behind.
 
 ## Continuity hooks
 

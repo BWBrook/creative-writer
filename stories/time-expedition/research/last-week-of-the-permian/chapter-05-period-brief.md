@@ -1,8 +1,9 @@
 # Chapter V Period and Continuity Brief
 
-This brief records the bounded checks needed for the first draft of Chapter V.
+This brief records the bounded checks needed for Chapter V and its revision
+after Fable's critique in correspondence thread 52, message 480.
 The narrative design and canonical research dossier remain authoritative for
-the expedition. The choices below are available for Fable's critique.
+the expedition. The revised chapter is ready for Fable's focused retest.
 
 ## Revolver
 
@@ -36,9 +37,27 @@ field image. The camera and this second roll remain in the failing refuge.
 The fish jar and early-film tin remain separately secured beside his knee;
 the wired satchel under the saddle contains baseline and Station III air and
 stream water, and the Station III black-deposit packet. The notebook, with
-the lead-paper strips, and the instrument register are inside his coat.
-Nothing is added to that surviving comparison set. V does not append an entry
-after the notebook's final words, "I shall stay."
+the lead-paper strips and its columns of instrument readings, is inside his
+coat. Nothing is added to that surviving comparison set. V does not append
+an entry after the notebook's final words, "I shall stay."
+
+The first draft imported a separate "instrument register" from the design.
+Chapter I establishes two notebooks: the field book travels, and the control
+book stays with the frame narrator. Chapter II already locates the instrument
+figures in the field book. The revised V removes the extra object, and the
+adopted planning references now identify the register with those columns.
+
+## Waiting and field equipment
+
+V now gives an unrecorded aneroid reading before the rain: the Traveller
+remembers a further fall but cannot supply its magnitude. He puts the aneroid
+in the wooden case, which stays with the lost equipment. This connects the
+waiting to IV's falling glass without adding a surviving measurement.
+
+The light in V is a candle, explicitly part of Chapter I's packing. The
+Traveller drinks water; the first draft's unprepared boiling is removed. No
+lamp, stove or fuel supply is added to the kit. The packing list is expressly
+incomplete, so those were unsupported additions rather than impossible items.
 
 ## Refuge and experienced time
 
@@ -52,8 +71,10 @@ access is on the right when looking inward; shelves are on the left and the
 existing two-foot space remains behind the machine. Water and partial falls
 alter these routes. The animal retreats crosswise behind the machine and
 tries to get out beside the fallen shelves. The Traveller clears the right
-passage and the stone pinning a lower rail before starting. He does not see a completed roof
-collapse or the animal's fate. No earthquake or local eruption is introduced.
+passage and the stone pinning a lower rail before starting. He does not see a
+completed roof collapse or the animal's fate. No earthquake or local eruption
+is introduced. The vulnerable machine part is a quartz rod, consistent with
+the source and Chapter I; the account does not assign it a new unique function.
 
 The third-day flood does not prove what happened during the thirteen months
 he missed. VI retains the unmarked-stake objection. It also remains free to
@@ -75,10 +96,13 @@ carried it towards the Sphinx. That is the governing continuity precedent.
 Before the encounter he intends to haul the machine back along the ancient
 ridge, and inspects the ledge for that purpose. The flood and animal prevent
 that return. V therefore adds a brief stop at Richmond before the laboratory
-was built. The house and wall give him familiar fixed references; he hauls the damaged
-machine to the future laboratory's ground before completing the journey. This
-is a fictional scene choice, not a new physical explanation of terrestrial
-anchoring. It leaves that question to VI. The stop also provides time to bind
-both hands with shirt strips after the final hauling; it does not recover any
-ancient evidence. The old coat tears are sewn on the first occupied afternoon,
-the hat goes in the wind, and the new head wound is above the left ear.
+was built. The house and wall give him familiar fixed references; he hauls
+the damaged machine to the future laboratory's ground before completing the
+journey. This is a fictional scene choice, not a new physical explanation of
+terrestrial anchoring. It leaves that question to VI. The revised account
+makes the hauling occupy most of the afternoon and acknowledges his luck in
+not being challenged by anyone in the house. The stop also provides time to
+bind both hands with shirt strips after the final hauling; it does not
+recover any ancient evidence. The old coat tears are sewn on the first
+occupied afternoon, the hat goes in the wind, and the new head wound is
+above the left ear.

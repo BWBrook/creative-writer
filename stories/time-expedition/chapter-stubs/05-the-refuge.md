@@ -57,7 +57,8 @@ whose desperation has overcome its earlier caution.
 - Use the revolver as a brief deterrent without a convenient misfire or kill.
 - Obstruct the machine through debris and progressive roof fall.
 - Force a choice between the full archive and immediate access to the controls.
-- Preserve only the attached proof satchel, notebook, and instrument register.
+- Preserve only the secured exhibits and the notebook, including its
+  instrument readings.
 - Escape at the point of structural failure.
 - Restore the machine's forty-yard displacement physically during a brief
   homeward stop before the laboratory was built.

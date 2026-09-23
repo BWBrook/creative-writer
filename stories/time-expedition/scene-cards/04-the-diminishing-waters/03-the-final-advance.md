@@ -30,5 +30,6 @@ committed to the personal final days that give the story its title.
 - The proof satchel contains the fish; baseline and Station III air tubes and
   water bottles; one Station III deposit packet; and an early exposed film
   roll.
-- Notebook and instrument register remain on his person.
+- The notebook, including its columns of instrument readings, remains on his
+  person.
 - The refuge warning is real but not yet an obvious death trap.

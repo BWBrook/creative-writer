@@ -1,51 +1,55 @@
 title: "Chapter V calibration"
-purpose: "Test whether the continuous crisis and return truly sound like Wells's Traveller in 1895. Spatial clarity, period equipment and continuity support that judgement; none substitutes for it."
-# Astra's first-draft self-review: ready for Fable's critique, not accepted.
-# The longer flood sentences were revised for gathering attention, not a target
-# percentile. Monitor the remaining short upper tail and the repeated first-person
-# observation components across the action. Dismiss the four local 'seemed'
-# locators as problems: fatigue, photographic dissatisfaction, uncertain graze,
-# and perception during travel each need their qualification. Other repeated
-# connective/object phrases are ordinary syntax. Generic 'mark', 'side to side',
-# 'whether ... or', and 'take shape' findings are contextual false positives.
+purpose: "Retest the revision after Fable's critique: does the waiting, crisis and return truly sound like Wells's Traveller in 1895? His presence as a speaker is the central question; continuity and diagnostics support that judgement."
+# Astra's revision after Fable's message 480, thread 52; ready for his focused
+# retest, not accepted. Revise: the absent speaker in the waiting and return,
+# the repeated automatic gun-drawing beat, and some uniform starts in clearing
+# the machine. Preserve the small animal, delirium, plumb and unfinished fate.
+# The Time Machine X supports a short gait within the fight; XII restores the
+# teller's relation to his listeners during the return. Monitor those functions
+# and the accumulated first-person observation phrases, not punctuation quotas
+# or a sentence-length percentile. Dismiss the local
+# 'seemed' locators: fatigue, photographic dissatisfaction, uncertain graze and
+# perception during travel need their qualifications. Dismiss the ordinary
+# connective/object phrases and generic 'mark', 'side to side', 'whether ... or'
+# and 'take shape' findings in context. No profile change is warranted.
 entries:
   - id: waiting-and-the-rain
-    label: "The little animal and the welcome rain"
+    label: "The falling glass, the little animal and the rain"
     manuscript: "manuscript/05-the-refuge.md"
-    start_line: 18
-    end_line: 58
+    start_line: 1
+    end_line: 62
     kind: uncertainty
-    question: "Does the movement from wishing the little animal a drink to welcoming the rain sound like the particular Traveller's uneven sympathies and bodily relief in Wells's voice?"
-    context: "Reported account. Compare the unstable fear, aggression, recognition and pity in The Time Machine IX, without copying its incidents or treating sympathy as a compulsory moral. His momentary willingness to return with an account of a dry summer is relief; it does not settle the volcanic inference for VI. The first day of waiting and the second morning belong to lived time, not the months crossed in the machine."
+    question: "Does the unrecorded aneroid reading restore the man speaking to the room while leaving the waiting, uneven sympathy and bodily relief in Wells's voice?"
+    context: "Reported account. Compare The Time Machine IX and XII for shifts between remembered experience and present telling. The new aside admits what he cannot supply, instead of decorating the account with an address. The notebook still ends at 'I shall stay.' Fable passed the little animal; that paragraph is unchanged. The rain no longer receives a modern emotional summary. The first afternoon and second morning are lived time."
   - id: the-river-and-its-load
     label: "The rain carries away the path"
     manuscript: "manuscript/05-the-refuge.md"
-    start_line: 60
-    end_line: 114
+    start_line: 64
+    end_line: 118
     kind: confidence
-    question: "Does the widening view of runoff, unfamiliar trees and displaced animals acquire the movement and scale of Wells's observed catastrophe while keeping this man's limited vantage?"
-    context: "Scientific inference and danger-action. The Time Machine III and IX govern attention and cadence; the danger-and-action packet's War of the Worlds passages supply bounded comparison for recognising danger through its consequences. The initial draft was too uniformly brisk here; the revision lets connected observations accumulate. The floating trees come from unseen country. The new channel is witnessed locally, and neither it nor the lost stake proves what happened during his thirteen-month absence."
+    question: "Does the widening view of runoff, unfamiliar trees and displaced animals retain the movement of Wells's observed catastrophe as the revised waiting leads into it?"
+    context: "Fable passed this sequence, including the delirium, and its prose is unchanged. The Time Machine III and IX govern attention and cadence; the danger-and-action packet supplies bounded comparison. The floating trees come from unseen country. The new channel is witnessed locally, and neither it nor the lost stake proves what happened during the thirteen-month absence. No new explanatory sentence settles that argument before VI."
   - id: the-animal-in-the-cleft
-    label: "Four charges and the bright rod"
+    label: "Four charges and the quartz rod"
     manuscript: "manuscript/05-the-refuge.md"
-    start_line: 134
-    end_line: 173
-    kind: confidence
-    question: "Does the shot, the animal's retreat into the cleft and the Traveller's fixation upon the vulnerable rod carry fear in Wells's voice while making his failure to fire again convincing?"
-    context: "Danger-action, under The Time Machine VI and IX and the bounded danger-and-action packet. He goes outside to inspect the route for hauling the machine back to its original ground. Two shots are fired, with only an apparent graze; four charges remain loaded and six remain in reserve. The weapon works. Machine and animal positions create the limit. The period brief verifies a pre-1895 six-chambered double-action analogue without naming a model in the prose."
+    start_line: 138
+    end_line: 178
+    kind: uncertainty
+    question: "Do the deliberate draw, the wounded animal's flight into shelter and the Traveller's fear for the quartz rod carry the encounter in Wells's voice without explaining its mechanics too insistently?"
+    context: "Danger-action, under The Time Machine VI, IX and X. The two-foot clearance is stated without assuming the Society heard the private notebook reading. Two shots are fired; four charges remain loaded and six in reserve. The gun works, but the machine lies beyond the beast. The quartz rod belongs to established machine continuity; the added fear concerns being stranded, not a new unique function for the rod. The plumb paragraph is unchanged."
   - id: clearing-the-machine
     label: "The cases, the hand and the levers"
     manuscript: "manuscript/05-the-refuge.md"
-    start_line: 183
-    end_line: 238
+    start_line: 188
+    end_line: 245
     kind: uncertainty
-    question: "Can you still hear Wells's Traveller through the close work of clearing the machine, losing the camera and fitting the levers, with the changing attention and irregular pace his danger scenes allow?"
-    context: "The Time Machine VI, IX and XI are the primary comparisons. The current short sentence upper tail remains a monitor finding, not a requirement to lengthen sentences. He clears material obstructions before travelling; his revolver returns in its case, and the separately secured proof survives. The animal lies crosswise behind the machine after the shelf fall, then tries the obstructed left route. Neither the complete collapse nor the animal's fate is witnessed. The line about leaving enough years behind him is frightened thought, not a new power attributed to the beast."
+    question: "Do the few joined movements in clearing the machine vary the attention naturally while preserving the short, bodily urgency that Wells allows inside his fight?"
+    context: "The Time Machine X is the closest cadence comparison, with VI and IX providing further action contexts. No audience interruption has been inserted into the close work. He clears material obstructions before travelling; his revolver returns in its case and the separately secured proof survives. The animal tries the obstructed left route. Neither the complete collapse nor its fate is witnessed; the closing thought about leaving enough years behind him is unchanged."
   - id: the-forty-yards
-    label: "Richmond before the laboratory"
+    label: "The stranger's lawn and the patient gentlemen"
     manuscript: "manuscript/05-the-refuge.md"
-    start_line: 240
-    end_line: 265
+    start_line: 247
+    end_line: 280
     kind: uncertainty
-    question: "Does the brief earlier-Richmond stop belong naturally to Wells's Traveller's exhausted return, including his attention to the bee and the piano?"
-    context: "The Time Machine XII expressly preserves the distance the Morlocks carried the machine as a displacement across the returned laboratory. Chapter II here moved it forty yards into the cleft, so V must restore that distance physically. His intended ancient haul is prevented; before the laboratory exists he recognises the house and wall and hauls it to the future laboratory's ground. This draft choice also permits the shirt-strip bandages and prolonged exertion established in II. It adds no lateral machine power, further ancient sampling station, or solution to terrestrial anchoring. The spoken account closes on the clock, leaving the public examination to VI."
+    question: "Does the renewed address sound like Wells's exhausted Traveller acknowledging the oddity of his escape, with the afternoon's hauling felt through the shadow and the piano?"
+    context: "The Time Machine XII governs both the return cadence and the preserved spatial displacement. The Richmond stop restores the forty yards by physical hauling before the laboratory exists. The revision gives that work most of an afternoon and lets the speaker wonder why nobody challenged him. The bee, piano, bandages and clock remain. It adds no lateral machine power or account of vertical anchoring; VI retains the examination. Test whether the address belongs to this man's telling rather than announcing the repair."

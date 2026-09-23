@@ -121,13 +121,14 @@ period verification before drafting.
 
 ### Surviving exhibits
 
-Before the final observations, the Traveller fixes a compact proof satchel to
-the machine. It preserves the fish in spirit; baseline and Station III air
-tubes; baseline and Station III water bottles; one Station III deposit packet;
-and one early exposed film roll. The notebook and instrument register remain
-on his person. The sequential plant pressings, most sediment samples, bulky
-instruments, and final photographs are lost. Contamination and incomplete
-provenance remain available to the Society questioners.
+Before the final observations, the Traveller fixes a compact proof satchel
+to the machine. It preserves the fish in spirit; baseline and Station III
+air tubes; baseline and Station III water bottles; one Station III deposit
+packet; and one early exposed film roll. The notebook, including its columns
+of instrument readings, remains on his person. The sequential plant
+pressings, most sediment samples, bulky instruments, and final photographs
+are lost. Contamination and incomplete provenance remain available to the
+Society questioners.
 
 ## Drift risks and handoff notes
 

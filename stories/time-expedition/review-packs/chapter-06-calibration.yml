@@ -1,7 +1,8 @@
 title: "Chapter VI calibration"
-purpose: "Retest the revision after Astra's critique: do the four examiners now differ in appetite and vulnerability as well as subject, has the narrator stopped certifying effects the scene already shows, and do the Geologist's premises, the Chemist's uncertainty and the Traveller's masthead analogy hold in their own period? Custody ending and physical business should survive unchanged."
-# Fable's revision after Astra's message 518, thread 54; ready for her focused
-# retest, not accepted. Cut: red-marl maxim and the narrator's recognition of
+purpose: "Review the closed initial draft: do the four examiners differ in appetite and vulnerability as well as subject, does the narrator trust effects the scene already shows, and do the Geologist's premises, the Chemist's uncertainty and the Traveller's masthead analogy hold in their own period?"
+# Fable's revision passed Astra's focused retest, message 520, thread 54.
+# Barry authorised Astra's bounded closeout; ready for his read.
+# Cut: red-marl maxim and the narrator's recognition of
 # it; 'he had earned it'; 'allowed the laughter and then took it back';
 # dust/smell and breathe/burn; the Permian's-father joke; 'novelty for them';
 # 'You are in something' and the fatal-day prediction; most of the narrator's
@@ -9,12 +10,14 @@ purpose: "Retest the revision after Astra's critique: do the four examiners now 
 # 'nothing that grows in Surrey'. Added: the salt-lake exchange that makes the
 # Geologist work before the concession; the Geologist's objection to the
 # Chemist's gas, which the Chemist accepts. Repaired: Richmond and Meux's
-# borings (Judd 1884); Krakatoa actinometry for the withdrawn 'cold 1884';
+# borings (Judd 1884); removal of both the 'cold 1884' and unverified
+# Krakatoa actinometry claims;
 # tube-against-tube control; four sightings; masthead physics; obituary
 # chronology; notebook coverage; sky from the second visit; who asked whom.
-# Lint: 60 advisory findings, reporting frames natural to summarised speech;
-# coherence clean. Barry's reminder on figures: no new metaphors; the
-# remaining figures are similes anchored to familiar objects (dog, sharks).
+# Closeout cuts: the stone's apparent one-second limit and the abstraction
+# riding in the saddle. Ordinary figurative idioms remain; the local test is
+# whether a figure clarifies observation or argument, not a blanket prohibition.
+# Lint findings remain advisory; reporting frames belong to summarised speech.
 entries:
   - id: proof-before-claim
     label: "The gadfly and the witnesses"
@@ -36,23 +39,23 @@ entries:
     label: "Declining the dust; a fish without a name"
     manuscript: "manuscript/06-the-examination.md"
     start_line: 198
-    end_line: 317
+    end_line: 314
     kind: uncertainty
     question: "Does the Chemist's gas now remain a conjecture a Victorian investigator might pursue, once the Geologist objects and the Chemist concedes he is proposing nothing? Do the two examiners differ in habit (the Chemist's short procedural refusals; the Anatomist's back to the room), and is the Anatomist's classification clearer without the genealogy joke?"
-    context: "The Krakatoa argument now rests on the Society's printed actinometry (less solar heat through the haze), not a cold London year. Tubes are a control upon each other; the water bottle is the Station III bottle. Four sightings. 'In the same street' stays; 'allowed the laughter and then took it back' is cut. The fish changes custody here."
+    context: "The unverified Krakatoa actinometry claim is removed; the Chemist proceeds directly from dust to Tyndall and a qualified gas conjecture. Tubes are a control upon each other; the water bottle is the Station III bottle. Four sightings. 'In the same street' stays; 'allowed the laughter and then took it back' is cut. The fish changes custody here."
   - id: the-astronomer
     label: "Upon the same ground"
     manuscript: "manuscript/06-the-examination.md"
-    start_line: 319
-    end_line: 379
+    start_line: 316
+    end_line: 374
     kind: uncertainty
-    question: "Does the masthead analogy now fail for the right reason (shared motion for a second does not explain what holds him to one patch of ground across the interval), with the Traveller's ignorance occurring there in his own words? Is the Astronomer's reduced close ('a fact about the machine, and not a part of your theory of it') the right weight, and does the three-sentence afterthought earn its place?"
+    question: "Does the masthead analogy reach a credible limit (the falling stone's shared motion does not explain what holds the machine to one patch of ground across a temporal interval), with the Traveller's ignorance occurring there in his own words? Is the Astronomer's reduced close ('a fact about the machine, and not a part of your theory of it') the right weight, and does the shortened personal recollection earn its place?"
     context: "Terrestrial anchoring introduced as behaviour, no mechanism. 'You are in something' and the fatal-day prediction are cut. 'Which will be a novelty for them' is cut. The silence with the Anatomist turning the jar is unchanged."
   - id: a-divided-finding
     label: "I will take the valley"
     manuscript: "manuscript/06-the-examination.md"
-    start_line: 381
-    end_line: 426
+    start_line: 376
+    end_line: 421
     kind: confidence
     question: "With the chair's claim narrowed, the notebook's coverage bounded, the sky dated from the second visit and the question's direction repaired, does the close still credit the journey and divide the interpretation in Wells's manner, ending on custody rather than feeling?"
     context: "The chair receives the account and names what was disputed. The Traveller's hierarchy (seen; a book with some of it; the rest told; sequence; probability; guess). 'There was no applause' without the institutional generalisation. Fish out with its label; receipt on the programme; notebook into his pocket. Nothing anticipates the epilogue."

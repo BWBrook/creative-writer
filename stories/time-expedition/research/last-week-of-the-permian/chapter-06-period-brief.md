@@ -54,10 +54,11 @@ here as the Comparative Anatomist.
 - The Galilean ship analogy (a stone let fall from a masthead) is the
   Traveller's own attempt at the anchoring problem. He states it correctly:
   the stone keeps the ship's motion because it shared it when released. Its
-  failure is that shared motion for a second does not explain what holds a
-  machine to one patch of ground across a vast interval in which that ground
-  has moved. No mechanism is supplied; the Astronomer only names it a fact
-  about the machine rather than part of its theory. Latitude (high noon sun, short shadows) is noted
+  limit is that the falling stone's shared motion does not explain what holds
+  a machine to one patch of ground across a vast temporal interval in which
+  that ground has moved. No mechanism is supplied; the Astronomer only names
+  it a fact about the machine rather than part of its theory. Latitude (high
+  noon sun, short shadows) is noted
   by both men and left as "either Richmond has moved, or the pole has", which
   keeps polar-wandering speculation period-bounded and unasserted.
 
@@ -73,18 +74,16 @@ here as the Comparative Anatomist.
 - Sulphuretted hydrogen, iron sulphide and decaying vegetation account for
   the third-station water and black deposit; lead-acetate paper darkens in
   any such pond, as the Traveller said in IV.
-- The Royal Society's Krakatoa report (1888) includes actinometric
-  observations showing diminished direct solar radiation through the haze
-  for about two years after the eruption. The Chemist uses this, not a
-  "cold year" in London: Astra checked the Greenwich yearbook for 1884 and
-  found the annual mean above the twenty-year average, so the first draft's
-  London recollection is withdrawn. Tyndall (1859–61) showed aqueous vapour
-  and carbonic acid absorb the earth's radiant heat; Arrhenius (1896)
+- Tyndall (1859–61) showed aqueous vapour and carbonic acid absorb the earth's
+  radiant heat; Arrhenius (1896)
   computed warming from a doubling of carbonic acid. The Chemist uses these
   to decline the Traveller's dust mechanism and name a gas as the thing he
   would sooner look for. The Geologist objects that the tubes cannot supply
   it, and the Chemist agrees he is proposing nothing. The gas remains a
   Victorian examiner's conjecture, not the chapter's answer.
+  The cold London year of the first draft and the revision's unverified
+  attribution of a two-year actinometric series to the Society's Krakatoa
+  report have both been removed. The argument no longer depends on either.
 
 ## Comparative anatomy
 
@@ -108,8 +107,6 @@ here as the Comparative Anatomist.
   drawer). The Medical Man's testimony matches II (burns as from Egypt; fever
   from heat, thirst and sleeping wet).
 - The narrator's published obituary is from Chapter I.
-- Filby's red-marl joke (Chapter I) is echoed by the Geologist without his
-  knowing it; the narrator notes the coincidence.
 - The Traveller's "how I know where I was" (Chapter II) is the Geologist's
   first question; "some of you mean to take the mountain" (Chapter IV) is
   answered by the Geologist.

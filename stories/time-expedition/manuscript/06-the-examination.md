@@ -229,15 +229,12 @@ he had finished.
 
 "Now I want your veil. You say that a veil of dust over the sun kept the days
 brown and held the earth's heat in at night. Dust does not do that. Dust
-keeps the sun off. The gentlemen who measured the sun through the Krakatoa
-haze found it giving less heat, not more, for the better part of two years,
-and the Society printed their figures. What holds the earth's heat in is not
-dust at all; it is aqueous vapour and carbonic acid gas—that is Tyndall's
-work, and it is nearly forty years old—and there has lately been a
-computation from Sweden, which I do not vouch for, that a doubling of the
-carbonic acid in the air would warm the whole earth by some degrees. If your
-nights were hot under a brown sky, I should sooner look for a gas than a
-dust."
+keeps the sun off. What holds the earth's heat in is not dust at all; it is
+aqueous vapour and carbonic acid gas—that is Tyndall's work, and it is nearly
+forty years old—and there has lately been a computation from Sweden, which I
+do not vouch for, that a doubling of the carbonic acid in the air would warm
+the whole earth by some degrees. If your nights were hot under a brown sky,
+I should sooner look for a gas than a dust."
 
 The Geologist said, without rising, that the Chemist had just told the
 meeting his tubes could establish nothing, and was now proposing to fill the
@@ -365,18 +362,16 @@ failed to. I have been careful never to try it."
 fall from the masthead of a moving ship comes down at the foot of the mast. I
 thought of that in the laboratory, before I first went, and it comforted me
 for about an hour. The stone keeps the ship's motion because it had it when
-it was let go, and it keeps it for a second. I do not know what it is that I
-keep, or why it should hold me to one piece of ground for two hundred and
-fifty millions of years, when the ground has been wherever it pleased in the
-meantime. I only know that it has."
+it was let go. I do not know what it is that I keep, or why it should hold me
+to one piece of ground for two hundred and fifty millions of years, when the
+ground has been wherever it pleased in the meantime. I only know that it has."
 
 "So do I," said the Astronomer. "I wished the meeting to know that it is a
 fact about the machine, and not a part of your theory of it." He sat down.
 
 I have thought since about that minute more than about anything else that was
 said. He had told Filby as much himself, in the study, about an eddy under
-his house; and I had heard him, and not understood that the same ignorance
-sat in the saddle with him every time he pressed the lever.
+his house; and I had heard him, and not understood.
 
 The Vice-President summed up, briefly and rather well. He said that the
 Society did not vote upon communications and would not vote upon this one.

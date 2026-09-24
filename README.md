@@ -14,8 +14,9 @@ Last Week of the Permian*, is planned at six numbered chapters and an epilogue
 (roughly 18,000–22,000 words; budgets are guidelines, not limits). Chapters I–VI
 have been drafted and revised after collaborator critique and are ready for
 Barry's read. Chapter VI, The Examination, is closed for the initial draft
-after Astra's focused retest and bounded repairs. The epilogue is next for
-Astra; its stub and scene cards are in place. The story contract is in
+after Astra's focused retest and bounded repairs. Astra's epilogue is drafted
+and ready for Fable's critique, with its calibration pack and continuity brief.
+The story contract is in
 `narrative-design.md` and `outline.md`; the Permian
 science and its Victorian translation are in
 `research/last-week-of-the-permian/`.

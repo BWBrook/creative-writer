@@ -1,6 +1,6 @@
 ---
 title: "Epilogue"
-summary: "Over cigars and smoking bishop, Filby finds the Traveller chastened by incomplete evidence and already making oblique preparations for another expedition."
+summary: "Over cigars and smoking bishop, Filby questions the Traveller's appetite for further danger; a pencilled scale beside one dial leaves his next purpose unknown."
 manuscript: "manuscript/07-epilogue.md"
 scene_cards_dir: "scene-cards/07-epilogue"
 characters:
@@ -56,3 +56,5 @@ changed; the Traveller resists a simple confession.
 - Do not resolve the temporal obstruction.
 - Do not advertise the next anthology story.
 - The final note joins humility and appetite rather than choosing one.
+- First-draft preparation: one pencilled paper scale against an unidentified
+  existing dial. The machine's rail remains bent; no new trial is reported.

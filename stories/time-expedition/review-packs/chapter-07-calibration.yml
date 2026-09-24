@@ -1,0 +1,53 @@
+title: "Epilogue calibration"
+purpose: "Test Astra's first draft against Wells's 1895 frame voice: can the private conversation preserve the Geologist's objection, the Traveller's appetite and Filby's independence, then end on one unexplained preparation?"
+# First draft, awaiting Fable's critique. Chapter VI is closed for the initial
+# draft; this pack does not reopen it or imply acceptance of the whole story.
+# Primary comparison: The Time Machine I and XII; terminal uncertainty checked
+# against the reflection-and-closure packet, with its authority limits intact.
+# AI disposition: monitor the short upper sentence tail and the concentration
+# of short exchanges; do not lengthen sentences solely to reach the diagnostic.
+# Dismiss the generic flags for 'both known ... Italy', 'a mile or ten' and
+# 'shape': ordinary joint acquaintance, actual uncertainty of scale and terrain.
+# Final calibration remains open; especially test whether the lamp gesture
+# makes Filby too acquiescent after his objection to another dangerous return.
+entries:
+  - id: after-the-meeting
+    label: "The fire and the Geologist"
+    manuscript: "manuscript/07-epilogue.md"
+    start_line: 1
+    end_line: 44
+    kind: confidence
+    question: "Does this sound like Wells's private Richmond company in 1895, with humour arising from Filby's practical care and the Traveller's surviving vanity rather than from a run of composed repartees?"
+    context: "Frame and social-dialogue roles; compare The Time Machine I and XII. The coal and the ordinary news of an absent acquaintance restore the household after the public examination. The Geologist remains distinct from the communicating Anatomist."
+  - id: the-valley-remains
+    label: "The answer he cannot give"
+    manuscript: "manuscript/07-epilogue.md"
+    start_line: 46
+    end_line: 86
+    kind: uncertainty
+    question: "Does the photographic regret let the Traveller concede the Geologist's strongest point through an actual attempt to answer him, without turning the coda into another examination or a statement of scientific method?"
+    context: "The baseline exposures towards plain, lake and ridge are established in II. No new photograph or improved evidence is produced. The Traveller admits that even better local views would leave the rest of the earth unaccounted for; his larger conviction is still personal."
+  - id: the-return-at-home
+    label: "Before dinner"
+    manuscript: "manuscript/07-epilogue.md"
+    start_line: 88
+    end_line: 148
+    kind: uncertainty
+    question: "Does the argument about his return make the cost to those at Richmond felt in Wells's manner, without making Filby a domestic censor or the Traveller's fear an explanatory speech that the earlier chapters did not need?"
+    context: "Half past twelve and dinner are I's promises; the return and carrying upstairs are II's events. III's hand remains stiff. His fear of another changed household is new private testimony, explicitly distinguished from IV–V's reason for staying in the field."
+  - id: the-closed-door
+    label: "The unresolved interval"
+    manuscript: "manuscript/07-epilogue.md"
+    start_line: 150
+    end_line: 186
+    kind: uncertainty
+    question: "Does the narrator's unease about the door carry the personal force of the obstruction without manufacturing a present danger, and does the Traveller's willingness to ask the Astronomer remain credible beside his resistance to Filby?"
+    context: "Frame and reflection-closure roles. No new test, width or mechanism. The deputation proposed in VI is still to come. The Traveller's wish for a useful question is modest, but his appetite is neither cured nor certified as wisdom."
+  - id: the-paper-scale
+    label: "Filby holds the lamp"
+    manuscript: "manuscript/07-epilogue.md"
+    start_line: 188
+    end_line: 212
+    kind: uncertainty
+    question: "Does this end with the right degree of uncertainty in Wells's voice, or does Filby's help with the lamp imply a consent to further adventure that his argument has not earned?"
+    context: "The single preparation is a pencilled paper scale against an existing, unidentified dial. The rail stays bent, no numerical setting or destination is named, and nothing moves through Time. Compare the relation between tangible evidence and unresolved implication in the closure packet, not its imagery or sentence patterns."

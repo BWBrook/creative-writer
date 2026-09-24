@@ -63,10 +63,7 @@ have walked nearer while I had the strength for it. There was plenty of
 daylight. But I was in a great hurry to see what came next."
 
 He took up his cigar again. There was an edge of vexation in his voice which
-I had not heard when they were questioning him. I had been thinking of the
-things lost in the flood; it had not occurred to me that he might be more
-troubled by an opportunity which had passed while he was at ease. Filby watched
-him for a little while before he spoke.
+I had not heard when they were questioning him.
 
 "Would another photograph have satisfied your Geologist?"
 
@@ -106,10 +103,6 @@ and left off.
 
 "It is the only one I have at present. What would you have me say? That I
 shall never go near the machine again? I should not believe myself."
-
-"I should like you to consider what happens here when you go near it."
-
-"I do consider it. If you suppose—"
 
 "You told us to wait until half past twelve."
 
@@ -162,8 +155,7 @@ to distinguish it from a hundred such glances I had seen him give; yet I
 followed it, and for an instant the closed door seemed a very slight thing
 to have between us and that colourless interval he had described. Beyond it
 were the bench, the tools, the four dials; things which I could have touched
-and named. I knew that the difficulty was not upon the other side of a door.
-But I was glad that he had not left it open.
+and named. I was glad, all the same, that he had not left it open.
 
 "You ought to have told the Astronomer," I said.
 
@@ -187,10 +179,10 @@ and presently we began to speak of other matters.
 
 Before we left I went into the laboratory. I had a wish to see the machine
 again, after our talk of it, and Filby came with me. The Traveller brought
-the lamp. He held it well away from the frame while Filby examined the bent
-rail, which had not been straightened; and in that light the whole machine
-looked more damaged than I remembered it. I asked whether the men from the
-Society would find it in working order.
+the lamp. He held it up while Filby examined the bent rail, which had not
+been straightened; and in that light the whole machine looked more damaged
+than I remembered it. I asked whether the men from the Society would find it
+in working order.
 
 "They can begin with it as it stands," he said.
 

@@ -1,8 +1,9 @@
 # Epilogue Period and Continuity Brief
 
-Astra's first draft, following the closure of Chapter VI at Barry's direction.
-This brief records the choices made in the coda and the limits that remain in
-force. The draft awaits Fable's critique under the Wells 1895 voice standard.
+Astra's first draft, closed after Fable's Wells-1895 calibration and four
+local repairs (Correspondence message 524, thread 55). This brief records the
+choices made in the coda and the limits that remain in force. The complete
+story is ready for Barry's read.
 
 ## Scene and frame
 
@@ -54,8 +55,8 @@ the Geologist's central objection intact.
   he still says he stayed because he thought he understood the developing
   crisis. The coda does not replace IV–V's account of that decision.
 - The narrator's momentary unease about the laboratory door is his own
-  association. He recognises that the obstruction is not physically behind
-  the door. It is not evidence of the anomaly's present extent.
+  association, not evidence of the anomaly's present extent. The explicit
+  explanation of that association was cut at Fable's suggestion.
 - The Richmond deputation remains pending. The Traveller expects the
   Astronomer to come and intends to tell him about the obstruction; no visit,
   undertaking to demonstrate the machine, or result is narrated.
@@ -73,7 +74,9 @@ calculations to turn the hint into an announced expedition.
 
 Filby's final act is to lower the lamp so the Traveller can see the scale.
 Whether that is assistance, curiosity, or reluctant complicity is left to
-the reader. He makes no promise to approve another journey.
+the reader. He makes no promise to approve another journey. The Traveller
+first holds the lamp up for the rail's examination; the earlier direction
+"well away from the frame" was removed because it suggested concealment.
 
 ## Voice and review
 
@@ -83,7 +86,15 @@ packet supplies a bounded check on ending the available record while leaving
 a supported uncertainty. The original epilogue's destinations, flowers and
 concluding cadence are not carried over.
 
-The calibration pack asks Fable to test the short exchanges within the frame
-voice, the distinction between admission and self-explanation, the narrator's
-doorway unease, and the final gesture. The syntax diagnostic is a review
-prompt; the draft has not been lengthened to meet a sentence quota.
+Fable passed the domestic voices, the Geologist's surviving objection, the
+Traveller's private fear and the final gesture. He resolved the syntax
+caution by comparing the coda with Wells's dinner conversation and the XII
+tail; the whole-account upper sentence tail was the wrong comparator here.
+Nothing was lengthened to meet it, and no dashes were added to meet a count.
+
+Closeout removes the narrator's interpretation and pause before Filby's
+photograph question, the abstract responsibility exchange (including the
+Traveller's now-dependent reply), and the door paragraph's self-explanation.
+The lamp is simply held up for the first examination. The glass against the
+Traveller's cheek remains deliberate: he wants its warmth, as he wants more
+coal despite Filby's complaint. Fable asked for no further retest cycle.

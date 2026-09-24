@@ -1,51 +1,58 @@
 title: "Chapter VI calibration"
-purpose: "Test whether the examination sounds like Wells's frame narrator in 1895 reporting a learned meeting: occupational speakers shaped by what each can admit, summary and quotation sharing the work, and confidence moved by each question without the Traveller winning or losing outright."
-# Fable's first-draft self-review: ready for Astra's critique, not accepted.
-# Lint: 65 advisory findings. The repeated-phrase hits are almost all reporting
-# frames ('he said that', 'I saw the') natural to a narrator summarising
-# speeches; monitor 'I saw' (8) and 'I do not' openings across the dialogue.
-# The one contrastive-parallelism warning (limit 1, count 2) falls on two
-# speakers' natural antitheses (Chemist 'could/could not'; Anatomist 'lay
-# money/not swear') and is dismissed. 'a man who' reduced from five to one.
-# The ai-audit parallelism flags are ordinary prepositional phrases; dismissed.
+purpose: "Retest the revision after Astra's critique: do the four examiners now differ in appetite and vulnerability as well as subject, has the narrator stopped certifying effects the scene already shows, and do the Geologist's premises, the Chemist's uncertainty and the Traveller's masthead analogy hold in their own period? Custody ending and physical business should survive unchanged."
+# Fable's revision after Astra's message 518, thread 54; ready for her focused
+# retest, not accepted. Cut: red-marl maxim and the narrator's recognition of
+# it; 'he had earned it'; 'allowed the laughter and then took it back';
+# dust/smell and breathe/burn; the Permian's-father joke; 'novelty for them';
+# 'You are in something' and the fatal-day prediction; most of the narrator's
+# afterthought; 'Men do not applaud at Burlington House'; the newspapers guess;
+# 'nothing that grows in Surrey'. Added: the salt-lake exchange that makes the
+# Geologist work before the concession; the Geologist's objection to the
+# Chemist's gas, which the Chemist accepts. Repaired: Richmond and Meux's
+# borings (Judd 1884); Krakatoa actinometry for the withdrawn 'cold 1884';
+# tube-against-tube control; four sightings; masthead physics; obituary
+# chronology; notebook coverage; sky from the second visit; who asked whom.
+# Lint: 60 advisory findings, reporting frames natural to summarised speech;
+# coherence clean. Barry's reminder on figures: no new metaphors; the
+# remaining figures are similes anchored to familiar objects (dog, sharks).
 entries:
   - id: proof-before-claim
     label: "The gadfly and the witnesses"
     manuscript: "manuscript/06-the-examination.md"
     start_line: 1
-    end_line: 77
+    end_line: 76
     kind: confidence
-    question: "Does the narrator's return to the room, the gadfly's dispatch by Filby and the Medical Man, and the chair's ruling read as Wells's sober frame voice observing a meeting, or as an author clearing the stage? Is the narrator's own testimony (the published obituary) the right weight?"
-    context: "Frame role. The narrator resumes note-taking because questions are shorter than answers, which licenses the more exact dialogue that follows. Filby's and the Medical Man's facts come from Chapters I–II. The scene card asks that the gadfly be brief so that genuine scepticism belongs to the experts."
+    question: "Does the opening now leave daylight between an irritating man and a fair question, with the Medical Man's partisanship his own rather than proof? Does the shortened account of the narrator's method (questions taken down, answers filled out at Richmond) read as Wells's frame voice rather than an explanation of the device?"
+    context: "Frame role. Filby's testimony is unchanged. The narrator's obituary chronology now follows I: three years gone, published within the week of his return. The chair's ruling and 'Then the examination began' replace 'the real business'."
   - id: the-geologist
     label: "A district which does not exist"
     manuscript: "manuscript/06-the-examination.md"
-    start_line: 79
-    end_line: 189
+    start_line: 78
+    end_line: 196
     kind: uncertainty
-    question: "Is the Geologist a serious antagonist in a period geologist's own idiom (borings, red beds, the Magnesian Limestone, the dial welcomed and disarmed), and does the Traveller's concession preserve a real observed claim rather than collapsing? Does the pleasure at two hundred and fifty million years sound like the man or like our design enjoying a historical irony?"
-    context: "Principal intellectual antagonist. He asks the question the Traveller wanted (II) and takes the mountain the Traveller offered (IV). The red-marl line is his own; the narrator notes its likeness to Filby's joke. Australian drought and the London borings are period knowledge. The seven missing beasts revive Chapter I's 'gone somewhere else' without the Geologist knowing it."
+    question: "Is the Geologist now on sound ground (Richmond's boring into the Oolite, Meux's into older rocks, no Permian touched anywhere under London), and does the salt-lake exchange make him work for the concession rather than deliver a brief? Does his pleasure at two hundred and fifty millions of years still sound like the man?"
+    context: "Principal intellectual antagonist. The red-marl maxim and the narrator's recognition of Filby's joke are cut; the colour argument stands alone. 'He had earned it' is cut. The seven missing beasts keep Chapter I's 'gone somewhere else'. Filby lowering the photographs is retained."
   - id: chemist-and-anatomist
-    label: "A smell for a dust; a fish without a name"
+    label: "Declining the dust; a fish without a name"
     manuscript: "manuscript/06-the-examination.md"
-    start_line: 191
-    end_line: 307
+    start_line: 198
+    end_line: 317
     kind: uncertainty
-    question: "Do the Chemist and the Anatomist speak in two different evidentiary habits, and does each question change confidence (dust removed, gas substituted; Permian widened to Permian-or-Carboniferous; theriodont reduced to resemblance; identity granted as a wager)? Is the Chemist's Tyndall-and-Sweden passage period exposition under pressure, or a modern explanation in costume?"
-    context: "Scientific exposition and social dialogue. The Chemist's carbonic-acid conjecture is the only place the modern backstage enters, and it enters as an examiner's Victorian speculation which the Traveller does not adopt. The Anatomist is the communicating Fellow of Chapter III. The fish changes custody here; the notebook does not."
+    question: "Does the Chemist's gas now remain a conjecture a Victorian investigator might pursue, once the Geologist objects and the Chemist concedes he is proposing nothing? Do the two examiners differ in habit (the Chemist's short procedural refusals; the Anatomist's back to the room), and is the Anatomist's classification clearer without the genealogy joke?"
+    context: "The Krakatoa argument now rests on the Society's printed actinometry (less solar heat through the haze), not a cold London year. Tubes are a control upon each other; the water bottle is the Station III bottle. Four sightings. 'In the same street' stays; 'allowed the laughter and then took it back' is cut. The fish changes custody here."
   - id: the-astronomer
     label: "Upon the same ground"
     manuscript: "manuscript/06-the-examination.md"
-    start_line: 309
-    end_line: 375
+    start_line: 319
+    end_line: 379
     kind: uncertainty
-    question: "Does the anchoring question land as the chapter's deepest limit in Wells's manner, with the Traveller's masthead analogy failing in his own mouth and the narrator's afterthought earning its place? Is the Kelvin quarrel one sentence too clever?"
-    context: "Terrestrial anchoring is introduced as a clue here and must remain behaviour, not theory. The Astronomer states the earth's motions in period figures and supplies no mechanism. Latitude is noted by both men and left. The narrator's paragraph recalls the eddy of Chapter I."
+    question: "Does the masthead analogy now fail for the right reason (shared motion for a second does not explain what holds him to one patch of ground across the interval), with the Traveller's ignorance occurring there in his own words? Is the Astronomer's reduced close ('a fact about the machine, and not a part of your theory of it') the right weight, and does the three-sentence afterthought earn its place?"
+    context: "Terrestrial anchoring introduced as behaviour, no mechanism. 'You are in something' and the fatal-day prediction are cut. 'Which will be a novelty for them' is cut. The silence with the Anatomist turning the jar is unchanged."
   - id: a-divided-finding
     label: "I will take the valley"
     manuscript: "manuscript/06-the-examination.md"
-    start_line: 377
-    end_line: 422
+    start_line: 381
+    end_line: 426
     kind: confidence
-    question: "Does the close credit the journey and divide the interpretation without applause or defeat, and does the changed custody of the fish, the receipt on the programme and the notebook nobody asked for make an evidentiary ending rather than an emotional one? Is 'I shall have to find out' the right size of appetite to leave for the epilogue?"
-    context: "The chair's summary follows Society practice: no vote, referral to Fellows, a deputation to Richmond. The Traveller's hierarchy (seen, sequence, probability, guess) is the scene card's turn. The epilogue keeps the altered settings and the temporal obstruction; nothing here names a destination."
+    question: "With the chair's claim narrowed, the notebook's coverage bounded, the sky dated from the second visit and the question's direction repaired, does the close still credit the journey and divide the interpretation in Wells's manner, ending on custody rather than feeling?"
+    context: "The chair receives the account and names what was disputed. The Traveller's hierarchy (seen; a book with some of it; the rest told; sequence; probability; guess). 'There was no applause' without the institutional generalisation. Fish out with its label; receipt on the programme; notebook into his pocket. Nothing anticipates the epilogue."

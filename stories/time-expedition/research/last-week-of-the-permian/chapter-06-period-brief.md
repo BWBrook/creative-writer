@@ -18,12 +18,16 @@ here as the Comparative Anatomist.
 
 ## Geology
 
-- Borings under London (Meux's brewery, Tottenham Court Road, 1878; Ware,
-  1877) passed from the Chalk and Gault directly into Palaeozoic rocks with no
-  Permian or Trias between. The Geologist uses this to say that no exposed or
-  bored bed under London can confirm the Traveller's district, and that any
-  Permian beds once there may have been removed before the Chalk. This
-  matches `world.md`: no terminal-Permian deposits survive at modern Richmond.
+- Borings under London: the Richmond water boring passed from the Chalk and
+  Gault into Jurassic (Great Oolite) strata, as Judd reported to the
+  Geological Society in 1884 (Nature, 24 July 1884); Meux's brewery,
+  Tottenham Court Road (1878), reached Palaeozoic rocks. No boring under
+  London has touched Permian or Trias. The Geologist's argument is therefore
+  the narrow one: no bed a hammer or a boring can reach confirms the
+  Traveller's district, and any Permian beds once there were removed before
+  the Oolite was laid down. Astra corrected the first draft's "nothing
+  between" the Chalk and the old rocks. This matches `world.md`: no
+  terminal-Permian deposits survive at modern Richmond.
 - Red beds occur in the Devonian (Old Red), Carboniferous, Permian and Trias
   (New Red); the Geologist's point that colour is not a date is period
   commonplace (Ramsay 1878).
@@ -47,28 +51,40 @@ here as the Comparative Anatomist.
 - Orbital speed of the earth about 18.5 miles per second; rotational speed
   at London's latitude some hundreds of miles per hour; the solar apex in
   Hercules (Herschel). All are period figures.
-- The Galilean ship analogy (a stone dropped from a masthead) is the
-  Traveller's own attempt at the anchoring problem; he states its failure.
-  No mechanism is supplied. Latitude (high noon sun, short shadows) is noted
+- The Galilean ship analogy (a stone let fall from a masthead) is the
+  Traveller's own attempt at the anchoring problem. He states it correctly:
+  the stone keeps the ship's motion because it shared it when released. Its
+  failure is that shared motion for a second does not explain what holds a
+  machine to one patch of ground across a vast interval in which that ground
+  has moved. No mechanism is supplied; the Astronomer only names it a fact
+  about the machine rather than part of its theory. Latitude (high noon sun, short shadows) is noted
   by both men and left as "either Richmond has moved, or the pole has", which
   keeps polar-wandering speculation period-bounded and unasserted.
 
 ## Chemistry
 
-- A few cubic centimetres of air permit a rough oxygen determination by
-  absorption but not a carbonic-acid figure to the parts in ten thousand that
-  would matter (about three in ten thousand in 1890s air). The Chemist says
-  so and predicts he will find air.
+- A small sealed tube of air permits a rough determination of whether it is
+  ordinary air, but not a carbonic-acid figure to the nicety that would
+  matter (a few parts in ten thousand in 1890s air), and the Traveller's
+  breath in the cleft would swamp any such figure. The Chemist states the
+  limit in those general terms, sets the Station III tube against the
+  baseline tube as a control, and predicts he will find air. No exact
+  analytical precision is claimed in the prose.
 - Sulphuretted hydrogen, iron sulphide and decaying vegetation account for
   the third-station water and black deposit; lead-acetate paper darkens in
   any such pond, as the Traveller said in IV.
-- The cool year after Krakatoa (1884) was attributed to the dust veil. Dust
-  cools by intercepting sunlight; Tyndall (1859–61) showed aqueous vapour and
-  carbonic acid absorb the earth's radiant heat; Arrhenius (1896) computed
-  warming from a doubling of carbonic acid. The Chemist uses these to remove
-  the Traveller's dust mechanism and substitute a gas, without endorsing the
-  Swedish computation. This is the only place modern backstage (volcanic
-  carbon) enters, and it enters as a Victorian conjecture from an examiner.
+- The Royal Society's Krakatoa report (1888) includes actinometric
+  observations showing diminished direct solar radiation through the haze
+  for about two years after the eruption. The Chemist uses this, not a
+  "cold year" in London: Astra checked the Greenwich yearbook for 1884 and
+  found the annual mean above the twenty-year average, so the first draft's
+  London recollection is withdrawn. Tyndall (1859–61) showed aqueous vapour
+  and carbonic acid absorb the earth's radiant heat; Arrhenius (1896)
+  computed warming from a doubling of carbonic acid. The Chemist uses these
+  to decline the Traveller's dust mechanism and name a gas as the thing he
+  would sooner look for. The Geologist objects that the tubes cannot supply
+  it, and the Chemist agrees he is proposing nothing. The gas remains a
+  Victorian examiner's conjecture, not the chapter's answer.
 
 ## Comparative anatomy
 
@@ -81,8 +97,9 @@ here as the Comparative Anatomist.
   tongue would bear on the mammal-like question), and notes the Traveller's
   four-toed print with a fifth toe set back is not a reptile's foot as then
   understood.
-- Identity of the scarred animal across three sightings is granted as
-  probability, not certainty, per the design.
+- Identity of the scarred animal across four sightings (baseline, thirteen,
+  twenty-three and thirty months) is granted as probability, not certainty,
+  per the design.
 
 ## Continuity
 

@@ -1,10 +1,8 @@
 He stopped there. I have said that I wrote very little while he spoke. I began
-to write again when the questions began, partly because they were shorter
-than the answers, and partly from a notion, which I still hold, that what the
-Society asked him that afternoon would be remembered less exactly than what he
-told it, and by fewer people. What follows is therefore nearer to a record
-than anything I have set down so far; and where it is not a record I have
-tried to say so.
+to write again when the questions began, because they were shorter than the
+answers and could be taken down as they were put; the answers I have filled
+out with him at Richmond, as I did the account. What follows is therefore
+nearer a record than the rest, without being one.
 
 For a little while there were no questions at all. The Traveller sat down—he
 had stood, by the clock he had looked at, for an hour and forty minutes—and
@@ -28,7 +26,8 @@ look about him—seen a very good performance before, in a room not much larger
 than this, and had been asked at the end of it to accept a journey.
 
 There was some laughter, not much. I saw the Traveller's hand go to the papers
-in front of him and come away again.
+in front of him and come away again. It was a fair question, though I did not
+think so at the time, and I have put it down as he asked it.
 
 The Vice-President asked whether anyone present could speak to the departure.
 
@@ -50,10 +49,10 @@ The Medical Man did not stand. He said, from his chair, that he had attended
 the Traveller on his return and for nine days afterwards; that the burns upon
 the face and the backs of the hands were such as he had seen upon men landed
 from Egypt and not such as could be got in a Richmond laboratory between
-breakfast and tea; that the fever which followed was consistent with heat,
-want of water, and sleeping wet, and with nothing that grows in Surrey; and
-that if the gentleman by the door wished to propose a lamp, he had better
-propose one which would burn a man evenly to the wrists and no farther.
+breakfast and tea; that the fever which followed was what he should have
+expected from heat, want of water, and sleeping wet; and that if the gentleman
+by the door wished to propose a lamp, he had better propose one which would
+burn a man evenly to the wrists and no farther.
 
 The small man said that a man might burn himself in a great many ways.
 
@@ -61,19 +60,19 @@ The small man said that a man might burn himself in a great many ways.
 
 I added what I could, which was less than I should have liked. I said that I
 had known the Traveller for some years and had seen him go before; that on the
-former occasion I had, within the week, published his death; and that I had
-the disadvantage, in the present company, of being on record. That was
-received better than it deserved.
+former occasion he had been three years gone, and that within the week of his
+coming back I had published his death; and that I had the disadvantage, in the
+present company, of being on record. That was received better than it
+deserved.
 
 The Vice-President said that the Society had received the communication and
 had the material upon the table; that the question of whether it should
 listen had, in his view, been answered by its presence; and that questions of
 competence belonged to those who could examine the exhibits. He said it
 pleasantly and did not look at the door. The small man sat down, and did not
-speak again that I heard, though he took notes for the rest of the afternoon,
-I suppose for the newspapers.
+speak again that I heard, though he went on taking notes.
 
-Then the real business began, and I found that I had been afraid of it for a
+Then the examination began, and I found that I had been afraid of it for a
 fortnight without knowing.
 
 The Geologist rose slowly. He was a tall stooping man with a grey beard cut
@@ -87,29 +86,36 @@ it was not the face he had promised us.
 "You have told us," said the Geologist, "that you were at Richmond. I will
 accept that; your machine's habits are not my province, and there is a
 gentleman across the room who will have something to say about them. But
-Richmond stands upon the London Clay, and the clay upon the Chalk, and where
-London has been bored—at Meux's brewery, at Ware, and at half a dozen places
-since—the Chalk goes down to the old rocks with nothing between. There is no
-Permian under London that any boring has found. It may be under Richmond. It
-may have been there and been carried away before the Chalk came, which is my
-own opinion. But you cannot check your ridge against any bed that a hammer
-can reach, and I want you to understand that you have brought us a district
-which does not exist."
+Richmond stands upon the London Clay, and the clay upon the Chalk, and we know
+what is under the Chalk there, because Richmond has been bored for its water.
+The boring went out of the Chalk into the Gault, and out of the Gault into
+rocks of the Oolite; at Meux's brewery it went into rocks older than anything
+you have described; and nowhere under London has a boring touched a bed that
+a Permian man could claim. It may be under Richmond still, deeper than any
+one has gone. It may have been there and been carried away before the Oolite
+was laid down, which is my own opinion. In either case you cannot check your
+ridge against any bed that a hammer can reach, and I want you to understand
+that you have brought us a district which does not exist."
 
 "It existed," said the Traveller.
 
 "I do not doubt it. I say it does not exist, and that I cannot go and look at
 it, and that you have therefore told me a great deal about the Permian and
 nothing that the Permian can confirm." He turned a little towards the drawing.
-"Your rock was red. Every dead condition makes a red marl when it has been
-dead long enough"—this was so nearly what Filby had said in the study that I
-looked at Filby, and Filby looked at the floor—"and we have
-red rocks in the Old Red and the New, in the Trias and the Permian and the
-Devonian and half the Carboniferous, and I have spent thirty years learning
-to tell them apart by what they contain. What does yours contain? A fish in a
-stream, which you compare with a fish from the Magnesian Limestone of Durham.
-The Magnesian Limestone is a sea deposit. Your fish was in fresh water. So
-either your fish is not what you take it for, or your river ran to a Permian
+"Your rock was red. We have red rocks in the Old Red and the New, in the
+Trias and the Permian and the Devonian and half the Carboniferous, and I have
+spent thirty years learning to tell them apart by what they contain. What
+does yours contain? A fish in a stream, which you compare with a fish from the
+Magnesian Limestone of Durham. The Magnesian Limestone is a sea deposit. Your
+fish was in fresh water."
+
+"The lake was salt," said the Traveller. "I had the sea for it, the first
+morning, before I put up the glass."
+
+"And lost it, by your own account. A salt lake is not a sea. It is the
+commonest thing in the New Red, and in a dozen deserts now." He waited, and
+the Traveller said nothing, and he went on. "So either your fish is not what
+you take it for, or your river ran, somewhere beyond your sight, to a Permian
 sea, or your comparison is a resemblance between a fish and a fish. I do not
 say you were not in the Permian. I say you have not told me how you know."
 
@@ -126,10 +132,10 @@ found great dryness, and afterwards a great flood. I found a reed like a
 horsetail as thick as my wrist, and a fish which a gentleman in this room
 compares with the Magnesian Limestone fish, and an animal with two teeth
 outside its lip. Some weeks ago in this room, I am told, a speaker gave you a
-list of conditions—red strata, gypsum, salt, shallow inland waters, great dryness or
-great floods—and I found every one of them and no label. If the list fits the
-Trias also, then I was in the Trias, and the animals died there instead. I
-have brought you the place. I have not brought you its name."
+list of conditions—red strata, gypsum, salt, shallow inland waters, great
+dryness or great floods—and I found every one of them and no label. If the
+list fits the Trias also, then I was in the Trias, and the animals died there
+instead. I have brought you the place. I have not brought you its name."
 
 "That is candid."
 
@@ -147,8 +153,8 @@ then he did a thing I had not expected, which was to smile. "You will find
 that a good many men in this room have wanted that quantity all their lives
 and been refused it, by gentlemen who are not geologists. I shall not refuse
 it. I shall only point out that you have given us a date for a formation from
-an instrument, and a formation for the date from a fish, and that the two are
-leaning upon one another with nothing underneath."
+an instrument, and a formation for the date from a fish, and that neither of
+them stands up without the other."
 
 "Yes," said the Traveller.
 
@@ -172,9 +178,10 @@ the river and five in the mud. Where are the seven?"
 
 "Neither do I. And I made precisely that objection, in this room, some weeks
 ago, to a man who told me they had gone somewhere else." There was laughter
-at that, and the Geologist waited for it; he had earned it. "I will take your valley. I will take your sky, since you saw it;
-it is an observation. Then you show me a brown sky and ask me for a mountain.
-Where is the ash? You have told us yourself that you had not a pinch of it."
+at that, and the Geologist waited for it. "I will take your valley. I will
+take your sky, since you saw it; it is an observation. Then you show me a
+brown sky and ask me for a mountain. Where is the ash? You have told us
+yourself that you had not a pinch of it."
 
 "I told you so."
 
@@ -192,17 +199,17 @@ The Chemist was a short man with an eyeglass who asked at once to see the
 tubes, and had them passed to him along the front row, and held each one to
 the window, and asked how they had been sealed. Ground stoppers, the Traveller
 said, and wax over the stoppers; and the wax had held, so far as he could
-tell, which was not far. The Chemist said that he would tell us what a tube of
-that size could do and what it could not, and did so, and I put it down.
+tell, which was not far. The Chemist said he would tell us what could be done
+with a tube of that size, and did so in about a minute, and I put it down.
 
-It could give him the oxygen to a part in a hundred, which was to say it
-could tell him whether the Traveller's air had been air. It could not give him
-the carbonic acid to the part in ten thousand that would signify, and the
-breath of one man in a cleft six feet deep would drown any figure he got. He
-would make the analysis. He would report it. He told us now what he should
-find, which was air. The Traveller said that in that case the first tube was a
-control; and the Chemist said it was a control for the water, and that the
-water he could do something with, and asked for the third bottle.
+It would tell him whether the Traveller's air had been air. It would not tell
+him the carbonic acid to the nicety that would signify; there was not enough
+of it, and the breath of one man working in a cleft would swamp any figure he
+got. He would make the analysis of both tubes and set the third against the
+first, and he would report it, and he told us now what he expected to report,
+which was air. The Traveller said that in that case the tubes were a control
+upon each other and no more. The Chemist said that was what he had said, and
+asked for the water from the third station.
 
 He took the stopper out and put his nose to it, and put the stopper back.
 
@@ -221,34 +228,39 @@ Then he did what the Geologist had done, which was to go on when I thought
 he had finished.
 
 "Now I want your veil. You say that a veil of dust over the sun kept the days
-brown and held the earth's heat in at night. I was in London in 'eighty-four,
-and it was a cold year, and every meteorologist in Europe set that down to the
-dust; and they were right to, because dust keeps the sun off. It does not keep
-the earth's heat in. What keeps the earth's heat in is not dust at all. It is
-aqueous vapour and carbonic acid gas—that is Tyndall's work, and it is nearly
-forty years old—and there has lately been a computation from Sweden, which I do not
-vouch for, that a doubling of the carbonic acid in the air would warm the
-whole earth by some degrees. If your nights were hot under a brown sky, I
-should sooner look for a gas than a dust. A volcano gives you both. So I am
-not taking your mountain away. I am taking away your dust and giving you a
-smell."
+brown and held the earth's heat in at night. Dust does not do that. Dust
+keeps the sun off. The gentlemen who measured the sun through the Krakatoa
+haze found it giving less heat, not more, for the better part of two years,
+and the Society printed their figures. What holds the earth's heat in is not
+dust at all; it is aqueous vapour and carbonic acid gas—that is Tyndall's
+work, and it is nearly forty years old—and there has lately been a
+computation from Sweden, which I do not vouch for, that a doubling of the
+carbonic acid in the air would warm the whole earth by some degrees. If your
+nights were hot under a brown sky, I should sooner look for a gas than a
+dust."
 
-"Then my mountain wanted to breathe rather than burn."
+The Geologist said, without rising, that the Chemist had just told the
+meeting his tubes could establish nothing, and was now proposing to fill the
+Permian atmosphere from them.
 
-"It may have done both. I cannot tell you which from a tube the size of my
-finger."
+"I am proposing nothing," said the Chemist. "I am declining his dust. He may
+have his gas or not as he pleases; I cannot find it for him in a tube the size
+of my finger, and I have said so."
+
+"Then where am I to look for it?"
+
+"I have no idea. That is not my difficulty."
 
 I saw the Traveller turn over the papers in front of him and write something
 on the back of one. It was the first note he had made that afternoon.
 
 The Comparative Anatomist did not rise at once. He was the Fellow who had gone
 down to Richmond and asked to have the jar turned round, and had declined to
-express an opinion; and he got up now with the deliberation of a host
-who has been asked a question at his own table and has taken a fortnight to
-answer it.
-He had the jar brought to him and set it upon the sill of the window behind
-him, where the light came through it, and stood with his back to the room
-looking at the fish for perhaps a minute before he said anything.
+express an opinion; and he got up now with the deliberation of a host who has
+been asked a question at his own table and has taken a fortnight to answer
+it. He had the jar brought to him and set it upon the sill of the window
+behind him, where the light came through it, and stood with his back to the
+room looking at the fish for perhaps a minute before he said anything.
 
 "I asked to have this turned round," he said. "I have since had it turned
 round every day for two weeks, and I will tell you what I see, which is not
@@ -261,28 +273,26 @@ was a ganoid fish. It was of the *Palaeoniscus* kind, and nearer in the fin to
 *Acrolepis* than to any *Palaeoniscus* he knew; and it was not any species he
 could name, and he should not name one. The spirit had taken the colour, and
 colour would not have helped him. If he were shown this fish without its
-history, he should say: a Permian ganoid, or a Carboniferous one, in a state
-of preservation he had never seen and did not expect to see again, from a
-locality unknown.
+history, he should say: a Permian ganoid, or a Carboniferous one, for the two
+systems share such fishes; in a state of preservation he had never seen and
+did not expect to see again; from a locality unknown.
 
 "That is more than I hoped," said the Traveller.
 
 "It is less than you claimed. You claimed the Permian. I give you the Permian
-or the Carboniferous, and my friend"—he inclined his head towards the
-Geologist—"will tell you that the Carboniferous is the Permian's father, and
-the two are frequently confused in the dark." He turned from the window.
-"Now your animal. You have called it a theriodont. Owen made that name for
-jaws and teeth from the Cape, and you have given me two teeth seen across a
-river, a track the length of your hand, and a gait. Four toes and a fifth set
-back is not a reptile's foot as I know reptiles. You have said it went down on
-its belly to drink like a dog and lifted its head like a dog. Did it lap?"
+or the Carboniferous, and I cannot take you nearer with a fish." He turned
+from the window. "Now your animal. You have called it a theriodont. Owen made
+that name for jaws and teeth from the Cape, and you have given me two teeth
+seen across a river, a track the length of your hand, and a gait. Four toes
+and a fifth set back is not a reptile's foot as I know reptiles. You have said
+it went down on its belly to drink like a dog and lifted its head like a dog.
+Did it lap?"
 
 "I could not see its tongue."
 
 "A pity. A tongue would have told me more than the teeth." He considered.
 "I will say resemblance to the Cape theriodonts. I will not say theriodont,
-and I should be obliged if you would not, in print. And one animal, or
-three?"
+and I should be obliged if you would not, in print. And one animal, or four?"
 
 "One, I believe. The scar."
 
@@ -291,10 +301,10 @@ three dogs in a week with the same ear torn."
 
 "In the same parish?"
 
-"In the same street." He allowed the laughter and then took it back. "I will
-grant you probability. Three sightings, one mark, one district, thirty
-months: I should lay money on it. I would not swear to it in this room. And
-you have brought me no piece of it."
+"In the same street." There was laughter, and he did not wait for it. "I will
+grant you probability. Four sightings, one mark, one district, thirty months:
+I should lay money on it. I would not swear to it in this room. And you have
+brought me no piece of it."
 
 "I had my hands full."
 
@@ -309,8 +319,7 @@ expected a refusal, waited for it, and did not get one.
 The Astronomer spoke last, and I had not until then noticed him. He was a
 quiet man who had sat through the whole account without moving, near the
 Geologist, and he did not stand until the Vice-President asked him to. He said
-he had two
-things to ask and that neither of them was about the fish.
+he had two things to ask and that neither of them was about the fish.
 
 "Your dial," he said, "gives the sun two hundred and fifty millions of years
 of shining before this afternoon, at the least, since you found it shining
@@ -321,10 +330,8 @@ sun is older than the physicists allow."
 "I can only tell you, sir, that it was shining, and that it was very hot."
 
 "I do not doubt you found it so. I am telling you that you have brought home
-a quarrel as well as a fish, and that the geologists will be upon your side of
-it, which will be a novelty for them." The Geologist inclined his head very
-slightly. "You found the sun high at noon and the shadows short. That is not
-Richmond."
+a quarrel as well as a fish." The Geologist inclined his head very slightly.
+"You found the sun high at noon and the shadows short. That is not Richmond."
 
 "No."
 
@@ -354,25 +361,22 @@ failed to. I have been careful never to try it."
 
 "You have tried it every time you have used it."
 
-"Yes." The Traveller looked down at his hand upon the notebook. "A stone
-dropped from the masthead of a moving ship falls at the foot of the mast. I
+"Yes." The Traveller looked down at his hand upon the notebook. "A stone let
+fall from the masthead of a moving ship comes down at the foot of the mast. I
 thought of that in the laboratory, before I first went, and it comforted me
-for about an hour. Then I saw that the ship carries the stone because the
-stone is in the ship, and that I am not in anything."
+for about an hour. The stone keeps the ship's motion because it had it when
+it was let go, and it keeps it for a second. I do not know what it is that I
+keep, or why it should hold me to one piece of ground for two hundred and
+fifty millions of years, when the ground has been wherever it pleased in the
+meantime. I only know that it has."
 
-"No," said the Astronomer. "You are in something. You do not know what it is.
-If you did, you would know more than any man in this room; and I should be
-glad if you would find out before you go again, because on the day it fails
-you will not come back to tell us." He sat down.
+"So do I," said the Astronomer. "I wished the meeting to know that it is a
+fact about the machine, and not a part of your theory of it." He sat down.
 
-I have thought a great deal since about that minute. Until the Astronomer
-spoke I had supposed, as I think most of the room supposed, that whatever
-else was in doubt the machine at least was understood by the man who made it.
-I had watched him build it. It had not occurred to me that a thing might be
-made, and work, and carry its maker to the Permian and back, and be a
-mystery to him upon a point on which his life depended every time he pressed
-the lever. He had known it. He had said as much to Filby, in the study, about
-an eddy. I had not heard him.
+I have thought since about that minute more than about anything else that was
+said. He had told Filby as much himself, in the study, about an eddy under
+his house; and I had heard him, and not understood that the same ignorance
+sat in the saddle with him every time he pressed the lever.
 
 The Vice-President summed up, briefly and rather well. He said that the
 Society did not vote upon communications and would not vote upon this one.
@@ -380,43 +384,43 @@ It had received an account, and had before it a specimen which a competent
 Fellow would examine and report upon, and samples which another Fellow would
 analyse, and a notebook which the author retained. It would ask a small
 deputation to go down to Richmond and see the machine. He said that the
-meeting had heard a great deal that afternoon which it could not confirm and
-nothing that it could refute, and that this was not a comfortable position
-for a learned body, and that he did not propose to make it more comfortable
-by pretending otherwise. Then he asked the Traveller whether he wished to add
-anything.
+meeting had heard a great deal that afternoon which it could not confirm, and
+had disputed some of it, and that he did not propose to pretend the position
+was a comfortable one for a learned body. Then he asked the Traveller whether
+he wished to add anything.
 
 The Traveller stood up. He did not take up the papers.
 
-"I will tell you what I think I have," he said. "I have what I saw, and I
-wrote it down while I saw it, and there it is. I have a sequence in one
-valley, four times over two years and a half, going one way. I have a
-probability that the trouble was wider than the valley, because the trees
-that came down the river when it filled had grown where I had never walked,
-and because the sky was brown from one edge of it to the other on every day I
-saw it. And I have a guess about a mountain, which I have enjoyed, and which
-you may have."
+"I will tell you what I think I have," he said. "I have what I saw, and there
+is a book with some of it in, written while I saw it, and the rest you have
+had from me this afternoon as a man tells a thing, and you may weigh it as
+that. I have a sequence in one valley, four times over two years and a half,
+going one way. I have a probability that the trouble was wider than the
+valley, because the trees that came down the river when it filled had grown
+where I had never walked, and because from my second visit on the sky was
+brown from one edge of it to the other. And I have a guess about a mountain,
+which I have enjoyed, and which you may have."
 
 "I will take the valley," said the Geologist, from his seat.
 
 "I have not asked you for the world."
 
-"You asked me how you knew where you were."
+"No. I asked you how you knew where you were."
 
-"And you have told me that I do not." The Traveller looked at him for a
+"And I have told you that I do not." The Traveller looked at him for a
 moment, and I saw the thing I had seen in the study when his fantastic world
 began to take order under his argument, and I was not glad to see it. "I
 shall have to find out."
 
-There was no applause. Men do not applaud at Burlington House, or did not
-then. They stood up, and the room filled with the sound of men talking to one
-another and not to him, and the two behind me went back to their own paper as
-if they had never left it. Filby gathered the photographs into their cover.
-The Chemist took the tubes and the bottles and the packet, and gave the
-Traveller a receipt for them, written on the back of the programme, which the
-Traveller folded and put away without reading. The Anatomist lifted the jar
-from the sill and carried it to the door under his arm, and I saw the
-Traveller watch it go, and not follow it with more than his eyes.
+There was no applause. Men stood up, and the room filled with the sound of
+them talking to one another and not to him, and the two behind me went back
+to their own paper as if they had never left it. Filby gathered the
+photographs into their cover. The Chemist took the tubes and the bottles and
+the packet, and gave the Traveller a receipt for them, written on the back of
+the programme, which the Traveller folded and put away without reading. The
+Anatomist lifted the jar from the sill and carried it to the door under his
+arm, and I saw the Traveller watch it go, and not follow it with more than
+his eyes.
 
 Then he picked up the notebook, which nobody had asked for, and put it in his
 pocket.

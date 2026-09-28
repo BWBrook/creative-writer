@@ -15,11 +15,13 @@ further journeys by H. G. Wells's Time Traveller. Its first expedition, *The
 Last Week of the Permian*, is complete in first draft: six numbered chapters
 and an epilogue, revised after collaborator critique and ready for Barry's
 full read. Fable passed the epilogue's Wells-1895 calibration; Astra completed
-his four local repairs without reopening the settled passages. The chapter
-review packs and continuity briefs record the decisions. Story acceptance
-remains with Barry. The story contract is in `narrative-design.md` and
-`outline.md`; the Permian science and its Victorian translation are in
-`research/last-week-of-the-permian/`.
+his four local repairs without reopening the settled passages. A whole-book
+editorial pass followed on Barry's imprimatur (naming, dialogue contractions,
+negation and register, cross-chapter continuity); its commits start at
+`4204278`. The chapter review packs and continuity briefs record the
+decisions. Story acceptance remains with Barry. The story contract is in
+`narrative-design.md` and `outline.md`; the Permian science and its Victorian
+translation are in `research/last-week-of-the-permian/`.
 
 Drafting alternates between two AI collaborators, each acting as critic on the
 other's chapter, with Barry as the final human reader. Review judgements live

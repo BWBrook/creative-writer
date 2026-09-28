@@ -56,7 +56,7 @@ which would burn a man evenly to the wrists and no farther.
 
 The small man said that a man might burn himself in a great many ways.
 
-"He might," said the Medical Man. "I have seen most of them."
+"He might," said the Medical Man. "I've seen most of them."
 
 I added what I could, which was less than I should have liked. I said that I
 had known the Time Traveller for some years and had seen him go before; that
@@ -140,7 +140,7 @@ instead. I have brought you the place. I have not brought you its name."
 
 "That is candid."
 
-"It is all I have."
+"It's all I have."
 
 The Geologist nodded, and I thought he was going to sit down, and he did not.
 
@@ -242,13 +242,13 @@ The Geologist said, without rising, that the Chemist had just told the
 meeting his tubes could establish nothing, and was now proposing to fill the
 Permian atmosphere from them.
 
-"I am proposing nothing," said the Chemist. "I am declining his dust. He may
-have his gas or not as he pleases; I cannot find it for him in a tube the size
-of my finger, and I have said so."
+"I'm proposing nothing," said the Chemist. "I'm declining his dust. He may
+have his gas or not as he pleases; I can't find it for him in a tube the size
+of my finger, and I've said so."
 
 "Then where am I to look for it?"
 
-"I have no idea. That is not my difficulty."
+"I've no idea. That's not my difficulty."
 
 I saw the Time Traveller turn over the papers in front of him and write
 something on the back of one. It was the first note he had made that
@@ -288,7 +288,7 @@ and a fifth set back is not a reptile's foot as I know reptiles. You have said
 it went down on its belly to drink like a dog and lifted its head like a dog.
 Did it lap?"
 
-"I could not see its tongue."
+"I couldn't see its tongue."
 
 "A pity. A tongue would have told me more than the teeth." He considered.
 "I will say resemblance to the Cape theriodonts. I will not say theriodont,

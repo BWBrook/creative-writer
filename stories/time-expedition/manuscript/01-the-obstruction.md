@@ -37,15 +37,15 @@ before. One hand rested upon a folded newspaper. The other kept turning a bent
 brass screw between finger and thumb.
 
 "Fever," said the Medical Man, seeing me look. "Or something that has behaved
-like one. I have had him in bed since Sunday, and I have not the least idea
-what I have been treating."
+like one. I've had him in bed since Sunday, and I haven't the least idea what
+I've been treating."
 
 "You published your conclusion," the Time Traveller said to me.
 
 "I had waited three years."
 
 "Quite right. You had the evidence of three years. Sit down. Filby has heard
-the worst of it, and he will otherwise make me begin again."
+the worst of it, and he'll make me begin again if you don't."
 
 "I shall make you begin wherever you become unintelligible," said Filby.
 
@@ -67,7 +67,7 @@ people. He saw no human creature. For part of a day he followed tracks in the
 soft margin of the water and found at last that they had been made by a beast
 which went upon four feet.
 
-"That is another matter," he said, when I would have questioned him. "I made
+"That's another matter," he said, when I would have questioned him. "I made
 three exposures, took a cast which broke in my pocket, and came away. Nothing
 there explains my absence. The trouble began when I tried to return."
 
@@ -111,7 +111,7 @@ yours?"
 "By the dial, less than a second at first. On my last approach, nearly eleven
 months."
 
-"That is a remarkably large error."
+"That's a remarkably large error."
 
 "It was not an error. I could cross it, but I could not take hold of any
 moment inside it. At last I set the machine well beyond the disturbance and
@@ -150,16 +150,16 @@ with every passage. That is conjecture. I can show you the damaged wheel."
 
 "An eddy of what?" said Filby.
 
-"Of precisely the thing you are sitting in."
+"Of precisely the thing you're sitting in."
 
 "Then I should feel it."
 
-"You do not feel the earth turn."
+"You don't feel the earth turn."
 
-"The earth is not—" Filby began, and stopped, because the Medical Man had put
+"The earth isn't—" Filby began, and stopped, because the Medical Man had put
 his hand flat upon the table.
 
-"He has been talking since four o'clock," said the Medical Man. "Let him have
+"He's been talking since four o'clock," said the Medical Man. "Let him have
 his eddy. You may disprove it in the morning."
 
 Filby grunted. He had accepted the Time Traveller's return without yielding an
@@ -168,13 +168,13 @@ mantelpiece, knocked the ash from his cigar, and stood looking about him for
 some new point of attack.
 
 "There was a geological discussion at Burlington House last Thursday," he
-said. "You would have enjoyed it. Two elderly gentlemen spent half an hour
+said. "You'd have enjoyed it. Two elderly gentlemen spent half an hour
 disagreeing about an absence."
 
 "What was absent?"
 
 Filby felt in his pocket and brought out a printed sheet, much folded. "I kept
-the programme. I could not have carried the names in my head." He held it to
+the programme. I couldn't have carried the names in my head." He held it to
 the lamp and read: "'Upon the Disappearance of Palaeozoic Types at the Passage
 from the Permian into the Trias.' That was the first man. Most of the older
 animals, according to him. He began with the Permian beds and ended in the New
@@ -185,14 +185,14 @@ explained that the animals had probably gone somewhere else."
 
 "Where?"
 
-"He did not say. That was the attraction of his explanation."
+"He didn't say. That was the attraction of his explanation."
 
 The Time Traveller ceased turning the screw. "Was it merely a question of the
 English beds?"
 
 "No. Germany came into it, and Russia, and some South African reptiles which
 no one near me could pronounce. The first speaker called it a change from the
-Palaeozoic grouping to the Secondary. He would not say it was sudden. He would
+Palaeozoic grouping to the Secondary. He wouldn't say it was sudden. He would
 only say that he could find the old forms below and not above."
 
 "In one district?"
@@ -200,8 +200,8 @@ only say that he could find the old forms below and not above."
 "In a dozen, I gathered. They argued over the correspondence of the beds. A
 young man with spectacles said the apparent break might occupy an age. The
 chairman reminded him that an age was the very quantity they could not
-measure. Then everybody laughed, though I could not see that the difficulty
-had improved."
+measure. Then everybody laughed, though I couldn't see that the difficulty had
+improved."
 
 "And the physical conditions?"
 
@@ -211,12 +211,12 @@ condition produced the same red marl when it had been dead long enough."
 
 The Time Traveller smiled faintly. "What did you ask them?"
 
-"I asked how long the change had taken. They said the strata would not tell
-us. So I asked what had happened. They said that was the problem."
+"I asked how long the change had taken. They said the strata wouldn't tell us.
+So I asked what had happened. They said that was the problem."
 
 "Very proper answers."
 
-"They are also an inducement to stay at home."
+"They're also an inducement to stay at home."
 
 The Time Traveller held out his hand, and Filby, after a moment, gave him the
 programme. He did not read it. He folded it small and put it away.
@@ -232,7 +232,7 @@ succession of observations. Water, air, vegetation, the common animals. If the
 change were local, one might detect that. If it were gradual, one might pass
 across it by intervals."
 
-"You have never travelled backwards beyond your own life," I said.
+"You've never travelled backwards beyond your own life," I said.
 
 "Not upon the machine."
 
@@ -240,7 +240,7 @@ across it by intervals."
 
 "My model has never sent me a report."
 
-Filby turned round. "And you cannot set those dials for the last Thursday of
+Filby turned round. "And you can't set those dials for the last Thursday of
 the Permian."
 
 "Certainly not. A geological formation is an inference from rocks. It is not a
@@ -251,24 +251,24 @@ successive trials."
 
 "Or under water, or in the air above an eroded valley. Yes."
 
-The Medical Man spoke without raising his voice. "You have been out of bed two
-days. You have lost, at my guess, two stone. I do not know what your illness
+The Medical Man spoke without raising his voice. "You've been out of bed two
+days. You have lost, at my guess, two stone. I don't know what your illness
 was, and I am not satisfied that it is finished."
 
-"It is finished enough to be inconvenient."
+"It's finished enough to be inconvenient."
 
-Filby stared at him. "You are serious."
+Filby stared at him. "You're serious."
 
-"I have been serious for some minutes."
+"I've been serious for some minutes."
 
-"You returned four days ago with a damaged machine. You have just explained
-that there is a hole in Time under this house. Now, because a geologist cannot
+"You returned four days ago with a damaged machine. You've just explained that
+there's a hole in Time under this house. Now, because a geologist can't
 account for certain shells, you propose to go where there are no houses, no
 men, and perhaps no ground."
 
-"That is a fair statement."
+"That's a fair statement."
 
-"It is lunacy."
+"It's lunacy."
 
 "It is experiment."
 
@@ -293,9 +293,9 @@ The Time Traveller was kneeling beside a shallow wooden case. As we entered he
 removed a brass microscope, considered the vacant space, and substituted two
 stoppered bottles wrapped in felt.
 
-"You cannot make a geological survey out of a dressing-case," said Filby.
+"You can't make a geological survey out of a dressing-case," said Filby.
 
-"I do not intend to. I want facts which can survive the journey."
+"I don't intend to. I want facts which can survive the journey."
 
 He showed us a spring balance fixed to one rail. The load he had allowed was
 little more than a man could carry for a mile. This was no proved limit of the
@@ -314,7 +314,7 @@ Filby's programme, unfolded again and much creased, was pinned to the shelf
 above, beside a column of figures. The heavier hammers and a folding spade had
 already been set aside.
 
-"You are taking the camera again," I said.
+"You're taking the camera again," I said.
 
 "Light permitting. The last results would convince no one who had not seen the
 things photographed."
@@ -328,7 +328,7 @@ of cartridges.
 
 "What do you expect to shoot?"
 
-"I have no expectation. That is why I take it."
+"I have no expectation. That's why I take it."
 
 He closed the case, fastened it high upon the frame, and made us stand clear
 while he tested the balance of the machine. It swayed under his hand, settled,
@@ -369,7 +369,7 @@ The page bore the pressure, the laboratory temperature, the time, and a column
 of dial readings. Beneath these he had written: *First trial into geological
 time. Intended region: close of the Permian System. Error unknown.*
 
-"You will not know that you have reached it," I said.
+"You won't know that you've reached it," I said.
 
 "Not at first. I shall stop where the dials permit, bring back an observation,
 and correct."
@@ -379,7 +379,7 @@ and correct."
 He looked towards the empty place beside the machine where the little model
 had once stood. "Then I shall learn that also."
 
-"If you are taken ill there—" said the Medical Man, and did not finish.
+"If you're taken ill there—" said the Medical Man, and did not finish.
 
 The Time Traveller put on a stout coat, secured the revolver beneath it, and
 climbed into the saddle. He looked very small among the strapped cases,

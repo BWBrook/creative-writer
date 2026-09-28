@@ -13,7 +13,7 @@ ordinary piece of news reminded me how much there was still to tell him. He
 asked two or three questions about the man's affairs. Then he fell silent,
 holding his glass against his cheek, and I thought that he was tired.
 
-"Well," said Filby, "you have had your meeting."
+"Well," said Filby, "you've had your meeting."
 
 "I have."
 
@@ -34,27 +34,27 @@ He looked across at me and smiled.
 
 "He was quite civil."
 
-"Oh, perfectly! But I had not expected a man to be pleased to hear that I
-had travelled two hundred and fifty million years, and then tell me it made
-no difference."
+"Oh, perfectly! But I hadn't expected a man to be pleased to hear that I had
+travelled two hundred and fifty million years, and then tell me it made no
+difference."
 
 Filby laughed at that, and the Time Traveller laughed too, though less
 readily. Then he began to explain something about the course of the river. He
 spoke with his eyes upon the fire, drawing the bend of it with one finger upon
 his knee; but before he had finished I saw him shake his head.
 
-"No," he said. "He would have answered that."
+"No," he said. "He'd have answered that."
 
 "What would he have answered?"
 
-"That it was still the same river. I cannot get out of that valley, Filby.
-Each time I try it, I find myself describing another part of the place."
+"That it was still the same river. I can't get out of that valley, Filby. Each
+time I try it, I find myself describing another part of the place."
 
 "You got out of it very well at the end."
 
 "Very badly. And I had meant to come away with so much! I thought the
 photograph of the plain was going to spare me half a day's measuring. You
-remember it? There is no telling whether the distance is a mile or ten."
+remember it? There's no telling whether the distance is a mile or ten."
 
 I said that we could at least distinguish the shape of the country.
 
@@ -74,7 +74,7 @@ I had not heard when they were questioning him.
 "Of that place? No. He might admit that the trouble extended as far as they
 showed. There would still be all the rest of the earth. And he might be right
 about that, too. It might have gone on very much as usual beyond those hills.
-I do not believe it did; but I never crossed them."
+I don't believe it did; but I never crossed them."
 
 He said this without looking at either of us, and for a little time we let
 him smoke. I had looked forward to this evening, when the account should be
@@ -82,12 +82,12 @@ finished and we could talk of it freely; yet I found myself wishing to change
 the subject. The fire had burnt through the fresh coal, and the little jet of
 gas which came from it made a thin singing noise.
 
-"I am glad you are here, at any rate," I said.
+"I'm glad you're here, at any rate," I said.
 
-He looked at me quickly. "So am I. You need not suppose I enjoyed all of it.
-I wanted to see this room again most abominably."
+He looked at me quickly. "So am I. You needn't suppose I enjoyed all of it. I
+wanted to see this room again most abominably."
 
-"And now you have seen it," said Filby, "will you stay in it?"
+"And now you've seen it," said Filby, "will you stay in it?"
 
 "For how long?"
 
@@ -97,12 +97,12 @@ The Time Traveller moved his right hand upon the arm of the chair and looked
 down at it. The finger and thumb were still stiff. He tried them together,
 slowly, and left off.
 
-"I shall not be fit to do much for some time."
+"I shan't be fit to do much for some time."
 
-"That is not an answer."
+"That's not an answer."
 
-"It is the only one I have at present. What would you have me say? That I
-shall never go near the machine again? I should not believe myself."
+"It's the only one I have at present. What would you have me say? That I shall
+never go near the machine again? I shouldn't believe myself."
 
 "You told us to wait until half past twelve."
 
@@ -119,9 +119,9 @@ passing along the hall. We listened until they had ceased.
 
 "I have been a great nuisance to her," the Time Traveller said.
 
-"She does not complain," said Filby.
+"She doesn't complain," said Filby.
 
-"No. She would be easier to deal with if she did."
+"No. She'd be easier to deal with if she did."
 
 He reached for the bowl and filled our glasses. I thought at first that he
 meant to evade the matter altogether; but presently, when Filby was occupied
@@ -131,7 +131,7 @@ with his cigar, he spoke again.
 put my hand upon the lever; but I had done that once before, and it had
 brought me into a room with three years' dust upon the furniture."
 
-"You did not come home because you were afraid of coming home?" said Filby.
+"You didn't come home because you were afraid of coming home?" said Filby.
 
 "No. I stayed because I thought I knew what was happening. I am telling you
 what I was afraid of. There were times when I lay in that hole and tried to
@@ -146,7 +146,7 @@ obstruction.
 "I cannot account for it in any other way. That is very little reason for
 you to accept it."
 
-"And you have not been trying it again?" said Filby.
+"And you haven't been trying it again?" said Filby.
 
 "No. You know what the machine was like when I brought it back."
 
@@ -162,7 +162,7 @@ and named. I was glad, all the same, that he had not left it open.
 "I mean to, when he comes down. I should like him to see the machine first.
 He may ask me something I have not thought of."
 
-"And if he cannot explain it?" said Filby.
+"And if he can't explain it?" said Filby.
 
 "He will have had a very reasonable excuse for coming to Richmond. I have
 been to Burlington House with less."
@@ -194,7 +194,7 @@ dials. It had been ruled in pencil with divisions of unequal length, and at
 one end these had been rubbed out and drawn again more closely. A little of
 the paper projected beyond the rim.
 
-"What is that for?" said Filby.
+"What's that for?" said Filby.
 
 The Time Traveller set down the lamp and stooped over the dial. I could not
 see his face.

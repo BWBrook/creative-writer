@@ -82,8 +82,8 @@ had reached it. He turned it over in his bandaged hands, could not open it,
 and gave it to Filby.
 
 "Dry it," he said. "Leaf by leaf. A knife, not your fingers, and not near the
-fire." And then, when Filby had got to the door: "There is nothing in it you
-cannot read."
+fire." And then, when Filby had got to the door: "There's nothing in it you
+can't read."
 
 I was not present at the drying. It was done in the study, at the table, with
 a paper-knife and blotting-paper, over two evenings; and a man who has
@@ -97,10 +97,10 @@ himself, and was angry with the stopping. The Medical Man ended it. On the
 seventh day he sat up. On the ninth, when I came down from town, Filby met me
 in the hall with the notebook under his arm.
 
-"He is asleep," said Filby. "He will sleep till ten; the Doctor has seen to
-that. You have been coming here every evening for a week to hear a story, and
-you have heard a great deal of arithmetic and nothing else. He may die of the
-next one with all of it inside him. Sit down."
+"He's asleep," said Filby. "He'll sleep till ten; the Doctor has seen to that.
+You've been coming here every evening for a week to hear a story, and you've
+heard a great deal of arithmetic and nothing else. He may die of the next one
+with all of it inside him. Sit down."
 
 I sat down. Filby did not read well. He read quickly and flatly, as he might
 have read a report at a board, and he skipped the columns of figures—said
@@ -269,17 +269,17 @@ had not stopped him.
 
 "I gave it you to dry."
 
-"You said there was nothing in it I could not read."
+"You said there was nothing in it I couldn't read."
 
-"There is nothing in it. There are readings." He came into the room, slowly,
+"There's nothing in it. There are readings." He came into the room, slowly,
 and sat down in the low chair; the Medical Man came in after him and stood by
 the fire with his hands behind him. The Time Traveller held out his bandaged
 hand and Filby put the notebook in it, and he laid it upon his knee without
 opening it. "You said 'figures' where the figures were. I heard you from the
-stair. They are the only part of it worth having, and you cannot read them,
-and I cannot read them to you, because they want the rest. The rest is in my
-head, and it is in there in the wrong order. You have had nine days of it in
-the wrong order. I am not going to give you a tenth."
+stair. They're the only part of it worth having, and you can't read them, and
+I can't read them to you, because they want the rest. The rest is in my head,
+and it's in there in the wrong order. You've had nine days of it in the wrong
+order. I am not going to give you a tenth."
 
 "Then give it us in the right order," said Filby. "What happened to the
 animal?"
@@ -288,13 +288,14 @@ The Time Traveller did not answer that. He looked at the notebook on his knee
 for some time, and when he spoke it was with an irritation I had not heard
 from him since he was well.
 
-"You would believe me. That is the trouble with you. You saw the machine come
-in, and he"—this was to me—"has believed me before. I want a room with men in
-it who know the Permian beds and have never dined with me. I want the fish in
+"You'd believe me. That's the trouble with you. You saw the machine come in,
+and he"—this was to me—"has believed me before. I want a room with men in it
+who know the Permian beds and have never dined with me. I want the fish in
 front of them, and the tubes, and the mud, and I want to be asked by a man who
 has spent his life on the New Red Sandstone how I know where I was, and I want
-to see his face when I tell him. Filby, you sat in Burlington House a fortnight
-ago and heard three Fellows disagree about an absence. You know men there."
+to see his face when I tell him. Filby, you sat in Burlington House a
+fortnight ago and heard three Fellows disagree about an absence. You know men
+there."
 
 "A special meeting of the Royal Society," said Filby slowly, "on the
 application of a man who is not a Fellow, who has been three years dead, and
@@ -302,9 +303,9 @@ who proposes to exhibit a fish."
 
 "Yes."
 
-The Medical Man took his hands from behind his back. "In a fortnight," he said.
-"Not before. If you go into a public room in the state you are in, I shall not
-answer for what you say in it, and neither will you."
+The Medical Man took his hands from behind his back. "In a fortnight," he
+said. "Not before. If you go into a public room in the state you're in, I
+shan't answer for what you say in it, and neither will you."
 
 "A fortnight." The Time Traveller looked at his hands. "Very well. A
 fortnight. Filby will need the time."

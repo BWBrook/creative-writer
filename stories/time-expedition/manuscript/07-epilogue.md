@@ -1,10 +1,10 @@
 We went down to Richmond on the Saturday after the meeting. The Time Traveller
-had asked no one else, and after dinner we sat over our cigars and a bowl of
-smoking bishop in the little room. He had drawn the table close to his chair,
-for he still used his right hand awkwardly; but he looked more like his old
-self than I had yet seen him. Filby, who had been unusually considerate during
-dinner, began presently to argue with him about the fire. The Time Traveller
-wanted another lump of coal upon it. Filby said the room was already
+had asked no one else, and after dinner we sat in the smoking-room over our
+cigars and a bowl of smoking bishop. He had drawn the table close to his
+chair, for he still used his right hand awkwardly; but he looked more like his
+old self than I had yet seen him. Filby, who had been unusually considerate
+during dinner, began presently to argue with him about the fire. The Time
+Traveller wanted another lump of coal upon it. Filby said the room was already
 insufferable, and put it on.
 
 For a time we talked of common things. I remember telling him of a man we had

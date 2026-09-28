@@ -106,11 +106,19 @@ here as the Comparative Anatomist.
   at four; bent rail; red mud; revolver fired twice, now in his bench
   drawer). The Medical Man's testimony matches II (burns as from Egypt; fever
   from heat, thirst and sleeping wet).
-- The narrator's published obituary is from Chapter I.
+- The narrator's printed account, which pronounced the Time Traveller lost,
+  is from Chapter I; canon's narrator wrote only that he "has never
+  returned", so VI no longer says he "published his death".
+- The narrator also testifies from the control page the Time Traveller gave
+  him before departure (Chapter I) and compared with the dials on the
+  machine's return (Chapter II): the dials came back to the written figures
+  but for the smallest hand. It establishes the return in time, not the
+  destination.
 - The Traveller's "how I know where I was" (Chapter II) is the Geologist's
   first question; "some of you mean to take the mountain" (Chapter IV) is
   answered by the Geologist.
 - Custody at the close: the fish goes to the Anatomist with its label; tubes,
-  bottles and packet go to the Chemist against a receipt; the notebook stays
-  with the Traveller. The epilogue's altered settings and the temporal
+  bottles, packet and the lead-paper strips (promised to "the chemists among
+  you" in IV, carried home between the notebook's leaves) go to the Chemist
+  against a receipt; the notebook stays with the Time Traveller. The epilogue's altered settings and the temporal
   obstruction are not touched.

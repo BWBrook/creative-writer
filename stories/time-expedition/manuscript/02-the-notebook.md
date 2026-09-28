@@ -48,15 +48,18 @@ unbuckled it and handed it to Filby without looking at him, and Filby weighed
 it, opened it, and put it in the drawer of the bench.
 
 Only when the Time Traveller had been carried upstairs did I look at the
-machine. The knapsack was gone. The strapped cases were gone, and the wooden
-box of instruments, and the thermometers in their sheath. What remained had
-been lashed to the frame with wire in a manner that had cost time: the
-wide-mouthed jar, its stopper sealed over with wax and the whole wound in a
-piece of oilcloth; a leather satchel, sodden and heavy; and, wedged between
-the rails where his knee had guarded it on the morning he left, a single tin.
-Filby undid the oilcloth. In the spirit, turning a little as the jar was
-moved, was a fish some six inches long, silver and brown, with a tail like a
-dogfish's and scales that caught the lamp like a mail glove.
+machine. I had the second notebook still in my pocket, and I compared the
+dials with it before anything else: they stood at the figures he had written
+there, all but the smallest hand. The knapsack was gone. The strapped cases
+were gone, and the wooden box of instruments, and the thermometers in their
+sheath. What remained had been secured in a manner that had cost time: the
+wide-mouthed jar, wedged between the rails where his knee had guarded it on
+the morning he left, its stopper sealed over with wax and the whole wound in a
+piece of oilcloth; a leather satchel, wired under the saddle, sodden and
+heavy; and, beside the jar, a single tin. Filby undid the oilcloth. In the
+spirit, turning a little as the jar was moved, was a fish some six inches
+long, silver and brown, with a tail like a dogfish's and scales that caught
+the lamp like a mail glove.
 
 "He said facts which could survive the journey," said Filby, and put the jar
 down very carefully upon the bench, under the programme with the time written
@@ -113,19 +116,20 @@ to me first, and it is his voice I hear when I read it.
 The first entry had a heading, and a line drawn beneath the heading with a
 rule.
 
-*First trial. The descent is not the ascent reversed, or not to the senses. The
-days flicker as before, but the light of them is wrong, and I have not yet made
-out why; I think the sun rises where I expect it to set, and I did not think of
-that in the laboratory. The second dial ran back through its thousands and the
-third began to move, and by the time its movement could be seen I was very sick
-and could not read the hand. The fourth dial, which I built because the
-arithmetic required it and had seen move once, forward, and never so far,
-moved. I have stopped three times. The first stop was in brown water to the
-waist, warm, with a low shore a mile off; I came away at once. The second was
-in darkness, with a pressure upon the ears and a heat coming into the frame
-which I did not stay to account for. This is the third. The fourth dial stands
-a little short of ninety-two, if it can be trusted at that extreme, which I
-have no means of knowing. I am on rock, in sunlight, and the sun is very high.*
+*First trial. The descent is not the ascent reversed, or not to the senses.
+The days flicker as before, but the light of them is wrong, and I have not yet
+made out why; I think the sun rises where I expect it to set, and I did not
+think of that in the laboratory. The second dial ran back through its
+thousands and the third began to move, and by the time its movement could be
+seen I was very sick and could not read the hand. The fourth dial, which I
+gave the machine only because the arithmetic required it, and had seen move
+once, forward, and never so far, moved. I have stopped three times. The first
+stop was in brown water to the waist, warm, with a low shore a mile off; I
+came away at once. The second was in darkness, with a pressure upon the ears
+and a heat coming into the frame which I did not stay to account for. This is
+the third. The fourth dial stands a little short of ninety-two, if it can be
+trusted at that extreme, which I have no means of knowing. I am on rock, in
+sunlight, and the sun is very high.*
 
 "He was insensible after that," said Filby. "He says so lower down. Four hours
 by the watch. Then this."
@@ -236,7 +240,7 @@ and forty paces from wet ground. Air III. Water III. The reeds brown at the
 top.*
 
 *Roof: grains falling at the back of the cleft in the night. Chalk line
-unaltered. Plumb unaltered.*
+unaltered. Plumb unaltered. Seven months next. One day there.*
 
 *The animal, on this bank. It has crossed. Thinner, I think, or it is the light
 at this hour. It stood a long while and did not drink, and I do not know what
@@ -293,8 +297,8 @@ and he"—this was to me—"has believed me before. I want a room with men in it
 who know the Permian beds and have never dined with me. I want the fish in
 front of them, and the tubes, and the mud, and I want to be asked by a man who
 has spent his life on the New Red Sandstone how I know where I was, and I want
-to see his face when I tell him. Filby, you sat in Burlington House a
-fortnight ago and heard three Fellows disagree about an absence. You know men
+to see his face when I tell him. Filby, you sat in Burlington House a few
+weeks since and heard three Fellows disagree about an absence. You know men
 there."
 
 "A special meeting of the Royal Society," said Filby slowly, "on the

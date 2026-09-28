@@ -33,10 +33,10 @@ latter looked down at his papers, moved them aside, and took up the notebook
 instead.
 
 He gave the circumstances of his departure and the manner in which he had
-fixed his first station. Most of this we had heard in the study. He pointed to
-the places upon the drawing, and Filby passed the early photographs along the
-front row. Once somebody asked which way the river ran; he answered, and
-returned to the little square. The notebook lay open under his left hand.
+fixed his first station. Most of this we had heard in the smoking-room. He
+pointed to the places upon the drawing, and Filby passed the early photographs
+along the front row. Once somebody asked which way the river ran; he answered,
+and returned to the little square. The notebook lay open under his left hand.
 
 "It was here," he said, "that I made the first advance. The early entries
 describe what I found well enough. Thereafter you have mostly figures. I had

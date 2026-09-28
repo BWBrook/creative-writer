@@ -136,10 +136,10 @@ break another rail, and he lay beside it until Mrs. Watchett, hearing the
 noise from the kitchen and supposing it to be the roof, came in and found him.
 She went for the Medical Man before she went for anything else. For thirty
 hours he slept. On Tuesday he had begun his calculations; on Wednesday he sent
-for Filby. The bent screw and the newspaper proved no more than the day on
-which he had been found. But Mrs. Watchett had seen his astonishment at the
-dust and the changed wall, and to the Time Traveller, at least, our three
-years had arrived in a single morning.
+for Filby, and on Thursday Filby sent for me. The bent screw and the newspaper
+proved no more than the day on which he had been found. But Mrs. Watchett had
+seen his astonishment at the dust and the changed wall, and to the Time
+Traveller, at least, our three years had arrived in a single morning.
 
 "What caused it?" I said.
 
@@ -330,9 +330,9 @@ of cartridges.
 
 "I have no expectation. That's why I take it."
 
-He closed the case, fastened it high upon the frame, and made us stand clear
-while he tested the balance of the machine. It swayed under his hand, settled,
-and swayed again when he added the knapsack. A box of reagents was opened,
+He closed the case, laid it upon the saddle, and made us stand clear while he
+tested the balance of the machine. It swayed under his hand, settled, and
+swayed again when he added the knapsack. A box of reagents was opened,
 divided, and reduced to six small tubes; one bottle of medicine displaced a
 second coil of wire; the spirit jar was wedged between the rails where his
 knee could guard it. Every article had to be tied against the violent motion
@@ -381,11 +381,11 @@ had once stood. "Then I shall learn that also."
 
 "If you're taken ill there—" said the Medical Man, and did not finish.
 
-The Time Traveller put on a stout coat, secured the revolver beneath it, and
-climbed into the saddle. He looked very small among the strapped cases,
-bottles, rails, and glittering bars. He drew his coat clear of the mechanism,
-removed the two small levers, fitted them in their sockets, and rested one
-hand upon the backward control.
+The Time Traveller put on a stout coat, buckled the revolver in its case
+beneath it, and climbed into the saddle. He looked very small among the
+strapped cases, bottles, rails, and glittering bars. He drew his coat clear of
+the mechanism, took the two small levers from his pocket, fitted them in their
+sockets, and rested one hand upon the backward control.
 
 "Stand by the door," he said. "There will be a draught."
 

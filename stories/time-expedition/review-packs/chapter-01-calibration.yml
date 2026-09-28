@@ -36,8 +36,8 @@ entries:
   - id: witnessed-departure
     label: "The backward departure"
     manuscript: "manuscript/01-the-obstruction.md"
-    start_line: 383
-    end_line: 407
+    start_line: 384
+    end_line: 408
     kind: uncertainty
     question: "Does this departure echo the canonical machine effects while remaining sufficiently independent in phrasing and ending on the right material residue?"
     context: "The revision avoids the original disappearance's transparent-figure image, folds the lever-press into the paragraph rather than isolating it as a suspense beat, drops the personified clock, and leaves Filby with the damaged screw after the Medical Man notes the time on the programme."

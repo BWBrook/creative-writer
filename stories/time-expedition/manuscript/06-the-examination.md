@@ -61,9 +61,13 @@ The small man said that a man might burn himself in a great many ways.
 I added what I could, which was less than I should have liked. I said that I
 had known the Time Traveller for some years and had seen him go before; that
 on the former occasion he had been three years gone, and that within the week
-of his coming back I had published his death; and that I had the disadvantage,
-in the present company, of being on record. That was received better than it
-deserved.
+of his coming back I had pronounced him lost, in print; and that I had the
+disadvantage, in the present company, of being on record. That was received
+better than it deserved. I said also that I had kept, at his wish, a note of
+his dials as they stood when he left, and that when the machine came back they
+stood again at those figures, all but the smallest hand. That proved, I
+supposed, that the machine could find its way home. It proved nothing whatever
+about where it had been.
 
 The Vice-President said that the Society had received the communication and
 had the material upon the table; that the question of whether it should
@@ -79,9 +83,9 @@ The Geologist rose slowly. He was a tall stooping man with a grey beard cut
 square, and Filby, leaning across the Medical Man, told me in a whisper that
 he was one of the two elderly gentlemen who had disagreed about an absence. He
 did not begin with the fish, or the dial, or the mountain. He began with the
-question the Time Traveller had told us in his study that he wanted to be
-asked, and I looked at the Time Traveller's face, as I had been invited to do,
-and it was not the face he had promised us.
+very question the Time Traveller had told us, in the smoking-room, that he
+wanted to be asked. I looked at the Time Traveller's face, and it was not the
+face he had promised us.
 
 "You have told us," said the Geologist, "that you were at Richmond. I will
 accept that; your machine's habits are not my province, and there is a
@@ -374,8 +378,8 @@ know that it has."
 fact about the machine, and not a part of your theory of it." He sat down.
 
 I have thought since about that minute more than about anything else that was
-said. He had told Filby as much himself, in the study, about an eddy under
-his house; and I had heard him, and not understood.
+said. He had told Filby as much himself, in the smoking-room, about an eddy
+under his house; and I had heard him, and not understood.
 
 The Vice-President summed up, briefly and rather well. He said that the
 Society did not vote upon communications and would not vote upon this one. It
@@ -407,18 +411,19 @@ which I have enjoyed, and which you may have."
 "No. I asked you how you knew where you were."
 
 "And I have told you that I do not." The Time Traveller looked at him for a
-moment, and I saw the thing I had seen in the study when his fantastic world
-began to take order under his argument, and I was not glad to see it. "I shall
-have to find out."
+moment, and I saw in his face the quickening I had seen in the smoking-room on
+the evening of his return, and I was not glad to see it. "I shall have to find
+out."
 
 There was no applause. Men stood up, and the room filled with the sound of
 them talking to one another and not to him, and the two behind me went back to
 their own paper as if they had never left it. Filby gathered the photographs
 into their cover. The Chemist took the tubes and the bottles and the packet,
-and gave him a receipt for them, written on the back of the programme, which
-the Time Traveller folded and put away without reading. The Anatomist lifted
-the jar from the sill and carried it to the door under his arm, and I saw the
-Time Traveller watch it go, and not follow it with more than his eyes.
+and the strips of lead paper from between the leaves of the notebook, and gave
+him a receipt for them, written on the back of the programme, which the Time
+Traveller folded and put away without reading. The Anatomist lifted the jar
+from the sill and carried it to the door under his arm, and I saw the Time
+Traveller watch it go, and not follow it with more than his eyes.
 
 Then he picked up the notebook, which nobody had asked for, and put it in his
 pocket.

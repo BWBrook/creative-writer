@@ -4,7 +4,7 @@ entries:
   - id: travel-under-the-rock
     label: "The first advance from the refuge"
     manuscript: "manuscript/03-the-first-intervals.md"
-    start_line: 63
+    start_line: 64
     end_line: 96
     kind: confidence
     question: "Does the movement from apprehension beneath the rock to the obscured plain sound like the particular Traveller, rather than an author deliberately supplying him with irrational reactions?"

@@ -5,9 +5,9 @@ until, on a wet evening late in March, Filby sent me a telegram of five words:
 
 In the interval there had been searches, legal inquiries, and many ingenious
 letters from persons who had read my account. Two men declared that they also
-possessed machines; another had seen the Traveller lecturing in Philadelphia;
-and a lady in Surbiton sent me a photograph of a luminous patch upon her
-staircase. None of these communications altered the fact of the empty
+possessed machines; another had seen the Time Traveller lecturing in
+Philadelphia; and a lady in Surbiton sent me a photograph of a luminous patch
+upon her staircase. None of these communications altered the fact of the empty
 laboratory. The house passed into the keeping of a solicitor, who shut up the
 greater part of it and retained Mrs. Watchett—alone of the household—to air
 the rooms and watch the roof; the manservant found another place within the
@@ -40,7 +40,7 @@ brass screw between finger and thumb.
 like one. I have had him in bed since Sunday, and I have not the least idea
 what I have been treating."
 
-"You published your conclusion," the Traveller said to me.
+"You published your conclusion," the Time Traveller said to me.
 
 "I had waited three years."
 
@@ -50,11 +50,11 @@ the worst of it, and he will otherwise make me begin again."
 "I shall make you begin wherever you become unintelligible," said Filby.
 
 There was a glass at my place and a decanter near the fire. These domestic
-particulars reassured me more than the Traveller's presence did—more, I think,
-than anything he said that night. I poured out some whisky and sat facing him,
-and for a little while, with the rain ticking faintly against the window, he
-resumed his account as if I had merely returned to the room after an
-interruption.
+particulars reassured me more than the Time Traveller's presence did—more, I
+think, than anything he said that night. I poured out some whisky and sat
+facing him, and for a little while, with the rain ticking faintly against the
+window, he resumed his account as if I had merely returned to the room after
+an interruption.
 
 His second journey, so far as it concerned the future world he had already
 described to us, had yielded less than he expected. He had meant to reach the
@@ -138,8 +138,8 @@ She went for the Medical Man before she went for anything else. For thirty
 hours he slept. On Tuesday he had begun his calculations; on Wednesday he sent
 for Filby. The bent screw and the newspaper proved no more than the day on
 which he had been found. But Mrs. Watchett had seen his astonishment at the
-dust and the changed wall, and to the Traveller, at least, our three years had
-arrived in a single morning.
+dust and the changed wall, and to the Time Traveller, at least, our three
+years had arrived in a single morning.
 
 "What caused it?" I said.
 
@@ -162,8 +162,8 @@ his hand flat upon the table.
 "He has been talking since four o'clock," said the Medical Man. "Let him have
 his eddy. You may disprove it in the morning."
 
-Filby grunted. He had accepted the Traveller's return without yielding an inch
-to the explanation of it, which was characteristic of him; he went to the
+Filby grunted. He had accepted the Time Traveller's return without yielding an
+inch to the explanation of it, which was characteristic of him; he went to the
 mantelpiece, knocked the ash from his cigar, and stood looking about him for
 some new point of attack.
 
@@ -209,7 +209,7 @@ had improved."
 floods, according to the gentleman speaking. I had the impression that every
 condition produced the same red marl when it had been dead long enough."
 
-The Traveller smiled faintly. "What did you ask them?"
+The Time Traveller smiled faintly. "What did you ask them?"
 
 "I asked how long the change had taken. They said the strata would not tell
 us. So I asked what had happened. They said that was the problem."
@@ -218,7 +218,7 @@ us. So I asked what had happened. They said that was the problem."
 
 "They are also an inducement to stay at home."
 
-The Traveller held out his hand, and Filby, after a moment, gave him the
+The Time Traveller held out his hand, and Filby, after a moment, gave him the
 programme. He did not read it. He folded it small and put it away.
 
 Then he rose and walked twice across the hearthrug. His weakness showed, for
@@ -274,8 +274,8 @@ men, and perhaps no ground."
 
 Filby shook his head. "You want another adventure. Call it by its proper name."
 
-The Traveller looked at him, and then laughed—the first full and easy laugh I
-had heard from him that night.
+The Time Traveller looked at him, and then laughed—the first full and easy
+laugh I had heard from him that night.
 
 "There may be some of that," he said.
 
@@ -321,8 +321,8 @@ things photographed."
 
 Filby lifted a leather case from behind the bottles. "And this?"
 
-The Traveller opened it. Inside lay a heavy revolver and a small packet of
-cartridges.
+The Time Traveller opened it. Inside lay a heavy revolver and a small packet
+of cartridges.
 
 "I went unarmed once," he said. "That was enough."
 
@@ -337,7 +337,7 @@ divided, and reduced to six small tubes; one bottle of medicine displaced a
 second coil of wire; the spirit jar was wedged between the rails where his
 knee could guard it. Every article had to be tied against the violent motion
 of a start or placed where it could not foul the levers, and each time the
-Traveller altered the disposition of the load he stood back, watched the
+Time Traveller altered the disposition of the load he stood back, watched the
 machine come to rest, and altered something else.
 
 Filby watched all this with an expression of increasing disapproval. "How long
@@ -354,12 +354,13 @@ date it."
 
 "I waited three years for the last one."
 
-The Traveller did not answer. He was doing something with a strap, and when he
-had finished with the strap he had forgotten the remark, or chose to appear so.
+The Time Traveller did not answer. He was doing something with a strap, and
+when he had finished with the strap he had forgotten the remark, or chose to
+appear so.
 
-Filby made an impatient sound and went to the window. The Traveller checked
-his watch against the clock, wrote in the first notebook, and handed the second
-to me.
+Filby made an impatient sound and went to the window. The Time Traveller
+checked his watch against the clock, wrote in the first notebook, and handed
+the second to me.
 
 "The initial readings," he said. "Keep them here. If I return, we shall have a
 control."
@@ -380,11 +381,11 @@ had once stood. "Then I shall learn that also."
 
 "If you are taken ill there—" said the Medical Man, and did not finish.
 
-The Traveller put on a stout coat, secured the revolver beneath it, and
+The Time Traveller put on a stout coat, secured the revolver beneath it, and
 climbed into the saddle. He looked very small among the strapped cases,
 bottles, rails, and glittering bars. He drew his coat clear of the mechanism,
-removed the two small levers, fitted them in their sockets, and rested one hand
-upon the backward control.
+removed the two small levers, fitted them in their sockets, and rested one
+hand upon the backward control.
 
 "Stand by the door," he said. "There will be a draught."
 
@@ -393,7 +394,7 @@ cigar from his mouth.
 
 He pressed the lever, and the machine made a small lateral jerk. Its bars lost
 their separate outlines and ran together in a quivering patch of light, within
-which the white labels on the cases flashed irregularly and the Traveller
+which the white labels on the cases flashed irregularly and the Time Traveller
 himself was visible only when he moved. I found that I was watching the clock
 above him, which at least kept its shape, and I was still watching it when the
 dust ran towards the machine, a gust struck through the room, and a bottle

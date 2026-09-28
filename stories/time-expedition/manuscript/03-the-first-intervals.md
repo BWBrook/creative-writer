@@ -1,16 +1,16 @@
 Filby obtained his meeting on the Thursday after the Medical Man's fortnight
 had expired. There had been letters, a visit to Richmond, and an afternoon
-during which a Fellow of the Society examined the fish while the Traveller
-tried to explain the machine. The Fellow asked to have the jar turned round.
-Filby turned it. By the end of the visit the Fellow had undertaken to
-communicate the account, though he declined to express an opinion upon it; and
-the Traveller, who had prepared for a considerable argument, complained that
-he had been given no opportunity to explain himself.
+during which a Fellow of the Society examined the fish while the Time
+Traveller tried to explain the machine. The Fellow asked to have the jar
+turned round. Filby turned it. By the end of the visit the Fellow had
+undertaken to communicate the account, though he declined to express an
+opinion upon it; and the Time Traveller, who had prepared for a considerable
+argument, complained that he had been given no opportunity to explain himself.
 
 At Burlington House I found the Medical Man already seated near the front,
-with an empty chair beside him. The Traveller was standing at a table, trying
-to separate two sheets of paper. His hands were no longer bandaged, but he
-could not make the finger and thumb of his right hand meet properly, and
+with an empty chair beside him. The Time Traveller was standing at a table,
+trying to separate two sheets of paper. His hands were no longer bandaged, but
+he could not make the finger and thumb of his right hand meet properly, and
 presently he wetted a finger of the other. I had watched those hands moving
 about the machine so often that their clumsiness distressed me. His coat
 fitted him badly still. There was a glass of water within reach which he had
@@ -28,8 +28,9 @@ the waters beneath it. There was a very small square for the shelter.
 
 One of the Vice-Presidents presided. He explained briefly how the
 communication had come before them and asked that questions be reserved until
-the account was finished. When he invited the Traveller to speak, the latter
-looked down at his papers, moved them aside, and took up the notebook instead.
+the account was finished. When he invited the Time Traveller to speak, the
+latter looked down at his papers, moved them aside, and took up the notebook
+instead.
 
 He gave the circumstances of his departure and the manner in which he had
 fixed his first station. Most of this we had heard in the study. He pointed to
@@ -182,8 +183,8 @@ and found it warm.
 
 "In the sun?" said a man behind me.
 
-"In the shade," said the Traveller. He looked towards the questioner for a
-moment before he went on.
+"In the shade," said the Time Traveller. He looked towards the questioner for
+a moment before he went on.
 
 "I moved it farther from the sunlit rock, waited, and read it again. It
 remained there. I had taken it out to the cairn with the camera, and left it

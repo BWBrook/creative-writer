@@ -9,10 +9,10 @@ empty square of boards.
 I had the second notebook in my pocket and took it out over the meal. The
 figures meant nothing to me and I read them several times: the pressure, the
 temperature of the laboratory, the hour, the readings of the four dials; and
-beneath them, in the Traveller's small upright hand, the line he had written
-while we watched him write it. Filby asked me what I was doing. I said that I
-was keeping the control. He said that if I proposed to keep it in my pocket for
-three years I had better have it bound.
+beneath them, in the Time Traveller's small upright hand, the line he had
+written while we watched him write it. Filby asked me what I was doing. I said
+that I was keeping the control. He said that if I proposed to keep it in my
+pocket for three years I had better have it bound.
 
 It was a little after four when the draught came. I felt it before I understood
 it, a movement of the air along the floor of the passage, and then Filby's
@@ -26,60 +26,60 @@ came after the dust—wet stone, and something under it which I did not then
 identify, and which I have since been told is the smell of a pond that has gone
 dry in a hot summer.
 
-The Traveller was in the saddle, or partly in it. One arm was through the frame
-to the shoulder and had held him there; the other hung. He had no hat. There
-was a wound in the hair above his left ear, closed with the same red earth, and
-both hands were bound in strips torn from a shirt, the knots tied with his
-teeth. He was quite conscious. He looked at us, and at the clock, and said,
-distinctly, "Four. I said dinner," and shut his eyes. I sat down upon the
-boards where I stood, and I do not know for how long.
+The Time Traveller was in the saddle, or partly in it. One arm was through the
+frame to the shoulder and had held him there; the other hung. He had no hat.
+There was a wound in the hair above his left ear, closed with the same red
+earth, and both hands were bound in strips torn from a shirt, the knots tied
+with his teeth. He was quite conscious. He looked at us, and at the clock, and
+said, distinctly, "Four. I said dinner," and shut his eyes. I sat down upon
+the boards where I stood, and I do not know for how long.
 
 The Medical Man came through the garden door at a run—I have never seen a man
-so glad of an occupation—and would not let us lift the Traveller until he had
-felt the arm in the frame and the ribs beneath the torn coat; then the three of
-us got him out and on to the boards, and Mrs. Watchett, who had come to the
-door and gone away again without a word, came back with blankets and brandy and
-a basin. The Traveller's boots were full of the red mud. His face and the backs
-of his hands, where the linen did not cover them, were burnt as I have seen men
-burnt who come home from Egypt, and cracked across the lips, and his coat had
-been torn at both shoulders and sewn again with twine. Under the coat, in its
-case, was the revolver. The Medical Man unbuckled it and handed it to Filby
-without looking at him, and Filby weighed it, opened it, and put it in the
-drawer of the bench.
+so glad of an occupation—and would not let us lift the Time Traveller until he
+had felt the arm in the frame and the ribs beneath the torn coat; then the
+three of us got him out and on to the boards, and Mrs. Watchett, who had come
+to the door and gone away again without a word, came back with blankets and
+brandy and a basin. The Time Traveller's boots were full of the red mud. His
+face and the backs of his hands, where the linen did not cover them, were
+burnt as I have seen men burnt who come home from Egypt, and cracked across
+the lips, and his coat had been torn at both shoulders and sewn again with
+twine. Under the coat, in its case, was the revolver. The Medical Man
+unbuckled it and handed it to Filby without looking at him, and Filby weighed
+it, opened it, and put it in the drawer of the bench.
 
-Only when the Traveller had been carried upstairs did I look at the machine.
-The knapsack was gone. The strapped cases were gone, and the wooden box of
-instruments, and the thermometers in their sheath. What remained had been
-lashed to the frame with wire in a manner that had cost time: the wide-mouthed
-jar, its stopper sealed over with wax and the whole wound in a piece of
-oilcloth; a leather satchel, sodden and heavy; and, wedged between the rails
-where his knee had guarded it on the morning he left, a single tin. Filby undid
-the oilcloth. In the spirit, turning a little as the jar was moved, was a fish
-some six inches long, silver and brown, with a tail like a dogfish's and scales
-that caught the lamp like a mail glove.
+Only when the Time Traveller had been carried upstairs did I look at the
+machine. The knapsack was gone. The strapped cases were gone, and the wooden
+box of instruments, and the thermometers in their sheath. What remained had
+been lashed to the frame with wire in a manner that had cost time: the
+wide-mouthed jar, its stopper sealed over with wax and the whole wound in a
+piece of oilcloth; a leather satchel, sodden and heavy; and, wedged between
+the rails where his knee had guarded it on the morning he left, a single tin.
+Filby undid the oilcloth. In the spirit, turning a little as the jar was
+moved, was a fish some six inches long, silver and brown, with a tail like a
+dogfish's and scales that caught the lamp like a mail glove.
 
 "He said facts which could survive the journey," said Filby, and put the jar
 down very carefully upon the bench, under the programme with the time written
 on it, and stood looking at the fish for a long while.
 
-For nine days the Traveller lay in the room over the laboratory, and for the
-first three of them the Medical Man did not go home. The fever he made light
-of: heat, want of water, then sleeping wet; he had treated it in soldiers. The
-hands were another matter, and the arm. What he could not account for was a
-stiffness across the back and shoulders, and he stood a long while at the foot
-of the bed considering it before he said that it had been got by hauling at
-something heavy, and for a long time. He asked no questions. He dressed the
-hands twice a day with a patience I should not have credited him with, and when
-the Traveller talked—which he did a good deal in the first days, and always in
-figures—the Medical Man wrote the figures down on the back of a prescription
-and gave the paper to Filby.
+For nine days the Time Traveller lay in the room over the laboratory, and for
+the first three of them the Medical Man did not go home. The fever he made
+light of: heat, want of water, then sleeping wet; he had treated it in
+soldiers. The hands were another matter, and the arm. What he could not
+account for was a stiffness across the back and shoulders, and he stood a long
+while at the foot of the bed considering it before he said that it had been
+got by hauling at something heavy, and for a long time. He asked no questions.
+He dressed the hands twice a day with a patience I should not have credited
+him with, and when the Time Traveller talked—which he did a good deal in the
+first days, and always in figures—the Medical Man wrote the figures down on
+the back of a prescription and gave the paper to Filby.
 
-On the third day the Traveller was clear-headed for an hour in the afternoon.
-He asked for water, and then for the notebook. It had been in the inner pocket
-of the coat, wrapped in oilskin, and the oilskin had not kept it dry. The
-leaves were stuck at the edges and the pencil had run where the water had
-reached it. He turned it over in his bandaged hands, could not open it, and
-gave it to Filby.
+On the third day the Time Traveller was clear-headed for an hour in the
+afternoon. He asked for water, and then for the notebook. It had been in the
+inner pocket of the coat, wrapped in oilskin, and the oilskin had not kept it
+dry. The leaves were stuck at the edges and the pencil had run where the water
+had reached it. He turned it over in his bandaged hands, could not open it,
+and gave it to Filby.
 
 "Dry it," he said. "Leaf by leaf. A knife, not your fingers, and not near the
 fire." And then, when Filby had got to the door: "There is nothing in it you
@@ -90,12 +90,12 @@ a paper-knife and blotting-paper, over two evenings; and a man who has
 separated a wet book leaf from leaf, holding each to the lamp to see whether it
 is dry, has read it, whatever he intended.
 
-On the fifth day the Traveller tried to give us the account. He got as far as
-the dragging of the machine into the shelter and then lost the order of things,
-and began to give us the third station before the first, and stopped himself,
-and was angry with the stopping. The Medical Man ended it. On the seventh day
-he sat up. On the ninth, when I came down from town, Filby met me in the hall
-with the notebook under his arm.
+On the fifth day the Time Traveller tried to give us the account. He got as
+far as the dragging of the machine into the shelter and then lost the order of
+things, and began to give us the third station before the first, and stopped
+himself, and was angry with the stopping. The Medical Man ended it. On the
+seventh day he sat up. On the ninth, when I came down from town, Filby met me
+in the hall with the notebook under his arm.
 
 "He is asleep," said Filby. "He will sleep till ten; the Doctor has seen to
 that. You have been coming here every evening for a week to hear a story, and
@@ -260,10 +260,10 @@ sat.
 "Four feet one," said a voice from the door, "and then he stops making
 sentences. You read badly, Filby. You always did."
 
-The Traveller was in the doorway in his dressing-gown, with one hand on the
-jamb and the other, in its linen, held against his chest. I do not know how
-long he had stood there. The Medical Man was behind him on the stair and had
-not stopped him.
+The Time Traveller was in the doorway in his dressing-gown, with one hand on
+the jamb and the other, in its linen, held against his chest. I do not know
+how long he had stood there. The Medical Man was behind him on the stair and
+had not stopped him.
 
 "You gave it me to dry," said Filby.
 
@@ -273,20 +273,20 @@ not stopped him.
 
 "There is nothing in it. There are readings." He came into the room, slowly,
 and sat down in the low chair; the Medical Man came in after him and stood by
-the fire with his hands behind him. The Traveller held out his bandaged hand
-and Filby put the notebook in it, and he laid it upon his knee without opening
-it. "You said 'figures' where the figures were. I heard you from the stair.
-They are the only part of it worth having, and you cannot read them, and I
-cannot read them to you, because they want the rest. The rest is in my head,
-and it is in there in the wrong order. You have had nine days of it in the
-wrong order. I am not going to give you a tenth."
+the fire with his hands behind him. The Time Traveller held out his bandaged
+hand and Filby put the notebook in it, and he laid it upon his knee without
+opening it. "You said 'figures' where the figures were. I heard you from the
+stair. They are the only part of it worth having, and you cannot read them,
+and I cannot read them to you, because they want the rest. The rest is in my
+head, and it is in there in the wrong order. You have had nine days of it in
+the wrong order. I am not going to give you a tenth."
 
 "Then give it us in the right order," said Filby. "What happened to the
 animal?"
 
-The Traveller did not answer that. He looked at the notebook on his knee for
-some time, and when he spoke it was with an irritation I had not heard from him
-since he was well.
+The Time Traveller did not answer that. He looked at the notebook on his knee
+for some time, and when he spoke it was with an irritation I had not heard
+from him since he was well.
 
 "You would believe me. That is the trouble with you. You saw the machine come
 in, and he"—this was to me—"has believed me before. I want a room with men in
@@ -306,8 +306,8 @@ The Medical Man took his hands from behind his back. "In a fortnight," he said.
 "Not before. If you go into a public room in the state you are in, I shall not
 answer for what you say in it, and neither will you."
 
-"A fortnight." The Traveller looked at his hands. "Very well. A fortnight.
-Filby will need the time."
+"A fortnight." The Time Traveller looked at his hands. "Very well. A
+fortnight. Filby will need the time."
 
 Filby got up and went to the bench.
 

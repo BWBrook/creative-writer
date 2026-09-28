@@ -4,11 +4,11 @@ answers and could be taken down as they were put; the answers I have filled
 out with him at Richmond, as I did the account. What follows is therefore
 nearer a record than the rest, without being one.
 
-For a little while there were no questions at all. The Traveller sat down—he
-had stood, by the clock he had looked at, for an hour and forty minutes—and
-reached behind the jar for the water, and drank it. The two men behind me, who
-had given up their own paper at about the time the fish began to die, said
-nothing whatever. Somebody at the back dropped a stick. Then the
+For a little while there were no questions at all. The Time Traveller sat
+down—he had stood, by the clock he had looked at, for an hour and forty
+minutes—and reached behind the jar for the water, and drank it. The two men
+behind me, who had given up their own paper at about the time the fish began
+to die, said nothing whatever. Somebody at the back dropped a stick. Then the
 Vice-President, who had listened throughout with his chin upon his hand and
 his eyes upon the drawing, said that the communication was before the meeting,
 and that he would take questions in the ordinary way, and looked round the
@@ -25,9 +25,9 @@ seen a fish in spirit before. He had also—and here he permitted himself to
 look about him—seen a very good performance before, in a room not much larger
 than this, and had been asked at the end of it to accept a journey.
 
-There was some laughter, not much. I saw the Traveller's hand go to the papers
-in front of him and come away again. It was a fair question, though I did not
-think so at the time, and I have put it down as he asked it.
+There was some laughter, not much. I saw the Time Traveller's hand go to the
+papers in front of him and come away again. It was a fair question, though I
+did not think so at the time, and I have put it down as he asked it.
 
 The Vice-President asked whether anyone present could speak to the departure.
 
@@ -46,23 +46,23 @@ owner more often than its owner liked, and that he was not there to explain
 it, but to say what he had seen; and he sat down.
 
 The Medical Man did not stand. He said, from his chair, that he had attended
-the Traveller on his return and for nine days afterwards; that the burns upon
-the face and the backs of the hands were such as he had seen upon men landed
-from Egypt and not such as could be got in a Richmond laboratory between
-breakfast and tea; that the fever which followed was what he should have
-expected from heat, want of water, and sleeping wet; and that if the gentleman
-by the door wished to propose a lamp, he had better propose one which would
-burn a man evenly to the wrists and no farther.
+the Time Traveller on his return and for nine days afterwards; that the burns
+upon the face and the backs of the hands were such as he had seen upon men
+landed from Egypt and not such as could be got in a Richmond laboratory
+between breakfast and tea; that the fever which followed was what he should
+have expected from heat, want of water, and sleeping wet; and that if the
+gentleman by the door wished to propose a lamp, he had better propose one
+which would burn a man evenly to the wrists and no farther.
 
 The small man said that a man might burn himself in a great many ways.
 
 "He might," said the Medical Man. "I have seen most of them."
 
 I added what I could, which was less than I should have liked. I said that I
-had known the Traveller for some years and had seen him go before; that on the
-former occasion he had been three years gone, and that within the week of his
-coming back I had published his death; and that I had the disadvantage, in the
-present company, of being on record. That was received better than it
+had known the Time Traveller for some years and had seen him go before; that
+on the former occasion he had been three years gone, and that within the week
+of his coming back I had published his death; and that I had the disadvantage,
+in the present company, of being on record. That was received better than it
 deserved.
 
 The Vice-President said that the Society had received the communication and
@@ -77,11 +77,11 @@ fortnight without knowing.
 
 The Geologist rose slowly. He was a tall stooping man with a grey beard cut
 square, and Filby, leaning across the Medical Man, told me in a whisper that
-he was one of the two elderly gentlemen who had disagreed about an absence.
-He did not begin with the fish, or the dial, or the mountain. He began with
-the question the Traveller had told us in his study that he wanted to be
-asked, and I looked at the Traveller's face, as I had been invited to do, and
-it was not the face he had promised us.
+he was one of the two elderly gentlemen who had disagreed about an absence. He
+did not begin with the fish, or the dial, or the mountain. He began with the
+question the Time Traveller had told us in his study that he wanted to be
+asked, and I looked at the Time Traveller's face, as I had been invited to do,
+and it was not the face he had promised us.
 
 "You have told us," said the Geologist, "that you were at Richmond. I will
 accept that; your machine's habits are not my province, and there is a
@@ -97,7 +97,7 @@ was laid down, which is my own opinion. In either case you cannot check your
 ridge against any bed that a hammer can reach, and I want you to understand
 that you have brought us a district which does not exist."
 
-"It existed," said the Traveller.
+"It existed," said the Time Traveller.
 
 "I do not doubt it. I say it does not exist, and that I cannot go and look at
 it, and that you have therefore told me a great deal about the Permian and
@@ -109,19 +109,20 @@ does yours contain? A fish in a stream, which you compare with a fish from the
 Magnesian Limestone of Durham. The Magnesian Limestone is a sea deposit. Your
 fish was in fresh water."
 
-"The lake was salt," said the Traveller. "I had the sea for it, the first
+"The lake was salt," said the Time Traveller. "I had the sea for it, the first
 morning, before I put up the glass."
 
 "And lost it, by your own account. A salt lake is not a sea. It is the
 commonest thing in the New Red, and in a dozen deserts now." He waited, and
-the Traveller said nothing, and he went on. "So either your fish is not what
-you take it for, or your river ran, somewhere beyond your sight, to a Permian
-sea, or your comparison is a resemblance between a fish and a fish. I do not
-say you were not in the Permian. I say you have not told me how you know."
+the Time Traveller said nothing, and he went on. "So either your fish is not
+what you take it for, or your river ran, somewhere beyond your sight, to a
+Permian sea, or your comparison is a resemblance between a fish and a fish. I
+do not say you were not in the Permian. I say you have not told me how you
+know."
 
-The Traveller was some time answering. When he did he spoke more slowly than
-he had spoken all afternoon, and I noticed that he had put his bad hand flat
-upon the notebook.
+The Time Traveller was some time answering. When he did he spoke more slowly
+than he had spoken all afternoon, and I noticed that he had put his bad hand
+flat upon the notebook.
 
 "I do not know it," he said. "I set out to find the passage from the Permian
 into the Trias by successive trials from above, because I had been told that
@@ -156,7 +157,7 @@ it. I shall only point out that you have given us a date for a formation from
 an instrument, and a formation for the date from a fish, and that neither of
 them stands up without the other."
 
-"Yes," said the Traveller.
+"Yes," said the Time Traveller.
 
 "Now the valley." The Geologist put his hand upon the table, upon the edge of
 the drawing, near the small square. "You saw it four times in thirty months
@@ -167,8 +168,8 @@ moved. I have seen the same thing in New South Wales, and so have the men who
 farm there, and they do not suppose the world is ending. They suppose it is a
 bad year, or five."
 
-"So did I," said the Traveller, "until the stake showed no flood-mark above
-the notch at thirteen months. A season leaves a line."
+"So did I," said the Time Traveller, "until the stake showed no flood-mark
+above the notch at thirteen months. A season leaves a line."
 
 "So does a run of dry years—no line at all. I am not disputing your
 sequence. I am asking what it is a sequence of. You had a dozen beasts across
@@ -191,25 +192,26 @@ yourself that you had not a pinch of it."
 
 "You did. I am reminding you that I have." He sat down.
 
-The Traveller said nothing more to that, and I saw Filby, who had been holding
-the photographs in their cover against his chest all this while, put them down
-upon his knees.
+The Time Traveller said nothing more to that, and I saw Filby, who had been
+holding the photographs in their cover against his chest all this while, put
+them down upon his knees.
 
 The Chemist was a short man with an eyeglass who asked at once to see the
 tubes, and had them passed to him along the front row, and held each one to
-the window, and asked how they had been sealed. Ground stoppers, the Traveller
-said, and wax over the stoppers; and the wax had held, so far as he could
-tell, which was not far. The Chemist said he would tell us what could be done
-with a tube of that size, and did so in about a minute, and I put it down.
+the window, and asked how they had been sealed. Ground stoppers, the Time
+Traveller said, and wax over the stoppers; and the wax had held, so far as he
+could tell, which was not far. The Chemist said he would tell us what could be
+done with a tube of that size, and did so in about a minute, and I put it
+down.
 
-It would tell him whether the Traveller's air had been air. It would not tell
-him the carbonic acid to the nicety that would signify; there was not enough
-of it, and the breath of one man working in a cleft would swamp any figure he
-got. He would make the analysis of both tubes and set the third against the
-first, and he would report it, and he told us now what he expected to report,
-which was air. The Traveller said that in that case the tubes were a control
-upon each other and no more. The Chemist said that was what he had said, and
-asked for the water from the third station.
+It would tell him whether the Time Traveller's air had been air. It would not
+tell him the carbonic acid to the nicety that would signify; there was not
+enough of it, and the breath of one man working in a cleft would swamp any
+figure he got. He would make the analysis of both tubes and set the third
+against the first, and he would report it, and he told us now what he expected
+to report, which was air. The Time Traveller said that in that case the tubes
+were a control upon each other and no more. The Chemist said that was what he
+had said, and asked for the water from the third station.
 
 He took the stopper out and put his nose to it, and put the stopper back.
 
@@ -248,8 +250,9 @@ of my finger, and I have said so."
 
 "I have no idea. That is not my difficulty."
 
-I saw the Traveller turn over the papers in front of him and write something
-on the back of one. It was the first note he had made that afternoon.
+I saw the Time Traveller turn over the papers in front of him and write
+something on the back of one. It was the first note he had made that
+afternoon.
 
 The Comparative Anatomist did not rise at once. He was the Fellow who had gone
 down to Richmond and asked to have the jar turned round, and had declined to
@@ -274,7 +277,7 @@ history, he should say: a Permian ganoid, or a Carboniferous one, for the two
 systems share such fishes; in a state of preservation he had never seen and
 did not expect to see again; from a locality unknown.
 
-"That is more than I hoped," said the Traveller.
+"That is more than I hoped," said the Time Traveller.
 
 "It is less than you claimed. You claimed the Permian. I give you the Permian
 or the Carboniferous, and I cannot take you nearer with a fish." He turned
@@ -308,10 +311,10 @@ brought me no piece of it."
 "So the account says." He put his hand upon the jar. "I should like to keep
 this."
 
-The Traveller did not answer at once, and the Anatomist, who I think had
+The Time Traveller did not answer at once, and the Anatomist, who I think had
 expected a refusal, waited for it, and did not get one.
 
-"Yes," said the Traveller. "Yes. Filby, give him the label."
+"Yes," said the Time Traveller. "Yes. Filby, give him the label."
 
 The Astronomer spoke last, and I had not until then noticed him. He was a
 quiet man who had sat through the whole account without moving, near the
@@ -358,13 +361,14 @@ failed to. I have been careful never to try it."
 
 "You have tried it every time you have used it."
 
-"Yes." The Traveller looked down at his hand upon the notebook. "A stone let
-fall from the masthead of a moving ship comes down at the foot of the mast. I
-thought of that in the laboratory, before I first went, and it comforted me
-for about an hour. The stone keeps the ship's motion because it had it when
-it was let go. I do not know what it is that I keep, or why it should hold me
-to one piece of ground for two hundred and fifty millions of years, when the
-ground has been wherever it pleased in the meantime. I only know that it has."
+"Yes." The Time Traveller looked down at his hand upon the notebook. "A stone
+let fall from the masthead of a moving ship comes down at the foot of the
+mast. I thought of that in the laboratory, before I first went, and it
+comforted me for about an hour. The stone keeps the ship's motion because it
+had it when it was let go. I do not know what it is that I keep, or why it
+should hold me to one piece of ground for two hundred and fifty millions of
+years, when the ground has been wherever it pleased in the meantime. I only
+know that it has."
 
 "So do I," said the Astronomer. "I wished the meeting to know that it is a
 fact about the machine, and not a part of your theory of it." He sat down.
@@ -374,17 +378,17 @@ said. He had told Filby as much himself, in the study, about an eddy under
 his house; and I had heard him, and not understood.
 
 The Vice-President summed up, briefly and rather well. He said that the
-Society did not vote upon communications and would not vote upon this one.
-It had received an account, and had before it a specimen which a competent
-Fellow would examine and report upon, and samples which another Fellow would
-analyse, and a notebook which the author retained. It would ask a small
-deputation to go down to Richmond and see the machine. He said that the
-meeting had heard a great deal that afternoon which it could not confirm, and
-had disputed some of it, and that he did not propose to pretend the position
-was a comfortable one for a learned body. Then he asked the Traveller whether
-he wished to add anything.
+Society did not vote upon communications and would not vote upon this one. It
+had received an account, and had before it a specimen which a competent Fellow
+would examine and report upon, and samples which another Fellow would analyse,
+and a notebook which the author retained. It would ask a small deputation to
+go down to Richmond and see the machine. He said that the meeting had heard a
+great deal that afternoon which it could not confirm, and had disputed some of
+it, and that he did not propose to pretend the position was a comfortable one
+for a learned body. Then he asked the Time Traveller whether he wished to add
+anything.
 
-The Traveller stood up. He did not take up the papers.
+The Time Traveller stood up. He did not take up the papers.
 
 "I will tell you what I think I have," he said. "I have what I saw, and there
 is a book with some of it in, written while I saw it, and the rest you have
@@ -402,20 +406,19 @@ which I have enjoyed, and which you may have."
 
 "No. I asked you how you knew where you were."
 
-"And I have told you that I do not." The Traveller looked at him for a
+"And I have told you that I do not." The Time Traveller looked at him for a
 moment, and I saw the thing I had seen in the study when his fantastic world
-began to take order under his argument, and I was not glad to see it. "I
-shall have to find out."
+began to take order under his argument, and I was not glad to see it. "I shall
+have to find out."
 
 There was no applause. Men stood up, and the room filled with the sound of
-them talking to one another and not to him, and the two behind me went back
-to their own paper as if they had never left it. Filby gathered the
-photographs into their cover. The Chemist took the tubes and the bottles and
-the packet, and gave the Traveller a receipt for them, written on the back of
-the programme, which the Traveller folded and put away without reading. The
-Anatomist lifted the jar from the sill and carried it to the door under his
-arm, and I saw the Traveller watch it go, and not follow it with more than
-his eyes.
+them talking to one another and not to him, and the two behind me went back to
+their own paper as if they had never left it. Filby gathered the photographs
+into their cover. The Chemist took the tubes and the bottles and the packet,
+and gave him a receipt for them, written on the back of the programme, which
+the Time Traveller folded and put away without reading. The Anatomist lifted
+the jar from the sill and carried it to the door under his arm, and I saw the
+Time Traveller watch it go, and not follow it with more than his eyes.
 
 Then he picked up the notebook, which nobody had asked for, and put it in his
 pocket.

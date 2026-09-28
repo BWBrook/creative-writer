@@ -3,9 +3,9 @@ had asked no one else, and after dinner we sat over our cigars and a bowl of
 smoking bishop in the little room. He had drawn the table close to his chair,
 for he still used his right hand awkwardly; but he looked more like his old
 self than I had yet seen him. Filby, who had been unusually considerate during
-dinner, began presently to argue with him about the fire. The Traveller wanted
-another lump of coal upon it. Filby said the room was already insufferable,
-and put it on.
+dinner, began presently to argue with him about the fire. The Time Traveller
+wanted another lump of coal upon it. Filby said the room was already
+insufferable, and put it on.
 
 For a time we talked of common things. I remember telling him of a man we had
 both known, who had gone to live in Italy; and his surprise at this quite
@@ -19,8 +19,8 @@ holding his glass against his cheek, and I thought that he was tired.
 
 "Was it what you expected?"
 
-The Traveller put down his glass. "I thought there would be more difficulty
-about believing me."
+The Time Traveller put down his glass. "I thought there would be more
+difficulty about believing me."
 
 "There was enough."
 
@@ -38,10 +38,10 @@ He looked across at me and smiled.
 had travelled two hundred and fifty million years, and then tell me it made
 no difference."
 
-Filby laughed at that, and the Traveller laughed too, though less readily.
-Then he began to explain something about the course of the river. He spoke
-with his eyes upon the fire, drawing the bend of it with one finger upon his
-knee; but before he had finished I saw him shake his head.
+Filby laughed at that, and the Time Traveller laughed too, though less
+readily. Then he began to explain something about the course of the river. He
+spoke with his eyes upon the fire, drawing the bend of it with one finger upon
+his knee; but before he had finished I saw him shake his head.
 
 "No," he said. "He would have answered that."
 
@@ -93,9 +93,9 @@ I wanted to see this room again most abominably."
 
 "Don't begin in that way," said Filby. "You know what I mean."
 
-The Traveller moved his right hand upon the arm of the chair and looked down
-at it. The finger and thumb were still stiff. He tried them together, slowly,
-and left off.
+The Time Traveller moved his right hand upon the arm of the chair and looked
+down at it. The finger and thumb were still stiff. He tried them together,
+slowly, and left off.
 
 "I shall not be fit to do much for some time."
 
@@ -111,13 +111,13 @@ shall never go near the machine again? I should not believe myself."
 Filby made an impatient movement. "You were carried up to bed before dinner.
 There is a difference."
 
-The Traveller said nothing to that. He sat with his head bent a little and
-his cigar between the fingers of his left hand. Filby had leaned forward to
-speak, and remained so, looking across the table at him; then he sank back
+The Time Traveller said nothing to that. He sat with his head bent a little
+and his cigar between the fingers of his left hand. Filby had leaned forward
+to speak, and remained so, looking across the table at him; then he sank back
 again. I heard a door shut somewhere in the house, and Mrs. Watchett's steps
 passing along the hall. We listened until they had ceased.
 
-"I have been a great nuisance to her," the Traveller said.
+"I have been a great nuisance to her," the Time Traveller said.
 
 "She does not complain," said Filby.
 
@@ -171,16 +171,16 @@ He smiled, and then grew serious again.
 
 "I do want to know," he said. "You must allow me that."
 
-Filby turned his glass about upon the table. At last he said that he had
-never objected to the Traveller's wanting to know anything; and the Traveller
-did not press him to say more. We sat for some time longer. There were things
-in my notes of the meeting which I wished to ask about, but I put them off,
-and presently we began to speak of other matters.
+Filby turned his glass about upon the table. At last he said that he had never
+objected to his friend's wanting to know anything; and the Time Traveller did
+not press him to say more. We sat for some time longer. There were things in
+my notes of the meeting which I wished to ask about, but I put them off, and
+presently we began to speak of other matters.
 
 Before we left I went into the laboratory. I had a wish to see the machine
-again, after our talk of it, and Filby came with me. The Traveller brought
-the lamp. He held it up while Filby examined the bent rail, which had not
-been straightened; and in that light the whole machine looked more damaged
+again, after our talk of it, and Filby came with me. The Time Traveller
+brought the lamp. He held it up while Filby examined the bent rail, which had
+not been straightened; and in that light the whole machine looked more damaged
 than I remembered it. I asked whether the men from the Society would find it
 in working order.
 
@@ -196,8 +196,8 @@ the paper projected beyond the rim.
 
 "What is that for?" said Filby.
 
-The Traveller set down the lamp and stooped over the dial. I could not see
-his face.
+The Time Traveller set down the lamp and stooped over the dial. I could not
+see his face.
 
 "It is not right yet," he said.
 

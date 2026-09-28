@@ -1,9 +1,9 @@
 "The rain did not come that day. I sat until my legs were cramped, and then
 went down to the stream with a bottle. There was still a little clear water
-running over the stones. I lay upon my stomach to reach it, and the smell of
-the bank came up into my face. I had to rest twice upon the way back. The
-bottle, which I had carried empty without noticing it, seemed extraordinarily
-heavy when it was full.
+running over the stones. I lay on my stomach to reach it, and the smell of the
+bank came up into my face. I had to rest twice on the way back. The bottle,
+which I had carried empty without noticing it, seemed extraordinarily heavy
+when it was full.
 
 "I looked at the aneroid when I came in. The hand was lower again—how much
 lower I cannot tell you, for I wrote nothing more in the book. I put it in
@@ -29,9 +29,9 @@ hoping that this particular little beast would get a drink.
 
 "Towards midnight there came a wind. It blew hot against the ridge and filled
 the cleft with dust; my candle went out, and I lay with my coat over my face,
-listening to the loose things shifting upon the shelves. There was a sound
-like rain which brought me up eagerly. It was the dry leaves blowing along
-the stone. My hat went out with them. I saw it once against the lighter ground
+listening to the loose things shifting on the shelves. There was a sound like
+rain which brought me up eagerly. It was the dry leaves blowing along the
+stone. My hat went out with them. I saw it once against the lighter ground
 beyond the entrance, and let it go.
 
 "At daylight the wind had fallen. The sky was lower, with a yellowish light
@@ -50,7 +50,7 @@ were so sore that I could scarcely get the cup between them.
 "The first drops fell while I was eating. They made black spots upon the
 ledge, as large as pennies, with dry stone between. I put my hand out. A drop
 struck it with an actual sting; then another struck the cup, and before I
-could set the cup down the whole plain had vanished. The noise upon the block
+could set the cup down the whole plain had vanished. The noise on the block
 above me was tremendous. I went out into it and stood with my mouth open.
 Water ran down my neck and under my shirt, and I laughed. I remember laughing
 quite loudly.
@@ -118,15 +118,15 @@ my shoulders. One looked down at me. Its wet face had a stupid, troubled
 appearance, and I was glad when it went on.
 
 "There was no reason to remain. I had seen the change I came to see, and the
-food was nearly finished. I put the camera upon its shelf and began packing.
-It was a wretched business. The plant papers had swollen so that I could not
-close the press, and when I knelt upon it to force it together the string
-slipped and a sheaf of the wet leaves spread across the mud. I tried to
-gather them in their order. Everything I touched left red mud upon something
-else, and I had to stop and shake my hands to loosen the fingers. The
-satchel upon the machine was wet outside, but its fastenings held, and I
-pushed at the jar and the little tin to make certain that they could not move.
-I ought to have been satisfied with those. I went back for the press.
+food was nearly finished. I put the camera on its shelf and began packing. It
+was a wretched business. The plant papers had swollen so that I could not
+close the press, and when I knelt on it to force it together the string
+slipped and a sheaf of the wet leaves spread across the mud. I tried to gather
+them in their order. Everything I touched left red mud on something else, and
+I had to stop and shake my hands to loosen the fingers. The satchel on the
+machine was wet outside, but its fastenings held, and I pushed at the jar and
+the little tin to make certain that they could not move. I ought to have been
+satisfied with those. I went back for the press.
 
 "A stone fell into the water at the entrance. I did not see where it came
 from. I heard the splash and looked out, still holding the string. The ledge
@@ -143,9 +143,9 @@ the ridge to the ground upon which I had first arrived, and went out to see
 whether the ledge would still carry it. The string was entangled about my
 fingers.
 
-"I was upon the right of the entrance, with my hand against the wall, when
-the animal came up. Its forefeet appeared first over the broken edge; then
-the long head, swinging as it sought a hold. It scrambled upon the ledge and
+"I was on the right of the entrance, with my hand against the wall, when the
+animal came up. Its forefeet appeared first over the broken edge; then the
+long head, swinging as it sought a hold. It scrambled on to the ledge and
 stood between me and the open plain. Mud ran off its belly. I could see the
 ridge of the old scar upon its left shoulder, pale against the wet skin, and
 the ribs moving behind it. The head turned towards me.
@@ -170,29 +170,28 @@ charges still in the revolver; I could have fired every one of them into
 that place. I kept seeing the rod break—and myself left there when the
 cartridges were gone.
 
-"For a little while neither of us moved. Water ran over my boots and out
-between two stones. The animal breathed with its mouth open. From somewhere
-under the block came a grinding sound, almost hidden by the river, and I saw
-the plumb move. It drew slowly away from its mark, stopped, and drew away
-again. There was no swinging. The peg from which it hung was moving with the
-stone.
+"For a while neither of us moved. Water ran over my boots and out between two
+stones. The animal breathed with its mouth open. From somewhere under the
+block came a grinding sound, almost hidden by the river, and I saw the plumb
+move. It drew slowly away from its mark, stopped, and drew away again. There
+was no swinging. The peg from which it hung was moving with the stone.
 
 "I called out, quite foolishly, and the animal thrust its head forward. Then
 the left-hand shelf came down. It fell in a heap of bottles and thin slabs,
 and the beast scrambled over it into the space behind the machine. There it
 was pressed crosswise against the back wall, with its head beside the saddle.
 A corner of the roof had settled upon the fallen stuff; the entrance was
-lower, and through a gap upon the left water burst in with a rush, carrying
-sand across the floor.
+lower, and through a gap on the left water burst in with a rush, carrying sand
+across the floor.
 
 "I got into the passage on the right, kneeling in the water. The revolver
-hindered me until I had thrust it into the case beneath my coat and could
-get both hands upon the stones. A flat piece lay across the foot-rest with
-one end under a case, and I could not lift it. I dragged the case towards me
-instead. Something glass broke inside it; then its lid came off in my hands,
-and the water took little packets of paper out of it and turned them over
-and over about my knees. I pushed the empty box into the stream and heaved
-the slab, which was loose now, against the opposite side of the cleft.
+hindered me until I had thrust it into the case beneath my coat and could get
+both hands on the stones. A flat piece lay across the foot-rest with one end
+under a case, and I could not lift it. I dragged the case towards me instead.
+Something glass broke inside it; then its lid came off in my hands, and the
+water took little packets of paper out of it and turned them over and over
+about my knees. I pushed the empty box into the stream and heaved the slab,
+which was loose now, against the opposite side of the cleft.
 
 "While I was at this the animal was moving, scraping its feet among the
 fallen things; presently its head showed beyond the farther rail. It had
@@ -219,14 +218,14 @@ its mouth within a yard of my face. I saw the two long teeth, the smaller
 teeth between them, and a thread of water hanging from its jaw. I drew my
 hand back and caught the frame with it.
 
-"I got one knee upon the foot-rest. The machine leaned as I put my weight
-upon it, and I passed my left arm between two bars to keep myself from
-falling. I could not sit upright. The roof touched my back, and I lay forward
-over the dials, fumbling for the levers. I found them together in the pocket,
-but could not separate them with my right hand. I had to free the other arm,
-fit them one at a time, and thrust the arm through again. All this took a
-long time. I heard the animal struggling, and the water, and a continual
-cracking close above my head.
+"I got one knee on the foot-rest. The machine leaned as I put my weight upon
+it, and I passed my left arm between two bars to keep myself from falling. I
+could not sit upright. The roof touched my back, and I lay forward over the
+dials, fumbling for the levers. I found them together in the pocket, but could
+not separate them with my right hand. I had to free the other arm, fit them
+one at a time, and thrust the arm through again. All this took a long time. I
+heard the animal struggling, and the water, and a continual cracking close
+above my head.
 
 "The starting lever moved. The roar broke into separate blows, the entrance
 flickered, and the animal became a brown indistinctness beyond the bars. Then
@@ -236,12 +235,12 @@ the dials, and I raised my head a little and found the stone no longer above
 me.
 
 "I went on. There were black intervals in which I saw nothing beyond the
-machine, and intervals of wavering light. Once I thought there was water
-about me. I watched the hands and kept the motion up. What happened to the
-cleft, whether the whole block fell or only that corner, and whether the
-animal got out, I cannot tell you. I have thought a good deal about the
-animal. At the time I wanted only to leave enough years behind me to be sure
-that it could not come any farther.
+machine, and intervals of wavering light. Once I thought there was water about
+me. I watched the hands and kept the motion up. What happened to the
+cleft—whether the whole block fell or only that corner—and whether the animal
+got out, I cannot tell you. I have thought a good deal about the animal. At
+the time I wanted only to leave enough years behind me to be sure that it
+could not come any farther.
 
 "But there was one more thing to do before I could come home. I had dragged
 the machine forty yards from the place at which I first arrived. It would
@@ -270,7 +269,7 @@ them opened!
 
 "Before I started again I tore strips from my shirt and bound my hands. I
 could not tie the knots with my fingers, and had to draw them tight with my
-teeth. The mud upon the rails was drying. I wiped the dial glasses with the
+teeth. The mud on the rails was drying. I wiped the dial glasses with the
 inside of my sleeve, got into the saddle, and hooked my arm through the frame
 again. The house altered, the laboratory came about me, and I slowed until I
 could follow the smallest hand. I meant to keep my appointment. But the

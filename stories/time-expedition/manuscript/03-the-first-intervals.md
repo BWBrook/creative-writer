@@ -68,10 +68,9 @@ Beyond the mouth of the cleft the daylight fluttered, and the rock above me
 remained black. I could not tell whether it was moving. I found myself
 stooping lower and lower over the dials—though to stoop would have availed me
 nothing if that mass had settled upon the place I occupied. I increased the
-speed to get it over. For a little while a whitish illumination showed the
-lower edge of the stone; then even that went, and I stopped at the first
-return of light that I could distinguish, with the dials marking about
-thirteen months.
+speed to get it over. For a while a whitish illumination showed the lower edge
+of the stone; then even that went, and I stopped at the first return of light
+that I could distinguish, with the dials marking about thirteen months.
 
 "The roof was still above me. It was so low and so substantial that I put my
 hand against it. I had been afraid of finding it upon my shoulders, and now
@@ -251,10 +250,10 @@ about it. There was scarcely a movement of air through the crack at the back.
 "I had intended to go forward after sleeping. Instead I lay listening. The
 river made a sound now which I had not noticed at the first station, a small
 intermittent trickling where the water passed over stones. At intervals some
-creature called from the plain. I could not tell whether it was near the
-entrance or a long way off. I got up once and looked out, and once I struck a
-match merely to see the familiar metal beside me. The flame stood straight
-until it burnt my finger.
+creature called from the plain; it might have been near the entrance or a long
+way off. I got up once and looked out, and once I struck a match merely to see
+the familiar metal beside me. The flame stood straight until it burnt my
+finger.
 
 "I considered waiting there for rain. A few days might have brought it; but
 the food was packed for travelling, and I had already used more of it than I

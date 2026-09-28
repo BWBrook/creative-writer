@@ -45,14 +45,14 @@ that he did not know how the machine did what it did and had said so to its
 owner more often than its owner liked, and that he was not there to explain
 it, but to say what he had seen; and he sat down.
 
-The Medical Man did not stand. He said, from his chair, that he had attended
-the Time Traveller on his return and for nine days afterwards; that the burns
-upon the face and the backs of the hands were such as he had seen upon men
-landed from Egypt and not such as could be got in a Richmond laboratory
-between breakfast and tea; that the fever which followed was what he should
-have expected from heat, want of water, and sleeping wet; and that if the
-gentleman by the door wished to propose a lamp, he had better propose one
-which would burn a man evenly to the wrists and no farther.
+The Medical Man spoke without rising. He said that he had attended the Time
+Traveller on his return and for nine days afterwards; that the burns upon the
+face and the backs of the hands were such as he had seen upon men landed from
+Egypt and not such as could be got in a Richmond laboratory between breakfast
+and tea; that the fever which followed was what he should have expected from
+heat, want of water, and sleeping wet; and that if the gentleman by the door
+wished to propose a lamp, he had better propose one which would burn a man
+evenly to the wrists and no farther.
 
 The small man said that a man might burn himself in a great many ways.
 
@@ -311,15 +311,15 @@ brought me no piece of it."
 "So the account says." He put his hand upon the jar. "I should like to keep
 this."
 
-The Time Traveller did not answer at once, and the Anatomist, who I think had
+The Time Traveller was slow to answer, and the Anatomist, who I think had
 expected a refusal, waited for it, and did not get one.
 
 "Yes," said the Time Traveller. "Yes. Filby, give him the label."
 
 The Astronomer spoke last, and I had not until then noticed him. He was a
 quiet man who had sat through the whole account without moving, near the
-Geologist, and he did not stand until the Vice-President asked him to. He said
-he had two things to ask and that neither of them was about the fish.
+Geologist, and he stood only when the Vice-President asked him to. He said he
+had two things to ask and that neither of them was about the fish.
 
 "Your dial," he said, "gives the sun two hundred and fifty millions of years
 of shining before this afternoon, at the least, since you found it shining
@@ -329,8 +329,8 @@ sun is older than the physicists allow."
 
 "I can only tell you, sir, that it was shining, and that it was very hot."
 
-"I do not doubt you found it so. I am telling you that you have brought home
-a quarrel as well as a fish." The Geologist inclined his head very slightly.
+"I am sure you found it so. I am telling you that you have brought home a
+quarrel as well as a fish." The Geologist inclined his head very slightly.
 "You found the sun high at noon and the shadows short. That is not Richmond."
 
 "No."

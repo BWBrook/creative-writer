@@ -2,40 +2,41 @@
 under the rock and watched the light beyond the entrance flutter and go grey,
 and told myself that a stone which had stood for a year would stand for ten
 months more. It did. When the light steadied I was under the roof, with the
-dust thick on the foot-rest and a little heap of grit, as much as would fill an
-egg-cup, lying against the frame where none had lain before. I looked up. Then
-I went to the back of the cleft and felt for the chalk line. The plumb hung
-over it as I had left it; but while I stood with my fingers on the mark a
+dust thick upon the foot-rest and a little heap of grit, as much as would fill
+an egg-cup, lying against the frame where none had lain before. I looked up.
+Then I went to the back of the cleft and felt for the chalk line. The plumb
+hung over it as I had left it; but while I stood with my fingers on the mark a
 single grain came down past my face and struck the rail with a sound like a
 seed dropped upon paper.
 
 "I thought it a small thing. I swept the grit off the foot-rest with my sleeve
 and went to the entrance, and the smell met me before I reached it.
 
-"I had smelt it faintly at the second station, at the lake, and had put it down
-to the warm margin. Now it filled the plain. It was the smell of a pond that
-has been let down in August, a smell of weed and mud and something fouler under
-them, and it came up to the ridge on air that scarcely moved. The haze was
-heavier than before, and did not lift at nine, or at ten; the sun stood in it
-all that day like a plate of hot iron, and the far bank never came clear at
-all. By my watch it was seven in the morning. I was sweating before I had gone
-twenty steps.
+"I had smelt it faintly at the second station, at the lake, and had put it
+down to the warm margin. Now it filled the plain. It was the smell of a pond
+that has been let down in August, a smell of weed and mud and something fouler
+under them, and it came up to the ridge on air that scarcely moved. The haze
+was heavier than before, and did not lift at nine, or at ten; the sun stood in
+it all that day like a plate of hot iron, and the far bank never came clear at
+all. It was seven in the morning by my watch when I came out, and I was
+sweating before I had gone twenty steps.
 
 "The stake was there, and the water was four feet one inch below my notch, and
-the stream that had been a river when I first saw it, and a brook when I saw it
-next, was now a chain wide where it spread over the stones, and a man could
+the stream that had been a river when I first saw it, and a brook when I saw
+it next, was now a chain wide where it spread over the stones, and a man could
 have waded it almost anywhere without wetting his knees. I did not wade it.
-Where it deepened below the ridge, in the reach where I had netted my fish, the
-surface was alive. I had never seen fish so crowded! They lay in the brown
+Where it deepened below the ridge, in the reach where I had netted my fish,
+the surface was alive. I had never seen fish so crowded! They lay in the brown
 water in a mass, heads to the trickle where it came in over the stones, and
-their gill-covers beat so fast that the whole reach seemed to shiver. Along the
-margin, where the water had gone back from the mud, they lay dead in a line,
-some dozens of them, silver turning to lead, and the small biting things I have
-mentioned were busy among them. I sat down on the bank and counted the dead as
-far as I could see, and made it sixty-four, and wrote the number, and my hand
-was not steady when I wrote it. It was not fear. I was very hot, and I had been
-three days in that country and it had taken the strength out of me as a warm
-bath does, and the number was larger than I had expected—that was all.
+their gill-covers beat so fast that the whole reach seemed to shiver. Along
+the margin, where the water had gone back from the mud, they lay dead in a
+line, some dozens of them, silver turning to lead, and the small biting things
+I have mentioned were busy among them. I sat down upon the bank and counted
+the dead as far as I could see, and made it sixty-four, and wrote the number,
+and my hand was not steady when I wrote it. It was not fear. I was very hot,
+and I had been three days in that country and it had taken the strength out of
+me as a warm bath does, and the number was larger than I had expected—that was
+all.
 
 "I filled the bottle where the trickle came in, which was the cleanest water I
 could find, and then, because I had the papers with me, I dipped a strip of the
@@ -63,31 +64,31 @@ and thinking about the heat.
 "I went up on the ridge to look for my river.
 
 "I must explain that I went up in some confidence. I had my theory. By my own
-reckoning I had made it the afternoon before and slept on it, badly, and it had
-seemed in the night quite sufficient; and I had only to find the new course to
-have it proved—a green line somewhere across the plain, a bank of reeds, a
-glint. I went along the ridge farther than I had been before, past the cairn,
-until the rock fell away, and I stood there with the glass for the better part
-of an hour. There was no green line, and no glint. The haze took the plain at
-about two miles and gave back nothing; and nearer, where I could see, the
-hollows between the bushes that I had wondered about so pleasantly at the
+reckoning I had made it the afternoon before and slept on it, badly, and it
+had seemed in the night quite sufficient; and I had only to find the new
+course to have it proved—a green line somewhere across the plain, a bank of
+reeds, a glint. I went along the ridge farther than I had been before, past
+the cairn, until the rock fell away, and I stood there with the glass for the
+better part of an hour. There was no green line, and no glint. I could make
+out perhaps two miles of the plain through the haze, and no more; and nearer,
+the hollows between the bushes that I had wondered about so pleasantly at the
 second station were as dry as the bushes, and had plainly been dry a long
 while. Somewhere beyond my sight there might still be a full river and green
 banks. I told myself so. But the beaked beasts I had seen grazing a mile off
 across the water were not a mile off now. They were in the river bed below me,
-five of them where there had been a dozen, standing about the last of the pools
-with their heads down, and their ribs showed. If there had been a fuller water
-anywhere within the range of a beast that size, I do not think they would have
-been standing in the mud drinking what the fish were dying in.
+five of them where there had been a dozen, standing about the last of the
+pools with their heads down, and their ribs showed. If there had been a fuller
+water anywhere within the range of a beast that size, I think they would have
+gone to it, rather than stand in the mud drinking what the fish were dying in.
 
-"I came down off the ridge and I did not think about the river again for some
-hours. I did the work. I took the air, and the water, and a packet of the black
-mud from the pool where the paper had gone darkest, and I repeated my views
-from the cairn, though there was nothing in the finder but brown. I walked to
-the lake stake and paced from it to the wet ground and made it a hundred and
-forty paces, and the water when I reached it was warm as a bath and left my
-finger white when it dried. At two the thermometer, in the deepest shade I
-could find for it, stood at a hundred and nine."
+"I came down off the ridge and put the river out of my head for some hours. I
+did the work. I took the air, and the water, and a packet of the black mud
+from the pool where the paper had gone darkest, and I repeated my views from
+the cairn, though there was nothing in the finder but brown. I walked to the
+lake stake and paced from it to the wet ground and made it a hundred and forty
+paces, and the water when I reached it was blood-warm and left my finger white
+when it dried. At two the thermometer, in the deepest shade I could find for
+it, stood at a hundred and nine."
 
 He stopped here and drank. It was the first time he had touched the glass, and
 I saw that he put it down again behind the jar.
@@ -132,41 +133,42 @@ up. I had the revolver out before I was fairly on my feet, and I remember that
 I took two steps backward into the shallow water without meaning to, and stood
 there with the warm mud coming in over my boots and the gun in both hands.
 
-"It did not move. It was leaner than I remembered, so much leaner that the
-bones of the hip stood up under the skin, and its head seemed larger for it,
-and lower. When it turned a little I saw the pale mark across the shoulder—the
-left shoulder—and knew it, or believed I knew it. It came down out of the
-shadow of the bush—not towards me, but towards the water, along the margin
-where the dead fish lay—and it put its head down and took one, and I heard the
-bones go. It did not eat as a dog eats. It swallowed the thing whole, in three
-movements of the head, and took another, and stood with the tail of it hanging
-from its jaw and looked at me. I have seen a fox take a dead pheasant so, in a
-hard winter. I had not thought to see the largest flesh-eater I had met in that
-country stooping to carrion; and it came into my head, with the water warm
-about my ankles, that a beast brought to that had not crossed a river for fish.
-I do not know it. I thought it then, and I kept the revolver up.
+"It stayed where it was. It was leaner than I remembered, so much leaner that
+the bones of the hip stood up under the skin, and its head seemed larger for
+it, and lower. When it turned a little I saw the pale mark across the
+shoulder—the left shoulder—and knew it, or believed I knew it. It came down
+out of the shadow of the bush—not towards me, but towards the water, along the
+margin where the dead fish lay—and it put its head down and took one, and I
+heard the bones go. It did not eat as a dog eats. It swallowed the thing
+whole, in three movements of the head, and took another, and stood with the
+tail of it hanging from its jaw and looked at me. I have seen a fox take a
+dead pheasant so, in a hard winter. It was a strange thing to see the largest
+flesh-eater I had met in that country stooping to carrion; and it came into my
+head, with the water warm about my ankles, that a beast brought to that had
+not crossed a river for fish. I do not know it. I thought it then, and I kept
+the revolver up.
 
 "We stood so, it and I, for about an hour. I have the time from the watch, and
-I did not believe it when I read it. It ate, and looked at me, and ate. I did
-not fire. I had a dozen cartridges, and the beast was forty yards off, and it
-had given me no cause; and I will confess to you also that I did not want to
-know what would happen if I fired and did not stop it. Towards five it turned
-and went up the bank, slowly, and along the ridge in the direction of my cleft,
-and I stood in the water and watched it out of sight, and then I found that my
-legs had begun to shake, and I sat down on the bank in the mud and let them.
+it astonished me when I read it. It ate, and looked at me, and ate. I did not
+fire. I had a dozen cartridges, and the beast was forty yards off, and it had
+given me no cause; and I will confess to you also that I was afraid of what
+would happen if I fired and failed to stop it. Towards five it turned and went
+up the bank, slowly, and along the ridge in the direction of my cleft, and I
+stood in the water and watched it out of sight, and then I found that my legs
+had begun to shake, and I sat down on the bank in the mud and let them.
 
 "I got back to the shelter a little before dark, by the other way, along the
-river. The animal was not there. Nothing had been disturbed. I made the machine
-ready, and I did not sleep in the cleft that night. I lay across the entrance
-with the revolver, and looked at the sky—there was no star to be seen at all
-now, only a brown darkness with the moon in it like a lamp behind a blind—and
-twice in the night I heard grit fall inside behind me, a little patter, and
-once something larger that struck the rail and rang. In the morning I went in
-with a match. The plumb hung over the line. The chalk was where I had drawn it.
-On the floor at the back, where there had been red dust, there was a spread of
-pale grit and small stones as broad as this table, and the crack through which
-the air had moved, and which had been cool at noon on the first day, breathed
-warm on my hand.
+river. The animal was not there. Nothing had been disturbed. I made the
+machine ready, and that night, instead of sleeping in the cleft, I lay across
+the entrance with the revolver and looked at the sky—there was no star to be
+seen at all now, only a brown darkness with the moon in it like a lamp behind
+a blind—and twice in the night I heard grit fall inside behind me, a little
+patter, and once something larger that struck the rail and rang. In the
+morning I went in with a match. The plumb hung over the line. The chalk was
+where I had drawn it. On the floor at the back, where there had been red dust,
+there was a spread of pale grit and small stones as broad as this table, and
+the crack through which the air had moved, and which had been cool at noon on
+the first day, breathed warm upon my hand.
 
 "I set the dial for seven months. I will tell you why seven. I had seen that
 country three times, and always in the same half of the year, or near it—the
@@ -178,17 +180,18 @@ should know that they did not, which was a different kind of knowledge from
 what I had. I meant to stay a day. I put down in the book that I meant to stay
 a day.
 
-"I need not describe the passage. I sat upright and did not look at the roof.
+"I need not describe the passage. I sat upright and kept my eyes from the
+roof.
 
-"The first thing was the pressure. I had left the aneroid on its ledge at the
-back, and I read it by the match before I had well got down from the saddle,
-and it stood lower than I had ever seen it stand in that country, and while I
-watched, over perhaps a quarter of an hour, it fell again. The second thing was
-the plumb. It hung clear of the line. Not far—the breadth of a finger, no more;
-but it hung clear, on the side away from the entrance, and the chalk had a
-crack through it as fine as a hair. The floor at the back was all grit now, and
-a stone the size of a man's head lay where I had used to set the food-case, and
-the crack breathed on me like a mouth.
+"The first thing was the pressure. I had left the aneroid upon its ledge at
+the back, and I read it by the match before I had well got down from the
+saddle, and it stood lower than I had ever seen it stand in that country, and
+while I watched, over perhaps a quarter of an hour, it fell again. The second
+thing was the plumb. It hung clear of the line. Not far—the breadth of a
+finger, no more; but it hung clear, on the side away from the entrance, and
+the chalk had a crack through it as fine as a hair. The floor at the back was
+all grit now, and a stone the size of a man's head lay where I had used to set
+the food-case, and the crack breathed on me like a mouth.
 
 "I stood there some time. I will tell you what went into the scale on the one
 side. I had seen that country three times, and each time it was further gone

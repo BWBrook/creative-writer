@@ -261,9 +261,9 @@ sat.
 sentences. You read badly, Filby. You always did."
 
 The Time Traveller was in the doorway in his dressing-gown, with one hand on
-the jamb and the other, in its linen, held against his chest. I do not know
-how long he had stood there. The Medical Man was behind him on the stair and
-had not stopped him.
+the jamb and the other, in its linen, held against his chest. He may have been
+there some minutes. The Medical Man was behind him on the stair and had not
+stopped him.
 
 "You gave it me to dry," said Filby.
 
@@ -284,9 +284,9 @@ order. I am not going to give you a tenth."
 "Then give it us in the right order," said Filby. "What happened to the
 animal?"
 
-The Time Traveller did not answer that. He looked at the notebook on his knee
-for some time, and when he spoke it was with an irritation I had not heard
-from him since he was well.
+The Time Traveller let that pass. He looked at the notebook on his knee for
+some time, and when he spoke it was with an irritation I had not heard from
+him since he was well.
 
 "You'd believe me. That's the trouble with you. You saw the machine come in,
 and he"—this was to me—"has believed me before. I want a room with men in it

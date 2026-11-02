@@ -1,5 +1,7 @@
 # Creative Writer
 
+> **Status:** developed in the open as a working record. This is work in progress: contents may change, and nothing here is peer-reviewed unless stated.
+
 A file-first workbench for writing fiction with an AI collaborator. Stories are
 Markdown and YAML under `stories/<slug>/`; the tooling checks them for
 continuity, reviews their prose against declared evidence, and builds EPUB and
@@ -146,3 +148,7 @@ without sending mail.
 
 Python is managed by `uv`; source is in `src/creative_writer/`, tests in
 `tests/`. `make test` runs the suite (about 300 tests, under half a minute).
+
+## Licence
+
+Code is released under the [MIT Licence](LICENSE). Text, figures and data created for this project are released under [CC BY-SA 4.0](LICENSE-CONTENT). Third-party material keeps its own terms where stated.
